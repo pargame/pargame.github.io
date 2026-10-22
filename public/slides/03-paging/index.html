@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Architecture: Virtual Memory & MMU Paging Studio</title>
+    <style>
+        :root {
+            --bg-color: #080c14;
+            --card-bg: #111827;
+            --card-border: #1f293d;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #fbbf24;
+            --accent-rose: #f43f5e;
+            --accent-purple: #c084fc;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --code-bg: #05070d;
+            --glow-blue: rgba(56, 189, 248, 0.4);
+            --glow-purple: rgba(192, 132, 252, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro", "Pretendard", monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            user-select: none;
+        }
+
+        /* Top Header */
+        header {
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(8, 12, 20, 0.95);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #0284c7;
+            color: white;
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .nav-btn {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .nav-btn:hover {
+            background: #334155;
+            border-color: var(--accent-blue);
+        }
+
+        .slide-progress {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Main Container */
+        .presentation-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            padding: 24px 36px 36px;
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .slide-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .slide-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            margin-top: -8px;
+            margin-bottom: 4px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Bottom Controls */
+        footer {
+            padding: 12px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--card-border);
+            background: rgba(8, 12, 20, 0.95);
+            font-size: 0.85rem;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-ctrl {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 7px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .btn-ctrl:hover:not(:disabled) {
+            background: #334155;
+            border-color: var(--accent-blue);
+        }
+        .btn-ctrl:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .btn-primary {
+            background: #0284c7;
+            border-color: var(--accent-blue);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #0369a1;
+        }
+
+        /* Grid Utilities */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        /* Interactive Diagram Elements */
+        .box-node {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            transition: all 0.25s ease;
+        }
+        .box-node.active-highlight {
+            border-color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.12);
+            box-shadow: 0 0 15px var(--glow-blue);
+        }
+        .box-node.active-purple {
+            border-color: var(--accent-purple);
+            background: rgba(192, 132, 252, 0.12);
+            box-shadow: 0 0 15px var(--glow-purple);
+        }
+        .box-node.active-green {
+            border-color: var(--accent-green);
+            background: rgba(74, 222, 128, 0.12);
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+        }
+        .box-node.active-rose {
+            border-color: var(--accent-rose);
+            background: rgba(244, 63, 94, 0.12);
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+        }
+
+        /* Memory visual block */
+        .mem-block {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        .mem-block.highlight {
+            border-color: var(--accent-blue);
+            background: rgba(56, 189, 248, 0.2);
+        }
+
+        /* Bit Slicer */
+        .bit-slicer {
+            display: flex;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+            font-family: monospace;
+            text-align: center;
+            margin: 14px 0;
+        }
+        .bit-field {
+            padding: 14px 10px;
+            transition: all 0.3s ease;
+        }
+        .bit-field-vpn {
+            flex: 3;
+            background: rgba(192, 132, 252, 0.15);
+            border-right: 2px dashed #475569;
+        }
+        .bit-field-offset {
+            flex: 1.5;
+            background: rgba(56, 189, 248, 0.15);
+        }
+        .bit-title {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+        .bit-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Console Log Box */
+        .log-box {
+            background: var(--code-bg);
+            border: 1px solid #1e293b;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: monospace;
+            font-size: 0.82rem;
+            color: #38bdf8;
+            height: 100px;
+            overflow-y: auto;
+            white-space: pre-line;
+        }
+
+        /* Pulse glow animation */
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(56, 189, 248, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(56, 189, 248, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(56, 189, 248, 0.4); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <a href="/learn/foundations/cs" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;" title="CS 스터디 노트로 복귀">
+                <span style="font-size: 1.1rem;">🏠</span>
+                <span>CPU ARCHITECTURE LAB</span>
+            </a>
+            <span class="badge">Part 03 // Memory Architecture</span>
+            <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-sub);">가상 메모리와 MMU 페이징 스튜디오</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <a href="/learn/foundations/cs" class="nav-btn">◀ CS 스터디 노트</a>
+            <div class="slide-progress" id="slideIndicator">Slide 1 / 4</div>
+        </div>
+    </header>
+
+    <!-- Presentation Container -->
+    <div class="presentation-container">
+
+        <!-- ========================================== -->
+        <!-- SLIDE 1: Why Virtual Memory? (Isolation)   -->
+        <!-- ========================================== -->
+        <div class="slide active" id="slide-1">
+            <h1 class="slide-title">1. 왜 가상 메모리(Virtual Memory)인가?</h1>
+            <p class="slide-subtitle">프로세스 독립 주소 공간과 하드웨어 메모리 보호(Protection) 메커니즘</p>
+
+            <div class="grid-2" style="flex: 1;">
+                <!-- Concept Card -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-header">
+                            <span class="card-title">문제: 물리 주소(Physical Memory) 직접 참조의 위험</span>
+                        </div>
+                        <p style="font-size: 0.92rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 14px;">
+                            과거 시스템처럼 모든 프로그램이 실제 물리 RAM 주소를 직접 읽고 쓴다면:
+                        </p>
+                        <ul style="padding-left: 20px; font-size: 0.88rem; color: var(--text-main); line-height: 1.7; margin-bottom: 16px;">
+                            <li><strong>주소 충돌:</strong> 프로세스 A와 B가 동일한 주소(<code>0x1000</code>)에 변수를 저장하려 할 때 덮어쓰기 발생</li>
+                            <li><strong>보안 침해:</strong> 악성 프로그램이 다른 프로세스나 운영체제 커널의 비밀 메모리를 무단 탐색</li>
+                            <li><strong>단편화(Fragmentation):</strong> 연속된 메모리 공간을 할당하기 어려워 실제 램이 남아돌아도 실행 불가</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid var(--accent-blue); border-radius: 8px; padding: 12px;">
+                        <span style="color: var(--accent-blue); font-weight: 700; font-size: 0.85rem;">💡 해결책: 가상 주소 공간(Virtual Address Space)</span>
+                        <p style="font-size: 0.82rem; color: var(--text-sub); margin-top: 4px;">
+                            운영체제와 CPU(MMU)는 각 프로세스에게 <strong>"나 혼자 테라바이트급 메모리를 독점한다"</strong>는 환상을 제공하고, 하드웨어 레벨에서 물리 RAM의 빈 조각(Frame)으로 안전하게 매핑합니다.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Interactive Mapping Visualization -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">실시간 시뮬레이션: 동일 가상 주소의 물리 격리</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button id="s1-btn-p1" class="btn-ctrl btn-primary" style="padding: 4px 10px; font-size: 0.75rem;">프로세스 A 선택</button>
+                            <button id="s1-btn-p2" class="btn-ctrl" style="padding: 4px 10px; font-size: 0.75rem;">프로세스 B 선택</button>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 100px 1fr; gap: 10px; align-items: center; margin-top: 10px;">
+                        <!-- Process Virtual Memory -->
+                        <div>
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-purple); margin-bottom: 8px; text-align: center;" id="s1-proc-label">
+                                프로세스 A (PID 101)
+                            </div>
+                            <div class="mem-block" id="s1-va-block">
+                                <span>가상 주소:</span>
+                                <strong style="color: var(--accent-blue);">0x0040_1000</strong>
+                            </div>
+                            <div class="mem-block" style="opacity: 0.5;">
+                                <span>가상 주소:</span>
+                                <span>0x0040_2000</span>
+                            </div>
+                            <div class="mem-block" style="opacity: 0.5;">
+                                <span>가상 주소:</span>
+                                <span>0x0040_3000</span>
+                            </div>
+                        </div>
+
+                        <!-- MMU Mapper -->
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; margin-bottom: 4px;">CPU MMU</div>
+                            <div style="font-size: 1.4rem; color: var(--accent-amber);">➔</div>
+                            <div style="font-size: 0.7rem; color: var(--text-sub);">주소 변환</div>
+                        </div>
+
+                        <!-- Physical RAM -->
+                        <div>
+                            <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green); margin-bottom: 8px; text-align: center;">
+                                실제 물리 RAM (DRAM)
+                            </div>
+                            <div class="mem-block" id="s1-pa-frame-1">
+                                <span>Frame 12:</span>
+                                <strong>0x00A1_0000</strong>
+                            </div>
+                            <div class="mem-block" id="s1-pa-frame-2">
+                                <span>Frame 48:</span>
+                                <strong>0x00D4_0000</strong>
+                            </div>
+                            <div class="mem-block" style="opacity: 0.3;">
+                                <span>Frame 99:</span>
+                                <span>0x00FF_0000</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="log-box" id="s1-log" style="margin-top: 16px; height: 80px;">
+[상태] 프로세스 A 실행 중: 가상 주소 0x0040_1000 접근 요청
+[MMU] 프로세스 A의 Page Table(CR3) 참조 -> 물리 RAM Frame 12(0x00A1_0000)로 안전 매핑 완료
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SLIDE 2: 4KB Paging & Address Slicing      -->
+        <!-- ========================================== -->
+        <div class="slide" id="slide-2">
+            <h1 class="slide-title">2. 4KB 페이징과 12비트 오프셋(Offset) 분해</h1>
+            <p class="slide-subtitle">가상 주소가 물리 주소로 바뀔 때, 실제로 변환되는 비트는 무엇인가?</p>
+
+            <div class="card" style="margin-bottom: 14px;">
+                <div class="card-header">
+                    <span class="card-title">핵심 원리: 왜 4KB 페이지일 때 오프셋이 12비트인가?</span>
+                </div>
+                <p style="font-size: 0.9rem; color: var(--text-sub); line-height: 1.6;">
+                    현대 OS와 CPU의 표준 페이지 크기는 <strong>4KB (4,096 Bytes)</strong>입니다. 
+                    4,096개의 서로 다른 바이트를 1대1로 식별하려면 정확히 <strong>12개의 비트 ($2^{12} = 4,096$)</strong>가 필요합니다.
+                    따라서 모든 가상 주소는 <strong>[ 가상 페이지 번호 (VPN) ]</strong>와 <strong>[ 페이지 내부 오프셋 (12비트) ]</strong>로 나뉩니다.
+                </p>
+
+                <!-- Interactive Bit Slicer -->
+                <div class="bit-slicer">
+                    <div class="bit-field bit-field-vpn">
+                        <div class="bit-title">VPN (가상 페이지 번호) // 상위 비트 변환 대상</div>
+                        <div class="bit-value" id="s2-vpn-hex" style="color: var(--accent-purple);">0x0000_7FFF_5FB0</div>
+                    </div>
+                    <div class="bit-field bit-field-offset">
+                        <div class="bit-title">Offset (오프셋 12비트) // 변환 없이 100% 그대로 복사!</div>
+                        <div class="bit-value" id="s2-offset-hex" style="color: var(--accent-blue);">0x8AC</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(255, 255, 255, 0.03); border-radius: 6px;">
+                    <span style="font-size: 0.85rem; color: var(--text-sub);">가상 주소 입력 시뮬레이션:</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="s2-btn-addr1" class="btn-ctrl btn-primary" style="padding: 4px 10px; font-size: 0.78rem;">주소 A: 0x7FFF_5FB0_08AC</button>
+                        <button id="s2-btn-addr2" class="btn-ctrl" style="padding: 4px 10px; font-size: 0.78rem;">주소 B: 0x7FFF_5FB0_0FFF</button>
+                        <button id="s2-btn-addr3" class="btn-ctrl" style="padding: 4px 10px; font-size: 0.78rem;">주소 C: 0x0040_2000_0120</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transformation Flow Visualizer -->
+            <div class="grid-2" style="flex: 1;">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">변환 전: Virtual Address</span></div>
+                    <div class="box-node active-purple" id="s2-va-box">
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">Virtual Address (48-bit)</div>
+                        <div style="font-size: 1.15rem; font-weight: 700; margin-top: 4px;" id="s2-va-display">0x7FFF_5FB0_08AC</div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 0.85rem; color: var(--text-sub); line-height: 1.6;">
+                        ➔ 상위 VPN(<code>0x7FFF5FB0</code>)은 MMU가 페이지 테이블을 조회하여 PFN(물리 프레임 번호)으로 치환합니다.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><span class="card-title">변환 후: Physical RAM Address</span></div>
+                    <div class="box-node active-green" id="s2-pa-box">
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">Physical Address in RAM</div>
+                        <div style="font-size: 1.15rem; font-weight: 700; margin-top: 4px;" id="s2-pa-display">0x0001_8C40_08AC</div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 0.85rem; color: var(--text-sub); line-height: 1.6;">
+                        ➔ <strong>주목:</strong> 하위 12비트 오프셋 <code style="color: var(--accent-blue);">0x8AC</code>는 1비트도 변하지 않고 <strong>그대로 복사</strong>되었습니다!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SLIDE 3: MMU & TLB Hardware Studio         -->
+        <!-- ========================================== -->
+        <div class="slide" id="slide-3">
+            <h1 class="slide-title">3. MMU & TLB 하드웨어 변환 스튜디오</h1>
+            <p class="slide-subtitle">CPU 내부 TLB 캐시 조회부터 다단계 Page Table Walk, Page Fault까지</p>
+
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <button id="s3-btn-hit" class="btn-ctrl btn-primary">시나리오 1: TLB Hit (초고속 변환)</button>
+                <button id="s3-btn-walk" class="btn-ctrl">시나리오 2: TLB Miss & Table Walk</button>
+                <button id="s3-btn-fault" class="btn-ctrl">시나리오 3: Page Fault (스왑 인)</button>
+            </div>
+
+            <div class="grid-3" style="flex: 1;">
+                <!-- Step 1: TLB Cache -->
+                <div class="card" id="s3-card-tlb">
+                    <div class="card-header">
+                        <span class="card-title">1단계: CPU 내부 TLB 캐시</span>
+                        <span id="s3-tlb-tag" class="badge" style="background: #334155;">대기 중</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 10px;">
+                        최근 변환된 [VPN ➔ PFN] 쌍을 보관하는 초고속 하드웨어 캐시 (접근 시간: 0.5ns)
+                    </p>
+                    <div class="box-node" id="s3-tlb-entry-1" style="margin-bottom: 6px;">
+                        <span>VPN: 0x7FFF5F ➔ </span><strong style="color: var(--accent-green);">PFN: 0x18C4</strong>
+                    </div>
+                    <div class="box-node" id="s3-tlb-entry-2" style="opacity: 0.4;">
+                        <span>VPN: 0x004020 ➔ </span><span>PFN: 0x05E1</span>
+                    </div>
+                </div>
+
+                <!-- Step 2: Page Table Walk -->
+                <div class="card" id="s3-card-walk">
+                    <div class="card-header">
+                        <span class="card-title">2단계: Page Table Walk (RAM)</span>
+                        <span id="s3-walk-tag" class="badge" style="background: #334155;">미실행</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 10px;">
+                        TLB Miss 시 CPU가 <strong>CR3 레지스터</strong>를 읽고 4단계 페이지 테이블을 RAM에서 차례로 순회 (수십 ns 지연)
+                    </p>
+                    <div class="box-node" id="s3-cr3-box" style="margin-bottom: 6px;">
+                        <span style="color: var(--accent-amber);">CR3 Reg: </span><span>0x0000_1000 (Root)</span>
+                    </div>
+                    <div class="box-node" id="s3-table-entry" style="font-size: 0.78rem;">
+                        <span>PTE: [Valid=1 | R/W=1 | </span><strong style="color: var(--accent-green);">PFN=0x18C4</strong>]
+                    </div>
+                </div>
+
+                <!-- Step 3: Result & Fault -->
+                <div class="card" id="s3-card-result">
+                    <div class="card-header">
+                        <span class="card-title">3단계: 물리 주소 확정 / 예외</span>
+                        <span id="s3-res-tag" class="badge" style="background: #334155;">READY</span>
+                    </div>
+                    <div class="box-node" id="s3-final-pa" style="margin-bottom: 10px;">
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">Target Physical Address</div>
+                        <div style="font-size: 1rem; font-weight: 700; margin-top: 4px;" id="s3-final-pa-text">0x0001_8C40_08AC</div>
+                    </div>
+                    <div class="log-box" id="s3-status-log" style="height: 130px;">
+[준비] 시나리오 버튼을 클릭하여 하드웨어 흐름을 시작하십시오.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SLIDE 4: Segmentation Fault & Hardware Protection -->
+        <!-- ========================================== -->
+        <div class="slide" id="slide-4">
+            <h1 class="slide-title">4. C++ 개발자가 만나는 하드웨어 예외 (Segmentation Fault)</h1>
+            <p class="slide-subtitle">PTE의 보호 비트(Protection Bits)와 운영체제 SIGSEGV 시그널의 원리</p>
+
+            <div class="grid-2" style="flex: 1;">
+                <!-- PTE Bit Anatomy -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Page Table Entry (PTE)의 핵심 플래그 비트</span>
+                    </div>
+                    <p style="font-size: 0.88rem; color: var(--text-sub); margin-bottom: 12px;">
+                        각 페이지는 단순히 물리 주소만 갖는 것이 아니라, CPU가 강제하는 <strong>접근 권한 비트</strong>를 함께 저장합니다:
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="box-node">
+                            <strong style="color: var(--accent-blue);">Present (P 비트, 0번 비트):</strong> 
+                            <span style="color: var(--text-sub);">1이면 물리 램에 존재, 0이면 디스크에 있거나 미할당 (Page Fault 유발)</span>
+                        </div>
+                        <div class="box-node">
+                            <strong style="color: var(--accent-amber);">Read / Write (R/W 비트):</strong> 
+                            <span style="color: var(--text-sub);">1이면 쓰기 허용, 0이면 읽기 전용 (코드 세그먼트에 쓰기 시도시 예외)</span>
+                        </div>
+                        <div class="box-node">
+                            <strong style="color: var(--accent-purple);">User / Supervisor (U/S 비트):</strong> 
+                            <span style="color: var(--text-sub);">0이면 커널 전용 영역 (유저 모드 애플리케이션의 시스템 영역 침범 차단)</span>
+                        </div>
+                        <div class="box-node">
+                            <strong style="color: var(--accent-rose);">NX (No-Execute 비트):</strong> 
+                            <span style="color: var(--text-sub);">스택/힙에 주입된 악성 셸코드 실행을 원천 차단하는 하드웨어 방어선</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crash Simulator -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">C++ 코드 버그와 하드웨어 크래시 시뮬레이터</span>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+                        <button id="s4-btn-null" class="btn-ctrl btn-primary" style="padding: 5px 10px; font-size: 0.8rem;">1. nullptr 역참조</button>
+                        <button id="s4-btn-ro" class="btn-ctrl" style="padding: 5px 10px; font-size: 0.8rem;">2. 코드 영역 쓰기 시도</button>
+                        <button id="s4-btn-ok" class="btn-ctrl" style="padding: 5px 10px; font-size: 0.8rem;">3. 정상 힙 쓰기</button>
+                    </div>
+
+                    <div class="box-node" style="background: #05070d; font-family: monospace; font-size: 0.85rem; margin-bottom: 12px;" id="s4-code-preview">
+int* ptr = nullptr;
+*ptr = 42; // &lt;-- 0번 주소(가상 주소 0x0) 쓰기 시도
+                    </div>
+
+                    <div class="log-box" id="s4-crash-log" style="height: 120px;">
+[CPU MMU] 가상 주소 0x00000000 변환 요청
+[PTE 검사] Present = 0 (0번 페이지는 OS가 의도적으로 미할당 상태로 유지)
+[하드웨어 인터럽트] CPU Page Fault Exception 발생 (Vector #14)
+[OS 커널 개입] 보호되지 않은 미할당 메모리 접근 확인 ➔ 프로세스에 SIGSEGV 전달
+[결과] Segmentation Fault (Core Dumped) ➔ 프로세스 강제 종료
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Controls -->
+    <footer>
+        <div style="color: var(--text-sub); display: flex; align-items: center; gap: 8px;">
+            <span>단축키:</span>
+            <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155;">←</code>
+            <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155;">→</code>
+            <code style="background: #1e293b; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155;">Space</code>
+        </div>
+        <div class="controls-group">
+            <button id="prevBtn" class="btn-ctrl" disabled>◀ 이전 슬라이드</button>
+            <button id="nextBtn" class="btn-ctrl btn-primary">다음 슬라이드 ▶</button>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // Slide Navigation Logic
+        const totalSlides = 4;
+        let currentSlide = 1;
+
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const slideIndicator = document.getElementById('slideIndicator');
+
+        function updateSlide(newIndex) {
+            if (newIndex < 1 || newIndex > totalSlides) return;
+            slides.forEach((s, idx) => {
+                s.classList.toggle('active', idx + 1 === newIndex);
+            });
+            currentSlide = newIndex;
+            slideIndicator.textContent = `Slide ${currentSlide} / ${totalSlides}`;
+            prevBtn.disabled = (currentSlide === 1);
+            nextBtn.disabled = (currentSlide === totalSlides);
+        }
+
+        prevBtn.addEventListener('click', () => updateSlide(currentSlide - 1));
+        nextBtn.addEventListener('click', () => updateSlide(currentSlide + 1));
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                updateSlide(currentSlide + 1);
+            } else if (e.key === 'ArrowLeft') {
+                updateSlide(currentSlide - 1);
+            }
+        });
+
+        // ==========================================
+        // Slide 1 Interaction: Process Isolation
+        // ==========================================
+        const s1BtnP1 = document.getElementById('s1-btn-p1');
+        const s1BtnP2 = document.getElementById('s1-btn-p2');
+        const s1ProcLabel = document.getElementById('s1-proc-label');
+        const s1Frame1 = document.getElementById('s1-pa-frame-1');
+        const s1Frame2 = document.getElementById('s1-pa-frame-2');
+        const s1Log = document.getElementById('s1-log');
+
+        s1BtnP1.addEventListener('click', () => {
+            s1BtnP1.classList.add('btn-primary');
+            s1BtnP2.classList.remove('btn-primary');
+            s1ProcLabel.textContent = "프로세스 A (PID 101)";
+            s1ProcLabel.style.color = "var(--accent-purple)";
+            s1Frame1.classList.add('highlight');
+            s1Frame2.classList.remove('highlight');
+            s1Log.textContent = `[상태] 프로세스 A 실행 중: 가상 주소 0x0040_1000 접근 요청\n[MMU] 프로세스 A의 Page Table(CR3) 참조 -> 물리 RAM Frame 12(0x00A1_0000)로 안전 매핑 완료\n[결과] 프로세스 A만의 고유 데이터 영역 접근.`;
+        });
+
+        s1BtnP2.addEventListener('click', () => {
+            s1BtnP2.classList.add('btn-primary');
+            s1BtnP1.classList.remove('btn-primary');
+            s1ProcLabel.textContent = "프로세스 B (PID 204)";
+            s1ProcLabel.style.color = "var(--accent-amber)";
+            s1Frame2.classList.add('highlight');
+            s1Frame1.classList.remove('highlight');
+            s1Log.textContent = `[상태] 프로세스 B 실행 중: 가상 주소 0x0040_1000 접근 요청\n[MMU] 프로세스 B의 Page Table(CR3) 참조 -> 물리 RAM Frame 48(0x00D4_0000)로 분리 매핑 완료!\n[격리] 동일한 0x0040_1000 주소지만 물리 RAM 공간은 완전히 격리되어 충돌이 없습니다.`;
+        });
+
+        // ==========================================
+        // Slide 2 Interaction: Bit Slicing
+        // ==========================================
+        const s2VpnHex = document.getElementById('s2-vpn-hex');
+        const s2OffsetHex = document.getElementById('s2-offset-hex');
+        const s2VaDisplay = document.getElementById('s2-va-display');
+        const s2PaDisplay = document.getElementById('s2-pa-display');
+
+        document.getElementById('s2-btn-addr1').addEventListener('click', () => {
+            s2VpnHex.textContent = "0x0000_7FFF_5FB0";
+            s2OffsetHex.textContent = "0x8AC";
+            s2VaDisplay.textContent = "0x7FFF_5FB0_08AC";
+            s2PaDisplay.textContent = "0x0001_8C40_08AC";
+        });
+        document.getElementById('s2-btn-addr2').addEventListener('click', () => {
+            s2VpnHex.textContent = "0x0000_7FFF_5FB0";
+            s2OffsetHex.textContent = "0xFFF";
+            s2VaDisplay.textContent = "0x7FFF_5FB0_0FFF";
+            s2PaDisplay.textContent = "0x0001_8C40_0FFF";
+        });
+        document.getElementById('s2-btn-addr3').addEventListener('click', () => {
+            s2VpnHex.textContent = "0x0000_0040_2000";
+            s2OffsetHex.textContent = "0x120";
+            s2VaDisplay.textContent = "0x0040_2000_0120";
+            s2PaDisplay.textContent = "0x0000_9E21_0120";
+        });
+
+        // ==========================================
+        // Slide 3 Interaction: MMU & TLB Studio
+        // ==========================================
+        const s3BtnHit = document.getElementById('s3-btn-hit');
+        const s3BtnWalk = document.getElementById('s3-btn-walk');
+        const s3BtnFault = document.getElementById('s3-btn-fault');
+        const s3TlbTag = document.getElementById('s3-tlb-tag');
+        const s3WalkTag = document.getElementById('s3-walk-tag');
+        const s3ResTag = document.getElementById('s3-res-tag');
+        const s3StatusLog = document.getElementById('s3-status-log');
+        const s3FinalPa = document.getElementById('s3-final-pa-text');
+
+        s3BtnHit.addEventListener('click', () => {
+            s3BtnHit.className = "btn-ctrl btn-primary";
+            s3BtnWalk.className = "btn-ctrl";
+            s3BtnFault.className = "btn-ctrl";
+
+            s3TlbTag.textContent = "TLB HIT! (1 사이클)";
+            s3TlbTag.style.background = "#15803d";
+            s3WalkTag.textContent = "스킵됨 (Walk 생략)";
+            s3WalkTag.style.background = "#334155";
+            s3ResTag.textContent = "변환 완료";
+            s3ResTag.style.background = "#0284c7";
+
+            s3FinalPa.textContent = "0x0001_8C40_08AC";
+            s3StatusLog.textContent = `[MMU] 가상 주소 0x7FFF5FB008AC 수신\n[TLB] VPN(0x7FFF5F) 검색 ➔ HIT 발생!\n[속도] RAM 접근 없이 MMU 내부 캐시에서 즉시 PFN(0x18C4) 획득 (소요 시간: 0.5ns)\n[완료] 물리 주소 0x0001_8C40_08AC로 즉시 버스 요청 전송.`;
+        });
+
+        s3BtnWalk.addEventListener('click', () => {
+            s3BtnWalk.className = "btn-ctrl btn-primary";
+            s3BtnHit.className = "btn-ctrl";
+            s3BtnFault.className = "btn-ctrl";
+
+            s3TlbTag.textContent = "TLB MISS!";
+            s3TlbTag.style.background = "#b45309";
+            s3WalkTag.textContent = "Table Walk 진행 중";
+            s3WalkTag.style.background = "#0284c7";
+            s3ResTag.textContent = "TLB 갱신 후 완료";
+            s3ResTag.style.background = "#15803d";
+
+            s3FinalPa.textContent = "0x0001_8C40_08AC";
+            s3StatusLog.textContent = `[MMU] TLB 캐시 미스 발생!\n[Page Table Walk] CR3 레지스터(0x1000)를 기반으로 RAM의 페이지 테이블 순회\n[메모리 접근] 4단계 테이블 탐색 완료 ➔ PTE에서 PFN(0x18C4) 발견\n[TLB 업데이트] 다음 조회를 위해 TLB 캐시에 신규 등록\n[완료] 약 40ns 소요 후 물리 주소 확정.`;
+        });
+
+        s3BtnFault.addEventListener('click', () => {
+            s3BtnFault.className = "btn-ctrl btn-primary";
+            s3BtnHit.className = "btn-ctrl";
+            s3BtnWalk.className = "btn-ctrl";
+
+            s3TlbTag.textContent = "TLB MISS";
+            s3TlbTag.style.background = "#b45309";
+            s3WalkTag.textContent = "Valid=0 (부재)";
+            s3WalkTag.style.background = "#be123c";
+            s3ResTag.textContent = "PAGE FAULT 발생";
+            s3ResTag.style.background = "#be123c";
+
+            s3FinalPa.textContent = "--- (WAIT FOR OS DISK I/O) ---";
+            s3StatusLog.textContent = `[MMU] Page Table 탐색 중 Valid 비트 = 0 감지!\n[하드웨어 인터럽트] CPU Page Fault Exception 트리거 ➔ OS 커널 제어권 이양\n[OS 커널 작업] 보조기억장치(스왑 디스크)에서 해당 4KB 페이지를 물리 RAM으로 적재\n[PTE 갱신] Valid = 1, PFN 세팅\n[재실행] 실패했던 명령어를 CPU가 처음부터 다시 실행(Re-execute)합니다!`;
+        });
+
+        // ==========================================
+        // Slide 4 Interaction: Crash Simulator
+        // ==========================================
+        const s4BtnNull = document.getElementById('s4-btn-null');
+        const s4BtnRo = document.getElementById('s4-btn-ro');
+        const s4BtnOk = document.getElementById('s4-btn-ok');
+        const s4CodePreview = document.getElementById('s4-code-preview');
+        const s4CrashLog = document.getElementById('s4-crash-log');
+
+        s4BtnNull.addEventListener('click', () => {
+            s4BtnNull.className = "btn-ctrl btn-primary";
+            s4BtnRo.className = "btn-ctrl";
+            s4BtnOk.className = "btn-ctrl";
+            s4CodePreview.innerHTML = `<span style="color: #f43f5e;">int* ptr = nullptr;\n*ptr = 42; // &lt;-- 0번 주소(0x0) 쓰기 시도</span>`;
+            s4CrashLog.textContent = `[CPU MMU] 가상 주소 0x00000000 변환 요청\n[PTE 검사] Present = 0 (OS는 0번 페이지를 의도적으로 미할당 처리)\n[하드웨어 인터럽트] CPU Page Fault 발생\n[OS 커널] 유효하지 않은 주소 접근 확인 ➔ 프로세스에 SIGSEGV 시그널 발송\n[결과] Segmentation Fault (Core Dumped) ➔ 비정상 종료.`;
+        });
+
+        s4BtnRo.addEventListener('click', () => {
+            s4BtnRo.className = "btn-ctrl btn-primary";
+            s4BtnNull.className = "btn-ctrl";
+            s4BtnOk.className = "btn-ctrl";
+            s4CodePreview.innerHTML = `<span style="color: #fbbf24;">const char* msg = "Hello";\n((char*)msg)[0] = 'h'; // &lt;-- .rodata / 코드 영역 쓰기 시도</span>`;
+            s4CrashLog.textContent = `[CPU MMU] 가상 주소 변환 요청 (.rodata 영역)\n[PTE 검사] Present = 1, 그러나 R/W 비트 = 0 (읽기 전용)\n[하드웨어 인터럽트] 권한 위반(Protection Fault) 발생\n[OS 커널] 메모리 보호 위반 감지 ➔ SIGSEGV 강제 전달\n[결과] 하드웨어가 읽기 전용 메모리 변조를 원천 차단했습니다.`;
+        });
+
+        s4BtnOk.addEventListener('click', () => {
+            s4BtnOk.className = "btn-ctrl btn-primary";
+            s4BtnNull.className = "btn-ctrl";
+            s4BtnRo.className = "btn-ctrl";
+            s4CodePreview.innerHTML = `<span style="color: #4ade80;">int* buffer = (int*)malloc(1024);\nbuffer[0] = 42; // &lt;-- 힙 메모리 정상 쓰기</span>`;
+            s4CrashLog.textContent = `[CPU MMU] 가상 주소 변환 요청 (Heap 영역)\n[PTE 검사] Present = 1, R/W = 1, User = 1 (모든 권한 통과)\n[물리 주소 전송] DRAM에 4바이트 데이터(42) 쓰기 완료\n[결과] 하드웨어 검증 통과 ➔ 정상 실행 (0ns 예외 없음).`;
+        });
+    </script>
+</body>
+</html>

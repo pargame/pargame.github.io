@@ -1,0 +1,46 @@
+[
+  {
+    "id": "foundations",
+    "name": "Foundations",
+    "koreanName": "기반 공학",
+    "description": "컴퓨터 과학 기초, 모던 C++, 메모리 모델 및 저수준 아키텍처",
+    "accent": "#3B82F6",
+    "topics": [
+      { "id": "cpp", "name": "Modern C++", "summary": "C++20/23, 템플릿, 메모리 최적화, CMake" },
+      { "id": "cs", "name": "Core CS", "summary": "운영체제, 컴퓨터구조, 알고리즘" }
+    ]
+  },
+  {
+    "id": "systems",
+    "name": "Systems",
+    "koreanName": "시스템 엔지니어링",
+    "description": "멀티프로그래밍 동시성, 고성능 네트워크 I/O 및 데이터베이스 엔진",
+    "accent": "#10B981",
+    "topics": [
+      { "id": "concurrency", "name": "Concurrency", "summary": "메모리 오더링, Lock-free, 코루틴, 동기화" },
+      { "id": "network", "name": "Network", "summary": "TCP/IP, 소켓, 고성능 I/O (epoll, IOCP, io_uring)" },
+      { "id": "db", "name": "Database & SQL", "summary": "B+Tree 인덱스, 트랜잭션 격리, WAL 스토리지 엔진" }
+    ]
+  },
+  {
+    "id": "game-engine",
+    "name": "Game Engine",
+    "koreanName": "게임 엔진",
+    "description": "언리얼 엔진 아키텍처, 게임플레이 프레임워크 및 그래픽스 렌더링",
+    "accent": "#F97316",
+    "topics": [
+      { "id": "unreal", "name": "Unreal Engine", "summary": "UObject 리플렉션, C++ & 블루프린트 연동, 라이프사이클" }
+    ]
+  },
+  {
+    "id": "labs",
+    "name": "Labs & Projects",
+    "koreanName": "연구실 & 프로젝트",
+    "description": "자체 언어 nung_lang 및 소크라테스식 재귀 탐구 지식 트리 whynode",
+    "accent": "#A98BFA",
+    "topics": [
+      { "id": "nung-lang", "name": "nung_lang", "summary": "자체 프로그래밍 언어 및 인터프리터 설계" },
+      { "id": "whynode", "name": "whynode", "summary": "소크라테스식 재귀적 지식 탐구 마인드맵" }
+    ]
+  }
+]

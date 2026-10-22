@@ -1,0 +1,191 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "pargame's engineering blog & learning hub" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title} | pargame</title>
+    <meta name="description" content={description} />
+    
+    <!-- Zero-Flicker Theme Script -->
+    <script is:inline>
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+          return 'light';
+        }
+        return 'dark';
+      })();
+      if (theme === 'light') {
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Top Global Header -->
+    <header class="header">
+      <div class="header-inner">
+        <a href="/" class="logo">
+          <span class="prompt">$</span> pargame<span class="dot">.</span>io
+        </a>
+
+        <nav class="nav">
+          <a href="/learn">Learn Hub</a>
+          <a href="/posts">Posts</a>
+          <a href="/labs">Labs</a>
+          <a href="https://github.com/pargame" target="_blank" rel="noopener noreferrer" class="external-link">GitHub ↗</a>
+        </nav>
+
+        <button id="theme-toggle" class="theme-btn" aria-label="테마 전환">
+          <span class="theme-icon dark-icon">🌙</span>
+          <span class="theme-icon light-icon">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <p>© 2026 pargame. Built with Astro & Midnight Terminal Design System.</p>
+        <p class="footer-meta">GitHub Pages Actions Modern Deployment</p>
+      </div>
+    </footer>
+
+    <!-- Theme Toggle Handler -->
+    <script>
+      const btn = document.getElementById('theme-toggle');
+      btn?.addEventListener('click', () => {
+        const root = document.documentElement;
+        const current = root.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    background: var(--glass);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--text-1);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .logo .prompt {
+    color: var(--accent);
+  }
+  .logo .dot {
+    color: var(--accent-2);
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+  }
+  .nav a {
+    text-decoration: none;
+    color: var(--text-2);
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: color var(--dur-fast);
+  }
+  .nav a:hover {
+    color: var(--accent);
+  }
+  .external-link {
+    color: var(--text-3) !important;
+  }
+  .theme-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color var(--dur-fast), background var(--dur-fast);
+  }
+  .theme-btn:hover {
+    border-color: var(--accent);
+  }
+  [data-theme="dark"] .light-icon { display: none; }
+  [data-theme="light"] .dark-icon { display: none; }
+
+  .main-wrapper {
+    flex: 1;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+
+  .footer {
+    border-top: 1px solid var(--border-subtle);
+    padding: 2.5rem 1.5rem;
+    background: var(--surface-1);
+    margin-top: auto;
+  }
+  .footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+  }
+  @media (max-width: 768px) {
+    .footer-inner {
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+    }
+  }
+</style>

@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import tracks from '../../data/tracks.json';
+---
+
+<BaseLayout title="Learn Hub" description="pargame 학습 허브 - 체계적인 소프트웨어 엔지니어링 학습 코스">
+  <div class="learn-header">
+    <div class="meta-tag">$ find /learn -type f</div>
+    <h1>Learning Hub (지식 아카이브)</h1>
+    <p class="subtitle">
+      컴퓨터 과학 기본기부터 고성능 시스템, 게임 엔진, 언어 설계까지 아우르는 챕터별 학습 코스입니다.
+    </p>
+  </div>
+
+  <div class="tracks-container">
+    {tracks.map((track) => (
+      <div class="track-block" style={`--track-color: ${track.accent}`}>
+        <div class="track-info">
+          <div class="track-pill">{track.name}</div>
+          <h2>{track.koreanName}</h2>
+          <p>{track.description}</p>
+        </div>
+
+        <div class="topics-grid">
+          {track.topics.map((topic) => (
+            <div class="topic-box">
+              <div class="topic-header">
+                <h3>{topic.name}</h3>
+                <span class="topic-arrow">→</span>
+              </div>
+              <p class="topic-summary">{topic.summary}</p>
+              <div class="topic-meta">
+                <span class="status-ready">Available</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .learn-header {
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 3rem;
+  }
+  .meta-tag {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .learn-header h1 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+  }
+  .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-2);
+    max-width: 700px;
+  }
+
+  .tracks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+  }
+  .track-block {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+  .track-info {
+    position: sticky;
+    top: 5rem;
+  }
+  .track-pill {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--track-color);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--track-color) 12%, transparent);
+    margin-bottom: 0.8rem;
+  }
+  .track-info h2 {
+    margin-top: 0;
+    margin-bottom: 0.6rem;
+    font-size: 1.6rem;
+  }
+  .track-info p {
+    color: var(--text-3);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .topics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+  }
+  .topic-box {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--dur-fast);
+  }
+  .topic-box:hover {
+    border-color: var(--track-color);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px -8px color-mix(in srgb, var(--track-color) 20%, transparent);
+  }
+  .topic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+  .topic-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--text-1);
+  }
+  .topic-arrow {
+    color: var(--text-3);
+    font-size: 1.1rem;
+    transition: transform var(--dur-fast), color var(--dur-fast);
+  }
+  .topic-box:hover .topic-arrow {
+    color: var(--track-color);
+    transform: translateX(3px);
+  }
+  .topic-summary {
+    font-size: 0.9rem;
+    color: var(--text-2);
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+    flex: 1;
+  }
+  .topic-meta {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  @media (max-width: 900px) {
+    .track-block {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    .track-info {
+      position: static;
+    }
+  }
+</style>

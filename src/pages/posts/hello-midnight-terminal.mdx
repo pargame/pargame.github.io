@@ -1,0 +1,95 @@
+---
+layout: ../../layouts/BaseLayout.astro
+title: "블로그 리뉴얼: Midnight Terminal과 GitHub Actions 모던 아키텍처"
+description: "GitHub Pages와 Astro, 그리고 Midnight Terminal 디자인 시스템을 활용한 차세대 기술 블로그 구축기"
+---
+
+# 블로그 리뉴얼: Midnight Terminal과 GitHub Actions 모던 아키텍처
+
+기존 `MyBlog` 저장소를 이어받아, 개인 엔지니어링 지식 허브이자 기술 블로그인 **pargame.github.io**를 공식 리뉴얼했습니다.
+
+---
+
+## 1. 리뉴얼의 핵심 목표
+
+단순한 텍스트 나열을 넘어 다음 네 가지 핵심 가치를 실현하고자 했습니다:
+
+1. **GitHub Actions 기반 모던 배포**: 브랜치 커밋 오염 없는 공식 아티팩트 직접 배포
+2. **Midnight Terminal 디자인 시스템**: 딥 인디고 블랙과 시안/바이올렛 액센트의 개발자 감성
+3. **트랙-토픽-포스트 확장형 아키텍처**: C++, 언리얼 엔진, 네트워크, 동시성, DB, CS 기초의 체계적 학습
+4. **인터랙티브 위젯 연동**: WebGL/Canvas 시뮬레이션 및 Pyodide 웹 파이썬 REPL 실행 환경
+
+<div class="callout" data-type="tip">
+  <strong>Tip</strong>: 모든 본문은 <code>Pretendard Variable</code>과 <code>JetBrains Mono</code> 폰트로 렌더링되며, 다크 모드가 기본 적용되어 장시간 기술 문서를 읽어도 눈의 피로를 최소화합니다.
+</div>
+
+---
+
+## 2. GitHub Actions 공식 배포 워크플로우
+
+GitHub Pages 공식 가이드라인을 준수하여 작성된 `.github/workflows/deploy.yml`의 핵심 구조입니다:
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4
+```
+
+---
+
+## 3. 인터랙티브 위젯 컨테이너 프리뷰
+
+앞으로 C++ 메모리 레이아웃 시각화, 언리얼 라이프사이클 다이어그램, Pyodide 웹 터미널이 들어갈 표준 프레임입니다:
+
+<div class="widget-box">
+  <div class="widget-bar">
+    <span>TERMINAL // INTERACTIVE_CONTAINER</span>
+    <span style="margin-left: auto; color: var(--accent);">READY</span>
+  </div>
+  <div style="padding: 1.5rem; text-align: center; color: var(--text-2);">
+    <p style="margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.95rem;">
+      [ Interactive Simulation or Pyodide Canvas will be rendered here ]
+    </p>
+    <small style="color: var(--text-3); font-family: var(--font-mono);">
+      Web Worker 격리 실행 및 지연 로딩(client:visible) 지원
+    </small>
+  </div>
+</div>
+
+---
+
+## 4. 앞으로의 계획
+
+로컬의 `whynode` 지식 트리 시스템과 `nung_lang` 언어 인터프리터 프로젝트를 이 블로그의 **Labs** 및 **Learn** 트랙에 차례로 연재할 예정입니다.

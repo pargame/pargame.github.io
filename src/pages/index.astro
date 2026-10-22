@@ -1,9 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import tracks from '../data/tracks.json';
 ---
 
-<BaseLayout title="Home" description="pargame - 소프트웨어 시스템 공학 및 컴퓨터 과학 학습 허브">
+<BaseLayout title="Home" description="pargame - 소프트웨어 시스템 공학 및 개인 스터디 아카이브">
   <!-- Hero Section -->
   <section class="hero">
     <div class="terminal-tag">
@@ -12,60 +11,81 @@ import tracks from '../data/tracks.json';
     </div>
     
     <h1 class="hero-title">
-      Deep Systems & Engine Engineering
-      <span class="gradient-text">Knowledge Hub</span>
+      Thinking in Systems,
+      <span class="gradient-text">Building from Scratch.</span>
     </h1>
     
     <p class="hero-desc">
-      모던 C++, 분산 시스템 동시성, 고성능 네트워크 I/O부터 언리얼 엔진과 자체 언어(nung_lang) 설계까지.<br />
-      컴퓨터 과학의 본질을 직접 공부하고 검증하며 체계적으로 정리하는 엔지니어링 아카이브입니다.
+      저수준 시스템, 모던 C++, 동시성 프로그래밍부터 게임 엔진과 언어 설계까지.<br />
+      컴퓨터 과학의 본질을 직접 탐구하고 내 언어로 체계화하는 개인 엔지니어링 공간입니다.
     </p>
 
     <div class="hero-cta">
       <a href="/learn" class="btn btn-primary">스터디 노트 탐색하기 →</a>
-      <a href="/posts" class="btn btn-secondary">최신 블로그 글</a>
+      <a href="/posts" class="btn btn-secondary">블로그 글 읽기</a>
     </div>
   </section>
 
-  <!-- Learning Tracks Grid -->
-  <section class="tracks-section">
-    <div class="section-header">
-      <div class="section-meta">STUDY CATEGORIES</div>
-      <h2>Study Categories (스터디 카테고리)</h2>
-      <p>깊이 있게 파고들며 정리하는 분야별 엔지니어링 공부 기록입니다.</p>
-    </div>
-
-    <div class="track-grid">
-      {tracks.map((track) => (
-        <div class="track-card" style={`--track-accent: ${track.accent}`}>
-          <div class="track-card-header">
-            <span class="track-badge">{track.name}</span>
-            <span class="topic-count">{track.topics.length} Topics</span>
-          </div>
-
-          <h3 class="track-title">{track.koreanName}</h3>
-          <p class="track-desc">{track.description}</p>
-
-          <div class="topic-list">
-            {track.topics.map((topic) => (
-              <a href={`/learn/${track.id}/${topic.id}`} class="topic-pill">
-                <span class="hash">#</span> {topic.name}
-              </a>
-            ))}
-          </div>
-
-          <a href={`/learn/${track.id}`} class="track-link">
-            노트 둘러보기 <span>→</span>
-          </a>
+  <!-- About & Purpose Grid -->
+  <section class="about-section">
+    <div class="about-grid">
+      <!-- About Me Card -->
+      <div class="info-card">
+        <div class="card-label">ABOUT ME</div>
+        <h2>엔지니어 소개</h2>
+        <p class="card-text">
+          소프트웨어의 하부 레이어와 동작 원리를 파고드는 것에 깊은 흥미를 가진 개발자 <strong>pargame</strong>입니다.
+        </p>
+        <p class="card-text">
+          추상화 뒤에 가려진 컴퓨터 하드웨어, C++ 메모리 모델, 멀티스레드 동기화, 대규모 네트워크 I/O, 그리고 게임 엔진의 내부 구조를 탐구합니다. 단순히 남의 라이브러리를 가져다 쓰는 것을 넘어, 자체 언어(<code>nung_lang</code>)나 지식 트리(<code>whynode</code>)처럼 원리를 직접 코드로 구현해보는 엔지니어링을 지향합니다.
+        </p>
+        <div class="keyword-tags">
+          <span class="tag">#Systems</span>
+          <span class="tag">#Modern_C++</span>
+          <span class="tag">#Concurrency</span>
+          <span class="tag">#UnrealEngine</span>
+          <span class="tag">#LanguageDesign</span>
         </div>
-      ))}
+      </div>
+
+      <!-- Purpose Card -->
+      <div class="info-card highlight-card">
+        <div class="card-label">PURPOSE</div>
+        <h2>이 공간을 만든 목적</h2>
+        <ul class="purpose-list">
+          <li>
+            <strong>지식의 온전한 체계화</strong>
+            <span>인터넷에 흩어진 정보나 단편적인 기억에 의존하지 않고, 직접 공부하고 검증한 핵심 이론과 구현 디테일을 내 언어로 온전히 정리하여 축적합니다.</span>
+          </li>
+          <li>
+            <strong>가벼운 환경과 자유로운 확장</strong>
+            <span>무겁고 닫힌 기존 프레임워크를 걷어내고, 0KB JS 정적 코어 위에 추후 Wasm/시뮬레이터 등 동적 실험을 자유롭게 올릴 수 있는 독립 플랫폼을 구축했습니다.</span>
+          </li>
+          <li>
+            <strong>본격적인 AI 에이전틱 협업</strong>
+            <span>Gemini Pro와 멀티 에이전트를 실질적인 페어 프로그래머이자 기술 검증 파트너로 활용하여, 더 높은 밀도의 엔지니어링 아카이브를 완성해 나갑니다.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Highlight -->
+  <section class="recent-highlight">
+    <div class="highlight-box">
+      <div class="highlight-info">
+        <span class="badge">LATEST POST</span>
+        <h3><a href="/posts/hello-midnight-terminal">블로그 리뉴얼: Astro 스캐폴딩 설계와 모던 정적 아키텍처 구현기</a></h3>
+        <p>0KB JS 정적 코어, Zero-FOIT 동기 인라인 테마 인젝션, Shiki 듀얼 빌드 렌더링, GitHub Actions 배포까지의 구체적 기술 결정과 템플릿 코드 구현 내역.</p>
+      </div>
+      <a href="/posts/hello-midnight-terminal" class="highlight-btn">글 읽기 →</a>
     </div>
   </section>
 </BaseLayout>
 
 <style>
   .hero {
-    padding: 3rem 0 4.5rem;
+    padding: 2.5rem 0 3.5rem;
     max-width: 850px;
   }
   .terminal-tag {
@@ -139,119 +159,159 @@ import tracks from '../data/tracks.json';
     color: var(--accent);
   }
 
-  /* Tracks Grid */
-  .tracks-section {
-    padding-top: 2rem;
+  /* About & Purpose Grid */
+  .about-section {
+    padding-top: 3rem;
     border-top: 1px solid var(--border-subtle);
+    margin-bottom: 3.5rem;
   }
-  .section-header {
-    margin-bottom: 2.2rem;
-  }
-  .section-meta {
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    color: var(--accent);
-    margin-bottom: 0.4rem;
-  }
-  .section-header h2 {
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-  }
-  .section-header p {
-    color: var(--text-3);
-  }
-  .track-grid {
+  .about-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 2rem;
   }
-  .track-card {
-    position: relative;
+  .info-card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.6rem;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
-    transition: transform var(--dur), border-color var(--dur), box-shadow var(--dur);
   }
-  .track-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--track-accent);
-    box-shadow: 0 8px 30px -10px color-mix(in srgb, var(--track-accent) 25%, transparent);
+  .highlight-card {
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: linear-gradient(145deg, var(--surface-1), color-mix(in srgb, var(--surface-2) 60%, transparent));
   }
-  .track-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  .track-badge {
+  .card-label {
     font-family: var(--font-mono);
     font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--track-accent);
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--track-accent) 12%, transparent);
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.6rem;
   }
-  .topic-count {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-3);
+  .info-card h2 {
+    margin: 0 0 1rem;
+    font-size: 1.4rem;
   }
-  .track-title {
-    font-size: 1.35rem;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
+  .card-text {
+    font-size: 0.96rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+  .card-text strong {
     color: var(--text-1);
   }
-  .track-desc {
-    font-size: 0.92rem;
-    color: var(--text-2);
-    line-height: 1.6;
-    margin-bottom: 1.4rem;
-  }
-  .topic-list {
+  .keyword-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1.6rem;
+    margin-top: auto;
+    padding-top: 1rem;
   }
-  .topic-pill {
+  .tag {
     font-family: var(--font-mono);
     font-size: 0.8rem;
-    padding: 0.25rem 0.6rem;
+    padding: 0.2rem 0.6rem;
     border-radius: var(--radius-sm);
     background: var(--surface-2);
+    color: var(--accent);
     border: 1px solid var(--border-subtle);
-    color: var(--text-2);
-    text-decoration: none;
-    transition: all var(--dur-fast);
   }
-  .topic-pill:hover {
-    border-color: var(--track-accent);
-    color: var(--track-accent);
+
+  /* Purpose List */
+  .purpose-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
   }
-  .topic-pill .hash {
-    color: var(--track-accent);
+  .purpose-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
   }
-  .track-link {
-    margin-top: auto;
-    display: inline-flex;
+  .purpose-list strong {
+    font-size: 0.98rem;
+    color: var(--text-1);
+    display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
+  }
+  .purpose-list strong::before {
+    content: "•";
+    color: var(--accent);
+    font-size: 1.2rem;
+  }
+  .purpose-list span {
+    font-size: 0.92rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    padding-left: 1rem;
+  }
+
+  /* Recent Highlight */
+  .recent-highlight {
+    margin-bottom: 2rem;
+  }
+  .highlight-box {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.6rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+  }
+  .highlight-info .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin-bottom: 0.5rem;
+  }
+  .highlight-info h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+  }
+  .highlight-info h3 a {
+    color: var(--text-1);
+    text-decoration: none;
+  }
+  .highlight-info h3 a:hover {
+    color: var(--accent);
+  }
+  .highlight-info p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-3);
+    line-height: 1.5;
+  }
+  .highlight-btn {
+    white-space: nowrap;
+    padding: 0.6rem 1.2rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-1);
+    text-decoration: none;
     font-size: 0.9rem;
     font-weight: 600;
-    text-decoration: none;
-    color: var(--track-accent);
+    transition: all var(--dur-fast);
   }
-  .track-link span {
-    transition: transform var(--dur-fast);
+  .highlight-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
-  .track-card:hover .track-link span {
-    transform: translateX(4px);
+
+  @media (max-width: 768px) {
+    .highlight-box {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
   }
 </style>

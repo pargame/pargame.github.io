@@ -48,7 +48,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
 
       <!-- Purpose Card -->
-      <div class="info-card highlight-card">
+      <div class="info-card">
         <div class="card-label">PURPOSE</div>
         <h2>이 공간을 만든 목적</h2>
         <ul class="purpose-list">
@@ -176,10 +176,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     padding: 2rem;
     display: flex;
     flex-direction: column;
-  }
-  .highlight-card {
-    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
-    background: linear-gradient(145deg, var(--surface-1), color-mix(in srgb, var(--surface-2) 60%, transparent));
   }
   .card-label {
     font-family: var(--font-mono);

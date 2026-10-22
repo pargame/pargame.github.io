@@ -71,26 +71,6 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       </div>
     </div>
   </section>
-
-  <!-- Key Concepts Summary -->
-  <section class="summary-section">
-    <h2>핵심 정리 노트</h2>
-    <div class="summary-grid">
-      <div class="summary-box">
-        <h4>1. 레지스터(Register)의 본질</h4>
-        <p>
-          레지스터는 CPU 내부에 존재하는 가장 빠른 저장 공간으로, 1 클럭 사이클 이내에 접근 가능합니다. DRAM 접근에 수백 사이클이 걸리는 메모리 벽(Memory Wall)을 극복하기 위해 모든 연산은 데이터를 레지스터로 끌어올린 후 수행됩니다.
-        </p>
-      </div>
-
-      <div class="summary-box">
-        <h4>2. Fetch-Decode-Execute 파이프라인</h4>
-        <p>
-          현대 프로세서는 한 명령어가 끝날 때까지 기다리지 않고, 1단계 인출이 끝나면 다음 명령어를 즉시 인출하는 파이프라이닝(Pipelining) 기법을 사용합니다. 이를 제대로 이해해야 분기 예측(Branch Prediction)과 캐시 최적화 코드 설계가 가능해집니다.
-        </p>
-      </div>
-    </div>
-  </section>
 </BaseLayout>
 
 <style>
@@ -264,32 +244,5 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
   .highlight-card .btn-primary:hover {
     background: var(--accent-2);
     color: var(--text-inverse);
-  }
-
-  /* Summary Section */
-  .summary-section h2 {
-    margin-bottom: 1.5rem;
-  }
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 1.5rem;
-  }
-  .summary-box {
-    background: var(--surface-1);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-  }
-  .summary-box h4 {
-    margin: 0 0 0.8rem;
-    color: var(--text-1);
-    font-size: 1.1rem;
-  }
-  .summary-box p {
-    font-size: 0.92rem;
-    color: var(--text-2);
-    line-height: 1.6;
-    margin: 0;
   }
 </style>

@@ -23,16 +23,16 @@ import tracks from '../../data/tracks.json';
 
         <div class="topics-grid">
           {track.topics.map((topic) => (
-            <div class="topic-box">
+            <a href={`/learn/${track.id}/${topic.id}`} class="topic-box">
               <div class="topic-header">
                 <h3>{topic.name}</h3>
                 <span class="topic-arrow">→</span>
               </div>
               <p class="topic-summary">{topic.summary}</p>
               <div class="topic-meta">
-                <span class="status-ready">Available</span>
+                <span class="status-ready">노트 보기 →</span>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </div>

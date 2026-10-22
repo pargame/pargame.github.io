@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Architecture: Process & Registers</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --card-border: #334155;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-purple: #c084fc;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --code-bg: #090d16;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro", "Pretendard", monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            user-select: none;
+        }
+
+        /* Top Header */
+        header {
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #0284c7;
+            color: white;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .slide-progress {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            font-family: monospace;
+        }
+
+        /* Presentation Container */
+        .presentation-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 24px;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            height: 90%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s ease-out;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .slide-subtitle {
+            font-size: 1.05rem;
+            color: var(--text-sub);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            flex: 1;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            flex: 1;
+        }
+
+        .card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-content {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            line-height: 1.6;
+        }
+
+        .highlight-val {
+            font-family: monospace;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* Register Box Component */
+        .reg-box {
+            font-family: monospace;
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .reg-box:hover {
+            border-color: var(--accent-blue);
+            transform: translateX(4px);
+        }
+
+        .reg-name {
+            font-weight: 800;
+            font-size: 1.05rem;
+        }
+
+        .reg-desc {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            text-align: right;
+        }
+
+        .reg-bits {
+            font-size: 0.75rem;
+            color: var(--accent-amber);
+            margin-left: 8px;
+        }
+
+        /* Bottom Controls */
+        footer {
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--card-border);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .nav-btn {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #334155;
+            border-color: var(--accent-blue);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .shortcut-hint {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        /* Interactive Simulator Styles */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr;
+            gap: 24px;
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        .code-view {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            overflow-y: auto;
+        }
+
+        .code-line {
+            padding: 4px 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .code-line.current {
+            background: rgba(56, 189, 248, 0.2);
+            border-left: 3px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .sim-state {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .state-panel {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .state-panel-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .memory-cells {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .mem-cell {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .mem-cell.active-sp {
+            border-color: var(--accent-green);
+            background: rgba(74, 222, 128, 0.15);
+        }
+
+        /* Register Glowing States */
+        .reg-box.glow-blue {
+            border-color: var(--accent-blue) !important;
+            background: rgba(56, 189, 248, 0.2) !important;
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+            transform: scale(1.02);
+        }
+
+        .reg-box.glow-green {
+            border-color: var(--accent-green) !important;
+            background: rgba(74, 222, 128, 0.2) !important;
+            box-shadow: 0 0 16px rgba(74, 222, 128, 0.4);
+            transform: scale(1.02);
+        }
+
+        .reg-box.glow-amber {
+            border-color: var(--accent-amber) !important;
+            background: rgba(251, 191, 36, 0.2) !important;
+            box-shadow: 0 0 16px rgba(251, 191, 36, 0.4);
+            transform: scale(1.02);
+        }
+
+        .reg-box.glow-purple {
+            border-color: var(--accent-purple) !important;
+            background: rgba(192, 132, 252, 0.2) !important;
+            box-shadow: 0 0 16px rgba(192, 132, 252, 0.4);
+            transform: scale(1.02);
+        }
+
+        .reg-box.glow-rose {
+            border-color: var(--accent-rose) !important;
+            background: rgba(244, 63, 94, 0.2) !important;
+            box-shadow: 0 0 16px rgba(244, 63, 94, 0.4);
+            transform: scale(1.02);
+        }
+
+        /* Floating Flying Data Packets */
+        .floating-packet {
+            position: absolute;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.82rem;
+            font-weight: 800;
+            z-index: 99;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
+        .pill-btn {
+            background: #1e293b;
+            color: var(--text-sub);
+            border: 1px solid var(--card-border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pill-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-main);
+        }
+
+        .pill-btn.active {
+            background: #0284c7;
+            border-color: #38bdf8;
+            color: white;
+        }
+
+        .action-btn {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            background: #0369a1;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <a href="/learn/foundations/cs" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;" title="CS 스터디 노트로 이동">
+                <span style="font-size: 1.1rem;">🏠</span>
+                <span>CPU Hardware Architecture</span>
+            </a>
+            <span class="badge">ARM64 / Apple M4</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <a href="/learn/foundations/cs" class="nav-btn" style="text-decoration: none; padding: 6px 14px; font-size: 0.8rem;">◀ CS 스터디 노트</a>
+            <div class="slide-progress" id="slideIndicator">Slide 1 / 5</div>
+        </div>
+    </header>
+
+    <div class="presentation-container">
+
+        <!-- SLIDE 1: Title & Process Architecture -->
+        <div class="slide active" id="slide-1">
+            <h1 class="slide-title">1. 프로세스와 CPU 하드웨어의 관계</h1>
+            <p class="slide-subtitle">운영체제가 관리하는 메모리와 CPU 코어가 독점하는 초고속 레지스터 세트</p>
+            
+            <div class="grid-2" id="s1-stage" style="position: relative;">
+                <div class="card" id="s1-ram-card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-purple);">
+                            🏢 가상 메모리 공간 (RAM)
+                        </span>
+                        <span class="highlight-val">128 TB (공유)</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="margin-bottom: 12px;">프로세스가 실행되면 운영체제(OS)로부터 독립된 거대한 가상 주소 공간을 부여받습니다.</p>
+                        <div class="reg-box" id="s1-box-code">
+                            <div><span class="reg-name">Code (Text)</span></div>
+                            <div class="reg-desc">기계어 바이너리 (r-x)</div>
+                        </div>
+                        <div class="reg-box" id="s1-box-data">
+                            <div><span class="reg-name">Data / BSS</span></div>
+                            <div class="reg-desc">전역 변수 (rw-)</div>
+                        </div>
+                        <div class="reg-box" id="s1-box-heap">
+                            <div><span class="reg-name">Heap</span></div>
+                            <div class="reg-desc">동적 할당 (malloc / new)</div>
+                        </div>
+                        <div class="reg-box" id="s1-box-stack">
+                            <div><span class="reg-name">Stack</span></div>
+                            <div class="reg-desc">함수 호출 & 지역 변수 (8MB)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" id="s1-cpu-card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-blue);">
+                            ⚡ CPU 코어 내부 레지스터 (코어 독점)
+                        </span>
+                        <span class="highlight-val">0.2 나노초</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="margin-bottom: 12px;">스레드가 CPU 코어에 안착(컨텍스트 스위칭)할 때 <b>오직 그 스레드만 독점적으로 사용하는 물리 메모지</b>입니다.</p>
+                        <div class="reg-box" id="s1-cpu-box" style="border-left: 4px solid var(--accent-blue); padding: 10px 14px; margin-bottom: 10px;">
+                            <div>
+                                <span class="reg-name" style="color: var(--accent-blue);">코어 활성 스레드 레지스터 뱅크</span>
+                                <div style="font-size: 0.8rem; color: var(--text-sub); margin-top: 4px;" id="s1-cpu-state">
+                                    PC: 0x0000 | SP: 0x0000 | X0~X30 대기
+                                </div>
+                            </div>
+                        </div>
+                        <ul style="padding-left: 20px; line-height: 1.8; font-size: 0.9rem;">
+                            <li><b>초고속 연산:</b> RAM보다 수백 배 빠른 0~1사이클 연산 속도</li>
+                            <li><b>크기:</b> 64비트 레지스터 약 32개 = <b>총 256바이트 남짓</b></li>
+                            <li><b>주소 없음:</b> 포인터로 주소(`&`)를 딸 수 없으며, 이름으로 직접 지목</li>
+                            <li><b>컨텍스트 스위칭:</b> 스레드가 교체될 때 이 값들이 메모리에 백업/복원됨</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Floating Packet for Slide 1 -->
+                <div class="floating-packet" id="s1-packet" style="background: var(--accent-amber); color: #020617;">
+                    📦 레지스터 백업
+                </div>
+            </div>
+
+            <!-- Slide 1 Interactive Action Bar -->
+            <div style="margin-top: 14px; background: rgba(10, 15, 26, 0.7); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.86rem; color: var(--accent-blue); font-weight: 700;" id="s1-status-msg">
+                    💡 [컨텍스트 스위칭 시뮬레이션] 버튼을 눌러 RAM의 스레드 상태가 CPU 코어로 로드되는 과정을 확인하세요.
+                </div>
+                <button class="action-btn" onclick="animateContextSwitch()">
+                    ⚡ 컨텍스트 스위칭 실행 (Load to Core)
+                </button>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Special Core Registers -->
+        <div class="slide" id="slide-2">
+            <h1 class="slide-title">2. 핵심 특수 레지스터 4총사</h1>
+            <p class="slide-subtitle">프로그램의 실행 흐름(흐름 제어, 스택, 함수 호출)을 전담하는 핵심 하드웨어 장치</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="reg-box" style="border-left: 4px solid var(--accent-rose);">
+                        <div>
+                            <span class="reg-name" style="color: var(--accent-rose);">PC</span>
+                            <span class="reg-bits">64-bit</span>
+                        </div>
+                        <div class="reg-desc">Program Counter</div>
+                    </div>
+                    <div class="card-content">
+                        <b>"다음에 실행할 기계어의 메모리 주소"</b><br>
+                        CPU가 명령어를 한 줄 읽어올 때마다 자동으로 4바이트씩 전진합니다. 점프 명령어(`B`, `BL`)를 만나면 목적지 주소로 덮어써집니다.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="reg-box" style="border-left: 4px solid var(--accent-green);">
+                        <div>
+                            <span class="reg-name" style="color: var(--accent-green);">SP</span>
+                            <span class="reg-bits">64-bit</span>
+                        </div>
+                        <div class="reg-desc">Stack Pointer (X31)</div>
+                    </div>
+                    <div class="card-content">
+                        <b>"현재 스택 메모리의 최상단 유효 주소 번지"</b><br>
+                        변수를 만들 때 `sub sp, sp, #16`으로 주소를 깎아 공간을 파고, 함수가 끝나면 `add sp, sp, #16`으로 복원합니다. (16바이트 정렬 필수)
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="reg-box" style="border-left: 4px solid var(--accent-blue);">
+                        <div>
+                            <span class="reg-name" style="color: var(--accent-blue);">LR (X30)</span>
+                            <span class="reg-bits">64-bit</span>
+                        </div>
+                        <div class="reg-desc">Link Register</div>
+                    </div>
+                    <div class="card-content">
+                        <b>"함수가 끝나고 나중에 돌아올 복귀 주소"</b><br>
+                        `bl _main`으로 함수를 부르면 다음 줄 주소가 여기에 백업되며, 함수 끝에서 `ret`을 실행하면 이 LR 값이 다시 PC로 복사되어 복귀합니다.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="reg-box" style="border-left: 4px solid var(--accent-amber);">
+                        <div>
+                            <span class="reg-name" style="color: var(--accent-amber);">FP (X29)</span>
+                            <span class="reg-bits">64-bit</span>
+                        </div>
+                        <div class="reg-desc">Frame Pointer</div>
+                    </div>
+                    <div class="card-content">
+                        <b>"현재 함수의 스택 프레임 기준 베이스 주소"</b><br>
+                        SP가 함수 안에서 수시로 오르내릴 때, 지역 변수들의 안정적인 기준점 역할을 하여 디버거가 함수 호출 스택(콜스택)을 추적할 수 있게 돕습니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: General Purpose Registers -->
+        <div class="slide" id="slide-3">
+            <h1 class="slide-title">3. 범용 레지스터 (X0 ~ X28)</h1>
+            <p class="slide-subtitle">계산, 함수 인자 전달, 임시 저장을 위한 31개의 64비트 일꾼 레지스터</p>
+
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-blue);">X0 ~ X7</span>
+                        <span class="badge" style="background: #0369a1;">함수 인자 / 반환</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="margin-bottom: 8px;"><b>함수 호출 규약 (ABI):</b></p>
+                        <p>• <b>X0:</b> 함수의 <b>리턴값(Return Value)</b>이 담기는 전 세계 표준 자리!</p>
+                        <p>• <b>X0 ~ X7:</b> 함수를 호출할 때 1번째~8번째 매개변수를 담아서 전달합니다.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-amber);">X9 ~ X15</span>
+                        <span class="badge" style="background: #b45309;">임시 (Scratch)</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="margin-bottom: 8px;"><b>호출자 보존 (Caller-saved):</b></p>
+                        <p>함수 안에서 사칙연산(`ADD`, `MUL`) 계산용으로 자유롭게 막 쓰고 버릴 수 있는 임시 메모지입니다.</p>
+                        <p>다른 함수를 호출하면 값이 날아갈 수 있습니다.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-green);">X19 ~ X28</span>
+                        <span class="badge" style="background: #15803d;">영구 보존</span>
+                    </div>
+                    <div class="card-content">
+                        <p style="margin-bottom: 8px;"><b>피호출자 보존 (Callee-saved):</b></p>
+                        <p>중요한 변수를 담는 방입니다.</p>
+                        <p>함수가 이 레지스터를 쓰고 싶다면, <b>반드시 원래 있던 값을 스택에 백업해 두고, 함수가 끝날 때 원래대로 복원</b>해 줘야 합니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive 64-bit (X0) vs 32-bit (W0) Hardware Bit Slicer -->
+            <div class="card" style="margin-top: 18px; border: 1px solid rgba(56, 189, 248, 0.3);">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.1rem;">🔬</span>
+                        <span class="card-title" style="color: var(--accent-blue); font-size: 1rem;">
+                            하드웨어 비트 슬라이서: 64비트(X0) vs 32비트(W0) 물리 구조
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="pill-btn active" id="btnMode64" onclick="setRegisterBitMode(64)">
+                            64-bit 모드: X0 (8 Bytes)
+                        </button>
+                        <button class="pill-btn" id="btnMode32" onclick="setRegisterBitMode(32)">
+                            32-bit 모드: W0 (4 Bytes)
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content" style="padding-top: 10px;">
+                    <!-- Visual Bit Register Diagram -->
+                    <div style="background: #020617; border: 1px solid var(--card-border); border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-sub); font-family: monospace; margin-bottom: 6px;">
+                            <span>Bit 63</span>
+                            <span>Bit 32</span>
+                            <span>Bit 31</span>
+                            <span>Bit 0</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;" id="slicerRegisterBar">
+                            <!-- Upper 32-bits [63:32] -->
+                            <div id="slicerUpper" style="background: rgba(56, 189, 248, 0.12); border: 2px solid var(--accent-blue); border-radius: 6px; padding: 10px; text-align: center; transition: all 0.3s ease;">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-blue);" id="slicerUpperTitle">
+                                    상위 32비트 [63:32] (Upper 4B)
+                                </div>
+                                <div style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="slicerUpperVal">
+                                    0x00000001
+                                </div>
+                            </div>
+                            <!-- Lower 32-bits [31:0] -->
+                            <div id="slicerLower" style="background: rgba(74, 222, 128, 0.15); border: 2px solid var(--accent-green); border-radius: 6px; padding: 10px; text-align: center; transition: all 0.3s ease;">
+                                <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent-green);" id="slicerLowerTitle">
+                                    하위 32비트 [31:0] (W0 슬라이스: 4B)
+                                </div>
+                                <div style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--accent-green); margin-top: 4px;" id="slicerLowerVal">
+                                    0xA0B1C2D3
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Bracket Indicator -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-family: monospace; font-size: 0.8rem; font-weight: 700;" id="slicerBracket">
+                            <div style="flex: 1; text-align: center; color: var(--accent-blue);" id="slicerBracketText">
+                                ⮜────────────── X0 전체 (64-bit, 8바이트 메모리 주소 / 포인터 / int64) ──────────────⮞
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explanatory text locked to fixed height to avoid layout shift -->
+                    <div style="min-height: 44px; max-height: 44px; overflow: hidden; display: flex; align-items: center; background: rgba(30, 41, 59, 0.4); border-radius: 6px; padding: 8px 14px; font-size: 0.88rem; line-height: 1.45;">
+                        <span id="slicerExplanation">
+                            💡 <b>X0 모드 (64-bit):</b> 64비트 전체 레지스터로 포인터(메모리 주소)나 큰 정수(`long`, `int64_t`)를 담을 때 8바이트 전체를 연산합니다.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Special Registers & Zero -->
+        <div class="slide" id="slide-4">
+            <h1 class="slide-title">4. 특수 하드웨어 & 실수/시스템 레지스터</h1>
+            <p class="slide-subtitle">0값 전용 하드웨어 접지, IEEE 754 부동소수점, 페이지 테이블 주소</p>
+
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-rose);">XZR / WZR</span>
+                        <span class="badge" style="background: #be123c;">Zero Register</span>
+                    </div>
+                    <div class="card-content">
+                        <p><b>"읽으면 항상 0, 쓰면 버려짐"</b></p>
+                        <p style="margin-top: 8px;">하드웨어 접지선(GND)처럼 물리적으로 0으로 묶여있는 마법의 레지스터입니다.</p>
+                        <p style="margin-top: 8px;">변수를 0으로 초기화하거나, 결과값을 버리고 플래그만 세팅할 때 씁니다.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-purple);">D0 ~ D31 (V)</span>
+                        <span class="badge" style="background: #7e22ce;">IEEE 754 FPU</span>
+                    </div>
+                    <div class="card-content">
+                        <p><b>"실수(소수점) & 벡터 연산기"</b></p>
+                        <p style="margin-top: 8px;">정수 레지스터(X0)와 물리 회로가 아예 다른 부동소수점 전용 64비트 레지스터입니다.</p>
+                        <p style="margin-top: 8px;">아까 배운 <b>`double 3.14`</b>가 바로 이 D0 레지스터에 탑재되어 계산됩니다.</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" style="color: var(--accent-blue);">TTBR0_EL1</span>
+                        <span class="badge" style="background: #0369a1;">시스템 레지스터</span>
+                    </div>
+                    <div class="card-content">
+                        <p><b>"L0 페이지 테이블 주소 보관함"</b></p>
+                        <p style="margin-top: 8px;">우리가 앞서 배운 4단계 가상 메모리 장부의 뿌리(L0) 시작 주소가 들어있는 특수 레지스터입니다.</p>
+                        <p style="margin-top: 8px;">오직 OS 커널만 이 레지스터를 수정할 수 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Live Step-by-Step Simulator -->
+        <div class="slide" id="slide-5">
+            <h1 class="slide-title">5. 라이브 시뮬레이터: 함수 호출과 레지스터 변화</h1>
+            <p class="slide-subtitle">`main()`이 `add_numbers(5, 7)`를 호출하고 복귀할 때 레지스터들이 바뀌는 실시간 과정</p>
+
+            <div class="sim-grid" id="s5-sim-grid">
+                <div class="code-view" id="s5-code-view">
+                    <div style="color: var(--text-sub); margin-bottom: 8px;">// ARM64 어셈블리 실행 파이프라인</div>
+                    <div class="code-line" id="line-0"><span>0x1000:  mov w0, #5</span><span style="color: var(--text-sub);">// 인자 1 (5)</span></div>
+                    <div class="code-line" id="line-1"><span>0x1004:  mov w1, #7</span><span style="color: var(--text-sub);">// 인자 2 (7)</span></div>
+                    <div class="code-line" id="line-2"><span>0x1008:  bl  _add_numbers</span><span style="color: var(--text-sub);">// 함수 호출 (LR 백업)</span></div>
+                    <div class="code-line" id="line-3"><span>0x100C:  str w0, [sp, #8]</span><span style="color: var(--text-sub);">// 결과(12) 스택 저장</span></div>
+                    <div class="code-line" id="line-4"><span>...</span></div>
+                    <div class="code-line" id="line-5"><span>_add_numbers:</span></div>
+                    <div class="code-line" id="line-6"><span>0x2000:  add w0, w0, w1</span><span style="color: var(--text-sub);">// 5 + 7 = 12</span></div>
+                    <div class="code-line" id="line-7"><span>0x2004:  ret</span><span style="color: var(--text-sub);">// LR로 복귀!</span></div>
+                </div>
+
+                <div class="sim-state">
+                    <div class="state-panel" style="padding: 14px;">
+                        <div class="state-panel-title">CPU 하드웨어 레지스터 상태</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="reg-box" id="regbox-pc"><span>PC</span><span id="sim-pc" style="color: var(--accent-rose);">0x1000</span></div>
+                            <div class="reg-box" id="regbox-lr"><span>LR (X30)</span><span id="sim-lr" style="color: var(--accent-blue);">0x0000</span></div>
+                            <div class="reg-box" id="regbox-w0"><span>W0 (결과/인자1)</span><span id="sim-w0" style="color: var(--accent-green);">0</span></div>
+                            <div class="reg-box" id="regbox-w1"><span>W1 (인자2)</span><span id="sim-w1" style="color: var(--accent-amber);">0</span></div>
+                            <div class="reg-box" id="regbox-sp" style="grid-column: span 2;"><span>SP (Stack Pointer)</span><span id="sim-sp" style="color: var(--accent-purple);">0x7FFEEFFFF0</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Stack Memory Frame Visualizer -->
+                    <div class="state-panel" style="padding: 12px 14px;">
+                        <div class="state-panel-title">스택 메모리 프레임 [SP 오프셋]</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <div class="reg-box" id="stack-slot-sp8" style="background: rgba(30, 41, 59, 0.4);">
+                                <div><span style="font-size: 0.78rem; color: var(--text-sub);">[SP, #8]</span> <b style="font-size: 0.85rem;">결과값 보관</b></div>
+                                <span id="slot-sp8-val" style="font-family: monospace; font-size: 0.85rem; color: var(--text-sub);">(비어있음)</span>
+                            </div>
+                            <div class="reg-box" id="stack-slot-sp0" style="background: rgba(30, 41, 59, 0.4);">
+                                <div><span style="font-size: 0.78rem; color: var(--text-sub);">[SP, #0]</span> <b style="font-size: 0.85rem;">호출자 프레임</b></div>
+                                <span id="slot-sp0-val" style="font-family: monospace; font-size: 0.85rem; color: var(--text-sub);">0x7FFEEFFFF8</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description panel with locked height to prevent layout shift -->
+                    <div class="state-panel" style="height: 68px; min-height: 68px; max-height: 68px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: 10px 14px; box-sizing: border-box;">
+                        <p id="sim-desc" style="font-size: 0.88rem; color: var(--text-main); line-height: 1.5; margin: 0;">
+                            [다음 명령어 실행] 버튼 또는 [Enter]/[↓] 키를 눌러 레지스터 변화를 확인하세요.
+                        </p>
+                    </div>
+
+                    <!-- Control Buttons with Auto-play -->
+                    <div style="display: flex; gap: 8px;">
+                        <button class="nav-btn" style="padding: 9px 12px;" onclick="prevStep()" id="simPrevBtn" title="단축키: [↑] 또는 [Backspace]">
+                            ◀ 이전
+                        </button>
+                        <button class="nav-btn" style="flex: 1; justify-content: center; background: #0284c7; padding: 9px 12px;" onclick="nextStep()" id="simNextBtn" title="단축키: [Enter] 또는 [↓]">
+                            ▶ 다음 명령어 (Next)
+                        </button>
+                        <button class="nav-btn" style="background: #059669; color: white; padding: 9px 12px;" onclick="toggleAutoPlay()" id="simAutoBtn" title="단축키: [P]">
+                            ▶▶ 자동 재생
+                        </button>
+                        <button class="nav-btn" style="padding: 9px 12px;" onclick="resetSim()" title="단축키: [R]">
+                            초기화
+                        </button>
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; margin-top: -6px;">
+                        ⌨️ 단축키: <b>[Enter]</b> / <b>[↓]</b> 다음 &nbsp;|&nbsp; <b>[↑]</b> 이전 &nbsp;|&nbsp; <b>[P]</b> 자동재생 &nbsp;|&nbsp; <b>[R]</b> 초기화
+                    </div>
+                </div>
+
+                <!-- Floating Packet for Slide 5 -->
+                <div class="floating-packet" id="sim-packet" style="background: var(--accent-green); color: #020617;">
+                    5
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전 슬라이드</button>
+        <div class="shortcut-hint">키보드 방향키 [←] [→] 또는 [Space] 로 넘길 수 있습니다</div>
+        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 슬라이드 ▶</button>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+
+        // Slide Navigation
+        function updateSlide() {
+            // Stop any ongoing animations/auto-play when changing slides
+            stopAutoPlay();
+
+            document.querySelectorAll('.slide').forEach((s, idx) => {
+                s.classList.toggle('active', (idx + 1) === currentSlide);
+            });
+            document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevBtn').disabled = (currentSlide === 1);
+            document.getElementById('nextBtn').disabled = (currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // ==========================================
+        // PACKET ANIMATION UTILITY
+        // ==========================================
+        function getStageCenter(stageId, elId) {
+            const stage = document.getElementById(stageId);
+            const el = document.getElementById(elId);
+            if (!stage || !el) return { x: 0, y: 0 };
+            const sRect = stage.getBoundingClientRect();
+            const eRect = el.getBoundingClientRect();
+            return {
+                x: (eRect.left + eRect.width / 2) - sRect.left,
+                y: (eRect.top + eRect.height / 2) - sRect.top
+            };
+        }
+
+        function launchFloatingPacket(packetId, stageId, fromId, toId, text, bg, color, onComplete) {
+            const p = document.getElementById(packetId);
+            if (!p) return;
+            const from = getStageCenter(stageId, fromId);
+            const to = getStageCenter(stageId, toId);
+
+            p.style.transition = 'none';
+            p.style.left = from.x + 'px';
+            p.style.top = from.y + 'px';
+            p.style.background = bg;
+            p.style.color = color;
+            p.innerText = text;
+            p.style.opacity = '0';
+            void p.offsetWidth; // Force reflow
+
+            p.style.transition = 'left 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease';
+            p.style.opacity = '1';
+            p.style.left = to.x + 'px';
+            p.style.top = to.y + 'px';
+
+            setTimeout(() => {
+                p.style.transition = 'opacity 0.2s ease';
+                p.style.opacity = '0';
+                if (onComplete) onComplete();
+            }, 650);
+        }
+
+        // ==========================================
+        // SLIDE 1: CONTEXT SWITCHING ANIMATION
+        // ==========================================
+        let s1Timer1 = null;
+        let s1Timer2 = null;
+
+        function animateContextSwitch() {
+            if (s1Timer1) clearTimeout(s1Timer1);
+            if (s1Timer2) clearTimeout(s1Timer2);
+
+            const cpuBox = document.getElementById('s1-cpu-box');
+            const statusMsg = document.getElementById('s1-status-msg');
+            const cpuState = document.getElementById('s1-cpu-state');
+
+            // Reset state
+            cpuBox.classList.remove('glow-blue');
+            statusMsg.innerText = '⏳ 1단계: RAM의 코드 시작 번지(0x1000)를 CPU 하드웨어 PC에 로드 중...';
+            cpuState.innerText = 'PC: 0x1000 로딩 중... | SP: 대기중...';
+
+            // Launch PC packet from Code box to CPU core
+            launchFloatingPacket('s1-packet', 's1-stage', 's1-box-code', 's1-cpu-box', 'PC ⇦ 0x1000 (_start)', '#f43f5e', '#ffffff', () => {
+                cpuState.innerText = 'PC: 0x1000 | SP: 대기중...';
+            });
+
+            // Launch SP packet from Stack box to CPU core
+            s1Timer1 = setTimeout(() => {
+                statusMsg.innerText = '⏳ 2단계: RAM의 스택 최상단 주소를 CPU 하드웨어 SP에 로드 중...';
+                launchFloatingPacket('s1-packet', 's1-stage', 's1-box-stack', 's1-cpu-box', 'SP ⇦ 0x7FFEEFFFF0', '#c084fc', '#020617', () => {
+                    cpuBox.classList.add('glow-blue');
+                    cpuState.innerText = 'PC: 0x1000 | SP: 0x7FFEEFFFF0 | X0~X30 준비 완료!';
+                    statusMsg.innerText = '✅ 컨텍스트 스위칭 완료! CPU 코어가 RAM의 스레드 상태(PC, SP, 레지스터)를 하드웨어 래치에 즉시 탑재했습니다.';
+                });
+            }, 750);
+        }
+
+        // ==========================================
+        // SLIDE 3: 64-BIT VS 32-BIT BIT SLICER
+        // ==========================================
+        function setRegisterBitMode(mode) {
+            const btn64 = document.getElementById('btnMode64');
+            const btn32 = document.getElementById('btnMode32');
+            const upper = document.getElementById('slicerUpper');
+            const lower = document.getElementById('slicerLower');
+            const upperTitle = document.getElementById('slicerUpperTitle');
+            const upperVal = document.getElementById('slicerUpperVal');
+            const lowerTitle = document.getElementById('slicerLowerTitle');
+            const lowerVal = document.getElementById('slicerLowerVal');
+            const bracketText = document.getElementById('slicerBracketText');
+            const explanation = document.getElementById('slicerExplanation');
+
+            if (mode === 64) {
+                btn64.classList.add('active');
+                btn32.classList.remove('active');
+
+                upper.style.opacity = '1';
+                upper.style.borderColor = 'var(--accent-blue)';
+                upper.style.background = 'rgba(56, 189, 248, 0.12)';
+                upperTitle.innerText = '상위 32비트 [63:32] (Upper 4B)';
+                upperTitle.style.color = 'var(--accent-blue)';
+                upperVal.innerText = '0x00000001';
+                upperVal.style.color = 'var(--text-main)';
+
+                lower.style.borderColor = 'var(--accent-blue)';
+                lower.style.background = 'rgba(56, 189, 248, 0.12)';
+                lowerTitle.innerText = '하위 32비트 [31:0] (Lower 4B)';
+                lowerTitle.style.color = 'var(--accent-blue)';
+                lowerVal.innerText = '0xA0B1C2D3';
+                lowerVal.style.color = 'var(--text-main)';
+
+                bracketText.innerText = '⮜────────────── X0 전체 (64-bit, 8바이트 메모리 주소 / 포인터 / int64) ──────────────⮞';
+                bracketText.style.color = 'var(--accent-blue)';
+
+                explanation.innerHTML = '💡 <b>X0 모드 (64-bit):</b> 64비트 전체 레지스터로 포인터(메모리 주소)나 큰 정수(<code>long</code>, <code>int64_t</code>)를 담을 때 8바이트 전체를 연산합니다.';
+            } else {
+                btn32.classList.add('active');
+                btn64.classList.remove('active');
+
+                upper.style.opacity = '0.35';
+                upper.style.borderColor = '#475569';
+                upper.style.background = 'rgba(15, 23, 42, 0.6)';
+                upperTitle.innerText = '상위 32비트 [63:32] (Zero-cleared)';
+                upperTitle.style.color = '#94a3b8';
+                upperVal.innerText = '0x00000000 (하드웨어 자동 0 클리어)';
+                upperVal.style.color = '#64748b';
+
+                lower.style.borderColor = 'var(--accent-green)';
+                lower.style.background = 'rgba(74, 222, 128, 0.2)';
+                lowerTitle.innerText = '하위 32비트 [31:0] (W0 활성 슬라이스: 4B)';
+                lowerTitle.style.color = 'var(--accent-green)';
+                lowerVal.innerText = '0xA0B1C2D3';
+                lowerVal.style.color = 'var(--accent-green)';
+
+                bracketText.innerText = '[ 상위 32비트 하드웨어 0 클리어 ] ⮜── W0 슬라이스 (32-bit: 4바이트 정수) ──⮞';
+                bracketText.style.color = 'var(--accent-green)';
+
+                explanation.innerHTML = '⚡ <b>W0 모드 (32-bit):</b> ARM64 하드웨어 규칙에 따라 W 레지스터에 값을 쓰면 상위 32비트는 하드웨어에 의해 자동으로 0으로 클리어(Zero-extended)됩니다!';
+            }
+        }
+
+        // ==========================================
+        // SLIDE 5: LIVE SIMULATOR ENGINE
+        // ==========================================
+        let currentSimIndex = -1;
+        let isAutoPlaying = false;
+        let autoPlayTimer = null;
+
+        const simSteps = [
+            {
+                line: "line-0",
+                pc: "0x1004",
+                lr: "0x0000",
+                w0: "5",
+                w1: "0",
+                fromId: "line-0",
+                toId: "regbox-w0",
+                packetText: "5",
+                packetBg: "#22c55e",
+                packetColor: "#020617",
+                glowTarget: "regbox-w0",
+                glowClass: "glow-green",
+                desc: "1단계: `mov w0, #5` 실행! 상수 5가 W0 레지스터에 기록되고, PC는 다음 명령어 번지(0x1004)로 4바이트 전진합니다."
+            },
+            {
+                line: "line-1",
+                pc: "0x1008",
+                lr: "0x0000",
+                w0: "5",
+                w1: "7",
+                fromId: "line-1",
+                toId: "regbox-w1",
+                packetText: "7",
+                packetBg: "#f59e0b",
+                packetColor: "#020617",
+                glowTarget: "regbox-w1",
+                glowClass: "glow-amber",
+                desc: "2단계: `mov w1, #7` 실행! 두 번째 인자 7이 W1 레지스터에 기록되고, PC는 0x1008로 전진합니다."
+            },
+            {
+                line: "line-2",
+                pc: "0x2000",
+                lr: "0x100C",
+                w0: "5",
+                w1: "7",
+                fromId: "line-2",
+                toId: "regbox-lr",
+                packetText: "LR ⇦ 0x100C",
+                packetBg: "#38bdf8",
+                packetColor: "#020617",
+                glowTarget: "regbox-lr",
+                glowClass: "glow-blue",
+                desc: "3단계: `bl _add_numbers` 함수 호출! 복귀 주소(0x100C)가 LR(X30)에 보관되고, PC는 함수 시작 번지(0x2000)로 점프합니다."
+            },
+            {
+                line: "line-6",
+                pc: "0x2004",
+                lr: "0x100C",
+                w0: "12",
+                w1: "7",
+                fromId: "line-6",
+                toId: "regbox-w0",
+                packetText: "12 (5+7)",
+                packetBg: "#22c55e",
+                packetColor: "#020617",
+                glowTarget: "regbox-w0",
+                glowClass: "glow-green",
+                desc: "4단계: `add w0, w0, w1` ALU 덧셈! W0(5) + W1(7) = 12 결과가 반환값 레지스터 W0에 저장됩니다."
+            },
+            {
+                line: "line-7",
+                pc: "0x100C",
+                lr: "0x100C",
+                w0: "12",
+                w1: "7",
+                fromId: "regbox-lr",
+                toId: "regbox-pc",
+                packetText: "PC ⇦ 0x100C",
+                packetBg: "#f43f5e",
+                packetColor: "#ffffff",
+                glowTarget: "regbox-pc",
+                glowClass: "glow-rose",
+                desc: "5단계: `ret` 함수 복귀! LR에 저장되어 있던 주소 0x100C를 PC에 다시 장착하여 호출자로 안전하게 복귀합니다."
+            },
+            {
+                line: "line-3",
+                pc: "0x1010",
+                lr: "0x100C",
+                w0: "12",
+                w1: "7",
+                fromId: "regbox-w0",
+                toId: "stack-slot-sp8",
+                packetText: "12",
+                packetBg: "#c084fc",
+                packetColor: "#020617",
+                glowTarget: "stack-slot-sp8",
+                glowClass: "glow-purple",
+                desc: "6단계: `str w0, [sp, #8]` 스택 저장! 반환값 12가 스택 프레임 [SP, #8] 번지에 영구 저장되었습니다! 전체 사이클 완료."
+            }
+        ];
+
+        function clearSimGlows() {
+            ['regbox-pc', 'regbox-lr', 'regbox-w0', 'regbox-w1', 'regbox-sp', 'stack-slot-sp8', 'stack-slot-sp0'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('glow-blue', 'glow-green', 'glow-amber', 'glow-purple', 'glow-rose');
+                }
+            });
+        }
+
+        function renderSimState(idx, triggerPacket = true) {
+            clearSimGlows();
+            document.querySelectorAll('.code-line').forEach(l => l.classList.remove('current'));
+
+            const slotSp8 = document.getElementById('slot-sp8-val');
+
+            if (idx < 0) {
+                currentSimIndex = -1;
+                document.getElementById('sim-pc').innerText = "0x1000";
+                document.getElementById('sim-lr').innerText = "0x0000";
+                document.getElementById('sim-w0').innerText = "0";
+                document.getElementById('sim-w1').innerText = "0";
+                if (slotSp8) {
+                    slotSp8.innerText = "(비어있음)";
+                    slotSp8.style.color = "var(--text-sub)";
+                }
+                document.getElementById('sim-desc').innerText = "[시뮬레이션 초기화됨] [다음 명령어 실행] 버튼 또는 [Enter]/[↓] 키를 눌러주세요.";
+                return;
+            }
+
+            currentSimIndex = idx;
+            const s = simSteps[idx];
+            const targetLine = document.getElementById(s.line);
+            if (targetLine) targetLine.classList.add('current');
+
+            document.getElementById('sim-pc').innerText = s.pc;
+            document.getElementById('sim-lr').innerText = s.lr;
+            document.getElementById('sim-w0').innerText = s.w0;
+            document.getElementById('sim-w1').innerText = s.w1;
+            document.getElementById('sim-desc').innerText = s.desc;
+
+            // Stack slot update
+            if (idx === 5) {
+                if (slotSp8) {
+                    slotSp8.innerText = "12 (0x0C)";
+                    slotSp8.style.color = "var(--accent-purple)";
+                }
+            } else {
+                if (slotSp8) {
+                    slotSp8.innerText = "(비어있음)";
+                    slotSp8.style.color = "var(--text-sub)";
+                }
+            }
+
+            if (triggerPacket) {
+                launchFloatingPacket('sim-packet', 's5-sim-grid', s.fromId, s.toId, s.packetText, s.packetBg, s.packetColor, () => {
+                    const glowEl = document.getElementById(s.glowTarget);
+                    if (glowEl) glowEl.classList.add(s.glowClass);
+                });
+            } else {
+                const glowEl = document.getElementById(s.glowTarget);
+                if (glowEl) glowEl.classList.add(s.glowClass);
+            }
+        }
+
+        function nextStep() {
+            stopAutoPlay();
+            if (currentSimIndex < simSteps.length - 1) {
+                renderSimState(currentSimIndex + 1, true);
+            } else {
+                renderSimState(0, true);
+            }
+        }
+
+        function prevStep() {
+            stopAutoPlay();
+            if (currentSimIndex > 0) {
+                renderSimState(currentSimIndex - 1, false);
+            } else if (currentSimIndex === 0) {
+                renderSimState(-1, false);
+            }
+        }
+
+        function resetSim() {
+            stopAutoPlay();
+            renderSimState(-1, false);
+        }
+
+        // Auto-play feature
+        function toggleAutoPlay() {
+            if (isAutoPlaying) {
+                stopAutoPlay();
+            } else {
+                startAutoPlay();
+            }
+        }
+
+        function startAutoPlay() {
+            isAutoPlaying = true;
+            const btn = document.getElementById('simAutoBtn');
+            if (btn) {
+                btn.innerText = '⏸ 일시 정지';
+                btn.style.background = '#b45309';
+            }
+
+            if (currentSimIndex >= simSteps.length - 1 || currentSimIndex < 0) {
+                renderSimState(0, true);
+            } else {
+                renderSimState(currentSimIndex + 1, true);
+            }
+
+            runAutoPlayLoop();
+        }
+
+        function runAutoPlayLoop() {
+            if (!isAutoPlaying) return;
+            autoPlayTimer = setTimeout(() => {
+                if (!isAutoPlaying) return;
+                if (currentSimIndex < simSteps.length - 1) {
+                    renderSimState(currentSimIndex + 1, true);
+                    runAutoPlayLoop();
+                } else {
+                    stopAutoPlay();
+                }
+            }, 1400);
+        }
+
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+            if (autoPlayTimer) {
+                clearTimeout(autoPlayTimer);
+                autoPlayTimer = null;
+            }
+            const btn = document.getElementById('simAutoBtn');
+            if (btn) {
+                btn.innerText = '▶▶ 자동 재생';
+                btn.style.background = '#059669';
+            }
+        }
+
+        // ==========================================
+        // KEYBOARD EVENT LISTENER
+        // ==========================================
+        window.addEventListener('keydown', (e) => {
+            // Simulator controls when on Slide 5
+            if (currentSlide === 5) {
+                if (e.key === 'Enter' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    nextStep();
+                    return;
+                } else if (e.key === 'ArrowUp' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    prevStep();
+                    return;
+                } else if (e.key === 'r' || e.key === 'R') {
+                    e.preventDefault();
+                    resetSim();
+                    return;
+                } else if (e.key === 'p' || e.key === 'P') {
+                    e.preventDefault();
+                    toggleAutoPlay();
+                    return;
+                }
+            }
+
+            // General Slide Navigation
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentSlide < totalSlides) {
+                    e.preventDefault();
+                    nextSlide();
+                }
+            } else if (e.key === 'ArrowLeft') {
+                if (currentSlide > 1) {
+                    e.preventDefault();
+                    prevSlide();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

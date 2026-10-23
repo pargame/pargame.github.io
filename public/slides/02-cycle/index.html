@@ -3,30 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPU Architecture: Cycle Animation Studio</title>
+    <title>CPU Architecture: Instruction Cycle & Clock Studio</title>
     <style>
         :root {
-            --bg-color: #080c14;
-            --card-bg: #111827;
-            --card-border: #1f293d;
-            --accent-blue: #38bdf8;
+            --bg-color: #0b0d14;
+            --card-bg: #12141e;
+            --card-border: #222636;
+            --accent-blue: #3ddcf7;
             --accent-green: #4ade80;
-            --accent-amber: #fbbf24;
+            --accent-amber: #f59e0b;
             --accent-rose: #f43f5e;
-            --accent-purple: #c084fc;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --code-bg: #05070d;
-            --glow-blue: rgba(56, 189, 248, 0.4);
-            --glow-amber: rgba(251, 191, 36, 0.4);
-            --glow-green: rgba(74, 222, 128, 0.4);
+            --accent-purple: #a98bfa;
+            --text-main: #ebeef5;
+            --text-sub: #82889a;
+            --code-bg: #07090e;
+            --glow-blue: rgba(61, 220, 247, 0.35);
+            --glow-green: rgba(74, 222, 128, 0.35);
+            --glow-amber: rgba(245, 158, 11, 0.35);
+            --glow-purple: rgba(169, 139, 250, 0.35);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro", "Pretendard", sans-serif;
         }
 
         body {
@@ -40,13 +41,14 @@
         }
 
         header {
-            padding: 12px 28px;
+            padding: 10px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--card-border);
-            background: rgba(8, 12, 20, 0.95);
-            backdrop-filter: blur(12px);
+            background: rgba(11, 13, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
         }
 
         .logo {
@@ -60,15 +62,17 @@
         .badge {
             background: #0284c7;
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             padding: 3px 8px;
             border-radius: 4px;
             text-transform: uppercase;
             font-weight: 800;
+            letter-spacing: 0.5px;
         }
 
         .slide-progress {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            font-weight: 600;
             color: var(--text-sub);
             font-family: monospace;
         }
@@ -78,9 +82,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 14px 20px;
-            position: relative;
+            padding: 12px 18px;
             min-height: 0;
+            position: relative;
         }
 
         .slide {
@@ -91,17 +95,17 @@
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 14px;
-            padding: 22px 30px;
-            box-shadow: 0 25px 50px -15px rgba(0, 0, 0, 0.7);
-            flex-direction: column;
+            padding: 20px 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.25s ease-out;
             position: relative;
             overflow-y: auto;
             box-sizing: border-box;
+            flex-direction: column;
         }
 
         .slide.active {
             display: flex;
-            animation: fadeIn 0.25s ease-out;
         }
 
         @keyframes fadeIn {
@@ -109,671 +113,371 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .slide-header-wrap {
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
         .slide-title {
-            font-size: 1.65rem;
+            font-size: 1.55rem;
             font-weight: 800;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: -0.5px;
         }
 
         .slide-subtitle {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--text-sub);
-            margin-bottom: 16px;
-            line-height: 1.5;
+            line-height: 1.45;
         }
 
-        .stage-box {
+        .theory-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 20px;
             flex: 1;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        .diagram-card {
             background: var(--code-bg);
             border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 20px;
+            border-radius: 10px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
             position: relative;
             overflow: hidden;
         }
 
-        /* Slide 1: Interactive Wire Board */
-        .wire-container {
+        .content-card {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            height: 100%;
+            gap: 10px;
             justify-content: center;
         }
 
-        .wire-grid-single-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(17, 24, 39, 0.7);
-            padding: 24px 16px 14px 16px;
-            border-radius: 12px;
+        .concept-box {
+            background: rgba(18, 20, 30, 0.7);
             border: 1px solid var(--card-border);
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .nibble-unit {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(51, 65, 85, 0.5);
             border-radius: 8px;
-            padding: 16px 6px 6px 6px;
+            padding: 12px 16px;
+            font-size: 0.86rem;
+            line-height: 1.55;
         }
 
-        .nibble-hex-tag {
-            position: absolute;
-            top: -12px;
-            background: #1e293b;
-            border: 1px solid var(--accent-amber);
-            border-radius: 4px;
-            padding: 1px 8px;
-            font-family: monospace;
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: var(--accent-amber);
-            box-shadow: 0 0 10px rgba(251, 191, 36, 0.25);
+        .concept-box b {
+            color: var(--accent-blue);
         }
 
-        .nibble-bulbs {
-            display: flex;
-            gap: 4px;
-        }
-
-        .nibble-field-badge {
-            font-size: 0.68rem;
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(61, 220, 247, 0.12);
+            border: 1px solid rgba(61, 220, 247, 0.3);
+            color: var(--accent-blue);
             font-weight: 700;
-            margin-top: 6px;
-            white-space: nowrap;
-            text-align: center;
+            font-size: 0.76rem;
+            margin-bottom: 6px;
         }
 
-        .wire-switch {
+        .concept-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .concept-body {
+            font-size: 0.84rem;
+            color: var(--text-main);
+            line-height: 1.55;
+        }
+
+        .concept-list {
+            margin-left: 16px;
+            font-size: 0.82rem;
+            line-height: 1.5;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            padding: 2px;
-            border-radius: 4px;
-            transition: all 0.15s;
+            gap: 5px;
         }
 
-        .wire-switch:hover {
-            background: rgba(56, 189, 248, 0.15);
-        }
-
-        .wire-bulb {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: #1e293b;
-            border: 2px solid #334155;
-            transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: #64748b;
-        }
-
-        /* Semantic Field Colors */
-        .wire-switch.field-op .wire-bulb { border-color: rgba(244, 63, 94, 0.7); color: #fca5a5; }
-        .wire-switch.field-rm .wire-bulb { border-color: rgba(251, 191, 36, 0.7); color: #fde68a; }
-        .wire-switch.field-rn .wire-bulb { border-color: rgba(74, 222, 128, 0.7); color: #bbf7d0; }
-        .wire-switch.field-rd .wire-bulb { border-color: rgba(192, 132, 252, 0.7); color: #e9d5ff; }
-        .wire-switch.field-shift .wire-bulb { border-color: #475569; color: #94a3b8; }
-
-        .wire-switch.on.field-op .wire-bulb {
-            background: var(--accent-rose);
-            border-color: #fecdd3;
-            box-shadow: 0 0 12px #f43f5e;
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .wire-switch.on.field-rm .wire-bulb {
-            background: var(--accent-amber);
-            border-color: #fef08a;
-            box-shadow: 0 0 12px #fbbf24;
-            color: #78350f;
-            transform: scale(1.1);
-        }
-
-        .wire-switch.on.field-rn .wire-bulb {
-            background: var(--accent-green);
-            border-color: #bbf7d0;
-            box-shadow: 0 0 12px #4ade80;
-            color: #064e3b;
-            transform: scale(1.1);
-        }
-
-        .wire-switch.on.field-rd .wire-bulb {
-            background: var(--accent-purple);
-            border-color: #f3e8ff;
-            box-shadow: 0 0 12px #c084fc;
-            color: #3b0764;
-            transform: scale(1.1);
-        }
-
-        /* Address Badge Component (10진수 주소 전용 칩) */
         .addr-chip {
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            padding: 2px 8px;
+            padding: 2px 7px;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
             font-size: 0.82em;
             font-weight: 700;
-            border-radius: 6px;
+            border-radius: 5px;
             line-height: 1.2;
             vertical-align: middle;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
         .addr-code {
             background: rgba(244, 63, 94, 0.15);
             color: var(--accent-rose);
-            border: 1.5px solid rgba(244, 63, 94, 0.45);
-        }
-        .addr-cache {
-            background: rgba(251, 191, 36, 0.15);
-            color: var(--accent-amber);
-            border: 1.5px solid rgba(251, 191, 36, 0.45);
+            border: 1.5px solid rgba(244, 63, 94, 0.55);
         }
 
-        .wire-switch.on.field-shift .wire-bulb {
-            background: #64748b;
-            border-color: #cbd5e1;
-            box-shadow: 0 0 10px #64748b;
-            color: white;
-            transform: scale(1.1);
+        .val-card {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: var(--text-main);
         }
 
-        .wire-num {
-            font-size: 0.62rem;
-            color: var(--text-sub);
-            font-family: monospace;
-        }
-
-        .decode-strip {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
+        /* Clock Signal Generator Box */
+        .clock-gen-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 12px;
-            background: rgba(17, 24, 39, 0.7);
+            width: 100%;
+            max-width: 440px;
+            background: #090c14;
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 12px 16px;
+            border-radius: 10px;
+            padding: 16px;
         }
-
-        .strip-item {
+        .pulse-wave {
             display: flex;
-            flex-direction: column;
+            align-items: flex-end;
             gap: 4px;
-            padding: 8px 12px;
-            background: rgba(15, 23, 42, 0.7);
-            border-radius: 8px;
-            border-left: 3px solid transparent;
+            height: 60px;
+            width: 100%;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 4px;
+            justify-content: center;
+        }
+        .wave-bar {
+            width: 18px;
+            background: rgba(61, 220, 247, 0.25);
+            border-top: 3px solid var(--accent-blue);
         }
 
-        .strip-item.item-op { border-left-color: var(--accent-rose); }
-        .strip-item.item-rm { border-left-color: var(--accent-amber); }
-        .strip-item.item-rn { border-left-color: var(--accent-green); }
-        .strip-item.item-rd { border-left-color: var(--accent-purple); }
-
-        .strip-label {
-            font-size: 0.72rem;
-            color: var(--text-sub);
-            font-weight: 700;
-        }
-
-        .strip-val {
-            font-family: monospace;
-            font-size: 1.1rem;
-            font-weight: 800;
-        }
-
-        .strip-sub {
-            font-size: 0.75rem;
-            color: var(--text-sub);
-            font-family: monospace;
-        }
-
-        /* Slide 2: Two-Column Studio Layout */
-        .s2-studio {
-            display: flex;
-            gap: 18px;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        /* Left Storyboard & Control Deck */
-        .s2-storyboard {
-            width: 360px;
-            flex-shrink: 0;
+        /* Hardware Pipeline Architecture Box */
+        .pipeline-flow {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            background: rgba(15, 23, 42, 0.7);
+            gap: 8px;
+            width: 100%;
+            max-width: 440px;
+        }
+        .pipeline-stage-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0d111d;
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 14px;
-            box-sizing: border-box;
-        }
-
-        .s2-code-card {
-            background: #030712;
-            border: 1px solid #1e293b;
-            border-left: 4px solid var(--accent-amber);
-            border-radius: 8px;
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .s2-code-title {
-            font-size: 0.72rem;
-            color: var(--text-sub);
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .s2-code-asm {
-            font-family: monospace;
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--accent-amber);
-            letter-spacing: 0.5px;
-        }
-
-        .s2-code-desc {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            line-height: 1.4;
-        }
-
-        .s2-step-list {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            overflow-y: auto;
-        }
-
-        .s2-step-card {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid var(--card-border);
+            border-left: 4px solid var(--accent-blue);
             border-radius: 8px;
             padding: 8px 12px;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.82rem;
+        }
+
+        .latency-container {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .latency-row {
             display: flex;
             flex-direction: column;
             gap: 3px;
         }
-
-        .s2-step-card:hover {
-            background: rgba(30, 41, 59, 0.8);
-            border-color: #38bdf8;
+        .latency-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+        .latency-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .latency-fill {
+            height: 100%;
+            border-radius: 4px;
         }
 
-        .s2-step-card.active {
-            border-color: var(--accent-blue);
-            background: rgba(56, 189, 248, 0.14);
-            box-shadow: 0 0 14px rgba(56, 189, 248, 0.22);
+        /* Slide 3 Layout */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+            position: relative;
         }
 
-        .s2-step-hdr {
+        .anchor-bar {
+            background: rgba(61, 220, 247, 0.08);
+            border: 1px solid rgba(61, 220, 247, 0.25);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            height: 36px;
+            min-height: 36px;
+            max-height: 36px;
+        }
+        .anchor-bar .anchor-tag {
+            color: var(--accent-blue);
+            font-weight: 800;
+            font-family: monospace;
+        }
+
+        .step-cards-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .step-mini-card {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .s2-step-tag {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: var(--text-main);
-            font-family: monospace;
+        .step-mini-card:hover {
+            border-color: var(--accent-blue);
         }
-
-        .s2-step-card.active .s2-step-tag {
-            color: var(--accent-blue);
-        }
-
-        .s2-step-status-pill {
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: #1e293b;
-            color: var(--text-sub);
+        .step-mini-card.current {
+            background: rgba(61, 220, 247, 0.12);
+            border-color: var(--accent-blue);
             font-weight: 700;
         }
 
-        .s2-step-card.active .s2-step-status-pill {
-            background: var(--accent-blue);
-            color: #032030;
-            font-weight: 800;
-        }
-
-        .s2-step-body {
-            font-size: 0.76rem;
-            color: var(--text-sub);
-            line-height: 1.35;
-        }
-
-        .s2-step-card.active .s2-step-body {
-            color: #e2e8f0;
-        }
-
-        .s2-ctrl-box {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            border-top: 1px solid var(--card-border);
-            padding-top: 10px;
-        }
-
-        .s2-ctrl-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        /* Right Hardware Map */
-        .s2-hw-stage {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .s2-hw-status {
-            background: rgba(15, 23, 42, 0.8);
+        .hw-stage-rack {
+            background: var(--code-bg);
             border: 1px solid var(--card-border);
             border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--accent-blue);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 38px;
-            box-sizing: border-box;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .s2-hw-grid {
-            flex: 1;
-            position: relative;
-            display: grid;
-            grid-template-columns: 1fr 1.25fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 14px;
             padding: 12px;
-            background: rgba(10, 15, 26, 0.6);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            position: relative;
+            min-height: 250px;
         }
 
         .hw-node {
-            background: rgba(22, 30, 48, 0.85);
-            border: 2px solid #2a374f;
-            border-radius: 10px;
-            padding: 12px 14px;
+            background: #0d111d;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            position: relative;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 2;
-            box-sizing: border-box;
+            justify-content: space-between;
+            transition: all 0.25s;
         }
-
-        .hw-node.active-blue {
+        .hw-node.active-node {
             border-color: var(--accent-blue);
-            background: rgba(56, 189, 248, 0.16);
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+            box-shadow: 0 0 16px var(--glow-blue);
+            background: rgba(61, 220, 247, 0.08);
         }
-
-        .hw-node.active-amber {
-            border-color: var(--accent-amber);
-            background: rgba(251, 191, 36, 0.16);
-            box-shadow: 0 0 20px rgba(251, 191, 36, 0.35);
-        }
-
-        .hw-node.active-green {
-            border-color: var(--accent-green);
-            background: rgba(74, 222, 128, 0.16);
-            box-shadow: 0 0 20px rgba(74, 222, 128, 0.35);
-        }
-
-        .hw-node.active-purple {
-            border-color: var(--accent-purple);
-            background: rgba(192, 132, 252, 0.16);
-            box-shadow: 0 0 20px rgba(192, 132, 252, 0.35);
-        }
-
-        .node-tag {
-            font-size: 0.68rem;
-            font-weight: 700;
+        .hw-node-title {
+            font-size: 0.7rem;
             color: var(--text-sub);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-        }
-
-        .node-title {
-            font-size: 1rem;
             font-weight: 800;
-            margin-bottom: 4px;
+            text-transform: uppercase;
         }
-
-        .node-val {
+        .hw-node-val {
             font-family: monospace;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 700;
-            color: var(--accent-amber);
         }
 
-        /* Floating Chip Packet */
         .chip-packet {
             position: absolute;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 3px 10px;
+            background: var(--accent-amber);
+            color: #000;
             font-family: monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 800;
-            z-index: 10;
+            border-radius: 12px;
             pointer-events: none;
             opacity: 0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-            transform: translate(-50%, -50%);
-            white-space: nowrap;
-        }
-
-        /* Slide 3: Clock Wave & Latency Simulator */
-        .clock-stage {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .scope-canvas {
-            width: 100%;
-            height: 140px;
-            background: #020408;
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            display: block;
-        }
-
-        .clock-stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .stat-card {
-            background: rgba(17, 24, 39, 0.7);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            height: 112px;
-            min-height: 112px;
-            max-height: 112px;
-            box-sizing: border-box;
-            justify-content: space-between;
-        }
-
-        .stat-desc {
-            font-size: 0.8rem;
-            color: var(--text-sub);
-            line-height: 1.35;
-            height: 38px;
-            min-height: 38px;
-            max-height: 38px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            box-sizing: border-box;
-        }
-
-        .clock-ctrl-row {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 14px;
-            height: 42px;
-            min-height: 42px;
-            max-height: 42px;
-            box-sizing: border-box;
-        }
-
-        .latency-bar-wrap {
-            background: #020617;
-            border-radius: 6px;
-            height: 18px;
-            overflow: hidden;
-            border: 1px solid #1e293b;
-            position: relative;
-            margin-top: 2px;
-        }
-
-        .latency-bar-fill {
-            height: 100%;
-            transition: width 0.15s ease-out;
-        }
-
-        .latency-bar-label {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.68rem;
-            font-weight: 800;
-            font-family: monospace;
-            color: #f8fafc;
-        }
-
-        /* Controls */
-        footer {
-            padding: 12px 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--card-border);
-            background: rgba(8, 12, 20, 0.95);
+            z-index: 100;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
         }
 
         .nav-btn {
-            background: #1e293b;
-            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--card-border);
-            padding: 8px 18px;
-            border-radius: 8px;
-            font-weight: 600;
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+            gap: 6px;
+            transition: all 0.15s;
         }
-
         .nav-btn:hover:not(:disabled) {
-            background: #334155;
+            background: rgba(255, 255, 255, 0.15);
             border-color: var(--accent-blue);
         }
-
         .nav-btn:disabled {
             opacity: 0.35;
             cursor: not-allowed;
         }
 
-        .action-btn {
-            background: #0284c7;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-            transition: all 0.2s;
+        footer {
+            padding: 8px 24px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            border-top: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            z-index: 100;
         }
 
-        .action-btn:hover {
-            background: #0369a1;
-            transform: translateY(-1px);
-        }
-
-        .pill-btn {
-            background: #1e293b;
+        .shortcut-hint {
+            font-size: 0.75rem;
             color: var(--text-sub);
-            border: 1px solid var(--card-border);
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+            font-family: monospace;
         }
-
-        .pill-btn:hover {
-            border-color: var(--accent-blue);
-            color: var(--text-main);
-        }
-
-        .pill-btn.active {
-            background: #0284c7;
-            border-color: #38bdf8;
-            color: white;
+        .shortcut-hint b {
+            color: var(--accent-blue);
         }
     </style>
 </head>
@@ -781,290 +485,262 @@
 
     <header>
         <div class="logo">
-            <a href="/learn/foundations/cs" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px;" title="CS 스터디 노트로 이동">
-                <span style="font-size: 1.1rem;">🏠</span>
-                <span>⚡ CPU ARCHITECTURE LAB</span>
-            </a>
-            <span class="badge">Core Fundamentals</span>
-            <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-sub);">3단계 하드웨어 시각화 스튜디오</span>
+            <span class="badge">CORE CS PART 02</span>
+            <span>Instruction Cycle & Clock Studio</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <a href="/learn/foundations/cs" class="nav-btn" style="text-decoration: none; padding: 6px 14px; font-size: 0.8rem;">◀ CS 스터디 노트</a>
-            <div class="slide-progress" id="slideIndicator">Slide 1 / 3</div>
-        </div>
+        <div class="slide-progress" id="slideIndicator">Slide 1 / 3</div>
     </header>
 
     <div class="presentation-container">
 
-        <!-- SLIDE 1: 32 Wires Interactive Board -->
+        <!-- SLIDE 1: Machine Code & Clock Synchronization -->
         <div class="slide active" id="slide-1">
-            <h1 class="slide-title">1. 기계어(Machine Code): 32가닥 구리선의 전압 스위치</h1>
-            <p class="slide-subtitle">
-                CPU는 글자를 읽지 않습니다. 아래의 <b>32개 전선 스위치를 직접 클릭</b>해 켜거나(1.2V), 프리셋 버튼으로 실제 명령어가 어떻게 켜지는지 확인해 보세요.
-            </p>
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>01. 기계어와 클럭(Clock) 동기화 메커니즘</span>
+                </h1>
+                <p class="slide-subtitle">
+                    2진수 비트열로 표현되는 명령어와, 수억 개의 플립플롭을 일제히 전진시키는 클럭 펄스
+                </p>
+            </div>
 
-            <div class="stage-box">
-                <div class="wire-container">
-                    <!-- Top Status -->
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.85rem; color: var(--accent-rose); font-family: monospace; font-weight: 700;">[Bit 31: MSB (고위 비트)]</span>
-                        <div style="display: flex; gap: 16px; align-items: baseline;">
-                            <span id="s1-hex" style="font-family: monospace; font-size: 1.35rem; font-weight: 800; color: var(--accent-amber);">
-                                HEX: 0x0B020020
-                            </span>
-                            <span style="color: var(--text-sub); font-size: 0.85rem;">(상단 주황색 태그: 4비트씩 묶은 16진수 문자)</span>
+            <div class="theory-grid">
+                <div class="diagram-card">
+                    <div class="clock-gen-box">
+                        <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 8px;">
+                            <span>⚡ 클럭 생성기: 4.0 GHz 발진 신호 (Square Wave)</span>
                         </div>
-                        <span style="font-size: 0.85rem; color: var(--accent-blue); font-family: monospace; font-weight: 700;">[Bit 0: LSB (저위 비트)]</span>
-                    </div>
-
-                    <!-- 32 Interactive Bulb Switches in 1 Continuous Line -->
-                    <div class="wire-grid-single-line" id="s1-grid"></div>
-
-                    <!-- Real-time Decoder Readout -->
-                    <div class="decode-strip">
-                        <div class="strip-item item-op">
-                            <span class="strip-label" style="color: var(--accent-rose);">[Bit 31:24] 연산 종류 (Opcode)</span>
-                            <span class="strip-val" id="dec-op" style="color: var(--accent-rose);">ADD (더하기)</span>
-                            <span class="strip-sub" id="dec-op-sub">비트: 0000 1011 (0x0B)</span>
+                        <div class="pulse-wave" id="pulseWave">
+                            <div class="wave-bar" style="height: 50px;"></div>
+                            <div class="wave-bar" style="height: 10px;"></div>
+                            <div class="wave-bar" style="height: 50px;"></div>
+                            <div class="wave-bar" style="height: 10px;"></div>
+                            <div class="wave-bar" style="height: 50px;"></div>
+                            <div class="wave-bar" style="height: 10px;"></div>
+                            <div class="wave-bar" style="height: 50px;"></div>
+                            <div class="wave-bar" style="height: 10px;"></div>
                         </div>
-                        <div class="strip-item item-rm">
-                            <span class="strip-label" style="color: var(--accent-amber);">[Bit 20:16] 피연산자 2 (Rm)</span>
-                            <span class="strip-val" id="dec-rm" style="color: var(--accent-amber);">W2 레지스터</span>
-                            <span class="strip-sub" id="dec-rm-sub">비트: 00010 (2진수 2)</span>
-                        </div>
-                        <div class="strip-item item-rn">
-                            <span class="strip-label" style="color: var(--accent-green);">[Bit 9:5] 피연산자 1 (Rn)</span>
-                            <span class="strip-val" id="dec-rn" style="color: var(--accent-green);">W1 레지스터</span>
-                            <span class="strip-sub" id="dec-rn-sub">비트: 00001 (2진수 1)</span>
-                        </div>
-                        <div class="strip-item item-rd">
-                            <span class="strip-label" style="color: var(--accent-purple);">[Bit 4:0] 결과 목적지 (Rd)</span>
-                            <span class="strip-val" id="dec-rd" style="color: var(--accent-purple);">W0 레지스터</span>
-                            <span class="strip-sub" id="dec-rd-sub">비트: 00000 (2진수 0)</span>
+                        <div style="font-family: monospace; font-size: 0.85rem; color: var(--accent-green); font-weight: 700;">
+                            주기 T = 1 / f = 0.25 나노초 (0.25ns)
                         </div>
                     </div>
 
-                    <!-- Presets -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                        <span style="font-size: 0.85rem; color: var(--text-sub);">원클릭 프리셋:</span>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="pill-btn active" onclick="loadWirePreset('add', this)">`add w0, w1, w2`</button>
-                            <button class="pill-btn" onclick="loadWirePreset('mov', this)">`mov w0, #5`</button>
-                            <button class="pill-btn" onclick="loadWirePreset('sub', this)">`sub w0, w1, w2`</button>
-                            <button class="pill-btn" onclick="loadWirePreset('zero', this)">전체 0V 리셋</button>
+                    <div style="width: 100%; max-width: 440px; background: #0d111d; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; font-size: 0.78rem;">
+                        <div style="color: var(--accent-amber); font-weight: 700; margin-bottom: 4px;">ARM64 32비트 기계어 구조: add w0, w1, w2</div>
+                        <div style="font-family: monospace; display: flex; justify-content: space-between; font-size: 0.76rem;">
+                            <span style="color: var(--accent-rose);">Opcode: 0x0B (ADD)</span>
+                            <span style="color: var(--accent-green);">Rn: W1 | Rm: W2</span>
+                            <span style="color: var(--accent-purple);">Rd: W0</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
+                        클럭 신호의 <b>상승 에지(Rising Edge)</b> 순간에만 레지스터의 데이터가 래치(Latch)되어 회로의 레이스 컨디션을 방지합니다.
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="tech-badge">동기식 디지털 논리회로 (Synchronous Logic)</div>
+                        <div class="concept-body">
+                            CPU 내부의 수억 개 트랜지스터 게이트는 신호 전달 지연(Propagation Delay) 시간이 서로 다릅니다. 주기적인 <b>클럭 신호(Clock Signal)</b>를 통해 모든 플립플롭이 동일한 타이밍에 입력을 래치함으로써 계산 오류와 신호 충돌을 원천 차단합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">💡 기계어(Machine Code)의 비트 구조</div>
+                        <div class="concept-body">
+                            기계어는 CPU 제어장치가 하드웨어 신호로 분해할 수 있도록 규격화된 2진수 비트열입니다.
+                            <ul class="concept-list" style="margin-top: 6px;">
+                                <li><b>Opcode (연산 코드)</b>: 수행할 마이크로 연산(ADD, SUB, LDR 등)을 결정하는 멀티플렉서 제어선</li>
+                                <li><b>피연산자 레지스터 인덱스</b>: 소스 및 목적지 레지스터 주소 번호</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">⚡ 클럭 주파수(Clock Frequency)와 실행 시간</div>
+                        <div class="concept-body">
+                            4.0 GHz CPU는 초당 40억 회의 클럭 펄스를 발생시킵니다. 1 사이클(Cycle)은 <b>0.25나노초(0.25ns)</b>이며, 빛이 진공에서 약 7.5cm 이동하는 극도로 미세한 시간 단위입니다.
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SLIDE 2: Master CPU Cycle Studio -->
+        <!-- SLIDE 2: 4-Step Pipeline & Memory Latency -->
         <div class="slide" id="slide-2">
-            <h1 class="slide-title">2. CPU 명령어 사이클 스튜디오 (Fetch ➔ Decode ➔ Execute ➔ Writeback)</h1>
-            <p class="slide-subtitle">
-                하나의 명령어가 메모리에서 나와 연산되어 레지스터에 저장되기까지의 전체 흐름입니다.
-            </p>
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>02. 명령어 사이클 4단계와 메모리 계층 레이턴시</span>
+                </h1>
+                <p class="slide-subtitle">
+                    Fetch ➔ Decode ➔ Execute ➔ Writeback 파이프라인과 L1 캐시 vs 메인 메모리(RAM) 레이턴시 격차
+                </p>
+            </div>
 
-            <div class="stage-box" style="padding: 14px;">
-                <div class="s2-studio">
-                    <!-- Left Column: Storyboard & Control Deck -->
-                    <div class="s2-storyboard">
-                        <!-- Instruction HUD -->
-                        <div class="s2-code-card">
-                            <span class="s2-code-title">🎯 실행 중인 명령어 (Arm64 어셈블리)</span>
-                            <div class="s2-code-asm">add w0, w1, w2</div>
-                            <div class="s2-code-desc">
-                                • 기계어 코드: <span style="font-family: monospace; color: var(--accent-amber); font-weight:700;">0x0B020020</span><br>
-                                • 연산 목표: <span style="font-family: monospace; color: var(--accent-green); font-weight:700;">W0 = W1(15) + W2(27) = 42</span>
-                            </div>
+            <div class="theory-grid">
+                <div class="diagram-card">
+                    <div class="pipeline-flow">
+                        <div class="pipeline-stage-card" style="border-left-color: var(--accent-rose);">
+                            <span style="font-weight: 700; color: var(--accent-rose);">1. FETCH (명령어 인출)</span>
+                            <span>PC가 가리키는 메모리 주소에서 32비트 명령어 인출</span>
                         </div>
-
-                        <!-- 4 Step Interactive Storyboard List -->
-                        <div class="s2-step-list" id="s2StepList">
-                            <div class="s2-step-card" id="step-card-1" onclick="jumpToStep(1)">
-                                <div class="s2-step-hdr">
-                                    <span class="s2-step-tag">1. FETCH (명령어 인출)</span>
-                                    <span class="s2-step-status-pill" id="step-pill-1">대기</span>
-                                </div>
-                                <span class="s2-step-body">
-                                    PC(<span class="addr-chip addr-code">▶ @1000</span>)가 L1 캐시에 주소를 전달하여 기계어를 가져옵니다. (동시에 PC는 <span class="addr-chip addr-code">▶ @1004</span>로 전진!)
-                                </span>
-                            </div>
-
-                            <div class="s2-step-card" id="step-card-2" onclick="jumpToStep(2)">
-                                <div class="s2-step-hdr">
-                                    <span class="s2-step-tag">2. DECODE (해석 및 준비)</span>
-                                    <span class="s2-step-status-pill" id="step-pill-2">대기</span>
-                                </div>
-                                <span class="s2-step-body">
-                                    디코더가 기계어를 분석(ADD 연산)하고 레지스터에서 인자값 W1(15), W2(27)를 꺼냅니다.
-                                </span>
-                            </div>
-
-                            <div class="s2-step-card" id="step-card-3" onclick="jumpToStep(3)">
-                                <div class="s2-step-hdr">
-                                    <span class="s2-step-tag">3. EXECUTE (산술 연산)</span>
-                                    <span class="s2-step-status-pill" id="step-pill-3">대기</span>
-                                </div>
-                                <span class="s2-step-body">
-                                    ALU(가산기 회로)로 15와 27이 들어가 15 + 27 = 42 연산을 완료합니다.
-                                </span>
-                            </div>
-
-                            <div class="s2-step-card" id="step-card-4" onclick="jumpToStep(4)">
-                                <div class="s2-step-hdr">
-                                    <span class="s2-step-tag">4. WRITEBACK (결과 저장)</span>
-                                    <span class="s2-step-status-pill" id="step-pill-4">대기</span>
-                                </div>
-                                <span class="s2-step-body">
-                                    ALU의 결과값 42를 최종 목적지인 W0 레지스터에 기록(Latch)하여 1개 사이클을 마칩니다.
-                                </span>
-                            </div>
+                        <div class="pipeline-stage-card" style="border-left-color: var(--accent-amber);">
+                            <span style="font-weight: 700; color: var(--accent-amber);">2. DECODE (명령어 해독)</span>
+                            <span>Opcode 해석, 제어신호 생성 및 소스 레지스터(W1, W2) 판독</span>
                         </div>
-
-                        <!-- Step Control Buttons -->
-                        <div class="s2-ctrl-box">
-                            <div class="s2-ctrl-row">
-                                <button class="nav-btn" style="flex: 1;" onclick="prevCycleStep()">◀ 이전 단계</button>
-                                <button class="action-btn" style="flex: 1.3;" id="s2NextBtn" onclick="nextCycleStep()">다음 단계 ▶</button>
-                            </div>
-                            <div class="s2-ctrl-row">
-                                <button class="pill-btn" style="flex: 1;" onclick="playFullCycle()">▶ 자동 재생</button>
-                                <button class="pill-btn" style="flex: 1;" onclick="resetCycle()">↺ 처음으로 (R)</button>
-                            </div>
-                            <div style="font-size: 0.72rem; color: var(--text-sub); text-align: center;">
-                                단축키: [Enter / Space] 다음 단계, [R] 초기화
-                            </div>
+                        <div class="pipeline-stage-card" style="border-left-color: var(--accent-blue);">
+                            <span style="font-weight: 700; color: var(--accent-blue);">3. EXECUTE (연산 실행)</span>
+                            <span>ALU(산술논리연산장치) 가산 회로에서 15 + 27 = 42 연산</span>
+                        </div>
+                        <div class="pipeline-stage-card" style="border-left-color: var(--accent-green);">
+                            <span style="font-weight: 700; color: var(--accent-green);">4. WRITEBACK (결과 기록)</span>
+                            <span>결과값 42를 목적지 레지스터(W0) 플립플롭에 래치(Latch)</span>
                         </div>
                     </div>
 
-                    <!-- Right Column: Visual Hardware Pipeline Stage Map -->
-                    <div class="s2-hw-stage">
-                        <!-- Live Status Banner -->
-                        <div class="s2-hw-status" id="s2HwStatus">
-                            <span>💡 [다음 단계 ▶] 또는 [자동 재생]을 눌러 하드웨어 데이터 흐름을 확인하세요.</span>
+                    <div class="latency-container">
+                        <div class="latency-row">
+                            <div class="latency-header">
+                                <span style="color: var(--accent-blue); font-weight: 700;">L1 캐시 레이턴시</span>
+                                <span style="font-family: monospace;">1 Cycle (0.25 ns)</span>
+                            </div>
+                            <div class="latency-track">
+                                <div class="latency-fill" style="width: 2%; background: var(--accent-blue);"></div>
+                            </div>
                         </div>
-
-                        <!-- 6 Hardware Nodes Grid -->
-                        <div class="s2-hw-grid" id="s2HwGrid">
-                            <!-- Node 1: PC -->
-                            <div class="hw-node" id="node-pc" style="grid-column: 1; grid-row: 1;">
-                                <span class="node-tag">주소 나침반 (Instruction Pointer)</span>
-                                <div class="node-title" style="color: var(--accent-rose);">PC (Program Counter)</div>
-                                <div class="node-val" id="node-pc-val"><span class="addr-chip addr-code" style="font-size:0.95rem;">▶ @1000</span></div>
+                        <div class="latency-row">
+                            <div class="latency-header">
+                                <span style="color: var(--accent-rose); font-weight: 700;">DDR5 RAM 메인 메모리 레이턴시</span>
+                                <span style="font-family: monospace; color: var(--accent-rose); font-weight: 700;">~240 Cycles (60 ns) ➔ 파이프라인 스톨</span>
                             </div>
-
-                            <!-- Node 2: L1 Instruction Cache -->
-                            <div class="hw-node" id="node-cache" style="grid-column: 2; grid-row: 1; text-align: center; align-items: center;">
-                                <span class="node-tag">메모리 계층 (0.8ns 초고속 캐시)</span>
-                                <div class="node-title" style="color: var(--accent-amber);">L1 Instruction Cache</div>
-                                <div class="node-val" id="node-cache-val"><span class="addr-chip addr-code">▶ @1000</span> 번지: 0x0B020020 보관</div>
+                            <div class="latency-track">
+                                <div class="latency-fill" style="width: 100%; background: var(--accent-rose);"></div>
                             </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <!-- Node 3: Register File -->
-                            <div class="hw-node" id="node-reg" style="grid-column: 3; grid-row: 1;">
-                                <span class="node-tag">레지스터 보관함 (0.2ns 초고속 SRAM)</span>
-                                <div class="node-title" style="color: var(--accent-green);">Register File</div>
-                                <div class="node-val" id="node-reg-val">W1 = 15 &nbsp;|&nbsp; W2 = 27</div>
-                            </div>
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="tech-badge">인스트럭션 실행 사이클 (Instruction Execution Cycle)</div>
+                        <div class="concept-body">
+                            CPU는 하나의 명령어를 실행하기 위해 하드웨어적으로 직렬화된 4단계를 순차적으로 거칩니다:
+                            <ul class="concept-list" style="margin-top: 6px;">
+                                <li><b>Fetch (인출)</b>: PC 주소로 메모리에 요청하여 기계어를 가져오고, PC는 다음 명령어를 가리키기 위해 4바이트 증가(<span class="addr-chip addr-code">+4</span>)</li>
+                                <li><b>Decode (해독)</b>: 제어장치가 Opcode를 해독하여 내부 데이터 패스(Datapath) 스위치 개폐</li>
+                                <li><b>Execute (실행)</b>: ALU가 피연산자에 대해 산술/논리 연산 수행</li>
+                                <li><b>Writeback (기록)</b>: 계산 결과를 목적지 레지스터에 기록하여 최종 상태 전이 완료</li>
+                            </ul>
+                        </div>
+                    </div>
 
-                            <!-- Node 4: IR & Decoder -->
-                            <div class="hw-node" id="node-ir" style="grid-column: 1; grid-row: 2;">
-                                <span class="node-tag">명령어 레지스터 & 제어장치</span>
-                                <div class="node-title" style="color: var(--accent-purple);">IR & Decoder</div>
-                                <div class="node-val" id="node-ir-val">대기 중 (Ready)</div>
-                            </div>
-
-                            <!-- Node 5: ALU -->
-                            <div class="hw-node" id="node-alu" style="grid-column: 2; grid-row: 2; text-align: center; align-items: center;">
-                                <span class="node-tag">산술논리연산장치 (가산기 덧셈 회로)</span>
-                                <div class="node-title" style="color: var(--accent-blue);">ALU (Arithmetic Logic Unit)</div>
-                                <div class="node-val" id="node-alu-val">대기 중 (Ready)</div>
-                            </div>
-
-                            <!-- Node 6: Destination W0 -->
-                            <div class="hw-node" id="node-w0" style="grid-column: 3; grid-row: 2;">
-                                <span class="node-tag">최종 목적지 레지스터 (반환값)</span>
-                                <div class="node-title" style="color: var(--accent-purple);">W0 (Destination)</div>
-                                <div class="node-val" id="node-w0-val" style="font-size: 1.25rem;">0</div>
-                            </div>
-
-                            <!-- Animated Floating Packet -->
-                            <div class="chip-packet" id="s2ChipPacket" style="background: var(--accent-amber); color: #020617;">
-                                📦 데이터 패킷
-                            </div>
+                    <div class="concept-box">
+                        <div class="concept-title">🐢 메모리 스톨(Memory Stall)과 캐시 계층 구조</div>
+                        <div class="concept-body">
+                            CPU 코어가 0.25ns 주기로 고속 동작하더라도, 메인 메모리(DDR5 RAM)는 물리적 버스 거리와 커패시터 충전 시간 때문에 접근에 약 <b>60ns (240 클럭 사이클)</b>가 소요됩니다. 데이터가 도착할 때까지 파이프라인이 멈추는 **메모리 스톨(Stall)**을 방지하기 위해 CPU 내부 SRAM 기반의 <b>L1/L2/L3 캐시</b>가 필수적입니다.
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SLIDE 3: The Reality of Time (Clock & Stall) -->
+        <!-- SLIDE 3: Interactive Studio (Looping Enabled) -->
         <div class="slide" id="slide-3">
-            <h1 class="slide-title">3. 클럭(Clock)과 시간의 체감: 1사이클(0.25ns) vs RAM(60ns)</h1>
-            <p class="slide-subtitle">
-                CPU 코어는 1초에 40억 번(4.0 GHz) 진동하는 클럭 박자에 맞춰 전진합니다. <b>[클럭 펄스 1회 쿵!]</b>을 직접 눌러 RAM과의 속도 격차를 체감해 보세요.
-            </p>
+            <div class="slide-header-wrap" style="margin-bottom: 8px;">
+                <h1 class="slide-title">
+                    <span>03. 종합 인터랙티브 스튜디오: 명령어 사이클 시뮬레이터</span>
+                </h1>
+                <p class="slide-subtitle">
+                    단일 명령어(add w0, w1, w2)가 하드웨어 데이터패스를 거쳐 처리되는 전 과정을 관찰하세요.
+                </p>
+            </div>
 
-            <div class="stage-box" style="padding: 16px;">
-                <div class="clock-stage">
-                    <!-- Oscilloscope Canvas with Live Stats Overlay -->
-                    <div style="position: relative;">
-                        <canvas class="scope-canvas" id="scopeCanvas"></canvas>
-                        <div style="position: absolute; top: 10px; left: 16px; font-family: monospace; font-size: 0.85rem; color: var(--accent-green); display: flex; gap: 20px;">
-                            <span>⚡ CLOCK FREQUENCY: 4.00 GHz</span>
-                            <span>⏱ 1 CYCLE = 0.25 ns (빛 이동 거리: ~7.5cm)</span>
-                        </div>
-                        <div style="position: absolute; top: 10px; right: 16px; font-family: monospace; font-size: 0.85rem; color: var(--accent-amber); font-weight: 700;" id="clockPulseCounter">
-                            누적 클럭: 0회 펄스
-                        </div>
-                    </div>
+            <div class="anchor-bar" id="sim-anchor-bar">
+                <span class="anchor-tag">[ANCHOR]</span>
+                <span id="sim-anchor">대기 중: [다음 단계]를 눌러 4단계 사이클을 시작하세요</span>
+                <span class="badge" id="sim-badge" style="margin-left: auto;">READY</span>
+            </div>
 
-                    <!-- Latency Race Simulator -->
-                    <div class="clock-stats-grid">
-                        <!-- L1 Cache Card with Live Flash & Throughput Counter -->
-                        <div class="stat-card" style="border-left: 4px solid var(--accent-blue);">
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span style="font-weight: 800; color: var(--accent-blue); font-size: 0.95rem;">⚡ CPU 레지스터 & L1 캐시</span>
-                                <span style="font-family: monospace; color: var(--accent-green); font-weight: 800; font-size: 0.9rem;" id="l1TimeLabel">1 사이클 (0.25 ns)</span>
-                            </div>
-                            <div class="latency-bar-wrap">
-                                <div class="latency-bar-fill" id="l1ProgressFill" style="width: 0%; background: linear-gradient(90deg, #38bdf8, #4ade80);"></div>
-                                <span class="latency-bar-label" id="l1ProgressLabel">대기 중 (0건 완료)</span>
-                            </div>
-                            <div class="stat-desc" id="l1ThroughputDesc">
-                                <div>L1 연산 처리량: <b>0건</b> 완료<br><span style="color: #64748b;">(빛이 20cm 날아가는 동안 1건씩 즉시 처리 완료)</span></div>
-                            </div>
+            <div class="sim-grid" style="margin-top: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="background: var(--code-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px;">
+                        <div style="font-size: 0.72rem; color: var(--text-sub); font-weight: 700;">실행 명령어 (Arm64 기계어)</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                            <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--accent-blue);">add w0, w1, w2</span>
+                            <span class="val-card" style="color: var(--accent-amber);">0x0B020020</span>
                         </div>
-
-                        <!-- RAM Card with Interactive Live Gauge -->
-                        <div class="stat-card" style="border-left: 4px solid var(--accent-rose);">
-                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                                <span style="font-weight: 800; color: var(--accent-rose); font-size: 0.95rem;">🐢 메인 메모리 (DDR5 RAM)</span>
-                                <span style="font-family: monospace; color: var(--accent-rose); font-weight: 800; font-size: 0.9rem;" id="ramTimeLabel">240 사이클 (60.0 ns)</span>
-                            </div>
-                            <div class="latency-bar-wrap">
-                                <div class="latency-bar-fill" id="ramProgressFill" style="width: 0%; background: linear-gradient(90deg, #f43f5e, #fbbf24);"></div>
-                                <span class="latency-bar-label" id="ramProgressLabel">0 / 240 사이클 (0%)</span>
-                            </div>
-                            <div class="stat-desc" id="ramStallDesc">
-                                <div>RAM 대기: 앞으로 <b>[쿵!] 240회</b> 필요<br><span style="color: #64748b;">(CPU는 응답이 올 때까지 아무 일도 못하는 Stall 상태)</span></div>
-                            </div>
+                        <div style="font-size: 0.76rem; color: var(--text-sub); margin-top: 4px;">
+                            연산: W0 = W1(15) + W2(27) ➔ <b style="color: var(--accent-green);">42</b>
                         </div>
                     </div>
 
-                    <!-- Clock Interactive Controls -->
-                    <div class="clock-ctrl-row">
-                        <button class="action-btn" onclick="triggerClockPulse()">
-                            ⚡ 클럭 펄스 1회 쿵! (Step Pulse)
-                        </button>
-                        <button class="nav-btn" id="toggleClockBtn" onclick="toggleAutoClock()">
-                            ▶ 연속 클럭 가동 (4.0 GHz Run)
-                        </button>
-                        <button class="pill-btn" onclick="resetClockSimulator()">
-                            ↺ 클럭 리셋
-                        </button>
+                    <div class="step-cards-list">
+                        <div class="step-mini-card" id="step-card-1" onclick="jumpToStep(1)">
+                            <span>1. FETCH: PC @1000 ➔ L1 캐시 기계어 인출</span>
+                            <span id="step-pill-1" class="val-card">대기</span>
+                        </div>
+                        <div class="step-mini-card" id="step-card-2" onclick="jumpToStep(2)">
+                            <span>2. DECODE: 제어신호 생성 & W1, W2 값 추출</span>
+                            <span id="step-pill-2" class="val-card">대기</span>
+                        </div>
+                        <div class="step-mini-card" id="step-card-3" onclick="jumpToStep(3)">
+                            <span>3. EXECUTE: ALU 가산기 15 + 27 = 42 연산</span>
+                            <span id="step-pill-3" class="val-card">대기</span>
+                        </div>
+                        <div class="step-mini-card" id="step-card-4" onclick="jumpToStep(4)">
+                            <span>4. WRITEBACK: 연산 결과값 42를 W0에 래치</span>
+                            <span id="step-pill-4" class="val-card">대기</span>
+                        </div>
                     </div>
+
+                    <div style="background: rgba(18, 20, 30, 0.85); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; font-size: 0.82rem; line-height: 1.5; min-height: 54px;">
+                        <p id="sim-desc">
+                            [다음 단계] 또는 [Enter]를 눌러 하드웨어 데이터 흐름을 한 단계씩 진행하세요.
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 6px;">
+                        <button class="nav-btn" onclick="prevCycleStep()" id="sim-prev-btn">◀ 이전</button>
+                        <button class="nav-btn" style="flex: 1; justify-content: center; background: #0284c7;" onclick="nextCycleStep()" id="sim-next-btn">▶ 다음 단계 (Next)</button>
+                        <button class="nav-btn" style="background: #059669; color: white;" onclick="toggleCycleAuto()" id="sim-auto-btn">▶▶ 자동</button>
+                        <button class="nav-btn" onclick="resetCycle()">초기화</button>
+                    </div>
+                </div>
+
+                <div class="hw-stage-rack" id="hw-stage">
+                    <div class="hw-node" id="node-pc">
+                        <span class="hw-node-title">PC (Program Counter)</span>
+                        <div class="hw-node-val" id="val-pc"><span class="addr-chip addr-code">@1000</span></div>
+                    </div>
+
+                    <div class="hw-node" id="node-cache">
+                        <span class="hw-node-title">L1 Instruction Cache</span>
+                        <div class="hw-node-val" id="val-cache">0x0B020020</div>
+                    </div>
+
+                    <div class="hw-node" id="node-reg">
+                        <span class="hw-node-title">Register File (SRAM)</span>
+                        <div class="hw-node-val" id="val-reg">W1: 15 | W2: 27</div>
+                    </div>
+
+                    <div class="hw-node" id="node-dec">
+                        <span class="hw-node-title">Control Unit & Decoder</span>
+                        <div class="hw-node-val" id="val-dec">대기 중</div>
+                    </div>
+
+                    <div class="hw-node" id="node-alu">
+                        <span class="hw-node-title">ALU (Adder Circuit)</span>
+                        <div class="hw-node-val" id="val-alu">대기 중</div>
+                    </div>
+
+                    <div class="hw-node" id="node-w0">
+                        <span class="hw-node-title">Destination W0 Register</span>
+                        <div class="hw-node-val" id="val-w0" style="color: var(--accent-purple); font-size: 1.1rem;">0</div>
+                    </div>
+
+                    <div class="chip-packet" id="sim-packet">📦</div>
                 </div>
             </div>
         </div>
@@ -1072,32 +748,30 @@
     </div>
 
     <footer>
-        <button class="nav-btn" id="prevBtn" onclick="prevSlide()">◀ 이전 슬라이드</button>
-        <div style="font-size: 0.85rem; color: var(--text-sub);">키보드 방향키 [←] [→] 로 슬라이드를 넘길 수 있습니다</div>
-        <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음 슬라이드 ▶</button>
+        <button class="nav-btn" id="prevSlideBtn" onclick="prevSlide()" disabled>◀ 이전 슬라이드</button>
+        <div class="shortcut-hint">
+            ⌨️ 단축키: <b>[←] [→]</b> 슬라이드 이동 &nbsp;|&nbsp; <b>[Enter] / [↓]</b> 시뮬레이터 다음 &nbsp;|&nbsp; <b>[↑]</b> 이전 &nbsp;|&nbsp; <b>[P]</b> 자동재생 &nbsp;|&nbsp; <b>[R]</b> 초기화
+        </div>
+        <button class="nav-btn" id="nextSlideBtn" onclick="nextSlide()">다음 슬라이드 ▶</button>
     </footer>
 
     <script>
-        // SLIDE MANAGEMENT
         let currentSlide = 1;
         const totalSlides = 3;
+        let cycleStep = 0;
+        let cycleAutoTimer = null;
 
         function updateSlide() {
+            stopCycleAuto();
             document.querySelectorAll('.slide').forEach((s, idx) => {
                 s.classList.toggle('active', (idx + 1) === currentSlide);
             });
             document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
-            document.getElementById('prevBtn').disabled = (currentSlide === 1);
-            document.getElementById('nextBtn').disabled = (currentSlide === totalSlides);
+            document.getElementById('prevSlideBtn').disabled = (currentSlide === 1);
+            document.getElementById('nextSlideBtn').disabled = (currentSlide === totalSlides);
 
-            // Clean up timers on slide change
-            resetCycle();
-
-            // Slide 3 Canvas Initialization on demand & cleanup
             if (currentSlide === 3) {
-                setTimeout(resizeClockCanvas, 50);
-            } else if (clockRunning) {
-                toggleAutoClock();
+                renderCycle();
             }
         }
 
@@ -1117,647 +791,204 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight') {
-                if (currentSlide < totalSlides) nextSlide();
+                nextSlide();
             } else if (e.key === 'ArrowLeft') {
-                if (currentSlide > 1) prevSlide();
-            } else if (e.key === 'r' || e.key === 'R') {
-                if (currentSlide === 2) resetCycle();
-                else if (currentSlide === 3) resetClockSimulator();
-            } else if (e.key === ' ' || e.key === 'Enter') {
-                if (currentSlide === 2) {
+                prevSlide();
+            } else if (currentSlide === 3) {
+                if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === ' ') {
                     e.preventDefault();
                     nextCycleStep();
-                } else if (currentSlide === 3) {
-                    e.preventDefault();
-                    triggerClockPulse();
-                }
-            } else if (e.key === 'ArrowDown') {
-                if (currentSlide === 2) {
-                    e.preventDefault();
-                    nextCycleStep();
-                }
-            } else if (e.key === 'ArrowUp') {
-                if (currentSlide === 2) {
+                } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     prevCycleStep();
+                } else if (e.key.toLowerCase() === 'p') {
+                    toggleCycleAuto();
+                } else if (e.key.toLowerCase() === 'r') {
+                    resetCycle();
                 }
             }
         });
 
-        // ==========================================
-        // SLIDE 1: 32-BIT INTERACTIVE WIRE BOARD
-        // ==========================================
-        let wireBits = new Array(32).fill(0);
-
-        const wirePresets = {
-            add: {
-                hex: "HEX: 0x0B020020",
-                bin: "0000 1011 0000 0010 0000 0000 0010 0000",
-                bits: "00001011000000100000000000100000",
-                op: "ADD (더하기)", rn: "W1 레지스터", rm: "W2 레지스터", rd: "W0 레지스터"
-            },
-            mov: {
-                hex: "HEX: 0x528000A0",
-                bin: "0101 0010 1000 0000 0000 0000 1010 0000",
-                bits: "01010010100000000000000010100000",
-                op: "MOV (값 대입: #5)", rn: "없음 (즉시값)", rm: "상수 5", rd: "W0 레지스터"
-            },
-            sub: {
-                hex: "HEX: 0x4B020020",
-                bin: "0100 1011 0000 0010 0000 0000 0010 0000",
-                bits: "01001011000000100000000000100000",
-                op: "SUB (빼기)", rn: "W1 레지스터", rm: "W2 레지스터", rd: "W0 레지스터"
-            },
-            zero: {
-                hex: "HEX: 0x00000000",
-                bin: "0000 0000 0000 0000 0000 0000 0000 0000",
-                bits: "00000000000000000000000000000000",
-                op: "NOP / 0V 전선 꺼짐", rn: "0", rm: "0", rd: "0"
-            }
-        };
-
-        function toBin(val, len) {
-            return val.toString(2).padStart(len, '0');
-        }
-
-        const badgeInfo = [
-            { name: '목적지 (W0)', color: 'var(--accent-purple)' },
-            { name: '인자1 (W1)', color: 'var(--accent-green)' },
-            { name: '인자1 (W1)', color: 'var(--accent-green)' },
-            { name: 'Shift (0)', color: 'var(--text-sub)' },
-            { name: '인자2 (W2)', color: 'var(--accent-amber)' },
-            { name: 'Shift (0)', color: 'var(--text-sub)' },
-            { name: 'Opcode (ADD)', color: 'var(--accent-rose)' },
-            { name: 'Opcode (ADD)', color: 'var(--accent-rose)' }
-        ];
-
-        function initWireBoard() {
-            const grid = document.getElementById('s1-grid');
-            grid.innerHTML = '';
-            for (let n = 7; n >= 0; n--) {
-                const unit = document.createElement('div');
-                unit.className = 'nibble-unit';
-                unit.id = `nibble-unit-${n}`;
-
-                const tag = document.createElement('div');
-                tag.className = 'nibble-hex-tag';
-                tag.id = `hex-tag-${n}`;
-                tag.innerText = '0';
-                unit.appendChild(tag);
-
-                const bulbsWrap = document.createElement('div');
-                bulbsWrap.className = 'nibble-bulbs';
-
-                for (let b = 3; b >= 0; b--) {
-                    const i = n * 4 + b;
-                    const sw = document.createElement('div');
-                    sw.className = 'wire-switch';
-                    sw.id = `sw-${i}`;
-                    
-                    // Assign semantic field class
-                    if (i >= 24) sw.classList.add('field-op');
-                    else if (i >= 21) sw.classList.add('field-shift');
-                    else if (i >= 16) sw.classList.add('field-rm');
-                    else if (i >= 10) sw.classList.add('field-shift');
-                    else if (i >= 5) sw.classList.add('field-rn');
-                    else sw.classList.add('field-rd');
-
-                    sw.onclick = () => toggleWireBit(i);
-                    sw.innerHTML = `
-                        <div class="wire-bulb" id="bulb-${i}">0</div>
-                        <span class="wire-num">${i}</span>
-                    `;
-                    bulbsWrap.appendChild(sw);
-                }
-
-                unit.appendChild(bulbsWrap);
-
-                // Add field explanation badge under each nibble
-                const badge = document.createElement('div');
-                badge.className = 'nibble-field-badge';
-                badge.id = `badge-${n}`;
-                badge.innerText = badgeInfo[n].name;
-                badge.style.color = badgeInfo[n].color;
-                unit.appendChild(badge);
-
-                grid.appendChild(unit);
-            }
-            loadWirePreset('add', document.querySelector('.pill-btn.active'));
-        }
-
-        function toggleWireBit(idx) {
-            wireBits[idx] = wireBits[idx] === 1 ? 0 : 1;
-            updateWireUI();
-        }
-
-        function loadWirePreset(key, btnEl) {
-            document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
-            if (btnEl) btnEl.classList.add('active');
-
-            const p = wirePresets[key];
-            for (let i = 0; i < 32; i++) {
-                wireBits[i] = parseInt(p.bits[31 - i], 10);
-            }
-            updateWireUI();
-        }
-
-        function updateWireUI() {
-            let num = 0n;
-            for (let n = 7; n >= 0; n--) {
-                let nibbleVal = 0;
-                for (let b = 3; b >= 0; b--) {
-                    const i = n * 4 + b;
-                    const val = wireBits[i];
-                    nibbleVal = (nibbleVal << 1) | val;
-                    if (val === 1) num |= (1n << BigInt(i));
-
-                    const sw = document.getElementById(`sw-${i}`);
-                    const bulb = document.getElementById(`bulb-${i}`);
-                    if (sw && bulb) {
-                        sw.classList.toggle('on', val === 1);
-                        bulb.innerText = val;
-                    }
-                }
-                const tag = document.getElementById(`hex-tag-${n}`);
-                if (tag) {
-                    tag.innerText = nibbleVal.toString(16).toUpperCase();
-                }
-            }
-
-            const hexStr = "0x" + num.toString(16).toUpperCase().padStart(8, '0');
-            document.getElementById('s1-hex').innerText = `HEX: ${hexStr}`;
-
-            // Dynamic 5-bit Register and Opcode Parsing
-            const rdVal = (wireBits[4]<<4) | (wireBits[3]<<3) | (wireBits[2]<<2) | (wireBits[1]<<1) | wireBits[0];
-            const rnVal = (wireBits[9]<<4) | (wireBits[8]<<3) | (wireBits[7]<<2) | (wireBits[6]<<1) | wireBits[5];
-            const rmVal = (wireBits[20]<<4) | (wireBits[19]<<3) | (wireBits[18]<<2) | (wireBits[17]<<1) | wireBits[16];
-            const opVal = (wireBits[31]<<7) | (wireBits[30]<<6) | (wireBits[29]<<5) | (wireBits[28]<<4) | (wireBits[27]<<3) | (wireBits[26]<<2) | (wireBits[25]<<1) | wireBits[24];
-
-            document.getElementById('dec-rd').innerText = `W${rdVal} 레지스터`;
-            document.getElementById('dec-rd-sub').innerText = `비트 [4:0] = ${toBin(rdVal, 5)} (2진수 ${rdVal} = W${rdVal})`;
-
-            document.getElementById('dec-rn').innerText = `W${rnVal} 레지스터`;
-            document.getElementById('dec-rn-sub').innerText = `비트 [9:5] = ${toBin(rnVal, 5)} (2진수 ${rnVal} = W${rnVal})`;
-
-            document.getElementById('dec-rm').innerText = `W${rmVal} 레지스터`;
-            document.getElementById('dec-rm-sub').innerText = `비트 [20:16] = ${toBin(rmVal, 5)} (2진수 ${rmVal} = W${rmVal})`;
-
-            // Opcode breakdown
-            const opHex = "0x" + opVal.toString(16).toUpperCase().padStart(2, '0');
-            if (opVal === 0x0B) {
-                document.getElementById('dec-op').innerText = "ADD (더하기)";
-                document.getElementById('dec-op-sub').innerText = `비트 [31:24] = ${toBin(opVal, 8)} (${opHex})`;
-            } else if (opVal === 0x4B) {
-                document.getElementById('dec-op').innerText = "SUB (빼기)";
-                document.getElementById('dec-op-sub').innerText = `비트 [31:24] = ${toBin(opVal, 8)} (${opHex})`;
-            } else if (opVal === 0x52) {
-                document.getElementById('dec-op').innerText = "MOV (값 대입)";
-                document.getElementById('dec-op-sub').innerText = `비트 [31:24] = ${toBin(opVal, 8)} (${opHex})`;
-            } else if (opVal === 0x00) {
-                document.getElementById('dec-op').innerText = "0V 꺼짐 (NOP)";
-                document.getElementById('dec-op-sub').innerText = `비트: 0000 0000 (0x00)`;
-            } else {
-                document.getElementById('dec-op').innerText = `명령어 (${opHex})`;
-                document.getElementById('dec-op-sub').innerText = `비트 [31:24] = ${toBin(opVal, 8)} (${opHex})`;
-            }
-        }
-
-        // ==========================================
-        // SLIDE 2: CPU CYCLE STUDIO ENGINE
-        // ==========================================
-        let s2CurrentStep = 0;
-        let cycleTimers = [];
-
-        function clearAllCycleTimers() {
-            cycleTimers.forEach(t => clearTimeout(t));
-            cycleTimers = [];
-        }
-
-        function scheduleStep(fn, delayMs) {
-            cycleTimers.push(setTimeout(fn, delayMs));
-        }
-
-        function getNodeCenter(nodeId) {
-            const stage = document.getElementById('s2HwGrid');
-            const node = document.getElementById(nodeId);
-            if (!stage || !node) return { x: 0, y: 0 };
-            const sRect = stage.getBoundingClientRect();
-            const nRect = node.getBoundingClientRect();
-            return {
-                x: (nRect.left + nRect.width / 2) - sRect.left,
-                y: (nRect.top + nRect.height / 2) - sRect.top
-            };
-        }
-
-        function launchPacketBetween(fromNodeId, toNodeId, label, bg, color) {
-            const p = document.getElementById('s2ChipPacket');
-            if (!p) return;
-            const from = getNodeCenter(fromNodeId);
-            const to = getNodeCenter(toNodeId);
-
-            p.style.transition = 'none';
-            p.style.left = from.x + 'px';
-            p.style.top = from.y + 'px';
-            p.style.background = bg;
-            p.style.color = color;
-            p.innerText = label;
-            p.style.opacity = '0';
-            void p.offsetWidth; // Force synchronous layout reflow
-
-            p.style.transition = 'left 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.65s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease';
-            p.style.opacity = '1';
-            p.style.left = to.x + 'px';
-            p.style.top = to.y + 'px';
-        }
-
-        function hidePacket() {
-            const p = document.getElementById('s2ChipPacket');
-            if (!p) return;
-            p.style.transition = 'opacity 0.2s ease';
-            p.style.opacity = '0';
-        }
-
-        function resetCycle() {
-            clearAllCycleTimers();
-            s2CurrentStep = 0;
-
-            // Clear node glow classes
-            ['node-pc', 'node-cache', 'node-reg', 'node-ir', 'node-alu', 'node-w0'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.classList.remove('active-blue', 'active-amber', 'active-green', 'active-purple');
-                }
-            });
-
-            // Hide packet
-            hidePacket();
-
-            // Reset node hardware values
-            document.getElementById('node-pc-val').innerHTML = '<span class="addr-chip addr-code" style="font-size:0.95rem;">▶ @1000</span>';
-            document.getElementById('node-cache-val').innerHTML = '<span class="addr-chip addr-code">▶ @1000</span> 번지: 0x0B020020 보관';
-            document.getElementById('node-reg-val').innerHTML = 'W1 = 15 &nbsp;|&nbsp; W2 = 27';
-            document.getElementById('node-ir-val').innerText = '대기 중 (Ready)';
-            document.getElementById('node-alu-val').innerText = '대기 중 (Ready)';
-            document.getElementById('node-w0-val').innerText = '0';
-
-            // Reset left storyboard cards & pills
+        function clearHwHighlights() {
+            document.querySelectorAll('.hw-node').forEach(n => n.classList.remove('active-node'));
+            document.querySelectorAll('.step-mini-card').forEach(c => c.classList.remove('current'));
             for (let i = 1; i <= 4; i++) {
-                const card = document.getElementById(`step-card-${i}`);
-                const pill = document.getElementById(`step-pill-${i}`);
-                if (card) card.classList.remove('active');
-                if (pill) {
-                    pill.innerText = '대기';
+                const p = document.getElementById(`step-pill-${i}`);
+                if (p) {
+                    p.innerText = "대기";
+                    p.style.color = "var(--text-sub)";
                 }
-            }
-
-            const status = document.getElementById('s2HwStatus');
-            if (status) {
-                status.innerHTML = '<span>💡 [다음 단계 ▶] 또는 [자동 재생]을 눌러 하드웨어 데이터 흐름을 확인하세요.</span>';
             }
         }
 
-        function jumpToStep(stepNum) {
-            clearAllCycleTimers();
-            s2CurrentStep = stepNum;
-            renderStep(stepNum, true);
+        function renderCycle(triggerPacket = false) {
+            clearHwHighlights();
+
+            const anchor = document.getElementById('sim-anchor');
+            const badge = document.getElementById('sim-badge');
+            const desc = document.getElementById('sim-desc');
+            const valPc = document.getElementById('val-pc');
+            const valDec = document.getElementById('val-dec');
+            const valAlu = document.getElementById('val-alu');
+            const valW0 = document.getElementById('val-w0');
+            const nextBtn = document.getElementById('sim-next-btn');
+
+            if (cycleStep === 0) {
+                anchor.innerText = "대기 중: [다음 단계]를 눌러 1단계 FETCH를 시작하세요";
+                badge.innerText = "READY";
+                badge.style.background = "#0284c7";
+                valPc.innerHTML = '<span class="addr-chip addr-code">@1000</span>';
+                valDec.innerText = "대기 중";
+                valAlu.innerText = "대기 중";
+                valW0.innerText = "0";
+                desc.innerText = "PC가 1,000번지(@1000)를 가리키고 있습니다. 다음 단계에서 L1 캐시로부터 기계어를 인출합니다.";
+                nextBtn.innerHTML = "▶ 다음 단계 (Next)";
+            } else if (cycleStep === 1) {
+                document.getElementById('step-card-1').classList.add('current');
+                document.getElementById('step-pill-1').innerText = "진행 중";
+                document.getElementById('step-pill-1').style.color = "var(--accent-blue)";
+                document.getElementById('node-pc').classList.add('active-node');
+                document.getElementById('node-cache').classList.add('active-node');
+
+                anchor.innerText = "1단계: FETCH (인출) - PC @1000에서 기계어 인출 & PC는 @1004로 전진!";
+                badge.innerText = "FETCH";
+                badge.style.background = "var(--accent-rose)";
+                valPc.innerHTML = '<span class="addr-chip addr-code">@1004 (전진)</span>';
+                valDec.innerText = "0x0B020020 수신";
+                desc.innerText = "L1 캐시에서 기계어(0x0B020020)를 인출하고, PC는 다음 명령어를 가리키기 위해 4바이트 전진(@1004)했습니다.";
+                nextBtn.innerHTML = "▶ 다음 단계 (Next)";
+                if (triggerPacket) launchPacket('node-pc', 'node-cache', '인출', '#f43f5e', '#fff');
+            } else if (cycleStep === 2) {
+                document.getElementById('step-card-2').classList.add('current');
+                document.getElementById('step-pill-2').innerText = "진행 중";
+                document.getElementById('step-pill-2').style.color = "var(--accent-amber)";
+                document.getElementById('node-dec').classList.add('active-node');
+                document.getElementById('node-reg').classList.add('active-node');
+
+                anchor.innerText = "2단계: DECODE (해석) - ADD 연산 식별 & W1(15), W2(27) 값 추출";
+                badge.innerText = "DECODE";
+                badge.style.background = "var(--accent-amber)";
+                valDec.innerHTML = '<span style="color:var(--accent-amber);">ADD W0, W1, W2</span>';
+                valAlu.innerText = "입력: 15, 27";
+                desc.innerText = "디코더가 비트를 분석하여 덧셈(ADD) 연산임을 확인하고, 레지스터 파일에서 피연산자 W1(15)과 W2(27)를 추출했습니다.";
+                nextBtn.innerHTML = "▶ 다음 단계 (Next)";
+                if (triggerPacket) launchPacket('node-cache', 'node-dec', '해석', '#f59e0b', '#000');
+            } else if (cycleStep === 3) {
+                document.getElementById('step-card-3').classList.add('current');
+                document.getElementById('step-pill-3').innerText = "진행 중";
+                document.getElementById('step-pill-3').style.color = "var(--accent-green)";
+                document.getElementById('node-alu').classList.add('active-node');
+
+                anchor.innerText = "3단계: EXECUTE (실행) - ALU 가산기 회로에서 15 + 27 = 42 연산 완료!";
+                badge.innerText = "EXECUTE";
+                badge.style.background = "var(--accent-green)";
+                valAlu.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">15 + 27 = 42</span>';
+                desc.innerText = "ALU의 가산 회로에 전기 신호가 인가되어 15와 27의 덧셈 결과값 42가 계산되었습니다.";
+                nextBtn.innerHTML = "▶ 다음 단계 (Next)";
+                if (triggerPacket) launchPacket('node-reg', 'node-alu', '15 + 27', '#4ade80', '#000');
+            } else {
+                document.getElementById('step-card-4').classList.add('current');
+                document.getElementById('step-pill-4').innerText = "완료";
+                document.getElementById('step-pill-4').style.color = "var(--accent-purple)";
+                document.getElementById('node-w0').classList.add('active-node');
+
+                anchor.innerText = "4단계: WRITEBACK (기록) - 결과값 42를 최종 W0 레지스터에 저장 완료!";
+                badge.innerText = "WRITEBACK OK";
+                badge.style.background = "var(--accent-purple)";
+                valW0.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">42 (저장됨)</span>';
+                desc.innerText = "계산된 결과값 42가 목적지 레지스터인 W0에 영구 기록(Latch)되었습니다. 1개 명령어 사이클이 완벽히 종료되었습니다!";
+                nextBtn.innerHTML = "처음부터 다시 시작 ↺";
+                if (triggerPacket) launchPacket('node-alu', 'node-w0', 'W0 = 42', '#a98bfa', '#000');
+            }
+
+            document.getElementById('sim-prev-btn').disabled = (cycleStep === 0);
+        }
+
+        function jumpToStep(st) {
+            cycleStep = st;
+            renderCycle(true);
         }
 
         function nextCycleStep() {
-            clearAllCycleTimers();
-            if (s2CurrentStep < 4) {
-                s2CurrentStep++;
-                renderStep(s2CurrentStep, true);
+            if (cycleStep < 4) {
+                cycleStep++;
+                renderCycle(true);
             } else {
                 resetCycle();
             }
         }
 
         function prevCycleStep() {
-            clearAllCycleTimers();
-            if (s2CurrentStep > 1) {
-                s2CurrentStep--;
-                renderStep(s2CurrentStep, false);
+            if (cycleStep > 0) {
+                cycleStep--;
+                renderCycle(false);
+            }
+        }
+
+        function resetCycle() {
+            stopCycleAuto();
+            cycleStep = 0;
+            renderCycle(false);
+        }
+
+        function toggleCycleAuto() {
+            if (cycleAutoTimer) {
+                stopCycleAuto();
             } else {
-                resetCycle();
+                document.getElementById('sim-auto-btn').innerText = "⏸ 정지";
+                cycleAutoTimer = setInterval(() => {
+                    nextCycleStep();
+                }, 2200);
             }
         }
 
-        function renderStep(step, animatePacket = true) {
-            // Clear node glow classes
-            ['node-pc', 'node-cache', 'node-reg', 'node-ir', 'node-alu', 'node-w0'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.remove('active-blue', 'active-amber', 'active-green', 'active-purple');
-            });
-
-            // Update storyboard cards & pills
-            for (let i = 1; i <= 4; i++) {
-                const card = document.getElementById(`step-card-${i}`);
-                const pill = document.getElementById(`step-pill-${i}`);
-                if (card) card.classList.toggle('active', i === step);
-                if (pill) {
-                    if (i < step) pill.innerText = '완료';
-                    else if (i === step) pill.innerText = '실행 중';
-                    else pill.innerText = '대기';
-                }
-            }
-
-            const status = document.getElementById('s2HwStatus');
-
-            if (step === 1) {
-                document.getElementById('node-pc').classList.add('active-blue');
-                document.getElementById('node-cache').classList.add('active-amber');
-                document.getElementById('node-ir').classList.add('active-amber');
-                document.getElementById('node-pc-val').innerHTML = '<span class="addr-chip addr-code" style="font-size:0.95rem;">▶ @1004</span> (전진 완료!)';
-                document.getElementById('node-ir-val').innerText = '0x0B020020 (기계어 적재)';
-                status.innerHTML = '<span style="color: var(--accent-amber);">1단계 [FETCH]: L1 캐시에서 기계어(0x0B020020)를 IR에 적재하고, PC는 다음 주소 <span class="addr-chip addr-code">▶ @1004</span>로 전진했습니다.</span>';
-
-                if (animatePacket) {
-                    launchPacketBetween('node-cache', 'node-ir', '📦 기계어: 0x0B020020', 'var(--accent-amber)', '#020617');
-                    scheduleStep(() => hidePacket(), 900);
-                }
-            } else if (step === 2) {
-                document.getElementById('node-pc-val').innerHTML = '<span class="addr-chip addr-code" style="font-size:0.95rem;">▶ @1004</span>';
-                document.getElementById('node-ir').classList.add('active-amber');
-                document.getElementById('node-reg').classList.add('active-green');
-                document.getElementById('node-ir-val').innerText = 'ADD 연산 (W1, W2 ➔ W0)';
-                document.getElementById('node-reg-val').innerHTML = '<span style="color: var(--accent-green); font-weight:800;">W1=15</span> &nbsp;|&nbsp; <span style="color: var(--accent-amber); font-weight:800;">W2=27</span> 인출';
-                status.innerHTML = '<span style="color: var(--accent-green);">2단계 [DECODE]: 디코더가 기계어를 분석(ADD 판정)하고 레지스터에서 인자 W1(15)과 W2(27)를 준비했습니다.</span>';
-                hidePacket();
-            } else if (step === 3) {
-                document.getElementById('node-pc-val').innerHTML = '<span class="addr-chip addr-code" style="font-size:0.95rem;">▶ @1004</span>';
-                document.getElementById('node-ir').classList.add('active-amber');
-                document.getElementById('node-reg').classList.add('active-green');
-                document.getElementById('node-alu').classList.add('active-blue');
-                document.getElementById('node-alu-val').innerText = '15 + 27 = 42 연산 완료!';
-                status.innerHTML = '<span style="color: var(--accent-blue);">3단계 [EXECUTE]: ALU 가산기 회로가 작동하여 15 + 27 = 42 연산을 마쳤습니다.</span>';
-
-                if (animatePacket) {
-                    launchPacketBetween('node-reg', 'node-alu', '⚡ 피연산자: 15 + 27', 'var(--accent-green)', '#020617');
-                    scheduleStep(() => hidePacket(), 900);
-                }
-            } else if (step === 4) {
-                document.getElementById('node-pc-val').innerHTML = '<span class="addr-chip addr-code" style="font-size:0.95rem;">▶ @1004</span>';
-                document.getElementById('node-alu').classList.add('active-blue');
-                document.getElementById('node-w0').classList.add('active-purple');
-                document.getElementById('node-alu-val').innerText = '15 + 27 = 42 (연산 완료)';
-                document.getElementById('node-w0-val').innerText = '42 (영구 저장 완료)';
-                status.innerHTML = '<span style="color: var(--accent-purple);">4단계 [WRITEBACK]: 최종 연산 결과 42가 목적지 W0 레지스터에 영구 기록(Latch)되었습니다!</span>';
-
-                if (animatePacket) {
-                    launchPacketBetween('node-alu', 'node-w0', '🔥 결과: 42', 'var(--accent-purple)', '#ffffff');
-                    scheduleStep(() => hidePacket(), 900);
-                }
+        function stopCycleAuto() {
+            if (cycleAutoTimer) {
+                clearInterval(cycleAutoTimer);
+                cycleAutoTimer = null;
+                document.getElementById('sim-auto-btn').innerText = "▶▶ 자동";
             }
         }
 
-        function playFullCycle() {
-            resetCycle();
-            scheduleStep(() => renderStep(1, true), 100);
-            scheduleStep(() => renderStep(2, true), 1400);
-            scheduleStep(() => renderStep(3, true), 2700);
-            scheduleStep(() => renderStep(4, true), 4000);
-            scheduleStep(() => {
-                const status = document.getElementById('s2HwStatus');
-                if (status) {
-                    status.innerHTML = '<span style="color: var(--accent-green);">🎉 1개 명령어(add w0, w1, w2)의 전체 하드웨어 사이클이 성공적으로 끝났습니다!</span>';
-                }
-            }, 5200);
+        function launchPacket(fromId, toId, text, bg, color) {
+            const p = document.getElementById('sim-packet');
+            const stage = document.getElementById('hw-stage');
+            const from = document.getElementById(fromId);
+            const to = document.getElementById(toId);
+            if (!p || !stage || !from || !to) return;
+
+            const sRect = stage.getBoundingClientRect();
+            const fRect = from.getBoundingClientRect();
+            const tRect = to.getBoundingClientRect();
+
+            const fromX = (fRect.left + fRect.width / 2) - sRect.left;
+            const fromY = (fRect.top + fRect.height / 2) - sRect.top;
+            const toX = (tRect.left + tRect.width / 2) - sRect.left;
+            const toY = (tRect.top + tRect.height / 2) - sRect.top;
+
+            p.style.transition = 'none';
+            p.style.left = fromX + 'px';
+            p.style.top = fromY + 'px';
+            p.style.background = bg;
+            p.style.color = color;
+            p.innerText = text;
+            p.style.opacity = '0';
+            void p.offsetWidth;
+
+            p.style.transition = 'left 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease';
+            p.style.opacity = '1';
+            p.style.left = toX + 'px';
+            p.style.top = toY + 'px';
+
+            setTimeout(() => {
+                p.style.transition = 'opacity 0.2s ease';
+                p.style.opacity = '0';
+            }, 600);
         }
 
-        // ==========================================
-        // SLIDE 3: REAL-TIME CLOCK & LATENCY SIMULATOR
-        // ==========================================
-        let clockRunning = false;
-        let clockOffset = 0;
-        let clockPulseEnergy = 0;
-        let totalClockPulses = 0;
-        let ramProgressCycles = 0;
-        let ramCompletedHoldFrames = 0;
-        let clockRafId = null;
-        const RAM_STALL_CYCLES = 240;
-
-        function resizeClockCanvas() {
-            const canvas = document.getElementById('scopeCanvas');
-            if (!canvas) return;
-            const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : 800;
-            canvas.width = Math.max(parentWidth, 400);
-            canvas.height = 140;
-            if (!clockRunning && !clockRafId) {
-                drawClockScope();
-            }
-        }
-
-        function drawClockScope() {
-            const canvas = document.getElementById('scopeCanvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width;
-            const h = canvas.height;
-
-            ctx.fillStyle = '#020408';
-            ctx.fillRect(0, 0, w, h);
-
-            // Draw Grid Lines
-            ctx.strokeStyle = '#0f172a';
-            ctx.lineWidth = 1;
-            for (let x = 0; x < w; x += 30) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, h);
-                ctx.stroke();
-            }
-            for (let y = 0; y < h; y += 30) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(w, y);
-                ctx.stroke();
-            }
-
-            // Draw Square Wave (Clock Signal)
-            ctx.beginPath();
-            ctx.strokeStyle = clockPulseEnergy > 0 ? '#38bdf8' : '#22c55e';
-            ctx.lineWidth = clockPulseEnergy > 0 ? 3 : 2;
-            ctx.shadowBlur = clockPulseEnergy > 0 ? 15 : 8;
-            ctx.shadowColor = clockPulseEnergy > 0 ? '#38bdf8' : '#22c55e';
-
-            const period = 50;
-            const highY = 35;
-            const lowY = 105;
-
-            for (let x = 0; x < w; x++) {
-                const phase = (x + clockOffset) % period;
-                const y = phase < period / 2 ? highY : lowY;
-                if (x === 0) ctx.moveTo(x, y);
-                else {
-                    const prevPhase = (x - 1 + clockOffset) % period;
-                    const prevY = prevPhase < period / 2 ? highY : lowY;
-                    if (prevY !== y) ctx.lineTo(x, prevY);
-                    ctx.lineTo(x, y);
-                }
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            if (clockPulseEnergy > 0) {
-                clockPulseEnergy -= 0.04;
-            }
-
-            if (clockRunning) {
-                clockOffset += 4;
-                totalClockPulses++;
-                advanceRamSimulation(1);
-                clockRafId = requestAnimationFrame(drawClockScope);
-            } else if (clockPulseEnergy > 0) {
-                clockRafId = requestAnimationFrame(drawClockScope);
-            } else {
-                clockRafId = null;
-            }
-        }
-
-        function triggerClockPulse() {
-            clockPulseEnergy = 1.0;
-            // 연속 가동 중에는 이미 4.0 GHz 정속으로 루프가 돌고 있으므로,
-            // 추가 루프 중복 생성이나 가속도 중첩(오프셋 급변/카운트 중복)을 엄격히 방지합니다.
-            if (clockRunning) {
-                return;
-            }
-            clockOffset += 25; // 수동 1회 펄스 시에만 반주기 전진
-            totalClockPulses++;
-            advanceRamSimulation(1);
-            if (!clockRafId) {
-                clockRafId = requestAnimationFrame(drawClockScope);
-            }
-        }
-
-        function advanceRamSimulation(delta) {
-            const counterEl = document.getElementById('clockPulseCounter');
-            if (counterEl) {
-                counterEl.innerText = `누적 클럭: ${totalClockPulses}회 펄스 (${(totalClockPulses * 0.25).toFixed(2)} ns)`;
-            }
-
-            // --- 1. L1 Cache Dynamic Reaction & Throughput Counter ---
-            const l1Fill = document.getElementById('l1ProgressFill');
-            const l1Label = document.getElementById('l1ProgressLabel');
-            const l1Desc = document.getElementById('l1ThroughputDesc');
-
-            if (l1Fill) {
-                if (!clockRunning) {
-                    // Manual 1 pulse: Flash 0% -> 100%
-                    l1Fill.style.transition = 'none';
-                    l1Fill.style.width = '0%';
-                    void l1Fill.offsetWidth; // Force synchronous reflow
-                    l1Fill.style.transition = 'width 0.12s cubic-bezier(0, 0, 0.2, 1)';
-                    l1Fill.style.width = '100%';
-                } else {
-                    l1Fill.style.transition = 'none';
-                    l1Fill.style.width = '100%';
-                }
-            }
-            if (l1Label) {
-                l1Label.innerText = `⚡ 1 사이클 완료! (누적 ${totalClockPulses}건)`;
-            }
-            if (l1Desc) {
-                l1Desc.innerHTML = `<div>L1 연산 처리량: <b style="color: var(--accent-green);">${totalClockPulses}건</b> 완료<br><span style="color: #64748b;">(빛이 20cm 날아가는 동안 1건씩 즉시 처리 완료)</span></div>`;
-            }
-
-            // --- 2. RAM Latency Progress & Stall Counter ---
-            if (ramProgressCycles >= RAM_STALL_CYCLES) {
-                if (clockRunning) {
-                    ramCompletedHoldFrames++;
-                    // Hold 240-completion celebratory state for ~40 frames (~0.7s) before refreshing back to 0
-                    if (ramCompletedHoldFrames < 40) {
-                        return;
-                    }
-                    ramCompletedHoldFrames = 0;
-                    ramProgressCycles = 0;
-                } else {
-                    // Manual pulse: when user clicks pulse again after 240, immediately refresh to start next fetch
-                    ramProgressCycles = 0;
-                }
-            }
-
-            ramProgressCycles = Math.min(RAM_STALL_CYCLES, ramProgressCycles + delta);
-            const percent = Math.round((ramProgressCycles / RAM_STALL_CYCLES) * 100);
-
-            const fill = document.getElementById('ramProgressFill');
-            const label = document.getElementById('ramProgressLabel');
-            const desc = document.getElementById('ramStallDesc');
-
-            if (fill) fill.style.width = percent + '%';
-            if (label) label.innerText = `${ramProgressCycles} / 240 사이클 (${percent}%)`;
-
-            if (desc) {
-                if (ramProgressCycles < RAM_STALL_CYCLES) {
-                    const remaining = RAM_STALL_CYCLES - ramProgressCycles;
-                    desc.innerHTML = `<div>RAM 대기: 앞으로 <b>[쿵!] ${remaining}회</b> 필요<br><span style="color: #64748b;">(CPU는 첫 번째 데이터를 기다리며 멈춘 Stall 상태)</span></div>`;
-                } else {
-                    desc.innerHTML = `<div><span style="color: var(--accent-green); font-weight: 800;">🎉 240사이클(60ns) 완료! 겨우 1건 도착!</span><br><span style="color: #64748b;">(그동안 L1 캐시는 이미 ${totalClockPulses}건의 연산을 끝냈습니다)</span></div>`;
-                }
-            }
-        }
-
-        function resetClockSimulator() {
-            if (clockRunning) toggleAutoClock();
-            if (clockRafId) {
-                cancelAnimationFrame(clockRafId);
-                clockRafId = null;
-            }
-            totalClockPulses = 0;
-            ramProgressCycles = 0;
-            ramCompletedHoldFrames = 0;
-            clockPulseEnergy = 0;
-            clockOffset = 0;
-
-            const counterEl = document.getElementById('clockPulseCounter');
-            if (counterEl) counterEl.innerText = '누적 클럭: 0회 펄스';
-
-            // Reset L1
-            const l1Fill = document.getElementById('l1ProgressFill');
-            const l1Label = document.getElementById('l1ProgressLabel');
-            const l1Desc = document.getElementById('l1ThroughputDesc');
-            if (l1Fill) l1Fill.style.width = '0%';
-            if (l1Label) l1Label.innerText = '대기 중 (0건 완료)';
-            if (l1Desc) l1Desc.innerHTML = '<div>L1 연산 처리량: <b>0건</b> 완료<br><span style="color: #64748b;">(빛이 20cm 날아가는 동안 1건씩 즉시 처리 완료)</span></div>';
-
-            // Reset RAM
-            const fill = document.getElementById('ramProgressFill');
-            const label = document.getElementById('ramProgressLabel');
-            const desc = document.getElementById('ramStallDesc');
-
-            if (fill) fill.style.width = '0%';
-            if (label) label.innerText = '0 / 240 사이클 (0%)';
-            if (desc) desc.innerHTML = '<div>RAM 대기: 앞으로 <b>[쿵!] 240회</b> 필요<br><span style="color: #64748b;">(CPU는 첫 번째 데이터를 기다리며 멈춘 Stall 상태)</span></div>';
-
-            drawClockScope();
-        }
-
-        function toggleAutoClock() {
-            clockRunning = !clockRunning;
-            const btn = document.getElementById('toggleClockBtn');
-            if (clockRunning) {
-                btn.innerText = "⏸ 클럭 일시정지";
-                btn.style.borderColor = "var(--accent-amber)";
-                if (clockRafId) cancelAnimationFrame(clockRafId);
-                clockRafId = requestAnimationFrame(drawClockScope);
-            } else {
-                btn.innerText = "▶ 연속 클럭 가동 (4.0 GHz Run)";
-                btn.style.borderColor = "var(--card-border)";
-                if (clockRafId) {
-                    cancelAnimationFrame(clockRafId);
-                    clockRafId = null;
-                }
-            }
-        }
-
-        // Onload Initialization
-        window.onload = () => {
-            initWireBoard();
+        window.addEventListener('load', () => {
             updateSlide();
-        };
-
-        window.onresize = () => {
-            if (currentSlide === 3) resizeClockCanvas();
-        };
+        });
     </script>
 </body>
 </html>

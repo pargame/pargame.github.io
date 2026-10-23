@@ -77,18 +77,41 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       <!-- Studio 3: Virtual Memory & MMU Paging -->
       <a href="/slides/03-paging/index.html" target="_blank" rel="noopener noreferrer" class="studio-card">
         <div class="card-top">
-          <span class="studio-badge" style="color: var(--accent);">PART 03 // 6 SLIDES</span>
+          <span class="studio-badge" style="color: var(--accent);">PART 03 // 4 SLIDES</span>
           <span class="open-indicator">전체화면 ↗</span>
         </div>
         <h3>가상 메모리와 MMU 페이징</h3>
         <p class="studio-desc">
-          가상 주소가 물리 RAM으로 변환되는 4단계 Table Walk, TLB 캐시, Page Fault 처리 원리
+          128TB 독점 아파트 환상, 1,000B 낱장 책과 도서관 목차(페이지 테이블), TLB 초고속 책갈피와 Page Fault 원리
         </p>
 
         <div class="card-tags">
-          <span class="card-tag">10진수 1,000B 오프셋 보존</span>
+          <span class="card-tag">10진수 1,000B 모델</span>
           <span class="card-tag">TLB 고속 캐시</span>
-          <span class="card-tag">프로세스 메모리 격리</span>
+          <span class="card-tag">도서관 목차 변환</span>
+        </div>
+
+        <div class="card-action">
+          <span>인터랙티브 스튜디오 실행</span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
+
+      <!-- Studio 4: Call Stack & Stack Frame -->
+      <a href="/slides/04-stack/index.html" target="_blank" rel="noopener noreferrer" class="studio-card">
+        <div class="card-top">
+          <span class="studio-badge" style="color: #38bdf8;">PART 04 // 4 SLIDES</span>
+          <span class="open-indicator">전체화면 ↗</span>
+        </div>
+        <h3>함수 호출과 콜 스택</h3>
+        <p class="studio-desc">
+          함수 호출 시 스택 프레임 생성과 해제(LIFO), 높은 주소에서 낮은 주소로 자라는 메모리 구조와 스택 오버플로우
+        </p>
+
+        <div class="card-tags">
+          <span class="card-tag">스택 프레임(SP & FP)</span>
+          <span class="card-tag">복귀 주소(Return Address)</span>
+          <span class="card-tag">스택 오버플로우 시뮬레이터</span>
         </div>
 
         <div class="card-action">

@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Architecture: Call Stack & Stack Frame Studio</title>
+    <style>
+        :root {
+            --bg-color: #0b0d14;
+            --card-bg: #12141e;
+            --card-border: #222636;
+            --accent-blue: #3ddcf7;
+            --accent-green: #4ade80;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-purple: #a98bfa;
+            --text-main: #ebeef5;
+            --text-sub: #82889a;
+            --code-bg: #07090e;
+            --glow-blue: rgba(61, 220, 247, 0.35);
+            --glow-green: rgba(74, 222, 128, 0.35);
+            --glow-amber: rgba(245, 158, 11, 0.35);
+            --glow-rose: rgba(244, 63, 94, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro", "Pretendard", monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            user-select: none;
+        }
+
+        /* Top Header */
+        header {
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #0284c7;
+            color: white;
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .slide-progress {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-family: monospace;
+        }
+
+        /* Presentation Container */
+        .presentation-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 12px 18px;
+            min-height: 0;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            max-width: 1180px;
+            max-height: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 20px 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.25s ease-out;
+            position: relative;
+            overflow-y: auto;
+            box-sizing: border-box;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-header-wrap {
+            margin-bottom: 14px;
+            flex-shrink: 0;
+        }
+
+        .slide-title {
+            font-size: 1.55rem;
+            font-weight: 800;
+            margin-bottom: 3px;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slide-subtitle {
+            font-size: 0.92rem;
+            color: var(--text-sub);
+            line-height: 1.45;
+        }
+
+        /* 2-Column Theory Layout */
+        .theory-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        .diagram-card {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .concept-box {
+            background: rgba(18, 20, 30, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .concept-box b {
+            color: var(--accent-blue);
+        }
+
+        .analogy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--accent-amber);
+            font-weight: 700;
+            font-size: 0.76rem;
+            margin-bottom: 6px;
+        }
+
+        .concept-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .concept-body {
+            font-size: 0.84rem;
+            color: var(--text-main);
+            line-height: 1.55;
+        }
+
+        .concept-list {
+            margin-left: 16px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* Address Chip & Value Card */
+        .addr-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.82em;
+            font-weight: 700;
+            border-radius: 5px;
+            line-height: 1.2;
+            vertical-align: middle;
+            letter-spacing: 0.4px;
+        }
+        .addr-stack {
+            background: rgba(61, 220, 247, 0.15);
+            color: var(--accent-blue);
+            border: 1.5px solid rgba(61, 220, 247, 0.55);
+        }
+        .addr-code {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1.5px solid rgba(244, 63, 94, 0.55);
+        }
+        .addr-heap {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--accent-green);
+            border: 1.5px solid rgba(74, 222, 128, 0.55);
+        }
+
+        .val-card {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: var(--text-main);
+        }
+
+        /* Memory Tower Visualizer for Slide 1 */
+        .mem-tower {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #090c14;
+        }
+        .tower-section {
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tower-stack {
+            background: rgba(61, 220, 247, 0.12);
+            border-left: 4px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+        .tower-free {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-sub);
+            padding: 18px 12px;
+            font-style: italic;
+            text-align: center;
+            justify-content: center;
+            border-left: 4px dashed var(--card-border);
+        }
+        .tower-heap {
+            background: rgba(74, 222, 128, 0.1);
+            border-left: 4px solid var(--accent-green);
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+        .tower-data {
+            background: rgba(245, 158, 11, 0.08);
+            border-left: 4px solid var(--accent-amber);
+            color: var(--accent-amber);
+        }
+        .tower-code {
+            background: rgba(244, 63, 94, 0.1);
+            border-left: 4px solid var(--accent-rose);
+            color: var(--accent-rose);
+            font-weight: 700;
+        }
+
+        /* Stack Frame Anatomy Visualizer for Slide 2 */
+        .frame-anatomy {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 420px;
+            border: 2px solid var(--accent-blue);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(61, 220, 247, 0.15);
+        }
+        .frame-header-tag {
+            background: rgba(61, 220, 247, 0.25);
+            padding: 6px 12px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            color: var(--accent-blue);
+            display: flex;
+            justify-content: space-between;
+        }
+        .frame-row {
+            padding: 7px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: #0d111d;
+        }
+        .frame-row.highlight-ret {
+            background: rgba(244, 63, 94, 0.15);
+            border-left: 3px solid var(--accent-rose);
+        }
+        .frame-row.highlight-fp {
+            background: rgba(169, 139, 250, 0.15);
+            border-left: 3px solid var(--accent-purple);
+        }
+        .frame-row.highlight-local {
+            background: rgba(61, 220, 247, 0.1);
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        /* Slide 4 Simulator Grid */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .code-view {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .code-line {
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            color: var(--text-sub);
+        }
+
+        .code-line.current {
+            background: rgba(61, 220, 247, 0.18);
+            border-left: 3px solid var(--accent-blue);
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .anchor-bar {
+            background: rgba(61, 220, 247, 0.08);
+            border: 1px solid rgba(61, 220, 247, 0.25);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            height: 36px;
+            min-height: 36px;
+            max-height: 36px;
+        }
+
+        .anchor-bar .anchor-tag {
+            color: var(--accent-blue);
+            font-weight: 800;
+            font-family: monospace;
+        }
+
+        .state-panel {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .state-panel-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .reg-cluster {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .reg-item {
+            background: #0f1422;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .reg-name {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--text-sub);
+        }
+        .reg-val {
+            font-size: 0.8rem;
+            font-family: monospace;
+            font-weight: 700;
+        }
+
+        .desc-panel {
+            background: rgba(18, 20, 30, 0.85);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            min-height: 64px;
+        }
+
+        /* Stack Visualizer Rack */
+        .stack-rack-container {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stack-rack-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            font-family: monospace;
+            color: var(--text-sub);
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 4px;
+        }
+
+        .stack-rack {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: flex-start;
+            min-height: 250px;
+            position: relative;
+        }
+
+        .stack-frame-box {
+            border: 1.5px solid var(--accent-blue);
+            background: rgba(61, 220, 247, 0.08);
+            border-radius: 6px;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: slideDown 0.25s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .frame-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .frame-items-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .frame-mini-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 0.72rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .frame-mini-label {
+            color: var(--text-sub);
+            font-size: 0.65rem;
+        }
+
+        .guard-line {
+            border-top: 2px dashed var(--accent-rose);
+            margin-top: auto;
+            padding-top: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: var(--accent-rose);
+            font-weight: 800;
+            font-family: monospace;
+        }
+
+        /* Shake animation for stack overflow */
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+
+        .overflow-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(244, 63, 94, 0.2);
+            backdrop-filter: blur(4px);
+            border: 2px solid var(--accent-rose);
+            border-radius: 8px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            z-index: 50;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .overflow-overlay.active {
+            display: flex;
+        }
+
+        /* Scenario Buttons */
+        .scenario-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .btn-scenario {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-sub);
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-scenario:hover {
+            border-color: var(--accent-blue);
+            color: var(--text-main);
+        }
+        .btn-scenario.active {
+            background: rgba(61, 220, 247, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            font-weight: 800;
+        }
+
+        /* Nav Buttons */
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-blue);
+        }
+        .nav-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        /* Footer */
+        footer {
+            padding: 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            z-index: 100;
+        }
+
+        .shortcut-hint {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            font-family: monospace;
+        }
+        .shortcut-hint b {
+            color: var(--accent-blue);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <span class="badge">CORE CS PART 04</span>
+            <span>Call Stack & Stack Frame Studio</span>
+        </div>
+        <div class="slide-progress" id="slideIndicator">Slide 1 / 4</div>
+    </header>
+
+    <!-- Main Presentation Container -->
+    <div class="presentation-container">
+
+        <!-- SLIDE 1: Concept of Stack Memory & LIFO -->
+        <div class="slide active" id="slide-1">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>01. 스택 메모리의 개념과 LIFO 원리</span>
+                </h1>
+                <p class="slide-subtitle">
+                    왜 컴퓨터는 함수를 실행할 때 메모리를 '접시 쌓기'처럼 관리할까요? 높은 주소에서 낮은 주소로 자라나는 원리
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Diagram -->
+                <div class="diagram-card">
+                    <div class="mem-tower">
+                        <div class="tower-section tower-stack">
+                            <span>🔻 스택 영역 (Stack) - 아래로 자람 (↓)</span>
+                            <span class="addr-chip addr-stack">@8000 (Top of Memory)</span>
+                        </div>
+                        <div class="tower-section tower-free">
+                            <span>자유 공간 (Free Memory Gap) - 스택과 힙이 서로 마주보며 성장</span>
+                        </div>
+                        <div class="tower-section tower-heap">
+                            <span>🔺 힙 영역 (Heap) - 위로 자람 (↑)</span>
+                            <span class="addr-chip addr-heap">@3000 (동적 할당)</span>
+                        </div>
+                        <div class="tower-section tower-data">
+                            <span>데이터 영역 (BSS / Data)</span>
+                            <span class="val-card">전역·정적 변수</span>
+                        </div>
+                        <div class="tower-section tower-code">
+                            <span>코드 영역 (Text/Code)</span>
+                            <span class="addr-chip addr-code">@1000 (기계어 명령어)</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
+                        스택은 메모리의 가장 높은 번지(<span class="addr-chip addr-stack">@8000</span>)에서 시작해 데이터가 쌓일 때마다 <span class="addr-chip addr-stack">@7984</span>, <span class="addr-chip addr-stack">@7968</span>처럼 <b>아래로 감소</b>합니다.
+                    </div>
+                </div>
+
+                <!-- Right: Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="analogy-badge">🍽️ 일상 비유: 뷔페의 접시 쌓기 (LIFO)</div>
+                        <div class="concept-body">
+                            뷔페에서 접시를 채울 때 맨 위에 얹고(Push), 손님도 맨 위 접시부터 집어가듯(Pop), <b>가장 나중에 호출된 함수가 가장 먼저 실행을 마치고 나가는 원리(Last-In, First-Out)</b>와 완벽히 같습니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">💡 왜 스택은 높은 주소에서 낮은 주소로 자랄까요?</div>
+                        <div class="concept-body">
+                            프로세스 메모리를 가장 알뜰하게 쓰기 위해서입니다. 자유롭게 크기가 늘어나는 <b>힙(Heap)</b>은 아래에서 위로 자라고, <b>스택(Stack)</b>은 맨 위에서 아래로 자라납니다. 서로 마주보고 자라기 때문에 사전 경계 없이 빈 메모리를 유연하게 나눠 쓸 수 있습니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">⚙️ CPU 레지스터: Stack Pointer (SP)</div>
+                        <div class="concept-body">
+                            CPU의 <code>SP</code>(스택 포인터) 레지스터는 항상 <b>현재 스택의 맨 꼭대기(가장 낮은 주소)</b>를 실시간으로 가리킵니다.
+                            <ul class="concept-list" style="margin-top: 6px;">
+                                <li><b>함수 호출 시 (Push)</b>: <code>SP = SP - 프레임 크기</code> (주소 감소)</li>
+                                <li><b>함수 반환 시 (Pop)</b>: <code>SP = SP + 프레임 크기</code> (주소 복원)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Stack Frame Anatomy & Registers -->
+        <div class="slide" id="slide-2">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>02. 스택 프레임의 해부도와 FP, SP 레지스터</span>
+                </h1>
+                <p class="slide-subtitle">
+                    함수 하나가 실행될 때 메모리에는 어떤 정보들이 블록처럼 포장될까요? 기준점(FP)과 꼭대기(SP)의 협력
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Diagram -->
+                <div class="diagram-card">
+                    <div class="frame-anatomy">
+                        <div class="frame-header-tag">
+                            <span>📦 스택 프레임 단면도 (Stack Frame)</span>
+                            <span>높은 주소 (위) ➔ 낮은 주소 (아래)</span>
+                        </div>
+                        <div class="frame-row">
+                            <span>매개변수 (Arguments)</span>
+                            <span class="val-card">a = 10, b = 20</span>
+                        </div>
+                        <div class="frame-row highlight-ret">
+                            <span>복귀 주소 (Return Address / LR)</span>
+                            <span class="addr-chip addr-code">PC @1020 (돌아갈 코드)</span>
+                        </div>
+                        <div class="frame-row highlight-fp">
+                            <span>이전 프레임 포인터 (Saved FP) ⚓</span>
+                            <span class="addr-chip addr-stack">@8000 (부모의 FP)</span>
+                        </div>
+                        <div class="frame-row highlight-local">
+                            <span>지역 변수 (Local Variables)</span>
+                            <span class="val-card">int sum = 30</span>
+                        </div>
+                        <div class="frame-row" style="background: rgba(61, 220, 247, 0.2); font-weight: 700;">
+                            <span>현재 스택 꼭대기 (Top of Stack)</span>
+                            <span class="addr-chip addr-stack">SP ➔ @7936</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
+                        함수 내에서 값이 계속 바뀌어도 <b>FP(Frame Pointer)</b>라는 고정 닻을 기준으로 <code>FP - 8</code>, <code>FP - 16</code>처럼 안정적으로 지역 변수를 찾아냅니다.
+                    </div>
+                </div>
+
+                <!-- Right: Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">🧩 스택 프레임의 3대 핵심 구성 요소</div>
+                        <ul class="concept-list">
+                            <li><b>복귀 주소 (Return Address)</b>: 함수가 끝났을 때 CPU가 어느 코드 번지(PC)로 되돌아가 실행을 이어갈지 적어둔 메모리 표식입니다.</li>
+                            <li><b>이전 프레임 포인터 (Saved FP)</b>: 나를 부른 부모 함수의 기준점 위치를 기록해 두어, 함수 반환 시 부모의 프레임을 단번에 복원합니다.</li>
+                            <li><b>지역 변수 및 임시 값 (Locals)</b>: 함수 안에서 선언된 변수들이 자리 잡으며, 함수가 반환되면 1초 만에 일괄 해제됩니다.</li>
+                        </ul>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">⚓ FP(Frame Pointer) vs SP(Stack Pointer)의 차이</div>
+                        <div class="concept-body">
+                            <code>SP</code>는 수식 계산이나 추가 push에 따라 시시각각 위아래로 움직입니다. 만약 기준점 없이 SP로만 변수를 찾으려면 오프셋 계산이 복잡해집니다. 컴파일러는 함수 진입 시점의 위치를 <b>FP(x29 레지스터)</b>에 고정시켜 흔들림 없는 닻으로 사용합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">⚡ 초고속 메모리 할당의 비결</div>
+                        <div class="concept-body">
+                            스택에서의 메모리 할당은 힙(malloc)처럼 복잡한 빈 공간 탐색이 전혀 없습니다. 단지 <b>CPU 레지스터 값을 한 번 빼거나 더하는 것(<code>sub sp, sp, #32</code>)</b>만으로 0.001나노초 만에 할당과 해제가 끝납니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Stack Overflow & Protection -->
+        <div class="slide" id="slide-3">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>03. 스택 오버플로우(Stack Overflow)와 방어 기법</span>
+                </h1>
+                <p class="slide-subtitle">
+                    함수가 끝나지 않고 계속 스택을 쌓으면 어떤 일이 벌어질까요? 한계선(Limit) 돌파와 운영체제의 보호막
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Diagram -->
+                <div class="diagram-card">
+                    <div class="mem-tower" style="max-width: 420px;">
+                        <div class="tower-section tower-stack">
+                            <span>정상 스택 영역 (Normal Stack)</span>
+                            <span class="addr-chip addr-stack">@8000 ~ @7400</span>
+                        </div>
+                        <div class="tower-section" style="background: rgba(244, 63, 94, 0.15); border-left: 4px solid var(--accent-rose); color: var(--accent-rose); font-weight: 700;">
+                            <span>⚠️ 스택 한계선 (Stack Limit 경계)</span>
+                            <span class="addr-chip addr-code">@7200</span>
+                        </div>
+                        <div class="tower-section" style="background: rgba(244, 63, 94, 0.25); border: 1.5px dashed var(--accent-rose); color: var(--accent-rose); font-weight: 800; justify-content: center; padding: 14px 10px;">
+                            <span>💥 GUARD PAGE (접근 금지 보호벽)</span>
+                        </div>
+                        <div class="tower-section tower-free">
+                            <span>침범 방지 격리 구역 (보호선)</span>
+                        </div>
+                        <div class="tower-section tower-heap">
+                            <span>힙 메모리 영역 (Heap)</span>
+                            <span class="addr-chip addr-heap">@3000 ~ @4500</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
+                        재귀 호출이 무한 반복되어 스택이 <span class="addr-chip addr-code">@7200</span> 가드 페이지를 밟는 순간, MMU 하드웨어 트랩이 터지며 OS가 프로세스를 강제 종료합니다.
+                    </div>
+                </div>
+
+                <!-- Right: Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">🚨 왜 스택 오버플로우가 발생할까요?</div>
+                        <ul class="concept-list">
+                            <li><b>탈출 조건 없는 무한 재귀 (Infinite Recursion)</b>: <code>if (n == 0) return;</code> 같은 종료 조건이 빠져 함수가 자신을 끝없이 호출할 때.</li>
+                            <li><b>과도하게 큰 지역 변수 선언</b>: 스택 크기는 보통 수 MB(macOS 약 8MB)로 제한적인데, <code>int big[2000000];</code>처럼 거대한 배열을 스택에 할당할 때.</li>
+                        </ul>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">🛡️ 운영체제의 안전장치: 가드 페이지 (Guard Page)</div>
+                        <div class="concept-body">
+                            스택이 무한정 커져서 힙(Heap)이나 중요한 시스템 메모리를 덮어쓰지 못하도록, OS는 스택 끝자락에 <b>읽기·쓰기가 전면 차단된 빈 페이지(Guard Page)</b>를 심어둡니다. CPU가 이 주소를 건드리면 즉각 하드웨어 Fault가 발생하여 <b>Segmentation Fault (SIGSEGV)</b>로 안전하게 종료됩니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">🐤 컴파일러의 보초병: 스택 카나리 (Stack Canary)</div>
+                        <div class="concept-body">
+                            과거 해커들이 버퍼 오버플로우로 복귀 주소(Return Address)를 조작해 악성 코드로 점프시키는 해킹을 막기 위해, 컴파일러는 복귀 주소 바로 앞에 무작위 비밀값(카나리)을 심어둡니다. 함수 종료 직전 이 값이 1비트라도 바뀌었다면 공격으로 간주하고 프로세스를 자폭시킵니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Interactive Studio (Call Stack Simulator) -->
+        <div class="slide" id="slide-4">
+            <div class="slide-header-wrap" style="margin-bottom: 10px;">
+                <h1 class="slide-title">
+                    <span>04. 종합 인터랙티브 스튜디오: 콜 스택 시뮬레이터</span>
+                </h1>
+                <p class="slide-subtitle">
+                    코드 실행에 따라 스택 프레임이 생기고 사라지는 물리적 과정을 직접 단계별로 조작하며 관찰하세요.
+                </p>
+            </div>
+
+            <!-- Scenario Selection -->
+            <div class="scenario-selector">
+                <button class="btn-scenario active" onclick="simSetScenario(0)">1. 표준 함수 호출 (main ➔ calc ➔ add)</button>
+                <button class="btn-scenario" onclick="simSetScenario(1)">2. 무한 재귀 & 스택 오버플로우</button>
+                <button class="btn-scenario" onclick="simSetScenario(2)">3. 지역 변수의 수명과 댕글링 포인터</button>
+            </div>
+
+            <!-- Anchor Bar -->
+            <div class="anchor-bar" id="sim-anchor-bar">
+                <span class="anchor-tag">[ANCHOR]</span>
+                <span id="sim-anchor">대기 중: [다음 단계]를 눌러 시뮬레이션을 시작하세요</span>
+                <span class="badge" id="sim-badge" style="margin-left: auto;">READY</span>
+            </div>
+
+            <div class="sim-grid" style="margin-top: 10px;">
+                <!-- Left: Code & Registers -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Code View -->
+                    <div class="code-view" id="sim-code-view">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- CPU Register Status -->
+                    <div class="state-panel">
+                        <div class="state-panel-title">
+                            <span>CPU CORE REGISTERS (ARM64)</span>
+                            <span style="color: var(--accent-blue);">10진수 물리 주소 맵</span>
+                        </div>
+                        <div class="reg-cluster">
+                            <div class="reg-item">
+                                <span class="reg-name">PC (명령어)</span>
+                                <span class="reg-val" id="reg-pc"><span class="addr-chip addr-code">@1000</span></span>
+                            </div>
+                            <div class="reg-item">
+                                <span class="reg-name">SP (스택 꼭대기)</span>
+                                <span class="reg-val" id="reg-sp"><span class="addr-chip addr-stack">@8000</span></span>
+                            </div>
+                            <div class="reg-item">
+                                <span class="reg-name">FP (프레임 닻)</span>
+                                <span class="reg-val" id="reg-fp"><span class="addr-chip addr-stack">@8000</span></span>
+                            </div>
+                            <div class="reg-item">
+                                <span class="reg-name">LR (복귀 주소)</span>
+                                <span class="reg-val" id="reg-lr"><span class="addr-chip addr-code">-</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="desc-panel">
+                        <p id="sim-desc">
+                            [다음 단계] 또는 [Enter]를 눌러 함수 호출(Call)과 반환(Return)에 따른 스택 프레임의 변화를 관찰하세요.
+                        </p>
+                    </div>
+
+                    <!-- Sim Navigation -->
+                    <div style="display: flex; gap: 6px;">
+                        <button class="nav-btn" onclick="simPrev()" id="sim-prev-btn">◀ 이전</button>
+                        <button class="nav-btn" style="flex: 1; justify-content: center; background: #0284c7;" onclick="simNext()" id="sim-next-btn">▶ 다음 단계 (Next)</button>
+                        <button class="nav-btn" style="background: #059669; color: white;" onclick="simToggleAuto()" id="sim-auto-btn">▶▶ 자동</button>
+                        <button class="nav-btn" onclick="simReset()">초기화</button>
+                    </div>
+                </div>
+
+                <!-- Right: Stack Memory Rack Visualizer -->
+                <div class="stack-rack-container" id="stack-rack-wrap">
+                    <div class="stack-rack-header">
+                        <span>STACK MEMORY RACK (TOP: 높은 주소 @8000 ➔ BOTTOM: 낮은 주소 @7200)</span>
+                        <span id="stack-usage-badge">USAGE: 1 FRAME</span>
+                    </div>
+
+                    <div class="stack-rack" id="stack-rack">
+                        <!-- Dynamic Frames Rendered Here -->
+                    </div>
+
+                    <div class="guard-line">
+                        <span>🛡️ GUARD PAGE LIMIT (@7200)</span>
+                        <span>[접근 금지 하드웨어 보호선]</span>
+                    </div>
+
+                    <!-- Overflow Alert Overlay -->
+                    <div class="overflow-overlay" id="overflow-overlay">
+                        <span style="font-size: 2rem;">💥</span>
+                        <h2 style="color: var(--accent-rose); font-size: 1.25rem;">STACK OVERFLOW DETECTED</h2>
+                        <p style="font-size: 0.82rem; text-align: center; max-width: 320px; line-height: 1.5; color: var(--text-main);">
+                            스택이 한계선(@7200)을 돌파하여 <b>Guard Page</b>를 침범했습니다!<br>
+                            CPU MMU가 <b>Data Abort 동기 예외</b>를 발생시켜 OS가 프로세스를 <b>SIGSEGV</b>로 강제 종료했습니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer Controls -->
+    <footer>
+        <button class="nav-btn" id="prevSlideBtn" onclick="prevSlide()" disabled>◀ 이전 슬라이드</button>
+        <div class="shortcut-hint">
+            ⌨️ 단축키: <b>[←] [→]</b> 슬라이드 이동 &nbsp;|&nbsp; <b>[Enter] / [↓]</b> 시뮬레이터 다음 &nbsp;|&nbsp; <b>[↑]</b> 이전 &nbsp;|&nbsp; <b>[P]</b> 자동재생 &nbsp;|&nbsp; <b>[R]</b> 초기화
+        </div>
+        <button class="nav-btn" id="nextSlideBtn" onclick="nextSlide()">다음 슬라이드 ▶</button>
+    </footer>
+
+    <!-- Interactive Simulator Logic -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+        let simScenario = 0;
+        let simStep = 0;
+        let simAutoTimer = null;
+
+        const SCENARIOS = [
+            {
+                title: "표준 함수 호출",
+                maxStep: 10,
+                code: [
+                    "// main() ➔ calculate(10, 20) ➔ add(10, 20)",
+                    "int main() {                   // ★ Step 0: 프로그램 시작 진입점", // 1
+                    "    int x = 10, y = 20;        // ★ Step 1: 지역 변수 초기화", // 2
+                    "    int res = calculate(x, y); // ★ Step 2: 호출문 도달 / Step 9: 복귀", // 3
+                    "    return 0;                  // ★ Step 10: main 종료", // 4
+                    "}",                                           // 5
+                    "int calculate(int a, int b) {  // ★ Step 3: calculate 진입", // 6
+                    "    int sum = add(a, b);       // ★ Step 4: add 호출 / Step 7: 복귀", // 7
+                    "    return sum;                // ★ Step 8: calculate 반환문", // 8
+                    "}",                                           // 9
+                    "int add(int p, int q) {        // ★ Step 5: add 진입", // 10
+                    "    return p + q;              // ★ Step 6: 덧셈 및 반환 준비", // 11
+                    "}"                                            // 12
+                ]
+            },
+            {
+                title: "무한 재귀 호출",
+                maxStep: 6,
+                code: [
+                    "// 탈출 조건(Base Case)이 누락된 무한 재귀 함수",
+                    "void recurse(int count) {",                   // 1: 재귀 진입 (Step 2)
+                    "    int buf[16];                // 프레임당 64B 소모", // 2
+                    "    // IF (count <= 0) RETURN;  <-- 탈출 조건 누락! (Step 3)", // 3
+                    "    recurse(count + 1);         // @1108: 누적 (Step 4, 5, 6)", // 4
+                    "}",                                           // 5
+                    "int main() {                   // ★ Step 0: 프로그램 시작 진입점", // 6
+                    "    recurse(1);                 // ★ Step 1: 최초 호출문 도달", // 7
+                    "    return 0;",                               // 8
+                    "}"                                            // 9
+                ]
+            },
+            {
+                title: "지역 변수 수명 & 댕글링 포인터",
+                maxStep: 7,
+                code: [
+                    "// 함수 반환 후 스택 지역 변수 주소 반환 버그",
+                    "int* get_dangling() {",                        // 1: 함수 진입 (Step 2)
+                    "    int local_val = 42;         // @1202: 지역 변수 할당", // 2: 할당 (Step 3)
+                    "    return &local_val;          // @1204: 스택 주소 반환!", // 3: 반환문 (Step 4)
+                    "}",                                            // 4
+                    "int main() {",                                 // 5: 프로그램 시작점 (Step 0)
+                    "    int* ptr = get_dangling();  // @1208: 호출 (Step 1) / 복귀 (Step 5)", // 6
+                    "    other_function();           // @1216: 새 프레임 할당 (Step 6)", // 7
+                    "    printf(\"%d\", *ptr);       // @1220: 오염된 역참조! (Step 7)", // 8
+                    "}"                                             // 9
+                ]
+            }
+        ];
+
+        function updateSlide() {
+            simStopAuto();
+            document.querySelectorAll('.slide').forEach((s, idx) => {
+                s.classList.toggle('active', (idx + 1) === currentSlide);
+            });
+            document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevSlideBtn').disabled = (currentSlide === 1);
+            document.getElementById('nextSlideBtn').disabled = (currentSlide === totalSlides);
+
+            if (currentSlide === 4) {
+                simRender();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Global Keydown Handler
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (currentSlide === 4) {
+                if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === ' ') {
+                    e.preventDefault();
+                    simNext();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    simPrev();
+                } else if (e.key.toLowerCase() === 'p') {
+                    simToggleAuto();
+                } else if (e.key.toLowerCase() === 'r') {
+                    simReset();
+                }
+            }
+        });
+
+        // ==========================================
+        // SLIDE 4 SIMULATOR ENGINE
+        // ==========================================
+        function simSetScenario(sc) {
+            simScenario = sc;
+            document.querySelectorAll('#slide-4 .btn-scenario').forEach((b, idx) => {
+                b.classList.toggle('active', idx === sc);
+            });
+            simReset();
+        }
+
+        function simRenderCodeView(activeLineIdx) {
+            const view = document.getElementById('sim-code-view');
+            const lines = SCENARIOS[simScenario].code;
+            view.innerHTML = lines.map((l, idx) => {
+                const isCurr = (idx === activeLineIdx);
+                return `<div class="code-line ${isCurr ? 'current' : ''}">
+                    <span>${escapeHtml(l)}</span>
+                    ${isCurr ? '<span style="font-size:0.7em;">▶ ACTIVE</span>' : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function simRender() {
+            const anchor = document.getElementById('sim-anchor');
+            const badge = document.getElementById('sim-badge');
+            const regPc = document.getElementById('reg-pc');
+            const regSp = document.getElementById('reg-sp');
+            const regFp = document.getElementById('reg-fp');
+            const regLr = document.getElementById('reg-lr');
+            const desc = document.getElementById('sim-desc');
+            const rack = document.getElementById('stack-rack');
+            const usage = document.getElementById('stack-usage-badge');
+            const overlay = document.getElementById('overflow-overlay');
+            const rackWrap = document.getElementById('stack-rack-wrap');
+            const guardLine = document.querySelector('.guard-line');
+
+            overlay.classList.remove('active');
+            rackWrap.classList.remove('shake');
+
+            // 가드 라인 주소 동적 동기화
+            if (guardLine) {
+                if (simScenario === 1) {
+                    guardLine.innerHTML = '<span>🛡️ GUARD PAGE LIMIT (@1000)</span><span>[접근 금지 하드웨어 보호선]</span>';
+                } else {
+                    guardLine.innerHTML = '<span>🛡️ GUARD PAGE LIMIT (@7200)</span><span>[접근 금지 하드웨어 보호선]</span>';
+                }
+            }
+
+            if (simScenario === 0) {
+                // Scenario 0: Standard Call Pipeline (Step 0 ~ 10, maxStep: 10)
+                if (simStep === 0) {
+                    // ★ Step 0: main() 머리 (프로그램 시작 진입점)
+                    simRenderCodeView(1);
+                    anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 및 스택 프레임 생성 (SP: @8000)";
+                    badge.innerText = "MAIN INIT";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1000</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "프로그램 진입점 main()이 가장 먼저 시작되어 OS로부터 @8000 번지를 스택 시작점으로 할당받았습니다. 지역 변수 초기화를 준비합니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box">
+                            <div class="frame-bar">
+                                <span>📦 FRAME: main() [프로그램 시작 진입점]</span>
+                                <span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span>None (OS)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next</span><span>변수 x, y 초기화 대기</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--accent-blue);">정상 실행 중</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 1) {
+                    // ★ Step 1: 지역 변수 x=10, y=20 초기화
+                    simRenderCodeView(2);
+                    anchor.innerText = "[Step 1] main() 지역 변수 x=10, y=20 스택 프레임에 초기화";
+                    badge.innerText = "LOCAL INIT";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1008</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "main()의 지역 변수 x=10, y=20이 스택 프레임의 오프셋 위치에 저장되었습니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box">
+                            <div class="frame-bar">
+                                <span>📦 FRAME: main()</span>
+                                <span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Local [x]</span><span class="val-card">10</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Local [y]</span><span class="val-card">20</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span>초기화 완료</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 2) {
+                    // ★ Step 2: calculate(x, y) 호출문 도달 (CALL 직전)
+                    simRenderCodeView(3);
+                    anchor.innerText = "[Step 2] calculate(x, y) 호출문 도달 ➔ CALL 실행 준비 (PC: @1016)";
+                    badge.innerText = "CALL PREPARE";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1016</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "main()에서 calculate(x, y)를 호출하기 직전입니다. 인자 x(10), y(20)를 레지스터에 준비합니다. 아직 CALL이 실행되기 전이므로 스택에는 main() 프레임 1개만 존재합니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000 - CALL 직전)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: #0284c7;">
+                            <div class="frame-bar">
+                                <span>📦 FRAME: main() [CALL @1016 직전]</span>
+                                <span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Local [x, y]</span><span>10, 20</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next Action</span><span style="color:var(--accent-blue);">CALL calculate ⚡</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 3) {
+                    // ★ Step 3: calculate 진입 및 새 프레임 할당
+                    simRenderCodeView(6);
+                    anchor.innerText = "[Step 3] calculate() 진입 ➔ 새 스택 프레임 생성 (SP: @8000 ➔ @7936)";
+                    badge.innerText = "ENTER CALC";
+                    badge.style.background = "var(--accent-blue)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1028</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7936</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7968</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1020</span>";
+                    desc.innerText = "CALL 명령어가 실행되어 복귀 주소(@1020)와 이전 FP(@8000)를 저장하고 SP를 @7936으로 64바이트 내려 calculate()의 새 프레임을 스택에 배정했습니다!";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7936)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.7;">
+                            <div class="frame-bar"><span>📦 FRAME: main()</span><span class="addr-chip addr-stack">FP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Local [x, y]</span><span>10, 20</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--text-sub);">함수 호출 대기</span></div>
+                            </div>
+                        </div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);">
+                                <span>📦 FRAME: calculate(a=10, b=20) ⚡</span>
+                                <span class="addr-chip addr-stack">FP: @7968 | SP: @7936</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1020</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span class="addr-chip addr-stack">@8000</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Args [a, b]</span><span>10, 20</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 4) {
+                    // ★ Step 4: calculate 내부에서 add(a, b) 호출문 도달
+                    simRenderCodeView(7);
+                    anchor.innerText = "[Step 4] calculate() 내부에서 add(a, b) 호출문 도달 (PC: @1040)";
+                    badge.innerText = "CALL PREPARE";
+                    badge.style.background = "var(--accent-blue)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1040</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7936</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7968</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1020</span>";
+                    desc.innerText = "calculate() 함수 실행 도중 add(a, b) 호출문에 도달했습니다. 인자 a(10), b(20)를 전달하고 add()로 점프를 준비합니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7936 - CALL 직전)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.6;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);">
+                                <span>📦 FRAME: calculate() [CALL add 직전]</span>
+                                <span class="addr-chip addr-stack">FP: @7968 | SP: @7936</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next Action</span><span style="color:var(--accent-green);">CALL add ⚡</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Args to pass</span><span>10, 20</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 5) {
+                    // ★ Step 5: add 진입 및 3번째 스택 프레임 적재
+                    simRenderCodeView(10);
+                    anchor.innerText = "[Step 5] add() 진입 ➔ 3번째 스택 프레임 중첩 생성 (SP: @7872)";
+                    badge.innerText = "ENTER ADD";
+                    badge.style.background = "var(--accent-green)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1052</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7872</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7904</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1044</span>";
+                    desc.innerText = "add 함수 프레임이 스택 아래에 추가로 쌓였습니다. SP는 @7872까지 내려왔으며, add의 복귀 주소는 calculate의 다음 위치인 @1044입니다.";
+                    usage.innerText = "USAGE: 3 FRAMES (SP: @7872)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.5;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="opacity: 0.7;"><div class="frame-bar"><span>📦 calculate()</span><span class="addr-chip addr-stack">@7968</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-green); background: rgba(74, 222, 128, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-green);">
+                                <span>📦 FRAME: add(p=10, q=20) ⚡ (최상위)</span>
+                                <span class="addr-chip addr-stack">FP: @7904 | SP: @7872</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1044</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span class="addr-chip addr-stack">@7968</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Args [p, q]</span><span>10, 20</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 6) {
+                    // ★ Step 6: add 덧셈 연산 및 반환 준비
+                    simRenderCodeView(11);
+                    anchor.innerText = "[Step 6] add() 계산 완료: 10 + 20 = 30 ➔ 반환 레지스터(X0)에 적재 및 RET 준비";
+                    badge.innerText = "RETURN STMT";
+                    badge.style.background = "var(--accent-amber)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1056</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7872</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7904</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1044</span>";
+                    desc.innerText = "p(10) + q(20) = 30 덧셈을 수행하고 결과값 30을 반환 레지스터(X0)에 담았습니다. RET 명령어로 복귀할 준비를 마쳤습니다.";
+                    usage.innerText = "USAGE: 3 FRAMES (SP: @7872 - return 연산)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.5;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="opacity: 0.7;"><div class="frame-bar"><span>📦 calculate()</span><span class="addr-chip addr-stack">@7968</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);">
+                                <span>📦 FRAME: add() [return 30 준비]</span>
+                                <span class="addr-chip addr-stack">FP: @7904 | SP: @7872</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">p + q 연산결과</span><span class="val-card" style="color:var(--accent-green);">30</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">반환 레지스터(X0)</span><span style="color:var(--accent-green); font-weight:800;">30 적재</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1044</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 7) {
+                    // ★ Step 7: add RET 실행 ➔ add 프레임 팝! calculate 복귀
+                    simRenderCodeView(7);
+                    anchor.innerText = "[Step 7] add() 반환(RET) 실행 ➔ add 프레임 팝, calculate() @1044 복귀!";
+                    badge.innerText = "RET ADD (POP)";
+                    badge.style.background = "var(--accent-amber)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1044</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7936</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7968</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1020</span>";
+                    desc.innerText = "add 함수의 RET가 실행되어 SP가 @7936으로 복구되고 add 프레임이 즉각 소멸(Pop)되었습니다! calculate는 결과값 30을 sum에 받아 자신의 return을 준비합니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7936)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.8;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);">
+                                <span>📦 FRAME: calculate() [sum = 30 수신, 반환 대기]</span>
+                                <span class="addr-chip addr-stack">FP: @7968 | SP: @7936</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1020</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span class="addr-chip addr-stack">@8000</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">sum (x0)</span><span class="val-card">30</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 8) {
+                    // ★ Step 8: calculate의 return sum; 실행
+                    simRenderCodeView(8);
+                    anchor.innerText = "[Step 8] calculate()의 return sum; 실행 ➔ 결과값 30을 X0에 담고 main 복귀 준비";
+                    badge.innerText = "RETURN STMT";
+                    badge.style.background = "var(--accent-amber)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1048</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7936</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7968</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1020</span>";
+                    desc.innerText = "calculate() 함수가 return sum; 문을 실행하여 결과값 30을 X0에 싣고 main()으로 복귀할 준비를 마쳤습니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7936 - return 실행)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.8;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);">
+                                <span>📦 FRAME: calculate() [return 30 준비]</span>
+                                <span class="addr-chip addr-stack">FP: @7968 | SP: @7936</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">반환 레지스터(X0)</span><span style="color:var(--accent-green); font-weight:800;">30 적재</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1020</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 9) {
+                    // ★ Step 9: calculate RET 실행 ➔ calculate 프레임 POP! main 복귀 완료
+                    simRenderCodeView(3);
+                    anchor.innerText = "[Step 9] calculate() 반환 ➔ calculate 프레임 팝, main() @1020 복귀 완료!";
+                    badge.innerText = "RET CALC (POP)";
+                    badge.style.background = "var(--accent-green)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1020</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "calculate 함수도 반환되어 calculate 프레임이 정리되었습니다. main()의 복귀 주소(@1020)로 돌아왔으며 SP와 FP가 원래의 @8000으로 완전 복구되었습니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: var(--accent-green); background: rgba(74, 222, 128, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-green);">
+                                <span>📦 FRAME: main() [계산 완료: res = 30]</span>
+                                <span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Local [x, y]</span><span>10, 20</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Result [res]</span><span class="val-card" style="color:var(--accent-green);">30</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--accent-green);">정상 복귀 완료</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // ★ Step 10: main() return 0; 종료
+                    simRenderCodeView(4);
+                    anchor.innerText = "[Step 10] main() return 0; 종료: 콜 스택 라이프사이클 완료";
+                    badge.innerText = "ALL COMPLETED";
+                    badge.style.background = "var(--accent-green)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1024</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "main()이 최종 0을 반환하며 전체 실행 사이클을 완수했습니다. [처음부터 다시] 버튼을 누르면 Step 0으로 자동 리셋되어 처음부터 다시 관찰할 수 있습니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SUCCESS)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: var(--accent-green); background: rgba(74, 222, 128, 0.12);">
+                            <div class="frame-bar" style="color: var(--accent-green);">
+                                <span>📦 FRAME: main() [성공적으로 완료]</span>
+                                <span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Final Res</span><span class="val-card" style="color:var(--accent-green);">res = 30</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return</span><span>0 (EXIT_SUCCESS)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next</span><span>처음부터 다시 ↺</span></div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (simScenario === 1) {
+                // Scenario 1: Infinite Recursion & Stack Overflow (Step 0 ~ 6, maxStep: 6)
+                if (simStep === 0) {
+                    // ★ Step 0: main() 머리 (프로그램 시작 진입점)
+                    simRenderCodeView(6);
+                    anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 및 스택 프레임 생성 (SP: @8000)";
+                    badge.innerText = "MAIN INIT";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1116</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "프로그램 진입점 main()이 시작되어 @8000 번지에 main의 스택 프레임이 생성되었습니다. 곧 recurse(1) 호출문으로 진입합니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box">
+                            <div class="frame-bar"><span>📦 FRAME: main() [프로그램 시작 진입점]</span><span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span>None (OS)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next Action</span><span>recurse(1) 호출문 진입</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--accent-blue);">정상 실행 중</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 1) {
+                    // ★ Step 1: recurse(1) 최초 호출문 도달 (CALL 직전)
+                    simRenderCodeView(7);
+                    anchor.innerText = "[Step 1] main()에서 recurse(1) 최초 호출문 도달 (PC: @1120)";
+                    badge.innerText = "CALL PREPARE";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1120</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "main()이 recurse(1) 함수를 호출하기 직전입니다. 인자 count=1을 설정하고 함수 진입을 준비합니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000 - CALL 직전)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: #0284c7;">
+                            <div class="frame-bar"><span>📦 FRAME: main() [CALL recurse(1) 직전]</span><span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next Action</span><span style="color:var(--accent-blue);">CALL recurse(1) ⚡</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 2) {
+                    // ★ Step 2: recurse(1) 함수 머리로 진입
+                    simRenderCodeView(1);
+                    anchor.innerText = "[Step 2] recurse(1) 함수 진입 ➔ 첫 번째 재귀 스택 프레임 생성 (SP: @7750)";
+                    badge.innerText = "RECURSE DEPTH 1";
+                    badge.style.background = "var(--accent-blue)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1100</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7750</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7782</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1124</span>";
+                    desc.innerText = "recurse(1)이 호출되어 복귀 주소(@1124)를 저장하고 SP를 @7750으로 내려 첫 번째 재귀 프레임을 스택에 배정했습니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7750)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity:0.7;"><div class="frame-bar"><span>📦 FRAME: main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-blue);">
+                            <div class="frame-bar" style="color: var(--accent-blue);"><span>📦 recurse(count = 1)</span><span class="addr-chip addr-stack">SP: @7750</span></div>
+                        </div>
+                    `;
+                } else if (simStep === 3) {
+                    // ★ Step 3: 탈출 조건 누락 확인
+                    simRenderCodeView(3);
+                    anchor.innerText = "[Step 3] 탈출 조건(Base Case) 누락 확인 ➔ 무조건 recurse(2) 재귀 호출로 직진";
+                    badge.innerText = "NO BASE CASE";
+                    badge.style.background = "var(--accent-amber)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1104</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7750</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7782</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1124</span>";
+                    desc.innerText = "if (count <= 0) return; 같은 탈출 조건문이 누락되어 있어, 함수가 반환되지 못하고 다음 재귀 호출로 강제 직진합니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (탈출 불가)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity:0.7;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);"><span>📦 recurse(count = 1) ⚠️ [탈출 조건 누락]</span><span class="addr-chip addr-stack">@7750</span></div>
+                        </div>
+                    `;
+                } else if (simStep === 4) {
+                    // ★ Step 4: recurse(2), recurse(3) 연속 호출로 프레임 누적
+                    simRenderCodeView(4);
+                    anchor.innerText = "[Step 4] recurse(2), recurse(3) 연속 호출 ➔ 스택 프레임 계속 누적 (SP: @7500)";
+                    badge.innerText = "DEPTH ACCUM";
+                    badge.style.background = "var(--accent-amber)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1108</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7500</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7532</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1112</span>";
+                    desc.innerText = "호출된 함수들이 하나도 반환(RET)되지 못한 채, 스택 아래로 새 프레임들이 계속 쌓여내려갑니다.";
+                    usage.innerText = "USAGE: 4 FRAMES (SP: @7500)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity:0.4;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="opacity:0.6;"><div class="frame-bar"><span>📦 recurse(count = 1)</span><span class="addr-chip addr-stack">@7750</span></div></div>
+                        <div class="stack-frame-box" style="opacity:0.8;"><div class="frame-bar"><span>📦 recurse(count = 2)</span><span class="addr-chip addr-stack">@7620</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber);"><div class="frame-bar" style="color:var(--accent-amber);"><span>📦 recurse(count = 3)</span><span class="addr-chip addr-stack">@7500</span></div></div>
+                    `;
+                } else if (simStep === 5) {
+                    // ★ Step 5: 스택 한계선 Guard Page 코앞까지 근접
+                    simRenderCodeView(4);
+                    anchor.innerText = "[Step 5] 재귀 호출 계속 ➔ 스택 한계선 Guard Page(@7200) 직전 위험 도달 (SP: @7250)";
+                    badge.innerText = "LIMIT DANGER";
+                    badge.style.background = "var(--accent-rose)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1108</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7250</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7282</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1112</span>";
+                    desc.innerText = "스택 포인터가 운영체제가 설정해 둔 보호 구역 경계선(@7200) 코앞까지 쫓아왔습니다!";
+                    usage.innerText = "USAGE: DANGER (SP: @7250)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity:0.3;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="opacity:0.5;"><div class="frame-bar"><span>📦 recurse(1 ~ 3)</span><span class="addr-chip addr-stack">@7500</span></div></div>
+                        <div class="stack-frame-box" style="opacity:0.8;"><div class="frame-bar"><span>📦 recurse(count = 4)</span><span class="addr-chip addr-stack">@7370</span></div></div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-rose);"><div class="frame-bar" style="color:var(--accent-rose);"><span>📦 recurse(count = 5) ⚠️ 한계선 직전!</span><span class="addr-chip addr-stack">@7250</span></div></div>
+                    `;
+                } else {
+                    // ★ Step 6: Guard Page 침범 ➔ SIGSEGV 크래시
+                    simRenderCodeView(4);
+                    anchor.innerText = "[Step 6] recurse(N) 호출 ➔ GUARD PAGE 침범! MMU 하드웨어 트랩 ➔ SIGSEGV 강제 종료";
+                    badge.innerText = "CRASH: SIGSEGV";
+                    badge.style.background = "var(--accent-rose)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1108</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\" style=\"border-color:var(--accent-rose); color:var(--accent-rose);\">@7180 (LIMIT 돌파)</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7212</span>";
+                    desc.innerText = "스택 포인터가 @7200 경계를 돌파해 Guard Page를 침범했습니다! MMU 하드웨어가 즉각 Data Abort를 일으키고 OS가 SIGSEGV로 프로세스를 강제 종료했습니다. [처음부터 다시]를 누르면 Step 0으로 리셋됩니다.";
+                    usage.innerText = "STACK OVERFLOW (KILLED)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity:0.2;"><div class="frame-bar"><span>📦 main()</span><span class="addr-chip addr-stack">@8000</span></div></div>
+                        <div class="stack-frame-box" style="opacity:0.4;"><div class="frame-bar"><span>📦 recurse(1 ~ 4)</span><span class="addr-chip addr-stack">@7370</span></div></div>
+                        <div class="stack-frame-box" style="opacity:0.6;"><div class="frame-bar"><span>📦 recurse(count = 5)</span><span class="addr-chip addr-stack">@7250</span></div></div>
+                        <div class="stack-frame-box" style="border: 2px dashed var(--accent-rose); background: rgba(244, 63, 94, 0.3);">
+                            <div class="frame-bar" style="color:var(--accent-rose);"><span>💥 recurse(6) - GUARD PAGE 돌파!</span><span class="addr-chip addr-code">SP: @7180</span></div>
+                        </div>
+                    `;
+                    overlay.classList.add("active");
+                    rackWrap.classList.add("shake");
+                }
+            } else {
+                // Scenario 2: Dangling Pointer (디버거 실행 흐름 8단계: Step 0 ~ 7)
+                if (simStep === 0) {
+                    // Step 0: 프로그램 시작점 main() 머리
+                    simRenderCodeView(5);
+                    anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 및 스택 프레임 생성 (SP: @8000)";
+                    badge.innerText = "MAIN INIT";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1208</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "프로그램 진입점 main()이 가장 먼저 시작되어 @8000 번지에 main의 스택 프레임이 생성되었습니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box">
+                            <div class="frame-bar"><span>📦 FRAME: main() [프로그램 시작 진입점]</span><span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span>None (OS)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next</span><span>int* ptr 선언 대기</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--accent-blue);">정상 실행 중</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 1) {
+                    // Step 1: main의 첫 실행문인 호출문 도달 (아직 호출 전)
+                    simRenderCodeView(6);
+                    anchor.innerText = "[Step 1] get_dangling() 함수 호출문 도달 ➔ 함수 진입(CALL) 준비";
+                    badge.innerText = "CALL PREPARE";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1208</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "main()의 첫 실행문인 get_dangling() 함수 호출문에 도달했습니다. CALL 명령어 실행을 준비하며 아직 스택은 main() 프레임 1개만 존재합니다.";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000 - CALL 직전)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: #0284c7;">
+                            <div class="frame-bar"><span>📦 FRAME: main() [CALL 직전]</span><span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">ptr</span><span>선언됨 (초기화 대기)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Next Action</span><span style="color:var(--accent-blue);">CALL get_dangling ⚡</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 2) {
+                    // Step 2: get_dangling() 함수 머리로 진입
+                    simRenderCodeView(1);
+                    anchor.innerText = "[Step 2] get_dangling() 함수 진입 ➔ 새 스택 프레임 생성 (SP: @7950)";
+                    badge.innerText = "ENTER DANGLING";
+                    badge.style.background = "var(--accent-blue)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1200</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7950</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7970</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1212</span>";
+                    desc.innerText = "CALL이 실행되어 복귀 주소(LR: @1212)와 이전 FP(@8000)를 저장하고 SP를 @7950으로 내려 get_dangling의 새 프레임을 스택에 적재했습니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7950)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.7;">
+                            <div class="frame-bar"><span>📦 FRAME: main()</span><span class="addr-chip addr-stack">FP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">ptr</span><span>대기 중</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--text-sub);">함수 호출 대기</span></div>
+                            </div>
+                        </div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-blue);">
+                            <div class="frame-bar" style="color: var(--accent-blue);"><span>📦 FRAME: get_dangling() [함수 진입]</span><span class="addr-chip addr-stack">FP: @7970 | SP: @7950</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1212 (main 복귀)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Saved FP</span><span class="addr-chip addr-stack">@8000</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--accent-blue);">프레임 생성</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 3) {
+                    // Step 3: 지역 변수 할당
+                    simRenderCodeView(2);
+                    anchor.innerText = "[Step 3] local_val = 42 스택 메모리(@7950)에 할당 완료";
+                    badge.innerText = "ALLOC LOCAL";
+                    badge.style.background = "#0284c7";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1202</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7950</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7970</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1212</span>";
+                    desc.innerText = "get_dangling 프레임 내부의 스택 번지(@7950)에 지역 변수 local_val = 42가 정상적으로 할당되었습니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7950 - 변수 할당)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.7;">
+                            <div class="frame-bar"><span>📦 FRAME: main()</span><span class="addr-chip addr-stack">FP: @8000</span></div>
+                        </div>
+                        <div class="stack-frame-box" style="border-color: #0284c7;">
+                            <div class="frame-bar" style="color: var(--accent-blue);"><span>📦 FRAME: get_dangling() [local_val 할당]</span><span class="addr-chip addr-stack">FP: @7970 | SP: @7950</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">local_val (@7950)</span><span class="val-card">42</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1212</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span>할당 완료</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 4) {
+                    // Step 4: return &local_val; 실행
+                    simRenderCodeView(3);
+                    anchor.innerText = "[Step 4] return &local_val; 실행 ➔ 스택 주소(@7950)를 반환 레지스터(X0)에 적재!";
+                    badge.innerText = "RETURN STMT";
+                    badge.style.background = "var(--accent-amber)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1204</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7950</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7970</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1212</span>";
+                    desc.innerText = "함수가 return 문에 도달했습니다! 방금 할당한 지역 변수의 스택 주소(&local_val = @7950)를 반환값 레지스터(X0)에 싣고 반환(RET)을 준비합니다. 아직 프레임은 스택에 살아있습니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7950 - return 문 실행)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.7;">
+                            <div class="frame-bar"><span>📦 FRAME: main()</span><span class="addr-chip addr-stack">FP: @8000</span></div>
+                        </div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-amber); background: rgba(245, 158, 11, 0.08);">
+                            <div class="frame-bar" style="color: var(--accent-amber);"><span>📦 FRAME: get_dangling() ⚠️ [return &local_val; 실행 중]</span><span class="addr-chip addr-stack">FP: @7970 | SP: @7950</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">local_val (@7950)</span><span class="val-card">42</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">반환 레지스터 (X0)</span><span class="addr-chip addr-stack" style="color:var(--accent-amber); font-weight:800;">@7950 적재 완료</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1212</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 5) {
+                    // Step 5: main() 복귀 완료 & 댕글링 포인터 발생
+                    simRenderCodeView(6);
+                    anchor.innerText = "[Step 5] main() 복귀 완료 ➔ 프레임 팝(SP: @8000), ptr에 @7950 유령 주소 저장 (댕글링 포인터 발생!)";
+                    badge.innerText = "DANGLING POINTER";
+                    badge.style.background = "var(--accent-rose)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1212</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "함수가 반환되어 SP가 @8000으로 즉시 복원되었습니다! get_dangling 프레임은 해제되었지만, main의 ptr에 레지스터 X0의 값(@7950)이 그대로 담겨 유령 주소를 가리키게 되었습니다(Dangling Pointer).";
+                    usage.innerText = "USAGE: 1 FRAME (SP: @8000 - 댕글링 포인터 발생)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: var(--accent-rose);">
+                            <div class="frame-bar" style="color: var(--accent-rose);"><span>📦 FRAME: main() [복귀 완료]</span><span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">ptr</span><span style="color:var(--accent-rose); font-weight:800;">@7950 ⚠️ (Dangling)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Status</span><span style="color:var(--accent-rose);">위험: 소멸된 주소 가리킴</span></div>
+                            </div>
+                        </div>
+                        <div class="stack-frame-box" style="border: 1px dashed var(--text-sub); background: rgba(255,255,255,0.02); opacity: 0.55;">
+                            <div class="frame-bar" style="color: var(--text-sub);">
+                                <span>👻 해제된 스택 잔상 (@7950) [SP 회수 완료]</span>
+                                <span>[임의 재사용 대기]</span>
+                            </div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">소멸된 local_val</span><span style="color:var(--accent-amber);">42 (수명 종료!)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">메모리 상태</span><span style="color:var(--text-sub);">무효 구역</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else if (simStep === 6) {
+                    // Step 6: other_function() 호출로 스택 오염
+                    simRenderCodeView(7);
+                    anchor.innerText = "[Step 6] other_function() 호출 ➔ 방금 해제된 스택 자리(@7950)를 새 프레임이 덮어씀!";
+                    badge.innerText = "STACK OVERWRITTEN";
+                    badge.style.background = "var(--accent-rose)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1216</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@7940</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@7960</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">@1220</span>";
+                    desc.innerText = "새 함수 other_function()이 호출되면서 방금 해제되었던 스택 자리(@7950)를 새 프레임이 덮어썼습니다! local_val이 있던 자리에 dummy=9999가 기록됩니다.";
+                    usage.innerText = "USAGE: 2 FRAMES (SP: @7940 - 메모리 오염)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="opacity: 0.7;">
+                            <div class="frame-bar"><span>📦 FRAME: main()</span><span class="addr-chip addr-stack">FP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">ptr</span><span style="color:var(--accent-rose);">@7950 (오염 예정)</span></div>
+                            </div>
+                        </div>
+                        <div class="stack-frame-box" style="border-color: var(--accent-rose); background: rgba(244, 63, 94, 0.1);">
+                            <div class="frame-bar" style="color: var(--accent-rose);"><span>📦 FRAME: other_function() 💥 [스택 덮어쓰기]</span><span class="addr-chip addr-stack">FP: @7960 | SP: @7940</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">덮어써진 @7950 자리</span><span class="val-card" style="color:var(--accent-rose); font-weight:800;">dummy = 9999 (변질됨!)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">Return Addr</span><span class="addr-chip addr-code">@1220</span></div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Step 7: *ptr 역참조로 오염된 값 읽기
+                    simRenderCodeView(8);
+                    anchor.innerText = "[Step 7] main()에서 *ptr 역참조 ➔ 42가 아닌 변질된 9999 출력! (치명적 메모리 오염)";
+                    badge.innerText = "CORRUPTED DEREF";
+                    badge.style.background = "var(--accent-rose)";
+                    regPc.innerHTML = "<span class=\"addr-chip addr-code\">@1220</span>";
+                    regSp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regFp.innerHTML = "<span class=\"addr-chip addr-stack\">@8000</span>";
+                    regLr.innerHTML = "<span class=\"addr-chip addr-code\">-</span>";
+                    desc.innerText = "ptr이 가리키는 @7950을 읽었더니 42가 아니라 덮어써진 쓰레기값(9999)이 출력됩니다! 함수가 종료되면 사라지는 스택 메모리의 주소를 반환하면 안 되는 이유입니다.";
+                    usage.innerText = "USAGE: 1 FRAME (BUG REPRODUCED)";
+                    rack.innerHTML = `
+                        <div class="stack-frame-box" style="border-color: var(--accent-rose); background: rgba(244, 63, 94, 0.15);">
+                            <div class="frame-bar" style="color: var(--accent-rose);"><span>📦 FRAME: main() [*ptr 역참조 실행 결과]</span><span class="addr-chip addr-stack">FP: @8000 | SP: @8000</span></div>
+                            <div class="frame-items-grid">
+                                <div class="frame-mini-card"><span class="frame-mini-label">ptr</span><span>@7950 (Dangling)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">*ptr 값</span><span class="val-card" style="color:var(--accent-rose); font-weight:800;">9999 (쓰레기값 출력!)</span></div>
+                                <div class="frame-mini-card"><span class="frame-mini-label">결과</span><span style="color:var(--accent-rose); font-weight:800;">메모리 오염 버그 확정</span></div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            const currentMax = SCENARIOS[simScenario].maxStep;
+            document.getElementById('sim-prev-btn').disabled = (simStep === 0);
+
+            // 마지막 단계 도달 시 '다음' 버튼을 루프(리셋) 버튼으로 활성화
+            const nextBtn = document.getElementById('sim-next-btn');
+            if (simStep === currentMax) {
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = "🔄 처음부터 다시 (Step 0)";
+                nextBtn.style.background = "#4f46e5";
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = "▶ 다음 단계 (Next)";
+                nextBtn.style.background = "#0284c7";
+            }
+        }
+
+        function simNext() {
+            const currentMax = SCENARIOS[simScenario].maxStep;
+            if (simStep < currentMax) {
+                simStep++;
+            } else {
+                // 마지막 단계에서 다음 클릭 시 Step 0으로 자동 리셋/초기화
+                simStep = 0;
+            }
+            simRender();
+        }
+
+        function simPrev() {
+            if (simStep > 0) {
+                simStep--;
+                simRender();
+            }
+        }
+
+        function simReset() {
+            simStopAuto();
+            simStep = 0;
+            simRender();
+        }
+
+        function simToggleAuto() {
+            if (simAutoTimer) {
+                simStopAuto();
+            } else {
+                document.getElementById('sim-auto-btn').innerText = "⏸ 정지";
+                simAutoTimer = setInterval(() => {
+                    const currentMax = SCENARIOS[simScenario].maxStep;
+                    if (simStep < currentMax) {
+                        simStep++;
+                        simRender();
+                    } else {
+                        simReset();
+                    }
+                }, 2200);
+            }
+        }
+
+        function simStopAuto() {
+            if (simAutoTimer) {
+                clearInterval(simAutoTimer);
+                simAutoTimer = null;
+                document.getElementById('sim-auto-btn').innerText = "▶▶ 자동";
+            }
+        }
+
+        window.addEventListener('load', () => {
+            updateSlide();
+        });
+    </script>
+</body>
+</html>

@@ -29,67 +29,73 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
     <div class="studios-grid">
       <!-- Studio 1: Registers -->
-      <div class="studio-card">
-        <div class="studio-badge">PART 01 // 5 SLIDES</div>
-        <h3>프로세스와 CPU 하드웨어 아키텍처</h3>
+      <a href="/slides/01-registers/index.html" target="_blank" rel="noopener noreferrer" class="studio-card">
+        <div class="card-top">
+          <span class="studio-badge">PART 01 // 5 SLIDES</span>
+          <span class="open-indicator">전체화면 ↗</span>
+        </div>
+        <h3>프로세스와 CPU 레지스터</h3>
         <p class="studio-desc">
-          운영체제가 관리하는 4대 가상 메모리 영역(Stack, Heap, Data, Code)과 CPU 코어가 독점하는 초고속 레지스터 세트(ARM64 / Apple Silicon 기준)의 물리적 구조와 데이터 전송 흐름을 다룹니다.
+          OS 가상 메모리(Stack·Heap·Code)와 CPU 코어 물리 레지스터 사이의 데이터 이동 파이프라인
         </p>
 
-        <ul class="feature-list">
-          <li><strong>메모리 계층 비교:</strong> 메인 메모리(DRAM) vs CPU 레지스터의 속도/용량 차이</li>
-          <li><strong>ARM64 레지스터 맵:</strong> 범용 레지스터(X0~X30) 및 특수 레지스터(PC, SP, FP, LR)</li>
-          <li><strong>호출 규약(Calling Convention):</strong> 스택 프레임 생성과 함수 호출 시의 레지스터 보존</li>
-        </ul>
-
-        <div class="studio-actions">
-          <a href="/slides/01-registers/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-            인터랙티브 슬라이드 실행 (전체화면) ↗
-          </a>
+        <div class="card-tags">
+          <span class="card-tag">컨텍스트 스위칭</span>
+          <span class="card-tag">ARM64 레지스터 맵</span>
+          <span class="card-tag">스택 프레임</span>
         </div>
-      </div>
+
+        <div class="card-action">
+          <span>인터랙티브 스튜디오 실행</span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
 
       <!-- Studio 2: Instruction Cycle -->
-      <div class="studio-card highlight-card">
-        <div class="studio-badge">PART 02 // 3 STAGES</div>
-        <h3>CPU 인스트럭션 사이클 시뮬레이터</h3>
+      <a href="/slides/02-cycle/index.html" target="_blank" rel="noopener noreferrer" class="studio-card highlight-card">
+        <div class="card-top">
+          <span class="studio-badge">PART 02 // 3 SLIDES</span>
+          <span class="open-indicator">전체화면 ↗</span>
+        </div>
+        <h3>명령어 사이클 & 클럭 스튜디오</h3>
         <p class="studio-desc">
-          클럭(Clock) 발생기, 제어장치(CU), 산술논리연산장치(ALU), 시스템 버스(주소/데이터/제어 버스)가 한 클럭마다 어떻게 동기화되어 명령어를 실행하는지 3단계 실시간 애니메이션으로 관찰합니다.
+          클럭 신호에 맞춰 명령어를 인출·해독·실행하는 4단계 CPU 하드웨어 데이터 흐름 시뮬레이터
         </p>
 
-        <ul class="feature-list">
-          <li><strong>Fetch (인출):</strong> PC가 가리키는 메모리 주소에서 명령어를 MBR로 가져오는 과정</li>
-          <li><strong>Decode (해독):</strong> 명령어 레지스터(IR)의 비트열을 제어장치가 해석하여 제어 신호 생성</li>
-          <li><strong>Execute (실행):</strong> ALU 연산 수행 및 상태 플래그 갱신, 메모리 쓰기(Write-back)</li>
-        </ul>
-
-        <div class="studio-actions">
-          <a href="/slides/02-cycle/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-            사이클 시뮬레이터 실행 (전체화면) ↗
-          </a>
+        <div class="card-tags">
+          <span class="card-tag">Fetch-Decode-Execute</span>
+          <span class="card-tag">L1 캐시 vs RAM 레이턴시</span>
+          <span class="card-tag">기계어 비트 제어</span>
         </div>
-      </div>
+
+        <div class="card-action">
+          <span>인터랙티브 스튜디오 실행</span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
 
       <!-- Studio 3: Virtual Memory & MMU Paging -->
-      <div class="studio-card">
-        <div class="studio-badge" style="color: var(--accent);">PART 03 // 6 SLIDES</div>
-        <h3>가상 메모리와 MMU 페이징 스튜디오</h3>
+      <a href="/slides/03-paging/index.html" target="_blank" rel="noopener noreferrer" class="studio-card">
+        <div class="card-top">
+          <span class="studio-badge" style="color: var(--accent);">PART 03 // 6 SLIDES</span>
+          <span class="open-indicator">전체화면 ↗</span>
+        </div>
+        <h3>가상 메모리와 MMU 페이징</h3>
         <p class="studio-desc">
-          초심자를 위한 직관적인 다이어그램과 쉬운 비유(1~5편)로 이론을 이해하고, 마지막 슬라이드에서 4대 시나리오(정상 변환, 지연 할당, 세그폴트, 컨텍스트 스위치)를 직접 인터랙티브하게 조작하며 체감하는 슬라이드 스튜디오입니다.
+          가상 주소가 물리 RAM으로 변환되는 4단계 Table Walk, TLB 캐시, Page Fault 처리 원리
         </p>
 
-        <ul class="feature-list">
-          <li><strong>이론 다이어그램 (1~5장):</strong> 가상 메모리 격리, 4KB 페이지/프레임 책장, 12비트 호수 오프셋 보존, TLB 단축 다이얼, Page Fault 3대 분기</li>
-          <li><strong>종합 인터랙티브 시뮬레이터 (6장):</strong> 가상 주소 입력 ➔ TLB 캐시 ➔ 4단계 Table Walk ➔ 물리 RAM 접근 전 과정을 한 화면에서 직접 단계별 조작</li>
-          <li><strong>ARM64 아키텍처 정합성:</strong> TTBR0_EL1, Data Abort(ESR/FAR_EL1), Valid/AP 비트 및 eret 복귀 재실행 메커니즘 준수</li>
-        </ul>
-
-        <div class="studio-actions">
-          <a href="/slides/03-paging/index.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-            페이징 스튜디오 실행 (전체화면) ↗
-          </a>
+        <div class="card-tags">
+          <span class="card-tag">10진수 1,000B 오프셋 보존</span>
+          <span class="card-tag">TLB 고속 캐시</span>
+          <span class="card-tag">프로세스 메모리 격리</span>
         </div>
-      </div>
+
+        <div class="card-action">
+          <span>인터랙티브 스튜디오 실행</span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
     </div>
   </section>
 </BaseLayout>
@@ -169,101 +175,111 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 2rem;
+    padding: 1.8rem;
     display: flex;
     flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
     transition: transform var(--dur), border-color var(--dur), box-shadow var(--dur);
   }
   .studio-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     border-color: var(--accent);
-    box-shadow: 0 8px 30px -10px hsla(189, 94%, 60%, 0.2);
+    box-shadow: 0 12px 36px -10px hsla(189, 94%, 60%, 0.25);
   }
   .highlight-card {
     border-color: color-mix(in srgb, var(--accent-2) 40%, transparent);
   }
   .highlight-card:hover {
     border-color: var(--accent-2);
-    box-shadow: 0 8px 30px -10px hsla(258, 90%, 72%, 0.25);
+    box-shadow: 0 12px 36px -10px hsla(258, 90%, 72%, 0.3);
+  }
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
   }
   .studio-badge {
     font-family: var(--font-mono);
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--accent);
-    margin-bottom: 0.8rem;
   }
   .highlight-card .studio-badge {
     color: var(--accent-2);
   }
+  .open-indicator {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-3);
+    transition: color var(--dur-fast);
+  }
+  .studio-card:hover .open-indicator {
+    color: var(--accent);
+  }
+  .highlight-card:hover .open-indicator {
+    color: var(--accent-2);
+  }
   .studio-card h3 {
-    margin: 0 0 0.8rem;
-    font-size: 1.35rem;
+    margin: 0 0 0.6rem;
+    font-size: 1.3rem;
     color: var(--text-1);
+    transition: color var(--dur-fast);
+  }
+  .studio-card:hover h3 {
+    color: var(--accent);
+  }
+  .highlight-card:hover h3 {
+    color: var(--accent-2);
   }
   .studio-desc {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     color: var(--text-2);
     line-height: 1.6;
     margin-bottom: 1.5rem;
   }
-  .feature-list {
-    list-style: none;
+  .card-tags {
     display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-    margin-bottom: 2rem;
-  }
-  .feature-list li {
-    font-size: 0.9rem;
-    color: var(--text-2);
-    line-height: 1.5;
-    padding-left: 1rem;
-    position: relative;
-  }
-  .feature-list li::before {
-    content: "•";
-    position: absolute;
-    left: 0;
-    color: var(--accent);
-  }
-  .highlight-card .feature-list li::before {
-    color: var(--accent-2);
-  }
-  .feature-list strong {
-    color: var(--text-1);
-  }
-  .studio-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
     margin-top: auto;
+    margin-bottom: 1.5rem;
   }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 0.8rem 1.4rem;
-    border-radius: var(--radius-sm);
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-decoration: none;
+  .card-tag {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    color: var(--text-3);
+    border: 1px solid var(--border-subtle);
     transition: all var(--dur-fast);
   }
-  .btn-primary {
-    background: var(--surface-2);
+  .studio-card:hover .card-tag {
+    border-color: var(--border);
+    color: var(--text-2);
+  }
+  .card-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    font-weight: 600;
     color: var(--accent);
-    border: 1px solid var(--border);
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-subtle);
+    transition: color var(--dur-fast);
   }
-  .btn-primary:hover {
-    background: var(--accent);
-    color: var(--text-inverse);
-    border-color: transparent;
-    box-shadow: var(--glow);
-  }
-  .highlight-card .btn-primary {
+  .highlight-card .card-action {
     color: var(--accent-2);
   }
-  .highlight-card .btn-primary:hover {
-    background: var(--accent-2);
-    color: var(--text-inverse);
+  .arrow-icon {
+    font-size: 1.1rem;
+    transition: transform var(--dur-fast);
+  }
+  .studio-card:hover .arrow-icon {
+    transform: translateX(4px);
   }
 </style>

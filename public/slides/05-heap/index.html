@@ -339,34 +339,154 @@
             position: relative;
         }
 
-        .code-view {
-            background: var(--code-bg);
+        .code-view-container {
+            background: #0d1117;
             border: 1px solid var(--card-border);
             border-radius: 8px;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            line-height: 1.5;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .code-view-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .code-dots {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-dots .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .code-dots .dot.red { background: #ff5f56; }
+        .code-dots .dot.yellow { background: #ffbd2e; }
+        .code-dots .dot.green { background: #27c93f; }
+
+        .code-filename {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.74rem;
+            color: var(--text-sub);
+            margin-left: 6px;
+            font-weight: 600;
+        }
+
+        .code-lang-tag {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .code-view {
+            background: transparent;
+            padding: 8px 6px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-x: auto;
         }
 
         .code-line {
-            padding: 3px 6px;
-            border-radius: 4px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
             color: var(--text-sub);
+            white-space: pre;
         }
 
         .code-line.current {
-            background: rgba(74, 222, 128, 0.18);
-            border-left: 3px solid var(--accent-green);
+            background: rgba(74, 222, 128, 0.14);
+            border-left-color: var(--accent-green);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .code-num {
+            width: 20px;
+            text-align: right;
+            margin-right: 12px;
+            color: var(--text-muted);
+            opacity: 0.45;
+            font-size: 0.74rem;
+            user-select: none;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+
+        .code-line.current .code-num {
             color: var(--accent-green);
+            opacity: 0.95;
             font-weight: 700;
+        }
+
+        .code-text {
+            white-space: pre;
+            font-family: inherit;
+            color: inherit;
+        }
+
+        .code-hint {
+            margin-left: 14px;
+            color: #8b949e;
+            opacity: 0.75;
+            font-size: 0.74rem;
+            font-style: italic;
+            white-space: nowrap;
+        }
+
+        .code-active-tag {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            color: var(--accent-green);
+            background: rgba(74, 222, 128, 0.15);
+            border: 1px solid rgba(74, 222, 128, 0.4);
+            border-radius: 3px;
+            padding: 1px 5px;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+
+        .tok-kw {
+            color: #ff7b72;
+            font-weight: 600;
+        }
+
+        .tok-fn {
+            color: #d2a8ff;
+            font-weight: 600;
+        }
+
+        .tok-num {
+            color: #79c0ff;
+        }
+
+        .tok-comment {
+            color: #8b949e;
+            font-style: italic;
         }
 
         .anchor-bar {
@@ -777,8 +897,19 @@
             <div class="sim-grid" style="margin-top: 10px;">
                 <!-- Left: Code & Controls -->
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <div class="code-view" id="sim-code-view">
-                        <!-- Populated by JS -->
+                    <div class="code-view-container">
+                        <div class="code-view-header">
+                            <div class="code-dots">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                                <span class="code-filename">main.c</span>
+                            </div>
+                            <span class="code-lang-tag">C99 / Pointer View</span>
+                        </div>
+                        <div class="code-view" id="sim-code-view">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
 
                     <!-- Hardware HUD -->
@@ -848,44 +979,44 @@
                 title: "표준 할당 및 정상 반납",
                 maxStep: 6,
                 code: [
-                    "// 표준 동적 할당 및 정상 반납 파이프라인",
-                    "int main() {                   // ★ Step 0: main() 진입 (SP: @8000)", // 1
-                    "    int* ptr = NULL;           // ★ Step 1: 포인터 변수 초기화", // 2
-                    "    ptr = (int*)malloc(16);    // ★ Step 2: 힙 @3040에 16B 할당", // 3
-                    "    ptr[0] = 42;               // ★ Step 3: 힙 메모리 값 쓰기", // 4
-                    "    free(ptr);                 // ★ Step 4: 힙 메모리 정상 반납", // 5
-                    "    ptr = NULL;                // ★ Step 5: 포인터 안전 초기화", // 6
-                    "    return 0;                  // ★ Step 6: main() 정상 종료", // 7
-                    "}"                                             // 8
+                    { text: "// 1. 표준 동적 할당 및 정상 반납 파이프라인", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
+                    { text: "    int* ptr = NULL;", hint: "// Step 1: 포인터 초기화" },
+                    { text: "    ptr = (int*)malloc(16);", hint: "// Step 2: 힙 @3040에 16B 할당" },
+                    { text: "    ptr[0] = 42;", hint: "// Step 3: 힙 메모리에 값 쓰기" },
+                    { text: "    free(ptr);", hint: "// Step 4: 힙 메모리 정상 반납" },
+                    { text: "    ptr = NULL;", hint: "// Step 5: 포인터 안전 초기화" },
+                    { text: "    return 0;", hint: "// Step 6: main() 정상 종료" },
+                    { text: "}", hint: "" }
                 ]
             },
             {
                 title: "메모리 누수 발생",
                 maxStep: 5,
                 code: [
-                    "// free() 누락으로 인한 메모리 누수(Memory Leak)",
-                    "int main() {                   // ★ Step 0: main() 진입 (SP: @8000)", // 1
-                    "    int* ptr = (int*)malloc(32); // ★ Step 1: 힙 @3040에 32B 동적 할당", // 2
-                    "    ptr[0] = 100;              // ★ Step 2: 힙 메모리 작업 수행", // 3
-                    "    // free(ptr); 누락!         // ★ Step 3: 반납 누락 확인 (경고!)", // 4
-                    "    ptr = (int*)malloc(32);    // ★ Step 4: 새 주소 할당 ➔ 이전 블록 고립!", // 5
-                    "    return 0;                  // ★ Step 5: main 종료 및 힙 메모리 누수!", // 6
-                    "}"                                             // 7
+                    { text: "// 2. free() 누락으로 인한 메모리 누수(Memory Leak)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
+                    { text: "    int* ptr = (int*)malloc(32);", hint: "// Step 1: 힙 @3040에 32B 할당" },
+                    { text: "    ptr[0] = 100;", hint: "// Step 2: 힙 메모리 작업 수행" },
+                    { text: "    // free(ptr); 누락 발생!", hint: "// Step 3: 반납 누락 (경고!)" },
+                    { text: "    ptr = (int*)malloc(32);", hint: "// Step 4: 새 주소 할당 (이전 블록 고립)" },
+                    { text: "    return 0;", hint: "// Step 5: 종료 (메모리 영구 누수)" },
+                    { text: "}", hint: "" }
                 ]
             },
             {
                 title: "외부 단편화 할당 실패",
                 maxStep: 6,
                 code: [
-                    "// 외부 단편화로 인한 메모리 할당 실패(OOM) 시뮬레이션",
-                    "int main() {                   // ★ Step 0: main() 진입 (SP: @8000)", // 1
-                    "    void *b1 = malloc(64);     // ★ Step 1: b1 할당 (@3000)", // 2
-                    "    void *b2 = malloc(64);     // ★ Step 2: b2 할당 (@3064)", // 3
-                    "    void *b3 = malloc(64);     // ★ Step 3: b3 할당 (@3128)", // 4
-                    "    free(b1); free(b3);        // ★ Step 4: 양 끝 블록 해제 (빈 공간: 128B)", // 5
-                    "    void *big = malloc(100);   // ★ Step 5: 100B 연속 할당 ➔ 단편화 실패!", // 6
-                    "    return 0;                  // ★ Step 6: 시뮬레이션 완료", // 7
-                    "}"                                             // 8
+                    { text: "// 3. 외부 단편화로 인한 메모리 할당 실패(OOM)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
+                    { text: "    void *b1 = malloc(64);", hint: "// Step 1: b1 할당 (@3000)" },
+                    { text: "    void *b2 = malloc(64);", hint: "// Step 2: b2 할당 (@3064)" },
+                    { text: "    void *b3 = malloc(64);", hint: "// Step 3: b3 할당 (@3128)" },
+                    { text: "    free(b1); free(b3);", hint: "// Step 4: 양 끝 블록 해제 (128B 여유)" },
+                    { text: "    void *big = malloc(100);", hint: "// Step 5: 100B 연속 할당 ➔ OOM 실패!" },
+                    { text: "    return 0;", hint: "// Step 6: 시뮬레이션 완료" },
+                    { text: "}", hint: "" }
                 ]
             }
         ];
@@ -949,11 +1080,29 @@
         function simRenderCodeView(activeLineIdx) {
             const view = document.getElementById('sim-code-view');
             const lines = SCENARIOS[simScenario].code;
-            view.innerHTML = lines.map((l, idx) => {
+            view.innerHTML = lines.map((item, idx) => {
                 const isCurr = (idx === activeLineIdx);
+                const lineText = (typeof item === 'string') ? item : item.text;
+                const lineHint = (typeof item === 'string') ? '' : (item.hint || '');
+
+                let codeHtml = escapeHtml(lineText);
+                if (codeHtml.trim().startsWith('//')) {
+                    codeHtml = `<span class="tok-comment">${codeHtml}</span>`;
+                } else {
+                    codeHtml = codeHtml.replace(/\b(int|void|return|NULL)\b/g, '<span class="tok-kw">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(malloc|free|main)\b(?=\s*\()/g, '<span class="tok-fn">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="tok-num">$1</span>');
+                }
+
+                const numHtml = `<span class="code-num">${idx + 1}</span>`;
+                const hintHtml = lineHint ? `<span class="code-hint">${escapeHtml(lineHint)}</span>` : '';
+                const activeTag = isCurr ? `<span class="code-active-tag">▶ CURRENT</span>` : '';
+
                 return `<div class="code-line ${isCurr ? 'current' : ''}">
-                    <span>${escapeHtml(l)}</span>
-                    ${isCurr ? '<span style="font-size:0.7em;">▶ ACTIVE</span>' : ''}
+                    ${numHtml}
+                    <span class="code-text">${codeHtml}</span>
+                    ${hintHtml}
+                    ${activeTag}
                 </div>`;
             }).join('');
         }

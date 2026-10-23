@@ -193,7 +193,32 @@
             color: var(--accent-amber);
             font-weight: 700;
             font-size: 0.78rem;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
+        }
+
+        .concept-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .concept-body {
+            font-size: 0.86rem;
+            color: var(--text-main);
+            line-height: 1.65;
+        }
+
+        .concept-list {
+            margin-left: 18px;
+            font-size: 0.84rem;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         /* Final Interactive Slide Layout: sim-grid */
@@ -508,13 +533,15 @@
                 <div class="content-card">
                     <div class="concept-box">
                         <div class="analogy-badge">💡 호텔 객실과 가상 주소 비유</div>
-                        모든 손님(프로그램)은 각자 호텔의 <b>"101호"</b> 키를 받고 들어간다고 생각합니다.<br />
-                        하지만 프런트 데스크(MMU)는 손님 A는 신관 101호로, 손님 B는 본관 101호로 안내하므로 둘은 결코 마주치거나 짐을 덮어쓸 일이 없습니다!
+                        <div class="concept-body">
+                            모든 손님(프로그램)은 각자 호텔의 <b>"101호"</b> 키를 받고 들어간다고 생각합니다.<br />
+                            하지만 프런트 데스크(MMU)는 손님 A는 신관 101호로, 손님 B는 본관 101호로 안내하므로 둘은 결코 마주치거나 짐을 덮어쓸 일이 없습니다!
+                        </div>
                     </div>
 
                     <div class="concept-box">
-                        <b>핵심 포인트:</b>
-                        <ul style="margin-left: 18px; margin-top: 6px; font-size: 0.84rem; line-height: 1.55;">
+                        <div class="concept-title">📌 핵심 포인트</div>
+                        <ul class="concept-list">
                             <li><b>가상 주소(VA):</b> 프로그램과 개발자가 다루는 주소. 모든 프로그램은 0번지부터 혼자 메모리를 독점한다고 여깁니다.</li>
                             <li><b>물리 주소(PA):</b> 실제 RAM 칩의 물리적 핀 번호.</li>
                             <li><b>MMU:</b> CPU 내부에서 매 메모리 접근마다 VA를 PA로 실시간 변환해주는 초고속 하드웨어.</li>
@@ -582,13 +609,15 @@
                 <div class="content-card">
                     <div class="concept-box">
                         <div class="analogy-badge">📖 도서관 원고지와 보관함 비유</div>
-                        글자(1바이트) 하나마다 도서관 보관함 위치를 적어두면, <b>장부 종이값(8B)이 책 본문보다 8배 더 듭니다!</b><br />
-                        따라서 도서관은 <b>4,096자(4KB)</b>씩 원고지 묶음 단위로 보관함에 넣습니다.
+                        <div class="concept-body">
+                            글자(1바이트) 하나마다 도서관 보관함 위치를 적어두면, <b>장부 종이값(8B)이 책 본문보다 8배 더 듭니다!</b><br />
+                            따라서 도서관은 <b>4,096자(4KB)</b>씩 원고지 묶음 단위로 보관함에 넣습니다.
+                        </div>
                     </div>
 
                     <div class="concept-box">
-                        <b>용어 완벽 정리:</b>
-                        <ul style="margin-left: 18px; margin-top: 6px; font-size: 0.84rem; line-height: 1.55;">
+                        <div class="concept-title">📌 용어 완벽 정리</div>
+                        <ul class="concept-list">
                             <li><b>페이지 (Page):</b> 가상 메모리를 4KB씩 자른 한 칸.</li>
                             <li><b>프레임 (Frame):</b> 실제 물리 RAM을 4KB씩 자른 한 칸.</li>
                             <li><b>페이지 테이블 (Page Table):</b> "몇 번 페이지가 몇 번 프레임에 있는가?"를 적어둔 OS의 장부.</li>
@@ -653,16 +682,18 @@
                 <div class="content-card">
                     <div class="concept-box">
                         <div class="analogy-badge">🏢 아파트 단지와 호수 비유</div>
-                        <b>"은마아파트 302호"</b>가 재개발되어 <b>"래미안 302호"</b>로 이사했다고 해봅시다.<br />
-                        아파트 이름(건물 번호)은 완전히 바뀌었지만, 문 앞의 <b>302호(방 번호)</b>는 바뀔 필요가 없습니다!
+                        <div class="concept-body">
+                            <b>"은마아파트 302호"</b>가 재개발되어 <b>"래미안 302호"</b>로 이사했다고 해봅시다.<br />
+                            아파트 이름(건물 번호)은 완전히 바뀌었지만, 문 앞의 <b>302호(방 번호)</b>는 바뀔 필요가 없습니다!
+                        </div>
                     </div>
 
                     <div class="concept-box">
-                        <b>왜 정확히 12비트일까?</b>
-                        <p style="font-size: 0.84rem; line-height: 1.55; margin-top: 4px;">
+                        <div class="concept-title">📌 왜 정확히 12비트일까?</div>
+                        <div class="concept-body">
                             <b>2<sup>12</sup> = 4,096</b>입니다. 4KB 페이지 안에서 0번째 바이트부터 4,095번째 바이트 중 <b>"몇 번째 글자인가?"</b>를 가리키는 데 정확히 12비트(16진수 3자리)가 필요합니다.<br />
                             따라서 <b>하위 12비트(오프셋)는 계산할 필요 없이 그대로 내려옵니다.</b>
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -709,16 +740,18 @@
                 <div class="content-card">
                     <div class="concept-box">
                         <div class="analogy-badge">📞 단축 다이얼과 두꺼운 전화번호부 비유</div>
-                        자주 통화하는 친구 번호는 <b>단축 다이얼 1번(TLB)</b>을 눌러 1초 만에 연결합니다.<br />
-                        단축 다이얼에 없을 때만 두꺼운 <b>전화번호부(페이지 테이블)</b>를 뒤적여 찾아보고, 찾은 번호는 단축 다이얼에 등록(Fill)해 둡니다.
+                        <div class="concept-body">
+                            자주 통화하는 친구 번호는 <b>단축 다이얼 1번(TLB)</b>을 눌러 1초 만에 연결합니다.<br />
+                            단축 다이얼에 없을 때만 두꺼운 <b>전화번호부(페이지 테이블)</b>를 뒤적여 찾아보고, 찾은 번호는 단축 다이얼에 등록(Fill)해 둡니다.
+                        </div>
                     </div>
 
                     <div class="concept-box">
-                        <b>국소성(Locality)의 축복:</b>
-                        <p style="font-size: 0.84rem; line-height: 1.55; margin-top: 4px;">
+                        <div class="concept-title">📌 국소성(Locality)의 축복</div>
+                        <div class="concept-body">
                             컴퓨터 프로그램은 한 번 접근한 페이지 근처를 계속해서 반복 접근합니다.<br />
                             따라서 첫 1회만 Miss가 나서 워크를 돌 뿐, <b>실제 실행 중인 명령어의 99% 이상은 TLB Hit</b>로 초고속 처리됩니다.
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -767,16 +800,18 @@
                 <div class="content-card">
                     <div class="concept-box">
                         <div class="analogy-badge">🎫 도서관 대출증과 호출 벨 비유</div>
-                        서가에 책이 꽂혀 있지 않다고(Valid=0) 불이 난 것이 아닙니다!<br />
-                        사서(OS 커널) 호출 벨을 누르면, 사서가 지하 보관고(SSD)에서 책을 가져와 서가에 꽂아주고 손님은 <b>다시 원래 하려던 독서를 계속(Re-execution)</b>합니다.
+                        <div class="concept-body">
+                            서가에 책이 꽂혀 있지 않다고(Valid=0) 불이 난 것이 아닙니다!<br />
+                            사서(OS 커널) 호출 벨을 누르면, 사서가 지하 보관고(SSD)에서 책을 가져와 서가에 꽂아주고 손님은 <b>다시 원래 하려던 독서를 계속(Re-execution)</b>합니다.
+                        </div>
                     </div>
 
                     <div class="concept-box">
-                        <b>Segmentation Fault의 본질:</b>
-                        <p style="font-size: 0.84rem; line-height: 1.55; margin-top: 4px;">
+                        <div class="concept-title">📌 Segmentation Fault의 본질</div>
+                        <div class="concept-body">
                             <code>nullptr</code>(0번 주소)는 OS가 의도적으로 아무 물리 방도 연결해 두지 않은 '금지 구역'입니다.<br />
                             하드웨어가 비정상 접근을 즉시 감지하여 <b>다른 프로그램의 메모리를 망가뜨리기 전에 안전하게 멈추는 것</b>이 세그폴트의 진짜 역할입니다.
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>

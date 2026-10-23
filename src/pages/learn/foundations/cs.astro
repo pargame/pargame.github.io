@@ -72,17 +72,18 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
       <!-- Studio 3: Virtual Memory & MMU Paging -->
       <div class="studio-card">
-        <div class="studio-badge" style="color: var(--accent);">PART 03 // 4 SLIDES</div>
+        <div class="studio-badge" style="color: var(--accent);">PART 03 // 8 SLIDES</div>
         <h3>가상 메모리와 MMU 페이징 스튜디오</h3>
         <p class="studio-desc">
-          프로세스 격리 원리부터 4KB 12비트 오프셋 슬라이싱, CPU 내부 TLB 캐시 조회, 다단계 Page Table Walk, 그리고 Page Fault 및 SIGSEGV 하드웨어 예외 처리까지의 실시간 인터랙티브 시뮬레이션입니다.
+          가상 메모리의 탄생 배경부터 4KB 페이지/프레임 구조, 12비트 오프셋 보존, 4단계 하드웨어 Table Walk, TLB 초고속 캐시, Page Fault(지연할당/스왑/세그폴트) 및 ARM64 컨텍스트 스위칭까지 체계적으로 재구성한 인터랙티브 스튜디오입니다.
         </p>
 
         <ul class="feature-list">
-          <li><strong>프로세스 격리:</strong> 동일 가상 주소(0x1000)가 서로 다른 물리 RAM 프레임으로 분리되는 원리</li>
-          <li><strong>12비트 Offset:</strong> 4KB 페이지에서 하위 12비트는 100% 보존되고 상위 VPN만 변환되는 비트 슬라이서</li>
-          <li><strong>MMU & TLB 스튜디오:</strong> TLB Hit(0.5ns), TLB Miss(40ns), Page Fault(OS 디스크 스왑) 3대 시나리오 시뮬레이션</li>
-          <li><strong>SIGSEGV 시뮬레이터:</strong> nullptr 역참조 및 읽기 전용 코드 변조 시 하드웨어 보호 인터럽트 검증</li>
+          <li><strong>프로세스 격리와 가상 주소:</strong> 동일 가상 주소(0x4040_3A2C)가 MMU에 의해 서로 다른 물리 RAM으로 분리되는 원리 (MMU ON/OFF 비교)</li>
+          <li><strong>4KB 페이징 & 12비트 Offset:</strong> 4KB(2<sup>12</sup>) 단위 분할과 하위 12비트 오프셋 보존 메커니즘 비트 슬라이싱</li>
+          <li><strong>4단계 Table Walk & TLB:</strong> 9비트씩 분할된 L0~L3 하드웨어 순회와 1사이클 초고속 TLB 캐시(Hit/Miss) 동작</li>
+          <li><strong>Page Fault & SIGSEGV:</strong> Valid=0 시 동기 예외(Data Abort), 3대 처리 시나리오(지연할당/스왑/크래시), eret 명령어 재실행 및 권한 비트 검증</li>
+          <li><strong>컨텍스트 스위칭 종합:</strong> TTBR0_EL1 교체와 ASID 태그를 통한 TLB 오염 방지 및 완벽한 메모리 격리</li>
         </ul>
 
         <div class="studio-actions">

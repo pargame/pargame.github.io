@@ -367,34 +367,154 @@
             position: relative;
         }
 
-        .code-view {
-            background: var(--code-bg);
+        .code-view-container {
+            background: #0d1117;
             border: 1px solid var(--card-border);
             border-radius: 8px;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 0.82rem;
-            line-height: 1.5;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .code-view-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .code-dots {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-dots .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .code-dots .dot.red { background: #ff5f56; }
+        .code-dots .dot.yellow { background: #ffbd2e; }
+        .code-dots .dot.green { background: #27c93f; }
+
+        .code-filename {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.74rem;
+            color: var(--text-sub);
+            margin-left: 6px;
+            font-weight: 600;
+        }
+
+        .code-lang-tag {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .code-view {
+            background: transparent;
+            padding: 8px 6px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-x: auto;
         }
 
         .code-line {
-            padding: 4px 8px;
-            border-radius: 4px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
             color: var(--text-sub);
+            white-space: pre;
         }
 
         .code-line.current {
-            background: rgba(61, 220, 247, 0.18);
-            border-left: 3px solid var(--accent-blue);
+            background: rgba(61, 220, 247, 0.14);
+            border-left-color: var(--accent-blue);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .code-num {
+            width: 20px;
+            text-align: right;
+            margin-right: 12px;
+            color: var(--text-muted);
+            opacity: 0.45;
+            font-size: 0.74rem;
+            user-select: none;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+
+        .code-line.current .code-num {
             color: var(--accent-blue);
+            opacity: 0.95;
             font-weight: 700;
+        }
+
+        .code-text {
+            white-space: pre;
+            font-family: inherit;
+            color: inherit;
+        }
+
+        .code-hint {
+            margin-left: 14px;
+            color: #8b949e;
+            opacity: 0.75;
+            font-size: 0.74rem;
+            font-style: italic;
+            white-space: nowrap;
+        }
+
+        .code-active-tag {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            color: var(--accent-blue);
+            background: rgba(61, 220, 247, 0.15);
+            border: 1px solid rgba(61, 220, 247, 0.4);
+            border-radius: 3px;
+            padding: 1px 5px;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+
+        .tok-kw {
+            color: #ff7b72;
+            font-weight: 600;
+        }
+
+        .tok-fn {
+            color: #d2a8ff;
+            font-weight: 600;
+        }
+
+        .tok-num {
+            color: #79c0ff;
+        }
+
+        .tok-comment {
+            color: #8b949e;
+            font-style: italic;
         }
 
         .anchor-bar {
@@ -924,9 +1044,20 @@
             <div class="sim-grid" style="margin-top: 10px;">
                 <!-- Left: Code & Registers -->
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <!-- Code View -->
-                    <div class="code-view" id="sim-code-view">
-                        <!-- Populated by JS -->
+                    <!-- Code View Container -->
+                    <div class="code-view-container">
+                        <div class="code-view-header">
+                            <div class="code-dots">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                                <span class="code-filename">main.c</span>
+                            </div>
+                            <span class="code-lang-tag">C99 / Stack Frame View</span>
+                        </div>
+                        <div class="code-view" id="sim-code-view">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
 
                     <!-- CPU Register Status -->
@@ -1024,51 +1155,51 @@
                 title: "표준 함수 호출",
                 maxStep: 10,
                 code: [
-                    "// main() ➔ calculate(10, 20) ➔ add(10, 20)",
-                    "int main() {                   // ★ Step 0: 프로그램 시작 진입점", // 1
-                    "    int x = 10, y = 20;        // ★ Step 1: 지역 변수 초기화", // 2
-                    "    int res = calculate(x, y); // ★ Step 2: 호출문 도달 / Step 9: 복귀", // 3
-                    "    return 0;                  // ★ Step 10: main 종료", // 4
-                    "}",                                           // 5
-                    "int calculate(int a, int b) {  // ★ Step 3: calculate 진입", // 6
-                    "    int sum = add(a, b);       // ★ Step 4: add 호출 / Step 7: 복귀", // 7
-                    "    return sum;                // ★ Step 8: calculate 반환문", // 8
-                    "}",                                           // 9
-                    "int add(int p, int q) {        // ★ Step 5: add 진입", // 10
-                    "    return p + q;              // ★ Step 6: 덧셈 및 반환 준비", // 11
-                    "}"                                            // 12
+                    { text: "// 1. main() ➔ calculate(10, 20) ➔ add(10, 20)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
+                    { text: "    int x = 10, y = 20;", hint: "// Step 1: 지역 변수 초기화" },
+                    { text: "    int res = calculate(x, y);", hint: "// Step 2: 호출 / Step 9: 복귀" },
+                    { text: "    return 0;", hint: "// Step 10: main() 정상 종료" },
+                    { text: "}", hint: "" },
+                    { text: "int calculate(int a, int b) {", hint: "// Step 3: calculate 진입" },
+                    { text: "    int sum = add(a, b);", hint: "// Step 4: 호출 / Step 7: 복귀" },
+                    { text: "    return sum;", hint: "// Step 8: 반환문 도달" },
+                    { text: "}", hint: "" },
+                    { text: "int add(int p, int q) {", hint: "// Step 5: add 진입" },
+                    { text: "    return p + q;", hint: "// Step 6: 덧셈 및 반환 준비" },
+                    { text: "}", hint: "" }
                 ]
             },
             {
                 title: "무한 재귀 호출",
                 maxStep: 6,
                 code: [
-                    "// 탈출 조건(Base Case)이 누락된 무한 재귀 함수",
-                    "void recurse(int count) {",                   // 1: 재귀 진입 (Step 2)
-                    "    int buf[16];                // 프레임당 64B 소모", // 2
-                    "    // IF (count <= 0) RETURN;  <-- 탈출 조건 누락! (Step 3)", // 3
-                    "    recurse(count + 1);         // @1108: 누적 (Step 4, 5, 6)", // 4
-                    "}",                                           // 5
-                    "int main() {                   // ★ Step 0: 프로그램 시작 진입점", // 6
-                    "    recurse(1);                 // ★ Step 1: 최초 호출문 도달", // 7
-                    "    return 0;",                               // 8
-                    "}"                                            // 9
+                    { text: "// 2. 탈출 조건(Base Case)이 누락된 무한 재귀 함수", hint: "" },
+                    { text: "void recurse(int count) {", hint: "// Step 2: 재귀 진입" },
+                    { text: "    int buf[16];", hint: "// 프레임당 64B 소모" },
+                    { text: "    // IF (count <= 0) RETURN;", hint: "// Step 3: 탈출 조건 누락!" },
+                    { text: "    recurse(count + 1);", hint: "// Step 4~6: 연속 호출 누적" },
+                    { text: "}", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
+                    { text: "    recurse(1);", hint: "// Step 1: 최초 호출문 도달" },
+                    { text: "    return 0;", hint: "" },
+                    { text: "}", hint: "" }
                 ]
             },
             {
                 title: "지역 변수 수명 & 댕글링 포인터",
                 maxStep: 7,
                 code: [
-                    "// 함수 반환 후 스택 지역 변수 주소 반환 버그",
-                    "int* get_dangling() {",                        // 1: 함수 진입 (Step 2)
-                    "    int local_val = 42;         // @1202: 지역 변수 할당", // 2: 할당 (Step 3)
-                    "    return &local_val;          // @1204: 스택 주소 반환!", // 3: 반환문 (Step 4)
-                    "}",                                            // 4
-                    "int main() {",                                 // 5: 프로그램 시작점 (Step 0)
-                    "    int* ptr = get_dangling();  // @1208: 호출 (Step 1) / 복귀 (Step 5)", // 6
-                    "    other_function();           // @1216: 새 프레임 할당 (Step 6)", // 7
-                    "    printf(\"%d\", *ptr);       // @1220: 오염된 역참조! (Step 7)", // 8
-                    "}"                                             // 9
+                    { text: "// 3. 함수 반환 후 스택 지역 변수 주소 반환 버그", hint: "" },
+                    { text: "int* get_dangling() {", hint: "// Step 2: 함수 진입" },
+                    { text: "    int local_val = 42;", hint: "// Step 3: 지역 변수 할당" },
+                    { text: "    return &local_val;", hint: "// Step 4: 스택 주소 반환 (RET)" },
+                    { text: "}", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
+                    { text: "    int* ptr = get_dangling();", hint: "// Step 1: 호출 / Step 5: 복귀" },
+                    { text: "    other_function();", hint: "// Step 6: 새 프레임 할당 (오염)" },
+                    { text: "    printf(\"%d\", *ptr);", hint: "// Step 7: 오염된 역참조!" },
+                    { text: "}", hint: "" }
                 ]
             }
         ];
@@ -1136,11 +1267,29 @@
         function simRenderCodeView(activeLineIdx) {
             const view = document.getElementById('sim-code-view');
             const lines = SCENARIOS[simScenario].code;
-            view.innerHTML = lines.map((l, idx) => {
+            view.innerHTML = lines.map((item, idx) => {
                 const isCurr = (idx === activeLineIdx);
+                const lineText = (typeof item === 'string') ? item : item.text;
+                const lineHint = (typeof item === 'string') ? '' : (item.hint || '');
+
+                let codeHtml = escapeHtml(lineText);
+                if (codeHtml.trim().startsWith('//')) {
+                    codeHtml = `<span class="tok-comment">${codeHtml}</span>`;
+                } else {
+                    codeHtml = codeHtml.replace(/\b(int|void|return)\b/g, '<span class="tok-kw">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(main|calculate|add|recurse|get_dangling|other_function|printf)\b(?=\s*\()/g, '<span class="tok-fn">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="tok-num">$1</span>');
+                }
+
+                const numHtml = `<span class="code-num">${idx + 1}</span>`;
+                const hintHtml = lineHint ? `<span class="code-hint">${escapeHtml(lineHint)}</span>` : '';
+                const activeTag = isCurr ? `<span class="code-active-tag">▶ CURRENT</span>` : '';
+
                 return `<div class="code-line ${isCurr ? 'current' : ''}">
-                    <span>${escapeHtml(l)}</span>
-                    ${isCurr ? '<span style="font-size:0.7em;">▶ ACTIVE</span>' : ''}
+                    ${numHtml}
+                    <span class="code-text">${codeHtml}</span>
+                    ${hintHtml}
+                    ${activeTag}
                 </div>`;
             }).join('');
         }

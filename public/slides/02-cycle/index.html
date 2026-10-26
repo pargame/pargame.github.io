@@ -95,7 +95,7 @@
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 14px;
-            padding: 20px 28px;
+            padding: 18px 26px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
             animation: fadeIn 0.25s ease-out;
             position: relative;
@@ -114,12 +114,12 @@
         }
 
         .slide-header-wrap {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             flex-shrink: 0;
         }
 
         .slide-title {
-            font-size: 1.55rem;
+            font-size: 1.5rem;
             font-weight: 800;
             margin-bottom: 3px;
             display: flex;
@@ -129,7 +129,7 @@
         }
 
         .slide-subtitle {
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             color: var(--text-sub);
             line-height: 1.45;
         }
@@ -137,7 +137,7 @@
         .theory-grid {
             display: grid;
             grid-template-columns: 1.05fr 0.95fr;
-            gap: 20px;
+            gap: 18px;
             flex: 1;
             min-height: 0;
             align-items: stretch;
@@ -147,12 +147,12 @@
             background: var(--code-bg);
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 16px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             position: relative;
             overflow: hidden;
         }
@@ -168,9 +168,9 @@
             background: rgba(18, 20, 30, 0.7);
             border: 1px solid var(--card-border);
             border-radius: 8px;
-            padding: 12px 16px;
-            font-size: 0.86rem;
-            line-height: 1.55;
+            padding: 11px 15px;
+            font-size: 0.85rem;
+            line-height: 1.5;
         }
 
         .concept-box b {
@@ -187,33 +187,33 @@
             border: 1px solid rgba(61, 220, 247, 0.3);
             color: var(--accent-blue);
             font-weight: 700;
-            font-size: 0.76rem;
-            margin-bottom: 6px;
+            font-size: 0.75rem;
+            margin-bottom: 5px;
         }
 
         .concept-title {
-            font-size: 0.86rem;
+            font-size: 0.85rem;
             font-weight: 700;
             color: var(--accent-blue);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
         .concept-body {
-            font-size: 0.84rem;
+            font-size: 0.83rem;
             color: var(--text-main);
-            line-height: 1.55;
+            line-height: 1.5;
         }
 
         .concept-list {
             margin-left: 16px;
-            font-size: 0.82rem;
+            font-size: 0.81rem;
             line-height: 1.5;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
         }
 
         .addr-chip {
@@ -244,7 +244,7 @@
             border-radius: 4px;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
             font-weight: 600;
-            font-size: 0.85em;
+            font-size: 0.84em;
             color: var(--text-main);
         }
 
@@ -253,28 +253,97 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             width: 100%;
-            max-width: 440px;
+            max-width: 460px;
             background: #090c14;
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 16px;
+            padding: 12px 14px;
         }
-        .pulse-wave {
-            display: flex;
-            align-items: flex-end;
-            gap: 4px;
-            height: 60px;
+
+        /* 32-bit Machine Code Hardware Slicer */
+        .slicer-box {
             width: 100%;
-            border-bottom: 2px solid var(--accent-blue);
-            padding-bottom: 4px;
-            justify-content: center;
+            max-width: 460px;
+            background: #0d111d;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.78rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
-        .wave-bar {
-            width: 18px;
-            background: rgba(61, 220, 247, 0.25);
-            border-top: 3px solid var(--accent-blue);
+        .bit-rail-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .bit-indices {
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+            font-size: 0.65rem;
+            color: var(--text-sub);
+            padding: 0 2px;
+        }
+        .bit-rail {
+            display: grid;
+            grid-template-columns: repeat(32, 1fr);
+            gap: 1.5px;
+            width: 100%;
+        }
+        .bit-cell {
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.64rem;
+            padding: 3px 0;
+            border-radius: 2px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .bit-opcode {
+            background: rgba(244, 63, 94, 0.22);
+            color: var(--accent-rose);
+            border: 1px solid rgba(244, 63, 94, 0.45);
+        }
+        .bit-rm {
+            background: rgba(74, 222, 128, 0.22);
+            color: var(--accent-green);
+            border: 1px solid rgba(74, 222, 128, 0.45);
+        }
+        .bit-rn {
+            background: rgba(61, 220, 247, 0.22);
+            color: var(--accent-blue);
+            border: 1px solid rgba(61, 220, 247, 0.45);
+        }
+        .bit-rd {
+            background: rgba(169, 139, 250, 0.22);
+            color: var(--accent-purple);
+            border: 1px solid rgba(169, 139, 250, 0.45);
+        }
+        .bit-other {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-sub);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .slicer-fields {
+            display: grid;
+            grid-template-columns: 8fr 3fr 5fr 6fr 5fr 5fr;
+            gap: 2px;
+            margin-top: 3px;
+            text-align: center;
+            font-size: 0.68rem;
+            font-family: monospace;
+            font-weight: 700;
+        }
+        .field-tag {
+            padding: 3px 2px;
+            border-radius: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* Hardware Pipeline Architecture Box */
@@ -347,9 +416,9 @@
             align-items: center;
             gap: 8px;
             font-weight: 600;
-            height: 36px;
-            min-height: 36px;
-            max-height: 36px;
+            height: 38px;
+            min-height: 38px;
+            max-height: 38px;
         }
         .anchor-bar .anchor-tag {
             color: var(--accent-blue);
@@ -390,7 +459,7 @@
             padding: 12px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
+            grid-template-rows: 1fr 1.15fr;
             gap: 10px;
             position: relative;
             min-height: 250px;
@@ -435,7 +504,9 @@
             pointer-events: none;
             opacity: 0;
             z-index: 100;
+            transform: translate(-50%, -50%);
             box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+            white-space: nowrap;
         }
 
         .nav-btn {
@@ -500,68 +571,164 @@
                     <span>01. 기계어와 클럭(Clock) 동기화 메커니즘</span>
                 </h1>
                 <p class="slide-subtitle">
-                    2진수 비트열로 표현되는 명령어와, 수억 개의 플립플롭을 일제히 전진시키는 클럭 펄스
+                    Part 01의 PC(@1000)와 레지스터 세트를 바탕으로, CPU가 클럭 한 박자마다 명령어를 가져와 회로를 통과시키는 4단계 사이클의 원리
                 </p>
             </div>
 
             <div class="theory-grid">
                 <div class="diagram-card">
                     <div class="clock-gen-box">
-                        <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 8px;">
-                            <span>⚡ 클럭 생성기: 4.0 GHz 발진 신호 (Square Wave)</span>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <span>⚡ 클럭 생성기: 4.0 GHz 발진 구형파 (Square Wave)</span>
+                            <span class="val-card" style="color: var(--accent-green); font-size: 0.74rem;">T = 0.25ns</span>
                         </div>
-                        <div class="pulse-wave" id="pulseWave">
-                            <div class="wave-bar" style="height: 50px;"></div>
-                            <div class="wave-bar" style="height: 10px;"></div>
-                            <div class="wave-bar" style="height: 50px;"></div>
-                            <div class="wave-bar" style="height: 10px;"></div>
-                            <div class="wave-bar" style="height: 50px;"></div>
-                            <div class="wave-bar" style="height: 10px;"></div>
-                            <div class="wave-bar" style="height: 50px;"></div>
-                            <div class="wave-bar" style="height: 10px;"></div>
+                        
+                        <!-- Clock Square Wave SVG with Rising Edge Latch visualization -->
+                        <div style="width: 100%; background: #07090e; border-radius: 6px; padding: 6px; border: 1px solid var(--card-border);">
+                            <svg viewBox="0 0 420 80" style="width: 100%; height: auto; display: block;">
+                                <!-- Grid Lines -->
+                                <line x1="10" y1="20" x2="410" y2="20" stroke="rgba(255,255,255,0.08)" stroke-dasharray="3,3" />
+                                <line x1="10" y1="55" x2="410" y2="55" stroke="rgba(255,255,255,0.08)" />
+                                
+                                <!-- High / Low Labels -->
+                                <text x="12" y="16" fill="var(--text-sub)" font-size="8" font-family="monospace">HIGH (1.2V)</text>
+                                <text x="12" y="52" fill="var(--text-sub)" font-size="8" font-family="monospace">LOW (0V)</text>
+
+                                <!-- Square Wave Path (2 full cycles + edges) -->
+                                <path d="M 40 55 L 75 55 L 75 20 L 145 20 L 145 55 L 215 55 L 215 20 L 285 20 L 285 55 L 355 55 L 355 20 L 400 20" 
+                                      fill="none" stroke="var(--accent-blue)" stroke-width="2.5" stroke-linejoin="miter" />
+
+                                <!-- Rising Edge Markers (↑ Latch) -->
+                                <g transform="translate(75, 0)">
+                                    <circle cx="0" cy="37.5" r="4" fill="var(--accent-amber)" />
+                                    <line x1="0" y1="55" x2="0" y2="10" stroke="var(--accent-amber)" stroke-width="1.5" stroke-dasharray="2,2" />
+                                    <text x="3" y="12" fill="var(--accent-amber)" font-size="8" font-family="monospace" font-weight="800">↑ 래치(Latch)</text>
+                                </g>
+
+                                <g transform="translate(215, 0)">
+                                    <circle cx="0" cy="37.5" r="4" fill="var(--accent-amber)" />
+                                    <line x1="0" y1="55" x2="0" y2="10" stroke="var(--accent-amber)" stroke-width="1.5" stroke-dasharray="2,2" />
+                                    <text x="3" y="12" fill="var(--accent-amber)" font-size="8" font-family="monospace" font-weight="800">↑ 래치(Latch)</text>
+                                </g>
+
+                                <g transform="translate(355, 0)">
+                                    <circle cx="0" cy="37.5" r="4" fill="var(--accent-amber)" />
+                                    <line x1="0" y1="55" x2="0" y2="10" stroke="var(--accent-amber)" stroke-width="1.5" stroke-dasharray="2,2" />
+                                    <text x="3" y="12" fill="var(--accent-amber)" font-size="8" font-family="monospace" font-weight="800">↑ 래치(Latch)</text>
+                                </g>
+
+                                <!-- Cycle Measurement Bar (75 to 215 = 140px = 1 Cycle) -->
+                                <line x1="75" y1="70" x2="215" y2="70" stroke="var(--accent-green)" stroke-width="1.2" />
+                                <line x1="75" y1="66" x2="75" y2="74" stroke="var(--accent-green)" stroke-width="1.2" />
+                                <line x1="215" y1="66" x2="215" y2="74" stroke="var(--accent-green)" stroke-width="1.2" />
+                                <text x="145" y="73" fill="var(--accent-green)" font-size="8.5" font-family="monospace" font-weight="700" text-anchor="middle">1 클럭 주기 (T = 0.25ns)</text>
+                            </svg>
                         </div>
-                        <div style="font-family: monospace; font-size: 0.85rem; color: var(--accent-green); font-weight: 700;">
-                            주기 T = 1 / f = 0.25 나노초 (0.25ns)
+
+                        <div style="font-size: 0.74rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
+                            클럭이 치솟는 <b style="color: var(--accent-amber);">상승 에지(Rising Edge, ↑)</b> 찰나에만 플립플롭이 데이터를 래치(Latch)하여 레이스 컨디션을 방지합니다.
                         </div>
                     </div>
 
-                    <div style="width: 100%; max-width: 440px; background: #0d111d; border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; font-size: 0.78rem;">
-                        <div style="color: var(--accent-amber); font-weight: 700; margin-bottom: 4px;">ARM64 32비트 기계어 구조: add w0, w1, w2</div>
-                        <div style="font-family: monospace; display: flex; justify-content: space-between; font-size: 0.76rem;">
-                            <span style="color: var(--accent-rose);">Opcode: 0x0B (ADD)</span>
-                            <span style="color: var(--accent-green);">Rn: W1 | Rm: W2</span>
-                            <span style="color: var(--accent-purple);">Rd: W0</span>
+                    <!-- 32-bit Machine Code Hardware Slicer Infographic -->
+                    <div class="slicer-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--accent-amber); font-weight: 700;">기계어 32비트 하드웨어 슬라이서</span>
+                            <span class="val-card" style="color: var(--accent-blue);">add w0, w1, w2 (0x0B020020)</span>
                         </div>
-                    </div>
 
-                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
-                        클럭 신호의 <b>상승 에지(Rising Edge)</b> 순간에만 레지스터의 데이터가 래치(Latch)되어 회로의 레이스 컨디션을 방지합니다.
+                        <div class="bit-rail-wrap">
+                            <div class="bit-indices">
+                                <span>31 (MSB)</span>
+                                <span>24 23</span>
+                                <span>21 20</span>
+                                <span>16 15</span>
+                                <span>10 9</span>
+                                <span>5 4</span>
+                                <span>0 (LSB)</span>
+                            </div>
+
+                            <div class="bit-rail">
+                                <!-- Opcode: 8 bits (31..24) 00001011 (0x0B) -->
+                                <div class="bit-cell bit-opcode" title="Bit 31: 0">0</div>
+                                <div class="bit-cell bit-opcode" title="Bit 30: 0">0</div>
+                                <div class="bit-cell bit-opcode" title="Bit 29: 0">0</div>
+                                <div class="bit-cell bit-opcode" title="Bit 28: 0">0</div>
+                                <div class="bit-cell bit-opcode" title="Bit 27: 1">1</div>
+                                <div class="bit-cell bit-opcode" title="Bit 26: 0">0</div>
+                                <div class="bit-cell bit-opcode" title="Bit 25: 1">1</div>
+                                <div class="bit-cell bit-opcode" title="Bit 24: 1">1</div>
+                                <!-- Shift: 3 bits (23..21) 000 -->
+                                <div class="bit-cell bit-other" title="Bit 23: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 22: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 21: 0">0</div>
+                                <!-- Rm: 5 bits (20..16) 00010 (W2 = 2) -->
+                                <div class="bit-cell bit-rm" title="Bit 20: 0">0</div>
+                                <div class="bit-cell bit-rm" title="Bit 19: 0">0</div>
+                                <div class="bit-cell bit-rm" title="Bit 18: 0">0</div>
+                                <div class="bit-cell bit-rm" title="Bit 17: 1">1</div>
+                                <div class="bit-cell bit-rm" title="Bit 16: 0">0</div>
+                                <!-- Imm6/Option: 6 bits (15..10) 000000 -->
+                                <div class="bit-cell bit-other" title="Bit 15: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 14: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 13: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 12: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 11: 0">0</div>
+                                <div class="bit-cell bit-other" title="Bit 10: 0">0</div>
+                                <!-- Rn: 5 bits (9..5) 00001 (W1 = 1) -->
+                                <div class="bit-cell bit-rn" title="Bit 9: 0">0</div>
+                                <div class="bit-cell bit-rn" title="Bit 8: 0">0</div>
+                                <div class="bit-cell bit-rn" title="Bit 7: 0">0</div>
+                                <div class="bit-cell bit-rn" title="Bit 6: 0">0</div>
+                                <div class="bit-cell bit-rn" title="Bit 5: 1">1</div>
+                                <!-- Rd: 5 bits (4..0) 00000 (W0 = 0) -->
+                                <div class="bit-cell bit-rd" title="Bit 4: 0">0</div>
+                                <div class="bit-cell bit-rd" title="Bit 3: 0">0</div>
+                                <div class="bit-cell bit-rd" title="Bit 2: 0">0</div>
+                                <div class="bit-cell bit-rd" title="Bit 1: 0">0</div>
+                                <div class="bit-cell bit-rd" title="Bit 0: 0">0</div>
+                            </div>
+
+                            <div class="slicer-fields">
+                                <div class="field-tag" style="background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.4);">Opcode 8b (0x0B)</div>
+                                <div class="field-tag" style="background: rgba(255, 255, 255, 0.05); color: var(--text-sub); border: 1px solid rgba(255, 255, 255, 0.1);">3b</div>
+                                <div class="field-tag" style="background: rgba(74, 222, 128, 0.15); color: var(--accent-green); border: 1px solid rgba(74, 222, 128, 0.4);">Rm: W2</div>
+                                <div class="field-tag" style="background: rgba(255, 255, 255, 0.05); color: var(--text-sub); border: 1px solid rgba(255, 255, 255, 0.1);">6b</div>
+                                <div class="field-tag" style="background: rgba(61, 220, 247, 0.15); color: var(--accent-blue); border: 1px solid rgba(61, 220, 247, 0.4);">Rn: W1</div>
+                                <div class="field-tag" style="background: rgba(169, 139, 250, 0.15); color: var(--accent-purple); border: 1px solid rgba(169, 139, 250, 0.4);">Rd: W0</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.35; margin-top: 2px;">
+                            32개의 물리적 전기 신호선이 디코더에 의해 슬라이스되어 ALU 제어선 및 레지스터 판독 포트로 즉시 직결됩니다.
+                        </div>
                     </div>
                 </div>
 
                 <div class="content-card">
-                    <div class="concept-box">
-                        <div class="tech-badge">동기식 디지털 논리회로 (Synchronous Logic)</div>
+                    <div class="concept-box" style="border-left: 3px solid var(--accent-blue);">
+                        <div class="tech-badge">Part 01 ➔ Part 02 아키텍처 브릿지</div>
                         <div class="concept-body">
-                            CPU 내부의 수억 개 트랜지스터 게이트는 신호 전달 지연(Propagation Delay) 시간이 서로 다릅니다. 주기적인 <b>클럭 신호(Clock Signal)</b>를 통해 모든 플립플롭이 동일한 타이밍에 입력을 래치함으로써 계산 오류와 신호 충돌을 원천 차단합니다.
+                            Part 01에서 다룬 <b>폰 노이만 구조</b>는 <span class="addr-chip addr-code">@1000</span> 주소의 명령어를 꺼내 <b>레지스터 세트</b>를 통해 순차 처리하는 구조였습니다. Part 02에서는 CPU가 <b>클럭(Clock) 한 박자</b>마다 명령어를 가져와 회로를 통과시키는 <b>4단계 실행 사이클(Fetch ➔ Decode ➔ Execute ➔ Writeback)</b>의 물리적 인과관계를 심층 탐구합니다.
                         </div>
                     </div>
 
                     <div class="concept-box">
-                        <div class="concept-title">💡 기계어(Machine Code)의 비트 구조</div>
+                        <div class="concept-title">💡 기계어 32비트 하드웨어 슬라이서</div>
                         <div class="concept-body">
-                            기계어는 CPU 제어장치가 하드웨어 신호로 분해할 수 있도록 규격화된 2진수 비트열입니다.
-                            <ul class="concept-list" style="margin-top: 6px;">
-                                <li><b>Opcode (연산 코드)</b>: 수행할 마이크로 연산(ADD, SUB, LDR 등)을 결정하는 멀티플렉서 제어선</li>
-                                <li><b>피연산자 레지스터 인덱스</b>: 소스 및 목적지 레지스터 주소 번호</li>
+                            기계어는 CPU 제어장치가 하드웨어 신호로 분해할 수 있도록 규격화된 2진수 비트열입니다:
+                            <ul class="concept-list" style="margin-top: 5px;">
+                                <li><b>Opcode [31:24]</b>: 수행할 마이크로 연산(ADD 덧셈)을 결정하는 멀티플렉서 제어선</li>
+                                <li><b>Rm [20:16] & Rn [9:5]</b>: 소스 레지스터 번호 (W2=2, W1=1)를 디코딩하여 ALU 입력 버스에 연결</li>
+                                <li><b>Rd [4:0]</b>: 연산 결과가 기록될 최종 목적지 레지스터 번호 (W0=0)</li>
                             </ul>
                         </div>
                     </div>
 
                     <div class="concept-box">
-                        <div class="concept-title">⚡ 클럭 주파수(Clock Frequency)와 실행 시간</div>
+                        <div class="concept-title">⚡ 클럭 주파수와 상승 에지(Rising Edge) 래치</div>
                         <div class="concept-body">
-                            4.0 GHz CPU는 초당 40억 회의 클럭 펄스를 발생시킵니다. 1 사이클(Cycle)은 <b>0.25나노초(0.25ns)</b>이며, 빛이 진공에서 약 7.5cm 이동하는 극도로 미세한 시간 단위입니다.
+                            4.0 GHz CPU는 초당 40억 회 발진하며 1 사이클은 <b>0.25나노초(0.25ns)</b>입니다. 게이트마다 지연 시간(Propagation Delay)이 다르므로, 전압이 급상승하는 <b>상승 에지(↑)</b> 순간에만 플립플롭이 데이터를 래치(Latch)하여 모든 회로가 동일한 타이밍에 다음 상태로 전진합니다.
                         </div>
                     </div>
                 </div>
@@ -657,16 +824,22 @@
                 </p>
             </div>
 
+            <!-- Anchor Bar with Clock Pulse Meter Integrated -->
             <div class="anchor-bar" id="sim-anchor-bar">
                 <span class="anchor-tag">[ANCHOR]</span>
                 <span id="sim-anchor">대기 중: [다음 단계]를 눌러 4단계 사이클을 시작하세요</span>
-                <span class="badge" id="sim-badge" style="margin-left: auto;">READY</span>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <span class="val-card" id="sim-clock-meter" style="color: var(--accent-blue); font-size: 0.76rem; border-color: rgba(61, 220, 247, 0.4); font-weight: 700;">
+                        ⚡ CLOCK PULSE: STANDBY
+                    </span>
+                    <span class="badge" id="sim-badge">READY</span>
+                </div>
             </div>
 
             <div class="sim-grid" style="margin-top: 10px;">
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     <div style="background: var(--code-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px;">
-                        <div style="font-size: 0.72rem; color: var(--text-sub); font-weight: 700;">실행 명령어 (Arm64 기계어)</div>
+                        <div style="font-size: 0.72rem; color: var(--text-sub); font-weight: 700;">실행 명령어 (ARM64 기계어)</div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                             <span style="font-family: monospace; font-size: 1.05rem; font-weight: 800; color: var(--accent-blue);">add w0, w1, w2</span>
                             <span class="val-card" style="color: var(--accent-amber);">0x0B020020</span>
@@ -709,7 +882,9 @@
                     </div>
                 </div>
 
+                <!-- Hardware Stage Rack with Unified Register File & Feedback Bus -->
                 <div class="hw-stage-rack" id="hw-stage">
+                    <!-- Top Row: Fetch & Decode Stages -->
                     <div class="hw-node" id="node-pc">
                         <span class="hw-node-title">PC (Program Counter)</span>
                         <div class="hw-node-val" id="val-pc"><span class="addr-chip addr-code">@1000</span></div>
@@ -720,26 +895,39 @@
                         <div class="hw-node-val" id="val-cache">0x0B020020</div>
                     </div>
 
-                    <div class="hw-node" id="node-reg">
-                        <span class="hw-node-title">Register File (SRAM)</span>
-                        <div class="hw-node-val" id="val-reg">W1: 15 | W2: 27</div>
-                    </div>
-
                     <div class="hw-node" id="node-dec">
                         <span class="hw-node-title">Control Unit & Decoder</span>
-                        <div class="hw-node-val" id="val-dec">대기 중</div>
+                        <div class="hw-node-val" id="val-dec" style="font-size: 0.78rem;">대기 중</div>
                     </div>
 
+                    <!-- Bottom Row: Execute (ALU) & Unified Register File (SRAM) with Feedback Bus -->
                     <div class="hw-node" id="node-alu">
                         <span class="hw-node-title">ALU (Adder Circuit)</span>
-                        <div class="hw-node-val" id="val-alu">대기 중</div>
+                        <div class="hw-node-val" id="val-alu" style="font-size: 0.82rem;">대기 중</div>
                     </div>
 
-                    <div class="hw-node" id="node-w0">
-                        <span class="hw-node-title">Destination W0 Register</span>
-                        <div class="hw-node-val" id="val-w0" style="color: var(--accent-purple); font-size: 1.1rem;">0</div>
+                    <div class="hw-node" id="node-reg" style="grid-column: span 2;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span class="hw-node-title">Register File (통합 SRAM 범용 레지스터 세트)</span>
+                            <span style="font-size: 0.68rem; color: var(--accent-purple); font-weight: 700; background: rgba(169, 139, 250, 0.12); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(169, 139, 250, 0.3);">W0 일원화</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 6px;" id="reg-slots">
+                            <div class="val-card" id="slot-w1" style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 4px 8px; border-color: rgba(74, 222, 128, 0.4);">
+                                <span style="font-size: 0.65rem; color: var(--text-sub);">Source Rn</span>
+                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-green);">W1 = 15</span>
+                            </div>
+                            <div class="val-card" id="slot-w2" style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 4px 8px; border-color: rgba(61, 220, 247, 0.4);">
+                                <span style="font-size: 0.65rem; color: var(--text-sub);">Source Rm</span>
+                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-blue);">W2 = 27</span>
+                            </div>
+                            <div class="val-card" id="slot-w0" style="flex: 1.2; display: flex; flex-direction: column; gap: 2px; padding: 4px 8px; border-color: var(--card-border); transition: all 0.3s;">
+                                <span style="font-size: 0.65rem; color: var(--text-sub);">Dest Rd (피드백 버스)</span>
+                                <span id="val-slot-w0" style="font-size: 0.82rem; font-weight: 700; color: var(--text-sub);">W0 = 0</span>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Animated Packet with Center Alignment -->
                     <div class="chip-packet" id="sim-packet">📦</div>
                 </div>
             </div>
@@ -760,9 +948,19 @@
         const totalSlides = 3;
         let cycleStep = 0;
         let cycleAutoTimer = null;
+        let packetTimer = null;
 
         function updateSlide() {
             stopCycleAuto();
+            if (packetTimer) {
+                clearTimeout(packetTimer);
+                packetTimer = null;
+            }
+            const p = document.getElementById('sim-packet');
+            if (p) {
+                p.style.transition = 'none';
+                p.style.opacity = '0';
+            }
             document.querySelectorAll('.slide').forEach((s, idx) => {
                 s.classList.toggle('active', (idx + 1) === currentSlide);
             });
@@ -825,22 +1023,34 @@
             clearHwHighlights();
 
             const anchor = document.getElementById('sim-anchor');
+            const clockMeter = document.getElementById('sim-clock-meter');
             const badge = document.getElementById('sim-badge');
             const desc = document.getElementById('sim-desc');
             const valPc = document.getElementById('val-pc');
             const valDec = document.getElementById('val-dec');
             const valAlu = document.getElementById('val-alu');
-            const valW0 = document.getElementById('val-w0');
+            const valSlotW0 = document.getElementById('val-slot-w0');
+            const slotW0Card = document.getElementById('slot-w0');
             const nextBtn = document.getElementById('sim-next-btn');
 
             if (cycleStep === 0) {
                 anchor.innerText = "대기 중: [다음 단계]를 눌러 1단계 FETCH를 시작하세요";
+                clockMeter.innerText = "⚡ CLOCK PULSE: STANDBY";
+                clockMeter.style.color = "var(--text-sub)";
+                clockMeter.style.borderColor = "var(--card-border)";
                 badge.innerText = "READY";
                 badge.style.background = "#0284c7";
                 valPc.innerHTML = '<span class="addr-chip addr-code">@1000</span>';
                 valDec.innerText = "대기 중";
                 valAlu.innerText = "대기 중";
-                valW0.innerText = "0";
+                if (valSlotW0) {
+                    valSlotW0.innerText = "W0 = 0";
+                    valSlotW0.style.color = "var(--text-sub)";
+                }
+                if (slotW0Card) {
+                    slotW0Card.style.borderColor = "var(--card-border)";
+                    slotW0Card.style.background = "rgba(255, 255, 255, 0.04)";
+                }
                 desc.innerText = "PC가 1,000번지(@1000)를 가리키고 있습니다. 다음 단계에서 L1 캐시로부터 기계어를 인출합니다.";
                 nextBtn.innerHTML = "▶ 다음 단계 (Next)";
             } else if (cycleStep === 1) {
@@ -851,10 +1061,17 @@
                 document.getElementById('node-cache').classList.add('active-node');
 
                 anchor.innerText = "1단계: FETCH (인출) - PC @1000에서 기계어 인출 & PC는 @1004로 전진!";
+                clockMeter.innerText = "⚡ CLOCK PULSE: CYCLE #1 (0.25ns)";
+                clockMeter.style.color = "var(--accent-rose)";
+                clockMeter.style.borderColor = "rgba(244, 63, 94, 0.5)";
                 badge.innerText = "FETCH";
                 badge.style.background = "var(--accent-rose)";
                 valPc.innerHTML = '<span class="addr-chip addr-code">@1004 (전진)</span>';
                 valDec.innerText = "0x0B020020 수신";
+                if (valSlotW0) {
+                    valSlotW0.innerText = "W0 = 0";
+                    valSlotW0.style.color = "var(--text-sub)";
+                }
                 desc.innerText = "L1 캐시에서 기계어(0x0B020020)를 인출하고, PC는 다음 명령어를 가리키기 위해 4바이트 전진(@1004)했습니다.";
                 nextBtn.innerHTML = "▶ 다음 단계 (Next)";
                 if (triggerPacket) launchPacket('node-pc', 'node-cache', '인출', '#f43f5e', '#fff');
@@ -865,12 +1082,19 @@
                 document.getElementById('node-dec').classList.add('active-node');
                 document.getElementById('node-reg').classList.add('active-node');
 
-                anchor.innerText = "2단계: DECODE (해석) - ADD 연산 식별 & W1(15), W2(27) 값 추출";
+                anchor.innerText = "2단계: DECODE (해석) - ADD 연산 식별 & W1(15), W2(27) 값 판독";
+                clockMeter.innerText = "⚡ CLOCK PULSE: CYCLE #2 (0.50ns)";
+                clockMeter.style.color = "var(--accent-amber)";
+                clockMeter.style.borderColor = "rgba(245, 158, 11, 0.5)";
                 badge.innerText = "DECODE";
                 badge.style.background = "var(--accent-amber)";
                 valDec.innerHTML = '<span style="color:var(--accent-amber);">ADD W0, W1, W2</span>';
-                valAlu.innerText = "입력: 15, 27";
-                desc.innerText = "디코더가 비트를 분석하여 덧셈(ADD) 연산임을 확인하고, 레지스터 파일에서 피연산자 W1(15)과 W2(27)를 추출했습니다.";
+                valAlu.innerText = "입력 대기: 15, 27";
+                if (valSlotW0) {
+                    valSlotW0.innerText = "W0 = 0";
+                    valSlotW0.style.color = "var(--text-sub)";
+                }
+                desc.innerText = "디코더가 비트를 분석하여 덧셈(ADD) 연산임을 확인하고, Register File에서 소스 피연산자 W1(15)과 W2(27)를 판독했습니다.";
                 nextBtn.innerHTML = "▶ 다음 단계 (Next)";
                 if (triggerPacket) launchPacket('node-cache', 'node-dec', '해석', '#f59e0b', '#000');
             } else if (cycleStep === 3) {
@@ -880,25 +1104,43 @@
                 document.getElementById('node-alu').classList.add('active-node');
 
                 anchor.innerText = "3단계: EXECUTE (실행) - ALU 가산기 회로에서 15 + 27 = 42 연산 완료!";
+                clockMeter.innerText = "⚡ CLOCK PULSE: CYCLE #3 (0.75ns)";
+                clockMeter.style.color = "var(--accent-green)";
+                clockMeter.style.borderColor = "rgba(74, 222, 128, 0.5)";
                 badge.innerText = "EXECUTE";
                 badge.style.background = "var(--accent-green)";
                 valAlu.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">15 + 27 = 42</span>';
-                desc.innerText = "ALU의 가산 회로에 전기 신호가 인가되어 15와 27의 덧셈 결과값 42가 계산되었습니다.";
+                if (valSlotW0) {
+                    valSlotW0.innerText = "W0 = 0";
+                    valSlotW0.style.color = "var(--text-sub)";
+                }
+                desc.innerText = "ALU의 가산 회로에 전기 신호가 인가되어 피연산자 15와 27의 덧셈 결과값 42가 계산되었습니다.";
                 nextBtn.innerHTML = "▶ 다음 단계 (Next)";
                 if (triggerPacket) launchPacket('node-reg', 'node-alu', '15 + 27', '#4ade80', '#000');
             } else {
                 document.getElementById('step-card-4').classList.add('current');
                 document.getElementById('step-pill-4').innerText = "완료";
                 document.getElementById('step-pill-4').style.color = "var(--accent-purple)";
-                document.getElementById('node-w0').classList.add('active-node');
+                document.getElementById('node-reg').classList.add('active-node');
+                document.getElementById('node-alu').classList.add('active-node');
 
-                anchor.innerText = "4단계: WRITEBACK (기록) - 결과값 42를 최종 W0 레지스터에 저장 완료!";
+                anchor.innerText = "4단계: WRITEBACK (기록) - 결과값 42를 Register File(W0)에 저장 완료!";
+                clockMeter.innerText = "⚡ CLOCK PULSE: CYCLE #4 (1.00ns)";
+                clockMeter.style.color = "var(--accent-purple)";
+                clockMeter.style.borderColor = "rgba(169, 139, 250, 0.5)";
                 badge.innerText = "WRITEBACK OK";
                 badge.style.background = "var(--accent-purple)";
-                valW0.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">42 (저장됨)</span>';
-                desc.innerText = "계산된 결과값 42가 목적지 레지스터인 W0에 영구 기록(Latch)되었습니다. 1개 명령어 사이클이 완벽히 종료되었습니다!";
+                valAlu.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">42 (피드백 출력)</span>';
+                if (valSlotW0) {
+                    valSlotW0.innerHTML = '<span style="color:var(--accent-purple); font-weight:800;">W0 = 42 (래치됨)</span>';
+                }
+                if (slotW0Card) {
+                    slotW0Card.style.borderColor = "var(--accent-purple)";
+                    slotW0Card.style.background = "rgba(169, 139, 250, 0.15)";
+                }
+                desc.innerText = "계산된 결과값 42가 피드백 버스를 통해 Register File 내부의 목적지 레지스터(W0)에 영구 기록(Latch)되었습니다. 1개 명령어 사이클이 완벽히 종료되었습니다!";
                 nextBtn.innerHTML = "처음부터 다시 시작 ↺";
-                if (triggerPacket) launchPacket('node-alu', 'node-w0', 'W0 = 42', '#a98bfa', '#000');
+                if (triggerPacket) launchPacket('node-alu', 'node-reg', '피드백 버스: W0 ← 42', '#a98bfa', '#000');
             }
 
             document.getElementById('sim-prev-btn').disabled = (cycleStep === 0);
@@ -927,6 +1169,15 @@
 
         function resetCycle() {
             stopCycleAuto();
+            if (packetTimer) {
+                clearTimeout(packetTimer);
+                packetTimer = null;
+            }
+            const p = document.getElementById('sim-packet');
+            if (p) {
+                p.style.transition = 'none';
+                p.style.opacity = '0';
+            }
             cycleStep = 0;
             renderCycle(false);
         }
@@ -951,6 +1202,10 @@
         }
 
         function launchPacket(fromId, toId, text, bg, color) {
+            if (packetTimer) {
+                clearTimeout(packetTimer);
+                packetTimer = null;
+            }
             const p = document.getElementById('sim-packet');
             const stage = document.getElementById('hw-stage');
             const from = document.getElementById(fromId);
@@ -980,9 +1235,10 @@
             p.style.left = toX + 'px';
             p.style.top = toY + 'px';
 
-            setTimeout(() => {
+            packetTimer = setTimeout(() => {
                 p.style.transition = 'opacity 0.2s ease';
                 p.style.opacity = '0';
+                packetTimer = null;
             }, 600);
         }
 

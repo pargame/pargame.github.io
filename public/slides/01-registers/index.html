@@ -9,6 +9,7 @@
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --card-border: #334155;
+            --border-subtle: #334155;
             --accent-blue: #38bdf8;
             --accent-green: #4ade80;
             --accent-amber: #f59e0b;
@@ -16,7 +17,11 @@
             --accent-purple: #c084fc;
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
+            --text-1: #f8fafc;
+            --text-2: #cbd5e1;
+            --text-3: #94a3b8;
             --code-bg: #090d16;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         }
 
         * {
@@ -484,7 +489,10 @@
         <!-- SLIDE 1: Title & Process Architecture -->
         <div class="slide active" id="slide-1">
             <h1 class="slide-title">1. 프로세스와 CPU 하드웨어의 관계</h1>
-            <p class="slide-subtitle">운영체제가 부여한 거대한 가상 메모리(128TB)와 CPU 코어가 독점하는 초고속 레지스터 세트(256B)</p>
+            <p class="slide-subtitle" style="margin-bottom: 8px;">운영체제가 부여한 거대한 가상 메모리(128TB)와 CPU 코어가 독점하는 초고속 레지스터 세트(256B)</p>
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 4px 12px; margin-bottom: 12px; font-size: 0.82rem; color: var(--accent-blue); width: fit-content;">
+                <span>💡 <b>10진수 교육용 주소 모델:</b> 64비트 16진수 대신 원리 이해를 위해 @1000, @8000 등 10진수 주소를 적용했습니다</span>
+            </div>
             
             <div class="grid-2">
                 <!-- Left: Virtual Memory (RAM) -->
@@ -509,11 +517,11 @@
                         </div>
                         <div class="reg-box" style="margin-bottom: 6px;">
                             <div><span class="reg-name" style="color: var(--accent-amber);">Data / BSS</span></div>
-                            <div class="reg-desc">전역 변수 및 정적 변수 (rw-)</div>
+                            <div class="reg-desc">전역 변수 및 정적 변수 (rw-: 읽기/쓰기 가능)</div>
                         </div>
                         <div class="reg-box">
                             <div><span class="reg-name" style="color: var(--accent-rose);">Code (Text)</span></div>
-                            <div class="reg-desc">컴파일된 기계어 바이너리 (<span class="addr-chip addr-code">▶ @1000</span>, r-x)</div>
+                            <div class="reg-desc">컴파일된 기계어 바이너리 (<span class="addr-chip addr-code">▶ @1000</span>, r-x: 읽기/실행 전용, 위변조 방지)</div>
                         </div>
                     </div>
                 </div>
@@ -605,7 +613,7 @@
                     </div>
                     <div class="card-content">
                         <b>"현재 스택 메모리의 최상단 유효 주소 번지"</b><br>
-                        변수를 만들 때 `sub sp, sp, #16`으로 주소를 깎아 공간을 파고, 함수가 끝나면 `add sp, sp, #16`으로 복원합니다. (16바이트 정렬 필수)
+                        스택은 높은 번지(@8000)에서 낮은 번지(@7984)로 거꾸로 자라므로 뺄셈(<code>sub sp, sp, #16</code>)으로 주소를 깎아 공간을 확보하고, 함수가 끝나면 덧셈(<code>add sp, sp, #16</code>)으로 복원합니다. (16바이트 정렬 필수)
                     </div>
                 </div>
 
@@ -767,7 +775,7 @@
                     <div class="card-content">
                         <p><b>"실수(소수점) & 벡터 연산기"</b></p>
                         <p style="margin-top: 8px;">정수 레지스터(X0)와 물리 회로가 아예 다른 부동소수점 전용 64비트 레지스터입니다.</p>
-                        <p style="margin-top: 8px;">아까 배운 <b>`double 3.14`</b>가 바로 이 D0 레지스터에 탑재되어 계산됩니다.</p>
+                        <p style="margin-top: 8px;">C 언어의 <code>double pi = 3.14;</code> 같은 실수를 다룰 때, 정수용 X0 대신 이 전용 D0 레지스터(FPU)에 값을 얹어 고속 계산합니다.</p>
                     </div>
                 </div>
 
@@ -778,7 +786,7 @@
                     </div>
                     <div class="card-content">
                         <p><b>"L0 페이지 테이블 주소 보관함"</b></p>
-                        <p style="margin-top: 8px;">우리가 앞서 배운 4단계 가상 메모리 장부의 뿌리(L0) 시작 주소가 들어있는 특수 레지스터입니다.</p>
+                        <p style="margin-top: 8px;">후속 파트에서 다룰 가상 메모리 변환 장부(페이지 테이블)의 최상위 뿌리 시작 주소를 담고 있는 CPU 내부 특수 레지스터입니다.</p>
                         <p style="margin-top: 8px;">오직 OS 커널만 이 레지스터를 수정할 수 있습니다.</p>
                     </div>
                 </div>
@@ -793,12 +801,13 @@
             <div class="sim-grid" id="s5-sim-grid">
                 <div class="code-view" id="s5-code-view">
                     <div style="color: var(--text-sub); margin-bottom: 8px;">// ARM64 어셈블리 실행 파이프라인</div>
+                    <div class="code-line" id="line-main"><span>_main:</span><span style="color: var(--text-sub);">// 프로그램 진입점 (Entry)</span></div>
                     <div class="code-line" id="line-0"><span><span class="addr-chip addr-code">▶ @1000</span>  mov w0, #5</span><span style="color: var(--text-sub);">// 인자 1 (5)</span></div>
                     <div class="code-line" id="line-1"><span><span class="addr-chip addr-code">▶ @1004</span>  mov w1, #7</span><span style="color: var(--text-sub);">// 인자 2 (7)</span></div>
                     <div class="code-line" id="line-2"><span><span class="addr-chip addr-code">▶ @1008</span>  bl  _add_numbers</span><span style="color: var(--text-sub);">// 함수 호출 (LR 백업)</span></div>
                     <div class="code-line" id="line-3"><span><span class="addr-chip addr-code">▶ @1012</span>  str w0, [sp, #8]</span><span style="color: var(--text-sub);">// 결과(12) 스택 저장</span></div>
                     <div class="code-line" id="line-4"><span>...</span></div>
-                    <div class="code-line" id="line-5"><span>_add_numbers:</span></div>
+                    <div class="code-line" id="line-5"><span>_add_numbers:</span><span style="color: var(--text-sub);">// 피호출 함수</span></div>
                     <div class="code-line" id="line-6"><span><span class="addr-chip addr-code">▶ @2000</span>  add w0, w0, w1</span><span style="color: var(--text-sub);">// 5 + 7 = 12</span></div>
                     <div class="code-line" id="line-7"><span><span class="addr-chip addr-code">▶ @2004</span>  ret</span><span style="color: var(--text-sub);">// LR로 복귀!</span></div>
                 </div>
@@ -833,7 +842,7 @@
                     <!-- Description panel with locked height to prevent layout shift -->
                     <div class="state-panel" style="height: 68px; min-height: 68px; max-height: 68px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: 10px 14px; box-sizing: border-box;">
                         <p id="sim-desc" style="font-size: 0.88rem; color: var(--text-main); line-height: 1.5; margin: 0;">
-                            [다음 명령어 실행] 버튼 또는 [Enter]/[↓] 키를 눌러 레지스터 변화를 확인하세요.
+                            진입점(Step 0): 프로그램 진입점 _main 머리에 도달했습니다. [다음 명령어]를 눌러 1단계로 진행하세요.
                         </p>
                     </div>
 
@@ -887,6 +896,10 @@
             document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
             document.getElementById('prevBtn').disabled = (currentSlide === 1);
             document.getElementById('nextBtn').disabled = (currentSlide === totalSlides);
+
+            if (currentSlide === 5 && currentSimIndex < 0) {
+                renderSimState(0, false);
+            }
         }
 
         function nextSlide() {
@@ -945,16 +958,29 @@
             }, 650);
         }
 
-
-
         // ==========================================
-        // SLIDE 5: LIVE SIMULATOR ENGINE
+        // SLIDE 5: LIVE SIMULATOR ENGINE (Step 0 ~ 6)
         // ==========================================
-        let currentSimIndex = -1;
+        let currentSimIndex = 0;
         let isAutoPlaying = false;
         let autoPlayTimer = null;
 
         const simSteps = [
+            {
+                line: "line-main",
+                pc: "▶ @1000",
+                lr: "대기 (@0)",
+                w0: "0",
+                w1: "0",
+                fromId: "line-main",
+                toId: "regbox-pc",
+                packetText: "Entry",
+                packetBg: "#38bdf8",
+                packetColor: "#020617",
+                glowTarget: "regbox-pc",
+                glowClass: "glow-blue",
+                desc: "진입점(Step 0): 프로그램 진입점 _main 머리에 도달했습니다. PC는 첫 번째 기계어 번지(@1000)를 가리킵니다."
+            },
             {
                 line: "line-0",
                 pc: "▶ @1004",
@@ -1056,6 +1082,18 @@
             });
         }
 
+        function updateSimButtons() {
+            const nextBtn = document.getElementById('simNextBtn');
+            if (!nextBtn) return;
+            if (currentSimIndex === simSteps.length - 1) {
+                nextBtn.innerHTML = '🔄 처음부터 다시 (Step 0)';
+                nextBtn.style.background = '#0d9488';
+            } else {
+                nextBtn.innerHTML = '▶ 다음 명령어 (Next)';
+                nextBtn.style.background = '#0284c7';
+            }
+        }
+
         function renderSimState(idx, triggerPacket = true) {
             clearSimGlows();
             document.querySelectorAll('.code-line').forEach(l => l.classList.remove('current'));
@@ -1071,8 +1109,10 @@
                 if (slotSp8) {
                     slotSp8.innerText = "(비어있음 @8008)";
                     slotSp8.style.color = "var(--text-sub)";
+                    slotSp8.style.borderStyle = "dashed";
                 }
-                document.getElementById('sim-desc').innerText = "[시뮬레이션 초기화됨] [다음 명령어 실행] 버튼 또는 [Enter]/[↓] 키를 눌러주세요.";
+                document.getElementById('sim-desc').innerText = "[시뮬레이션 대기] [다음 명령어 (Next)] 또는 [Enter]/[↓] 키를 누르면 _main 진입점(Step 0)부터 시작합니다.";
+                updateSimButtons();
                 return;
             }
 
@@ -1087,8 +1127,8 @@
             document.getElementById('sim-w1').innerText = s.w1;
             document.getElementById('sim-desc').innerText = s.desc;
 
-            // Stack slot update
-            if (idx === 5) {
+            // Stack slot update (idx 6: str w0, [sp, #8])
+            if (idx === simSteps.length - 1) {
                 if (slotSp8) {
                     slotSp8.innerText = "12 (값 저장됨)";
                     slotSp8.style.color = "var(--accent-green)";
@@ -1102,7 +1142,9 @@
                 }
             }
 
-            if (triggerPacket) {
+            updateSimButtons();
+
+            if (triggerPacket && s.fromId && s.toId && idx > 0) {
                 launchFloatingPacket('sim-packet', 's5-sim-grid', s.fromId, s.toId, s.packetText, s.packetBg, s.packetColor, () => {
                     const glowEl = document.getElementById(s.glowTarget);
                     if (glowEl) glowEl.classList.add(s.glowClass);
@@ -1118,7 +1160,7 @@
             if (currentSimIndex < simSteps.length - 1) {
                 renderSimState(currentSimIndex + 1, true);
             } else {
-                renderSimState(0, true);
+                renderSimState(0, false);
             }
         }
 
@@ -1127,13 +1169,13 @@
             if (currentSimIndex > 0) {
                 renderSimState(currentSimIndex - 1, false);
             } else if (currentSimIndex === 0) {
-                renderSimState(-1, false);
+                renderSimState(0, false);
             }
         }
 
         function resetSim() {
             stopAutoPlay();
-            renderSimState(-1, false);
+            renderSimState(0, false);
         }
 
         // Auto-play feature
@@ -1154,7 +1196,7 @@
             }
 
             if (currentSimIndex >= simSteps.length - 1 || currentSimIndex < 0) {
-                renderSimState(0, true);
+                renderSimState(0, false);
             } else {
                 renderSimState(currentSimIndex + 1, true);
             }
@@ -1226,6 +1268,9 @@
                 }
             }
         });
+
+        // Initialize Slide 5 to Step 0 by default
+        renderSimState(0, false);
     </script>
 </body>
 </html>

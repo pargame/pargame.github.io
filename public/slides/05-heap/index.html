@@ -147,12 +147,12 @@
             background: var(--code-bg);
             border: 1px solid var(--card-border);
             border-radius: 10px;
-            padding: 16px;
+            padding: 14px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             position: relative;
             overflow: hidden;
         }
@@ -270,11 +270,11 @@
             background: #090c14;
         }
         .tower-section {
-            padding: 8px 12px;
+            padding: 7px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         .tower-stack {
@@ -286,11 +286,12 @@
         .tower-free {
             background: rgba(255, 255, 255, 0.02);
             color: var(--text-sub);
-            padding: 16px 12px;
+            padding: 10px 12px;
             font-style: italic;
             text-align: center;
             justify-content: center;
             border-left: 4px dashed var(--card-border);
+            font-size: 0.74rem;
         }
         .tower-heap {
             background: rgba(74, 222, 128, 0.12);
@@ -308,6 +309,47 @@
             border-left: 4px solid var(--accent-rose);
             color: var(--accent-rose);
             font-weight: 700;
+        }
+
+        /* Slide 1 Comparison Table */
+        .compare-table {
+            width: 100%;
+            max-width: 440px;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+            background: #090c14;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .compare-table th, .compare-table td {
+            padding: 5px 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            line-height: 1.35;
+        }
+        .compare-table th {
+            background: rgba(255, 255, 255, 0.04);
+            font-weight: 700;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--card-border);
+        }
+        .compare-table tr:last-child td {
+            border-bottom: none;
+        }
+        .compare-table td:first-child {
+            font-weight: 700;
+            color: var(--text-sub);
+            white-space: nowrap;
+            width: 22%;
+        }
+        .compare-table td:nth-child(2) {
+            color: var(--accent-blue);
+            width: 39%;
+        }
+        .compare-table td:nth-child(3) {
+            color: var(--accent-green);
+            width: 39%;
         }
 
         /* Slide 2 Pointer Mapping Box */
@@ -705,9 +747,43 @@
                         </div>
                     </div>
 
-                    <div style="font-size: 0.78rem; color: var(--text-sub); text-align: center; line-height: 1.4;">
-                        스택은 높은 주소(<span class="addr-chip addr-stack">@8000</span>)에서 아래로 자라고, 힙은 낮은 주소(<span class="addr-chip addr-heap">@3000</span>)에서 위로 자랍니다.
-                    </div>
+                    <!-- 5대 핵심 대비표 -->
+                    <table class="compare-table">
+                        <thead>
+                            <tr>
+                                <th>비교 항목</th>
+                                <th>스택 (Stack)</th>
+                                <th>힙 (Heap)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>할당 시점</td>
+                                <td>컴파일 시 결정 (정적)</td>
+                                <td>런타임 동적 할당 (가변)</td>
+                            </tr>
+                            <tr>
+                                <td>관리 방식</td>
+                                <td>CPU 자동 관리 (SP 레지스터)</td>
+                                <td>수동 관리 (malloc / free)</td>
+                            </tr>
+                            <tr>
+                                <td>생명 주기</td>
+                                <td>함수 반환 시 즉시 소멸 (LIFO)</td>
+                                <td>free() 전까지 영구 유지</td>
+                            </tr>
+                            <tr>
+                                <td>공간 한계</td>
+                                <td>수 MB 한정 (Stack Overflow 위험)</td>
+                                <td>가상 메모리 허용치까지 확장</td>
+                            </tr>
+                            <tr>
+                                <td>접근 속도</td>
+                                <td>초고속 (CPU 캐시 친화적)</td>
+                                <td>포인터 역참조 오버헤드 존재</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="content-card">
@@ -795,14 +871,15 @@
                     <div class="concept-box">
                         <div class="concept-title">⚡ free()와 프리 리스트(Free List)</div>
                         <div class="concept-body">
-                            사용이 끝난 메모리는 <code>free(ptr)</code>를 통해 힙 관리자의 **프리 리스트(Free List)**로 반납됩니다. 반납된 블록은 즉시 운영체제에 반환되는 것이 아니라, 향후 다른 `malloc` 요청 시 재사용될 수 있도록 관리자가 보관합니다.
+                            사용이 끝난 메모리는 <code>free(ptr)</code>를 통해 힙 관리자의 <b>프리 리스트(Free List)</b>로 반납됩니다. 반납된 블록은 즉시 운영체제에 반환되는 것이 아니라, 향후 다른 <code>malloc</code> 요청 시 재사용될 수 있도록 관리자가 보관합니다.
                         </div>
                     </div>
 
                     <div class="concept-box">
-                        <div class="concept-title">⚠️ 자원 반납의 명시적 의무</div>
+                        <div class="concept-title">⚠️ 자원 반납의 의무와 ptr = NULL 필수 원리</div>
                         <div class="concept-body">
-                            스택과 달리 힙 메모리는 함수가 종료되어도 자동으로 해제되지 않습니다. 프로그래머가 <code>free()</code>를 명시적으로 호출하기 전까지 영구적으로 메모리를 점유합니다.
+                            스택과 달리 힙은 함수 종료 후에도 자동 해제되지 않으므로 <code>free()</code>가 필수입니다.<br>
+                            특히 <code>free(ptr)</code> 실행 후에도 포인터 변수 <code>ptr</code> 내부에는 <b>기존 힙 주소값이 그대로 남아있습니다</b>. 따라서 명시적으로 <code>ptr = NULL</code>을 대입해 연결을 끊지 않으면, 이미 반납된 주소를 가리키는 <b>댕글링 포인터(Dangling Pointer)</b>가 되어 심각한 메모리 오염(Use-After-Free) 버그를 유발합니다.
                         </div>
                     </div>
                 </div>
@@ -823,13 +900,29 @@
             <div class="theory-grid">
                 <div class="diagram-card">
                     <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 440px;">
-                        <div style="background: rgba(244, 63, 94, 0.1); border: 1.5px solid var(--accent-rose); border-radius: 8px; padding: 10px;">
-                            <div style="font-size: 0.76rem; font-weight: 800; color: var(--accent-rose);">1. 메모리 누수 (Memory Leak)</div>
-                            <div style="font-size: 0.74rem; color: var(--text-sub); margin-top: 3px;">
-                                포인터 변수 ptr이 사라져 주소를 영구 분실 ➔ 힙 블록이 해제되지 못하고 고립 점유
+                        <!-- 1. 메모리 누수 포인터 단선 인포그래픽 -->
+                        <div style="background: rgba(244, 63, 94, 0.08); border: 1.5px solid var(--accent-rose); border-radius: 8px; padding: 10px;">
+                            <div style="font-size: 0.76rem; font-weight: 800; color: var(--accent-rose); margin-bottom: 6px;">1. 메모리 누수: 포인터 단선(✕ ✕) ➔ 고립 힙 블록</div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; background: #090c14; border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 6px; padding: 8px 10px; margin-bottom: 6px;">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.68rem; color: var(--accent-blue); font-weight: 700;">스택 포인터 (ptr)</div>
+                                    <div class="val-card" style="margin-top: 2px; color: var(--text-sub); text-decoration: line-through;">@3040 분실</div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                                    <span style="color: var(--accent-rose); font-weight: 900; font-size: 1.1rem; letter-spacing: 2px;">✕ ✕</span>
+                                    <span style="font-size: 0.62rem; color: var(--accent-rose); font-weight: 700;">링크 단선</span>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.68rem; color: var(--accent-rose); font-weight: 700;">고립된 힙 블록</div>
+                                    <div class="addr-chip addr-heap" style="margin-top: 2px; border-color: var(--accent-rose); color: var(--accent-rose); background: rgba(244,63,94,0.15);">@3040 (32B 고립)</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4;">
+                                포인터 변수가 새 주소로 덮어써지거나 스코프를 벗어나면 주소를 잃어버려, 해제 불가능한 <b>유령 메모리</b>로 고립됩니다.
                             </div>
                         </div>
 
+                        <!-- 2. 외부 단편화 인포그래픽 -->
                         <div style="background: rgba(245, 158, 11, 0.1); border: 1.5px solid var(--accent-amber); border-radius: 8px; padding: 10px;">
                             <div style="font-size: 0.76rem; font-weight: 800; color: var(--accent-amber);">2. 외부 단편화 (External Fragmentation)</div>
                             <div style="display: flex; gap: 4px; margin-top: 6px;">
@@ -862,7 +955,7 @@
                     <div class="concept-box">
                         <div class="concept-title">🛡️ 모던 할당자의 단편화 방어 기법</div>
                         <div class="concept-body">
-                            인접한 빈 블록을 하나로 묶는 **병합(Coalescing)**과, 동일한 고정 크기 블록들을 미리 풀로 구성해 재사용하는 **슬랩 할당자(Slab Allocator)**를 통해 외부 단편화를 최소화합니다.
+                            인접한 빈 블록을 하나로 묶는 <b>병합(Coalescing)</b>과, 동일한 고정 크기 블록들을 미리 풀로 구성해 재사용하는 <b>슬랩 할당자(Slab Allocator)</b>를 통해 외부 단편화를 최소화합니다.
                         </div>
                     </div>
                 </div>
@@ -992,15 +1085,14 @@
             },
             {
                 title: "메모리 누수 발생",
-                maxStep: 5,
+                maxStep: 4,
                 code: [
                     { text: "// 2. free() 누락으로 인한 메모리 누수(Memory Leak)", hint: "" },
                     { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
                     { text: "    int* ptr = (int*)malloc(32);", hint: "// Step 1: 힙 @3040에 32B 할당" },
                     { text: "    ptr[0] = 100;", hint: "// Step 2: 힙 메모리 작업 수행" },
-                    { text: "    // free(ptr); 누락 발생!", hint: "// Step 3: 반납 누락 (경고!)" },
-                    { text: "    ptr = (int*)malloc(32);", hint: "// Step 4: 새 주소 할당 (이전 블록 고립)" },
-                    { text: "    return 0;", hint: "// Step 5: 종료 (메모리 영구 누수)" },
+                    { text: "    ptr = (int*)malloc(32);", hint: "// Step 3: 이전 주소 덮어쓰기 (free 누락 ➔ 고립)" },
+                    { text: "    return 0;", hint: "// Step 4: main() 종료 (총 64B 영구 누수 확정)" },
                     { text: "}", hint: "" }
                 ]
             },
@@ -1126,6 +1218,7 @@
             const nextBtn = document.getElementById('sim-next-btn');
 
             rackWrap.classList.remove('shake');
+            void rackWrap.offsetWidth;
 
             if (simScenario === 0) {
                 // Scenario 0: Standard malloc & free (Step 0 ~ 6)
@@ -1235,7 +1328,7 @@
                     `;
                 }
             } else if (simScenario === 1) {
-                // Scenario 1: Memory Leak (Step 0 ~ 5)
+                // Scenario 1: Memory Leak (Step 0 ~ 4)
                 if (simStep === 0) {
                     simRenderCodeView(1);
                     anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 (SP: @8000)";
@@ -1246,6 +1339,7 @@
                     hudPtr.innerHTML = '<span class="val-card">NULL</span>';
                     hudUsage.innerText = "0 B";
                     gauge.style.width = "0%";
+                    tag.innerText = "STATUS: 0 B ALLOCATED";
                     desc.innerText = "main() 함수가 실행되었습니다. 메모리 누수 발생 과정을 관찰합니다.";
                     rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(할당 대기 중)</div>`;
                 } else if (simStep === 1) {
@@ -1258,7 +1352,7 @@
                     hudUsage.innerText = "32 B";
                     gauge.style.width = "30%";
                     tag.innerText = "STATUS: 32 B ALLOCATED";
-                    desc.innerText = "첫 번째 32바이트 블록이 힙 @3040에 할당되었습니다.";
+                    desc.innerText = "첫 번째 32바이트 블록이 힙 @3040에 정상 할당되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box">
                             <div><span style="font-weight:800; color:var(--accent-green);">📦 Block A (@3040)</span><span> [32B]</span></div>
@@ -1271,7 +1365,11 @@
                     badge.innerText = "WORK DONE";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1408</span>';
-                    desc.innerText = "데이터 작업이 완료되었으나, 이제 이 메모리를 free해야 하는 시점입니다.";
+                    hudPtr.innerHTML = '<span class="addr-chip addr-heap">@3040</span>';
+                    hudUsage.innerText = "32 B";
+                    gauge.style.width = "30%";
+                    tag.innerText = "STATUS: 32 B ALLOCATED";
+                    desc.innerText = "데이터 작업이 완료되었으나, free(ptr)로 메모리를 반납하지 않고 다음 단계로 진행합니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box">
                             <div><span style="font-weight:800; color:var(--accent-green);">📦 Block A (@3040)</span><span> [32B, 데이터: 100]</span></div>
@@ -1280,27 +1378,15 @@
                     `;
                 } else if (simStep === 3) {
                     simRenderCodeView(4);
-                    anchor.innerText = "[Step 3] free(ptr) 반납 누락 감지 ➔ 주소를 잃어버릴 위험 발생!";
-                    badge.innerText = "FREE MISSED";
-                    badge.style.background = "var(--accent-rose)";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1412</span>';
-                    desc.innerText = "개발자가 free(ptr)를 작성하지 않고 다음 코드로 넘어갔습니다! 메모리는 아직 해제되지 않았습니다.";
-                    rack.innerHTML = `
-                        <div class="heap-block-box" style="border-color: var(--accent-rose);">
-                            <div><span style="font-weight:800; color:var(--accent-rose);">⚠️ Block A (@3040) - 반납 안 됨!</span></div>
-                            <div><span style="color:var(--accent-rose); font-size:0.72rem;">위험: 해제 누락</span></div>
-                        </div>
-                    `;
-                } else if (simStep === 4) {
-                    simRenderCodeView(5);
-                    anchor.innerText = "[Step 4] ptr에 새 주소(@3072) 할당 ➔ 이전 블록(@3040) 주소 영구 분실! (메모리 누수)";
+                    anchor.innerText = "[Step 3] free 없이 새 malloc(32) 호출 ➔ ptr에 새 주소(@3072) 대입 (이전 @3040 블록 고립 누수!)";
                     badge.innerText = "LEAK OCCURRED";
                     badge.style.background = "var(--accent-rose)";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1416</span>';
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1412</span>';
                     hudPtr.innerHTML = '<span class="addr-chip addr-heap">@3072</span>';
-                    hudUsage.innerText = "64 B";
+                    hudUsage.innerText = "64 B (32B 누수)";
                     gauge.style.width = "60%";
-                    desc.innerText = "ptr 변수에 새로운 힙 주소(@3072)가 덮어써지면서, 이전 블록(@3040)의 주소를 영원히 잃어버렸습니다! 아무도 해제할 수 없습니다.";
+                    tag.innerText = "STATUS: 64 B (32 B LEAKED)";
+                    desc.innerText = "ptr 변수에 새 주소(@3072)가 덮어써지면서, 이전 블록(@3040)의 주소를 영원히 분실했습니다! 누구도 free()를 호출할 수 없게 되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box leaked-block">
                             <div><span>💥 고립된 Block A (@3040) [32B]</span></div>
@@ -1313,15 +1399,19 @@
                     `;
                     rackWrap.classList.add('shake');
                 } else {
-                    simRenderCodeView(6);
-                    anchor.innerText = "[Step 5] main() 종료: 해제되지 못한 32B가 힙에 영구 고립됨 (Memory Leak 확정)";
+                    simRenderCodeView(5);
+                    anchor.innerText = "[Step 4] main() 종료: 해제되지 못한 힙 메모리 영구 고립 (총 64B 누수 확정)";
                     badge.innerText = "MEMORY LEAK";
                     badge.style.background = "var(--accent-rose)";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1420</span>';
-                    desc.innerText = "프로그램이 종료될 때까지 32바이트의 메모리가 해제되지 못하고 낭비되었습니다. 서버 환경이었다면 누적이 반복되어 OOM 크래시가 발생합니다.";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1416</span>';
+                    hudPtr.innerHTML = '<span class="val-card">소멸됨</span>';
+                    hudUsage.innerText = "64 B (누수)";
+                    gauge.style.width = "60%";
+                    tag.innerText = "STATUS: 64 B (LEAKED)";
+                    desc.innerText = "프로그램이 종료될 때까지 힙 블록들이 해제되지 못하고 메모리를 점유했습니다. 장시간 가동 서버라면 OOM 크래시로 이어집니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box leaked-block">
-                            <div><span>💥 영구 누수된 메모리 블록 (@3040, 32B)</span></div>
+                            <div><span>💥 영구 누수된 메모리 블록 (@3040 & @3072, 총 64B)</span></div>
                             <div><span style="color:var(--accent-rose); font-weight:800;">회수 불가</span></div>
                         </div>
                     `;
@@ -1338,6 +1428,7 @@
                     hudPtr.innerHTML = '<span class="val-card">-</span>';
                     hudUsage.innerText = "0 B";
                     gauge.style.width = "0%";
+                    tag.innerText = "STATUS: 0 B ALLOCATED";
                     desc.innerText = "외부 단편화(External Fragmentation)로 인한 할당 실패 메커니즘을 관찰합니다.";
                     rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(힙 풀 초기화 상태)</div>`;
                 } else if (simStep === 1) {
@@ -1346,8 +1437,10 @@
                     badge.innerText = "ALLOC B1";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1504</span>';
+                    hudPtr.innerHTML = '<span class="addr-chip addr-heap">b1: @3000</span>';
                     hudUsage.innerText = "64 B";
                     gauge.style.width = "25%";
+                    tag.innerText = "STATUS: 64 B ALLOCATED";
                     desc.innerText = "첫 번째 64바이트 블록이 할당되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box"><span>📦 b1: 64B (@3000)</span><span>사용 중</span></div>
@@ -1358,8 +1451,10 @@
                     badge.innerText = "ALLOC B2";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1508</span>';
+                    hudPtr.innerHTML = '<span class="addr-chip addr-heap">b2: @3064</span>';
                     hudUsage.innerText = "128 B";
                     gauge.style.width = "50%";
+                    tag.innerText = "STATUS: 128 B ALLOCATED";
                     desc.innerText = "두 번째 64바이트 블록이 연속으로 할당되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box"><span>📦 b1: 64B (@3000)</span><span>사용 중</span></div>
@@ -1371,8 +1466,10 @@
                     badge.innerText = "ALLOC B3";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1512</span>';
+                    hudPtr.innerHTML = '<span class="addr-chip addr-heap">b3: @3128</span>';
                     hudUsage.innerText = "192 B";
                     gauge.style.width = "75%";
+                    tag.innerText = "STATUS: 192 B ALLOCATED";
                     desc.innerText = "세 번째 64바이트 블록이 할당되어 힙에 총 192바이트가 연속으로 들어찼습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box"><span>📦 b1: 64B (@3000)</span><span>사용 중</span></div>
@@ -1385,8 +1482,10 @@
                     badge.innerText = "FRAGMENTED";
                     badge.style.background = "var(--accent-amber)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1516</span>';
+                    hudPtr.innerHTML = '<span class="addr-chip addr-heap">b2: @3064</span>';
                     hudUsage.innerText = "64 B (b2만 점유)";
                     gauge.style.width = "25%";
+                    tag.innerText = "STATUS: 64 B (128 B FRAGMENTED)";
                     desc.innerText = "b1과 b3이 해제되어 힙에 총 128바이트의 여유 공간이 생겼지만, 가운데 b2(64B)가 버티고 있어 64B짜리 두 조각으로 분리되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box free-block"><span>♻️ FREE: 64B (@3000)</span><span>빈 조각 1</span></div>
@@ -1399,6 +1498,10 @@
                     badge.innerText = "ALLOC FAILED";
                     badge.style.background = "var(--accent-rose)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1520</span>';
+                    hudPtr.innerHTML = '<span class="val-card" style="color:var(--accent-rose); font-weight:700;">NULL (할당 실패)</span>';
+                    hudUsage.innerText = "64 B";
+                    gauge.style.width = "25%";
+                    tag.innerText = "STATUS: 64 B (OOM FAIL)";
                     desc.innerText = "프로그램이 100바이트를 요구했습니다. 전체 빈 공간의 합은 128B이지만, 연속된 100B짜리 블록이 존재하지 않아 malloc은 NULL을 반환하고 실패합니다!";
                     rack.innerHTML = `
                         <div class="heap-block-box free-block"><span>♻️ 64B 여유 (부족: 100B 불가)</span></div>
@@ -1415,6 +1518,10 @@
                     badge.innerText = "SIM COMPLETED";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1524</span>';
+                    hudPtr.innerHTML = '<span class="val-card">-</span>';
+                    hudUsage.innerText = "64 B";
+                    gauge.style.width = "25%";
+                    tag.innerText = "STATUS: 64 B ALLOCATED";
                     desc.innerText = "외부 단편화의 치명적인 문제점을 확인했습니다. [처음부터 다시] 버튼을 눌러 다시 조작할 수 있습니다.";
                     rack.innerHTML = `
                         <div style="color:var(--accent-green); font-size:0.82rem; font-weight:700; padding:10px; text-align:center;">

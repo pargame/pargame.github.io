@@ -851,6 +851,9 @@
                         <div class="analogy-badge">🍽️ 일상 비유: 뷔페의 접시 쌓기 (LIFO)</div>
                         <div class="concept-body">
                             뷔페에서 접시를 채울 때 맨 위에 얹고(Push), 손님도 맨 위 접시부터 집어가듯(Pop), <b>가장 나중에 호출된 함수가 가장 먼저 실행을 마치고 나가는 원리(Last-In, First-Out)</b>와 완벽히 같습니다.
+                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.1); font-size: 0.8rem; color: var(--accent-amber); line-height: 1.45;">
+                                💡 <b>천장 스프링 디스펜서 멘탈 모델</b>: 단, 컴퓨터 메모리는 바닥에서 위로 쌓는 것이 아니라 <b>천장(@8000)에 고정된 스프링 디스펜서에 접시를 아래로 눌러 끼워 넣는 것</b>과 같아서, 함수 호출 시마다 번지가 거꾸로 줄어듭니다(<code>SP - 프레임 크기</code>).
+                            </div>
                         </div>
                     </div>
 
@@ -899,11 +902,11 @@
                             <span class="val-card">a = 10, b = 20</span>
                         </div>
                         <div class="frame-row highlight-ret">
-                            <span>복귀 주소 (Return Address / LR)</span>
+                            <span>Return Address (ARM64 LR / x30)</span>
                             <span class="addr-chip addr-code">PC @1020 (돌아갈 코드)</span>
                         </div>
                         <div class="frame-row highlight-fp">
-                            <span>이전 프레임 포인터 (Saved FP) ⚓</span>
+                            <span>Saved FP (ARM64 FP / x29) ⚓</span>
                             <span class="addr-chip addr-stack">@8000 (부모의 FP)</span>
                         </div>
                         <div class="frame-row highlight-local">
@@ -911,7 +914,7 @@
                             <span class="val-card">int sum = 30</span>
                         </div>
                         <div class="frame-row" style="background: rgba(61, 220, 247, 0.2); font-weight: 700;">
-                            <span>현재 스택 꼭대기 (Top of Stack)</span>
+                            <span>Top of Stack (ARM64 SP)</span>
                             <span class="addr-chip addr-stack">SP ➔ @7936</span>
                         </div>
                     </div>
@@ -1010,6 +1013,9 @@
                         <div class="concept-title">🐤 컴파일러의 보초병: 스택 카나리 (Stack Canary)</div>
                         <div class="concept-body">
                             과거 해커들이 버퍼 오버플로우로 복귀 주소(Return Address)를 조작해 악성 코드로 점프시키는 해킹을 막기 위해, 컴파일러는 복귀 주소 바로 앞에 무작위 비밀값(카나리)을 심어둡니다. 함수 종료 직전 이 값이 1비트라도 바뀌었다면 공격으로 간주하고 프로세스를 자폭시킵니다.
+                            <div style="margin-top: 6px; font-size: 0.78rem; color: var(--accent-amber); line-height: 1.4;">
+                                ⛏️ <b>유래</b>: 19세기 광부들이 일산화탄소 등 무색·무취의 유독가스를 조기 감지하기 위해 가스에 극도로 민감한 카나리아 새를 새장에 넣어 탄광 깊숙이 데리고 들어갔던 역사적 사실에서 이름 붙여졌습니다.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1064,7 +1070,8 @@
                     <div class="state-panel">
                         <div class="state-panel-title">
                             <span>CPU CORE REGISTERS (ARM64)</span>
-                            <span style="color: var(--accent-blue);">10진수 물리 주소 맵</span>
+                            <span id="reg-ret-tag" style="display: none; color: var(--accent-green); background: rgba(74, 222, 128, 0.15); border: 1.5px solid var(--accent-green); padding: 1px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.3px;">[반환 레지스터 X0 = 30 적재 완료]</span>
+                            <span id="reg-sub-title" style="color: var(--accent-blue);">10진수 물리 주소 맵</span>
                         </div>
                         <div class="reg-cluster">
                             <div class="reg-item">
@@ -1305,6 +1312,8 @@
             const regSp = document.getElementById('reg-sp');
             const regFp = document.getElementById('reg-fp');
             const regLr = document.getElementById('reg-lr');
+            const regRetTag = document.getElementById('reg-ret-tag');
+            const regSubTitle = document.getElementById('reg-sub-title');
             const desc = document.getElementById('sim-desc');
             const rack = document.getElementById('stack-rack');
             const usage = document.getElementById('stack-usage-badge');
@@ -1314,14 +1323,12 @@
 
             overlay.classList.remove('active');
             rackWrap.classList.remove('shake');
+            if (regRetTag) regRetTag.style.display = 'none';
+            if (regSubTitle) regSubTitle.style.display = 'inline';
 
-            // 가드 라인 주소 동적 동기화
+            // 가드 라인 주소 동적 동기화 (모든 시나리오 @7200 일관성 유지)
             if (guardLine) {
-                if (simScenario === 1) {
-                    guardLine.innerHTML = '<span>🛡️ GUARD PAGE LIMIT (@1000)</span><span>[접근 금지 하드웨어 보호선]</span>';
-                } else {
-                    guardLine.innerHTML = '<span>🛡️ GUARD PAGE LIMIT (@7200)</span><span>[접근 금지 하드웨어 보호선]</span>';
-                }
+                guardLine.innerHTML = '<span>🛡️ GUARD PAGE LIMIT (@7200)</span><span>[접근 금지 하드웨어 보호선]</span>';
             }
 
             if (simScenario === 0) {
@@ -1487,6 +1494,8 @@
                 } else if (simStep === 6) {
                     // ★ Step 6: add 덧셈 연산 및 반환 준비
                     simRenderCodeView(11);
+                    if (regRetTag) { regRetTag.innerText = "[반환 레지스터 X0 = 30 적재 완료]"; regRetTag.style.display = "inline-block"; }
+                    if (regSubTitle) regSubTitle.style.display = "none";
                     anchor.innerText = "[Step 6] add() 계산 완료: 10 + 20 = 30 ➔ 반환 레지스터(X0)에 적재 및 RET 준비";
                     badge.innerText = "RETURN STMT";
                     badge.style.background = "var(--accent-amber)";
@@ -1540,6 +1549,8 @@
                 } else if (simStep === 8) {
                     // ★ Step 8: calculate의 return sum; 실행
                     simRenderCodeView(8);
+                    if (regRetTag) { regRetTag.innerText = "[반환 레지스터 X0 = 30 적재 완료]"; regRetTag.style.display = "inline-block"; }
+                    if (regSubTitle) regSubTitle.style.display = "none";
                     anchor.innerText = "[Step 8] calculate()의 return sum; 실행 ➔ 결과값 30을 X0에 담고 main 복귀 준비";
                     badge.innerText = "RETURN STMT";
                     badge.style.background = "var(--accent-amber)";
@@ -1853,6 +1864,8 @@
                 } else if (simStep === 4) {
                     // Step 4: return &local_val; 실행
                     simRenderCodeView(3);
+                    if (regRetTag) { regRetTag.innerText = "[반환 레지스터 X0 = @7950 적재 완료]"; regRetTag.style.display = "inline-block"; }
+                    if (regSubTitle) regSubTitle.style.display = "none";
                     anchor.innerText = "[Step 4] return &local_val; 실행 ➔ 스택 주소(@7950)를 반환 레지스터(X0)에 적재!";
                     badge.innerText = "RETURN STMT";
                     badge.style.background = "var(--accent-amber)";

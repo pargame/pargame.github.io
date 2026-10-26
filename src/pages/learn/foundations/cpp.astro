@@ -963,7 +963,7 @@ process(nullptr); // 타입이 std::nullptr_t이므로 완벽하게 process(char
             </tr>
             <tr>
               <td><strong>Unsigned 정수</strong><br>(<code>unsigned int</code>, <code>uint32_t</code> 등)</td>
-              <td><strong>$2^N$ 모듈로 랩어라운드 (Defined Behavior)</strong></td>
+              <td><strong>2<sup>N</sup> 모듈로 랩어라운드 (Defined Behavior)</strong></td>
               <td>
                 표준에 의해 정확히 규정된 동작입니다. 최대값을 넘으면 다시 0으로 순환(Wrap-around)합니다.
               </td>
@@ -1002,7 +1002,7 @@ process(nullptr); // 타입이 std::nullptr_t이므로 완벽하게 process(char
           <div class="code-block-wrap">
             <pre><code>// ❌ 잘못된 코드: i는 unsigned이므로 결코 0 미만(-1)이 될 수 없음!
 for (std::size_t i = 5; i &gt;= 0; --i) &#123;
-    // i가 0일 때 --i를 실행하면 $2^N$ 랩어라운드에 의해 18,446,744,073,709,551,615로 순환
+    // i가 0일 때 --i를 실행하면 2^N 랩어라운드에 의해 18,446,744,073,709,551,615로 순환
     // 조건식 'i &gt;= 0'은 영원히 true이므로 프로그램이 종료되지 않음
 &#125;
 
@@ -1383,7 +1383,7 @@ int main() &#123;
     std::println("실제 sizeof(HardwarePacket): &#123;&#125; 바이트 (패딩으로 인해 증가)", sizeof(HardwarePacket));
     std::println("alignof(HardwarePacket): &#123;&#125; 바이트", alignof(HardwarePacket));
 
-    // 3. Unsigned 정수의 $2^N$ 모듈로 랩어라운드 실측
+    // 3. Unsigned 정수의 2^N 모듈로 랩어라운드 실측
     std::println("\n=== 3. 무부호 정수 랩어라운드 ===");
     uint8_t u_val&#123;255&#125;;
     u_val = u_val + 1; // 255 + 1 -> 0으로 순환 (Defined Behavior)
@@ -1475,7 +1475,7 @@ uint8_t(255) + 1 의 결과: 0
         <ul>
           <li>C++ 표준은 기본 타입의 절대 크기를 강제하지 않으며, 최소 비트 수와 상대 크기 순서(<code>char &le; short &le; int &le; long &le; long long</code>)만 보장합니다.</li>
           <li>플랫폼 독립적인 아키텍처 설계를 위해 네트워크/파일 I/O에는 <code>&lt;cstdint&gt;</code>의 <strong>고정 너비 정수(<code>int32_t</code>, <code>uint64_t</code>)</strong>를, 메모리 크기에는 <strong><code>std::size_t</code></strong>를 사용합니다.</li>
-          <li><strong>Signed 오버플로는 미정의 동작(UB)</strong>으로 컴파일러 최적화 시 코드가 삭제될 수 있으며, <strong>Unsigned 오버플로는 $2^N$ 모듈로 연산</strong>으로 규정되어 있습니다.</li>
+          <li><strong>Signed 오버플로는 미정의 동작(UB)</strong>으로 컴파일러 최적화 시 코드가 삭제될 수 있으며, <strong>Unsigned 오버플로는 2<sup>N</sup> 모듈로 연산</strong>으로 규정되어 있습니다.</li>
           <li>CPU의 메모리 버스 효율을 위해 <strong>메모리 정렬(<code>alignof</code>)</strong>이 필수적이며, 구조체 멤버 순서에 따라 <strong>패딩 바이트</strong>가 삽입되어 전체 크기가 달라집니다.</li>
           <li>모던 C++에서는 <strong>균일 초기화(<code>&#123;&#125;</code>)</strong>를 기본으로 사용하여 값 유실(Narrowing Conversion)을 컴파일 타임에 원천 차단해야 합니다.</li>
           <li><strong>최신 C++26</strong>에서는 단일 밑줄 <strong><code>_</code> 플레이스홀더(P2169R4)</strong>를 통해 불필요한 변수명을 짓지 않고도 심볼 충돌 없이 안전하게 값을 버릴 수 있습니다.</li>

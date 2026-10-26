@@ -12,6 +12,7 @@ dist
 dist-ssr
 .astro
 *.local
+*.local.md
 
 # Environment variables and credentials
 .env

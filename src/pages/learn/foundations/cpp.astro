@@ -1174,7 +1174,12 @@ struct GoodLayout &#123;
 
       <h4>C++의 4가지 초기화 문법 비교</h4>
       <div class="spec-table-wrap">
-        <table class="spec-table">
+        <table class="spec-table init-syntax-table">
+          <colgroup>
+            <col style="width: 20%; min-width: 135px;" />
+            <col style="width: 24%; min-width: 150px;" />
+            <col style="width: 56%;" />
+          </colgroup>
           <thead>
             <tr>
               <th>초기화 문법</th>
@@ -1185,22 +1190,22 @@ struct GoodLayout &#123;
           <tbody>
             <tr>
               <td>복사 초기화<br>(Copy Init)</td>
-              <td><code>int a = 10;</code></td>
+              <td class="nowrap-code"><code>int a = 10;</code></td>
               <td>C 언어로부터 계승된 가장 전통적인 문법입니다. 우측의 값을 좌측 변수에 대입 복사합니다.</td>
             </tr>
             <tr>
               <td>직접 초기화<br>(Direct Init)</td>
-              <td><code>int b(10);</code></td>
+              <td class="nowrap-code"><code>int b(10);</code></td>
               <td>생성자 매개변수를 직접 괄호로 전달하는 방식입니다. C++ 객체 지향에서 흔히 쓰입니다.</td>
             </tr>
             <tr>
               <td>값 초기화<br>(Value Init)</td>
-              <td><code>int c&#123;&#125;;</code></td>
+              <td class="nowrap-code"><code>int c&#123;&#125;;</code></td>
               <td>중괄호 내부에 아무 값도 전달하지 않으면, 기본 정수형은 <strong>0</strong>으로 안전하게 자동 초기화됩니다.</td>
             </tr>
             <tr>
               <td>균일 / 리스트 초기화<br>(Uniform Init)</td>
-              <td><code>int d&#123;10&#125;;</code></td>
+              <td class="nowrap-code"><code>int d&#123;10&#125;;</code></td>
               <td>
                 C++11에서 도입된 중괄호(<code>&#123;&#125;</code>) 기반의 현대적 표준 초기화 문법입니다.
                 기본 타입, 배열, STL 컨테이너, 구조체에 일관된 문법을 제공합니다.
@@ -2037,6 +2042,15 @@ uint8_t(255) + 1 의 결과: 0
     min-width: 165px;
     word-break: keep-all;
     white-space: normal;
+  }
+  /* colgroup이 선언된 테이블은 colgroup 설정을 최우선 적용 */
+  .spec-table:has(colgroup) th:first-child,
+  .spec-table:has(colgroup) td:first-child {
+    width: auto;
+    min-width: unset;
+  }
+  .nowrap-code {
+    white-space: nowrap !important;
   }
   .spec-table code {
     color: var(--accent);

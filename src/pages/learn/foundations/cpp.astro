@@ -38,10 +38,46 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         <h3>기초 구조 및 번역 모델</h3>
         <p class="phase-desc">컴파일러 파이프라인, 번역 단위, 기본 타입 시스템 및 제어 흐름</p>
         <ul class="phase-list">
-          <li class="current-lesson"><span class="lesson-num">01</span> 프로그램 구조 & 번역 모델</li>
-          <li class="current-lesson"><span class="lesson-num">02</span> 기본 타입 시스템 & 객체 모델 (현재 단원)</li>
-          <li><span class="lesson-num">03</span> 표현식(Expressions) & 연산자 우선순위</li>
-          <li><span class="lesson-num">04</span> 함수 선언·정의 & 인자 전달 메커니즘</li>
+          <li class="current-lesson-item">
+            <a href="#ch-01" class="phase-chapter-link">
+              <span class="lesson-num">01</span>
+              <span class="chapter-name">프로그램 구조 & 번역 모델</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="1단원 세부 소단원 이동">
+              <a href="#sec-1-1" class="sub-chip">1.1 번역 모델</a>
+              <a href="#sec-1-2" class="sub-chip">1.2 main 규약</a>
+              <a href="#sec-1-3" class="sub-chip">1.3 I/O & print</a>
+              <a href="#sec-1-4" class="sub-chip">1.4 주석 규약</a>
+              <a href="#sec-1-5" class="sub-chip">1.5 터미널 실습</a>
+            </div>
+          </li>
+          <li class="current-lesson-item">
+            <a href="#ch-02" class="phase-chapter-link">
+              <span class="lesson-num">02</span>
+              <span class="chapter-name">기본 타입 시스템 & 객체 모델</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="2단원 세부 소단원 이동">
+              <a href="#sec-2-1" class="sub-chip">2.1 기본 타입</a>
+              <a href="#sec-2-2" class="sub-chip">2.2 고정 너비</a>
+              <a href="#sec-2-3" class="sub-chip">2.3 UB & Modulo</a>
+              <a href="#sec-2-4" class="sub-chip">2.4 sizeof & 정렬</a>
+              <a href="#sec-2-5" class="sub-chip">2.5 초기화 문법</a>
+              <a href="#sec-2-6" class="sub-chip">2.6 C++26 `_`</a>
+              <a href="#sec-2-7" class="sub-chip">2.7 디버깅 실습</a>
+            </div>
+          </li>
+          <li class="pending-item">
+            <span class="lesson-num">03</span>
+            <span class="chapter-name">표현식 & 연산자 우선순위</span>
+            <span class="pending-tag">준비중</span>
+          </li>
+          <li class="pending-item">
+            <span class="lesson-num">04</span>
+            <span class="chapter-name">함수 선언·정의 & 인자 전달</span>
+            <span class="pending-tag">준비중</span>
+          </li>
         </ul>
       </div>
 
@@ -119,7 +155,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         <span class="read-time">예상 학습 시간: 20분</span>
       </div>
 
-      <header class="lesson-header">
+      <header class="lesson-header" id="ch-01">
         <h2>단원 01: 프로그램 구조와 번역 모델 (Translation Model)</h2>
         <p class="lesson-intro">
           C++ 프로그램을 작성할 때 텍스트 파일(.cpp)에 적힌 소스 코드가 컴퓨터 하드웨어(CPU)가 실행할 수 있는 바이너리 기계어로 변환되는 전체 과정과, 
@@ -1733,13 +1769,80 @@ uint8_t(255) + 1 의 결과: 0
     padding-top: 0.8rem;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.6rem;
     color: var(--text-2);
   }
   .phase-list li {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+  .current-lesson-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.35rem !important;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+  }
+  .phase-chapter-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    color: var(--accent);
+    font-weight: 700;
+    transition: all 0.15s ease;
+  }
+  .phase-chapter-link:hover {
+    color: #93c5fd;
+    text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  }
+  .goto-icon {
+    font-size: 0.72rem;
+    opacity: 0.7;
+    transition: transform 0.15s ease;
+  }
+  .phase-chapter-link:hover .goto-icon {
+    transform: translateX(3px);
+    opacity: 1;
+  }
+  .sub-lesson-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-left: 1.25rem;
+  }
+  .sub-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.45rem;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--text-2);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .sub-chip:hover {
+    color: #ffffff;
+    background: rgba(59, 130, 246, 0.22);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
+    transform: translateY(-1px);
+  }
+  .pending-item {
+    opacity: 0.65;
+  }
+  .pending-tag {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-3);
+    font-family: var(--font-mono);
   }
   .current-lesson {
     color: var(--accent);
@@ -1775,6 +1878,7 @@ uint8_t(255) + 1 의 결과: 0
     border-bottom: 1px solid var(--border-subtle);
     padding-bottom: 1.5rem;
     margin-bottom: 2rem;
+    scroll-margin-top: 5rem;
   }
   .lesson-header h2 {
     margin: 0 0 0.8rem;

@@ -1293,6 +1293,17 @@ int old_val = 3.141592; // 컴파일 성공! 소수점(.141592)이 유실되어 
       </div>
 
       <div class="callout callout-info">
+        <div class="callout-title">💡 초보자가 가장 많이 오해하는 규약: 전역 변수(0 보장) vs 지역 변수(미초기화 UB)</div>
+        <p>
+          <em>"초기화를 안 했는데 실행해보니 0이 나오던데요?"</em>라는 의문이 자주 생깁니다. C++ 표준 규약은 <strong>변수의 저장 위치(Storage Duration)</strong>에 따라 완전히 다르게 동작합니다:
+        </p>
+        <ul style="margin: 0.5rem 0 0.5rem 1.2rem; font-size: 0.9rem; color: var(--text-2);">
+          <li><strong>전역 변수 및 <code>static</code> 변수:</strong> 프로그램 시작 시 데이터 영역(BSS)에서 표준 규약에 따라 <strong>반드시 0으로 자동 초기화(Zero-initialization)</strong>됩니다.</li>
+          <li><strong>함수 내부의 일반 지역 변수(스택):</strong> 성능 극대화를 위해 스택을 0으로 비우는 오버헤드를 지불하지 않으므로, <strong>이전 메모리 비트 찌꺼기(Indeterminate value, 쓰레기 값)</strong>가 그대로 남습니다. 이 값을 읽어 연산에 쓰는 것은 C++ 표준 규약상 명백한 <strong>미정의 동작(UB)</strong>입니다. (실행 시 0이 나오는 것은 OS가 방금 할당해 준 깨끗한 빈 RAM 페이지였을 뿐인 우연의 일치입니다.)</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-info" style="margin-top: 1rem;">
         <div class="callout-title">💡 Most Vexing Parse 문제의 종결</div>
         <p>
           C++에서는 <code>Timer t();</code>와 같이 객체를 기본 생성자로 직접 초기화하려 할 때, 컴파일러가 이를 "Timer 객체 생성"이 아니라 "매개변수가 없고 Timer를 반환하는 함수 <code>t</code>의 선언"으로 오해하는 문법적 모호성(Most Vexing Parse)이 존재했습니다.
@@ -1300,28 +1311,36 @@ int old_val = 3.141592; // 컴파일 성공! 소수점(.141592)이 유실되어 
         </p>
       </div>
 
-      <!-- 실무 스타일 가이드 비교: 모던 C++ 코어 가이드라인 vs 구글 C++ 스타일 가이드 -->
+      <!-- 실무 스타일 가이드 비교: 구글 C++ 스타일 가이드 vs 모던 C++ 코어 가이드라인 -->
       <div class="style-comparison-card">
         <div class="style-card-header">
           <span class="style-badge">STYLE GUIDE DEBATE</span>
-          <span class="style-card-title">실무 표준 관례 비교: 변수 초기화 문법 (Core Guidelines vs Google)</span>
+          <span class="style-card-title">실무 표준 관례 비교: 변수 초기화 문법 (Google vs Core Guidelines)</span>
         </div>
         <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
-          변수를 초기화할 때 <code>int x&#123;0&#125;;</code> (중괄호)를 쓸 것인가, <code>int x = 0;</code> (등호)를 쓸 것인가에 대한 실무 표준의 관점 차이입니다:
+          변수를 초기화할 때 <code>int x = 0;</code> (전통적 등호)를 쓸 것인가, <code>int x&#123;0&#125;;</code> (중괄호 균일 초기화)를 쓸 것인가에 대한 실무 표준의 관점 차이와 해법입니다:
         </p>
         <div class="style-grid">
           <div class="style-column">
-            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (ES.23)</div>
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
             <p>
-              <strong>"항상 중괄호 균일 초기화(&#123;&#125;)를 기본으로 채택하라"</strong><br>
-              비야네 스트롭스트룹(Bjarne Stroustrup)과 헙 서터(Herb Sutter)가 주도하는 코어 가이드라인은 <strong>축소 변환(Narrowing Conversion)을 컴파일 타임에 원천 차단</strong>하고, 모든 객체와 기본 타입에 일관된 문법을 제공하기 위해 <code>int x&#123;0&#125;;</code>를 기본 표준으로 권장합니다.
+              <strong>"기본 스칼라 타입에는 대입(=)을 유지하고, 중괄호는 꼭 필요한 곳에만 써라"</strong><br>
+              구글 가이드는 <code>int x = 0;</code>처럼 친숙한 대입 복사 문법을 권장합니다.
+              중괄호 초기화가 <code>std::initializer_list</code> 생성자와 모호성을 빚는 대표적인 부작용 때문입니다:<br>
+              &bull; <code>std::vector&lt;int&gt; v(10, 2);</code> ➔ 원소 10개를 2로 채움 (크기 10)<br>
+              &bull; <code>std::vector&lt;int&gt; v&#123;10, 2&#125;;</code> ➔ 원소 [10, 2] 생성 (크기 2)<br>
+              이러한 생성자 해석 혼란이 대규모 협업에서 버그를 유발할 수 있으므로, 구조체 집합체나 명시적 컨테이너 원소 나열 외의 기본 타입에는 전통적인 <code>=</code> 사용을 규정합니다.
             </p>
           </div>
           <div class="style-column">
-            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (ES.23)</div>
             <p>
-              <strong>"기본 스칼라 타입에는 전통적인 대입 초기화(=)를 유지하라"</strong><br>
-              구글 가이드는 <code>int x = 0;</code>처럼 기본 정수·실수형에는 친숙한 대입 복사 문법을 권장합니다. 중괄호 초기화는 <code>std::initializer_list</code> 생성자와 모호성을 빚거나(예: <code>std::vector&lt;int&gt; v&#123;10&#125;</code>이 크기 10이 아닌 요소 [10]을 생성), 과도한 구문 복잡성을 낳을 수 있어 구조체나 컨테이너 구성 등 필요한 곳에만 선택적으로 사용하도록 규정합니다.
+              <strong>"벡터의 혼란에도 불구하고 왜 항상 중괄호(&#123;&#125;)를 기본으로 추구하는가?"</strong><br>
+              비야네 스트롭스트룹과 헙 서터가 주도하는 코어 가이드라인은 <strong>축소 변환(Narrowing) 방지와 Most Vexing Parse 해결</strong>이라는 압도적인 안전성 이점을 위해 <code>int x&#123;0&#125;;</code>를 기본 표준으로 권장합니다.<br>
+              <strong>[모던 C++의 벡터 혼란 해법: 명확한 의미적 분리]</strong><br>
+              &bull; <strong><code>&#123;&#125;</code> (중괄호):</strong> 명시적인 <em>"원소들의 목록(List of Elements)"</em>을 담을 때 기본값으로 사용<br>
+              &bull; <strong><code>()</code> (소괄호):</strong> 컨테이너의 <em>"동작 속성(크기, 기본값 등)"</em>을 생성자에 넘길 때만 예외적으로 사용<br>
+              즉, 기본 스칼라 타입과 구조체에는 안전한 <code>&#123;&#125;</code>를 100% 기본으로 쓰되, 크기 지정 생성자 호출에만 소괄호를 사용하는 명확한 규칙을 세우면 혼란 없이 안전성을 극대화할 수 있습니다.
             </p>
           </div>
         </div>

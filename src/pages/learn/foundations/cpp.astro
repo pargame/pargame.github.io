@@ -1560,22 +1560,6 @@ uint8_t(255) + 1 의 결과: 0
           <li><strong>최신 C++26</strong>에서는 단일 밑줄 <strong><code>_</code> 플레이스홀더(P2169R4)</strong>를 통해 불필요한 변수명을 짓지 않고도 심볼 충돌 없이 안전하게 값을 버릴 수 있습니다.</li>
         </ul>
       </div>
-
-      <!-- 2단원 마무리 및 다음 단원 네비게이션 액션 카드 -->
-      <div class="chapter-end-nav">
-        <div class="next-chapter-info">
-          <div class="next-chap-meta">
-            <span class="next-chap-badge">NEXT LESSON</span>
-            <span class="next-chap-status">작성 준비 중</span>
-          </div>
-          <h4>단원 03: 표현식(Expressions)과 연산자 우선순위</h4>
-          <p>산술·비트 연산자, 우선순위 및 결합 법칙, 단축 평가(Short-circuit), C++20 우주선 연산자(&lt;=&gt;)를 학습합니다.</p>
-        </div>
-        <div class="chapter-nav-btns">
-          <a href="#ch-01" class="chap-nav-btn secondary">⇠ 1단원 복습하기</a>
-          <button type="button" class="chap-nav-btn primary" id="jumpRoadmapBtn">▲ 상단 로드맵 보기</button>
-        </div>
-      </div>
     </footer>
   </article>
 
@@ -1667,7 +1651,6 @@ uint8_t(255) + 1 의 결과: 0
   document.addEventListener('DOMContentLoaded', () => {
     const topBtn = document.getElementById('scrollTopBtn');
     const bottomBtn = document.getElementById('scrollBottomBtn');
-    const jumpRoadmapBtn = document.getElementById('jumpRoadmapBtn');
     const tocLinks = document.querySelectorAll('.floating-toc-link');
     const sections = Array.from(document.querySelectorAll('.lesson-section'));
 
@@ -1693,17 +1676,6 @@ uint8_t(255) + 1 의 결과: 0
     if (bottomBtn) {
       bottomBtn.addEventListener('click', () => {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-      });
-    }
-
-    if (jumpRoadmapBtn) {
-      jumpRoadmapBtn.addEventListener('click', () => {
-        const roadmap = document.querySelector('.roadmap-section');
-        if (roadmap) {
-          roadmap.scrollIntoView({ behavior: 'smooth' });
-        } else {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
       });
     }
 
@@ -2494,105 +2466,6 @@ uint8_t(255) + 1 의 결과: 0
     font-size: 0.95rem;
   }
 
-  /* Chapter End Action Nav */
-  .chapter-end-nav {
-    margin-top: 1rem;
-    padding: 1.6rem;
-    background: var(--surface-1);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1.5rem;
-  }
-  .next-chapter-info {
-    flex: 1;
-  }
-  .next-chap-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.4rem;
-  }
-  .next-chap-badge {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-  }
-  .next-chap-status {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-3);
-    padding: 2px 7px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-  }
-  .next-chapter-info h4 {
-    margin: 0 0 0.4rem;
-    font-size: 1.12rem;
-    color: var(--text-1);
-  }
-  .next-chapter-info p {
-    margin: 0;
-    font-size: 0.88rem;
-    color: var(--text-3);
-    line-height: 1.5;
-  }
-  .chapter-nav-btns {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    flex-shrink: 0;
-  }
-  .chap-nav-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.6rem 0.95rem;
-    border-radius: 6px;
-    font-family: var(--font-mono);
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    border: none;
-  }
-  .chap-nav-btn.primary {
-    background: var(--accent);
-    color: #0f172a;
-    font-weight: 700;
-  }
-  .chap-nav-btn.primary:hover {
-    background: #60a5fa;
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
-    transform: translateY(-1px);
-  }
-  .chap-nav-btn.secondary {
-    background: var(--surface-2);
-    color: var(--text-2);
-    border: 1px solid var(--border-subtle);
-  }
-  .chap-nav-btn.secondary:hover {
-    color: var(--text-1);
-    border-color: var(--accent);
-  }
-  @media (max-width: 768px) {
-    .chapter-end-nav {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    .chapter-nav-btns {
-      flex-direction: column;
-    }
-    .chap-nav-btn {
-      justify-content: center;
-    }
-  }
-
   .chapter-separator {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--border), var(--accent), var(--border), transparent);
@@ -2733,6 +2606,7 @@ uint8_t(255) + 1 의 결과: 0
     justify-content: center;
     gap: 2.5rem;
     align-items: flex-start;
+    padding-bottom: 5rem;
   }
   .lesson-article {
     flex: 1;

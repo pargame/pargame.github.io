@@ -3,10 +3,10 @@
     "id": "foundations",
     "name": "Foundations",
     "koreanName": "기반 공학",
-    "description": "컴퓨터 과학 기초, 모던 C++, 메모리 모델 및 저수준 아키텍처",
+    "description": "컴퓨터 과학 기초, C++, 메모리 모델 및 저수준 아키텍처",
     "accent": "#3B82F6",
     "topics": [
-      { "id": "cpp", "name": "Modern C++", "summary": "C++20/23, 템플릿, 메모리 최적화, CMake" },
+      { "id": "cpp", "name": "C++", "summary": "최신 C++26 및 ISO/IEC 14882 공식 규약, 번역 모델, 타입 시스템, 저수준 메모리 최적화" },
       { "id": "cs", "name": "Core CS", "summary": "운영체제, 컴퓨터구조, 알고리즘" }
     ]
   },

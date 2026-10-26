@@ -128,13 +128,36 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         </div>
         <h3>동적 할당과 힙(Heap) 메모리</h3>
         <p class="studio-desc">
-          malloc과 free 라이프사이클, 포인터 주소 매핑, 메모리 누수(Leak) 및 외부 단편화(Fragmentation) 원리
+          new와 delete 객체 라이프사이클, 포인터 주소 매핑, 메모리 누수(Leak) 및 외부 단편화(Fragmentation) 원리
         </p>
 
         <div class="card-tags">
           <span class="card-tag">스택 vs 힙 타워</span>
           <span class="card-tag">메모리 누수 원리</span>
           <span class="card-tag">외부 단편화 시뮬레이터</span>
+        </div>
+
+        <div class="card-action">
+          <span>인터랙티브 스튜디오 실행</span>
+          <span class="arrow-icon">→</span>
+        </div>
+      </a>
+
+      <!-- Studio 6: Cache Memory & Locality -->
+      <a href="/slides/06-cache/index.html" target="_blank" rel="noopener noreferrer" class="studio-card">
+        <div class="card-top">
+          <span class="studio-badge" style="color: #f59e0b;">PART 06 // 4 SLIDES</span>
+          <span class="open-indicator">전체화면 ↗</span>
+        </div>
+        <h3>캐시 메모리와 참조 지역성</h3>
+        <p class="studio-desc">
+          메모리 계층 피라미드와 64B 캐시 라인, 행 우선 vs 열 우선 순회에 따른 공간·시간적 지역성 및 캐시 적중률 원리
+        </p>
+
+        <div class="card-tags">
+          <span class="card-tag">메모리 벽 (Memory Wall)</span>
+          <span class="card-tag">64B 캐시 라인</span>
+          <span class="card-tag">캐시 라인 시뮬레이터</span>
         </div>
 
         <div class="card-action">

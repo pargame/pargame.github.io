@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Architecture: Cache Memory & Locality Studio</title>
+    <style>
+        :root {
+            --bg-color: #0b0d14;
+            --card-bg: #12141e;
+            --card-border: #222636;
+            --accent-blue: #3ddcf7;
+            --accent-green: #4ade80;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --accent-purple: #a98bfa;
+            --text-main: #ebeef5;
+            --text-sub: #82889a;
+            --text-muted: #525866;
+            --code-bg: #07090e;
+            --glow-green: rgba(74, 222, 128, 0.35);
+            --glow-blue: rgba(61, 220, 247, 0.35);
+            --glow-amber: rgba(245, 158, 11, 0.35);
+            --glow-rose: rgba(244, 63, 94, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro", "Pretendard", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            user-select: none;
+        }
+
+        header {
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: var(--accent-amber);
+            color: #000000;
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .slide-progress {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-family: monospace;
+        }
+
+        .presentation-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
+            min-height: 0;
+            position: relative;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            max-width: 1180px;
+            max-height: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 20px 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.25s ease-out;
+            position: relative;
+            overflow-y: auto;
+            box-sizing: border-box;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-header-wrap {
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+
+        .slide-title {
+            font-size: 1.55rem;
+            font-weight: 800;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .slide-subtitle {
+            font-size: 0.92rem;
+            color: var(--text-sub);
+            line-height: 1.45;
+        }
+
+        .theory-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        .diagram-card {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .concept-box {
+            background: rgba(18, 20, 30, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .concept-box b {
+            color: var(--accent-amber);
+        }
+
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--accent-amber);
+            font-weight: 700;
+            font-size: 0.76rem;
+            margin-bottom: 6px;
+        }
+
+        .concept-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--accent-amber);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .concept-body {
+            font-size: 0.84rem;
+            color: var(--text-main);
+            line-height: 1.55;
+        }
+
+        .addr-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.82em;
+            font-weight: 700;
+            border-radius: 5px;
+            line-height: 1.2;
+            vertical-align: middle;
+            letter-spacing: 0.4px;
+        }
+        .addr-code {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1.5px solid rgba(244, 63, 94, 0.55);
+        }
+        .addr-cache {
+            background: rgba(61, 220, 247, 0.15);
+            color: var(--accent-blue);
+            border: 1.5px solid rgba(61, 220, 247, 0.55);
+        }
+        .addr-dram {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-amber);
+            border: 1.5px solid rgba(245, 158, 11, 0.55);
+        }
+        .addr-stack {
+            background: rgba(169, 139, 250, 0.15);
+            color: var(--accent-purple);
+            border: 1.5px solid rgba(169, 139, 250, 0.55);
+        }
+
+        .val-card {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: var(--text-main);
+        }
+
+        /* Slide 1 Memory Hierarchy Pyramid */
+        .pyramid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 450px;
+            gap: 5px;
+        }
+
+        .pyramid-level {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease;
+        }
+        .pyramid-level:hover {
+            transform: scale(1.02);
+        }
+
+        .p-reg {
+            width: 44%;
+            background: rgba(244, 63, 94, 0.2);
+            border: 1.5px solid var(--accent-rose);
+            color: var(--accent-rose);
+        }
+        .p-l1 {
+            width: 56%;
+            background: rgba(61, 220, 247, 0.2);
+            border: 1.5px solid var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        .p-l2 {
+            width: 68%;
+            background: rgba(74, 222, 128, 0.18);
+            border: 1.5px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+        .p-l3 {
+            width: 80%;
+            background: rgba(169, 139, 250, 0.18);
+            border: 1.5px solid var(--accent-purple);
+            color: var(--accent-purple);
+        }
+        .p-dram {
+            width: 92%;
+            background: rgba(245, 158, 11, 0.18);
+            border: 1.5px solid var(--accent-amber);
+            color: var(--accent-amber);
+        }
+        .p-ssd {
+            width: 100%;
+            background: rgba(130, 136, 154, 0.15);
+            border: 1.5px solid var(--text-sub);
+            color: var(--text-sub);
+        }
+
+        .latency-bar-box {
+            width: 100%;
+            max-width: 450px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.75rem;
+        }
+
+        .lat-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .lat-label {
+            width: 80px;
+            font-weight: 700;
+            color: var(--text-sub);
+            font-family: monospace;
+            font-size: 0.72rem;
+        }
+        .lat-track {
+            flex: 1;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+        }
+        .lat-fill-l1 {
+            width: 2%;
+            background: var(--accent-blue);
+            border-radius: 6px;
+        }
+        .lat-fill-dram {
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-amber));
+            border-radius: 6px;
+        }
+
+        /* Slide 2 Cache Line Diagram */
+        .cache-line-diagram {
+            width: 100%;
+            max-width: 450px;
+            background: #0d111d;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cl-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+        .cl-cell {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 5px 2px;
+            text-align: center;
+            font-size: 0.68rem;
+            font-family: monospace;
+            color: var(--text-sub);
+        }
+        .cl-cell.target {
+            background: rgba(245, 158, 11, 0.25);
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+            font-weight: 800;
+        }
+        .cl-cell.bundled {
+            background: rgba(61, 220, 247, 0.15);
+            border-color: rgba(61, 220, 247, 0.5);
+            color: var(--accent-blue);
+        }
+
+        /* Slide 3 Row/Col Major Visualizer */
+        .traversal-box {
+            width: 100%;
+            max-width: 450px;
+            background: #0d111d;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Slide 4 Simulator Grid */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .code-view-container {
+            background: #0d1117;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .code-view-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .code-dots {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-dots .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .code-dots .dot.red { background: #ff5f56; }
+        .code-dots .dot.yellow { background: #ffbd2e; }
+        .code-dots .dot.green { background: #27c93f; }
+
+        .code-filename {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.74rem;
+            color: var(--text-sub);
+            margin-left: 6px;
+            font-weight: 600;
+        }
+
+        .code-lang-tag {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .code-view {
+            background: transparent;
+            padding: 8px 6px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 0.82rem;
+            line-height: 1.55;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-x: auto;
+        }
+
+        .code-line {
+            display: flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
+            color: var(--text-sub);
+            white-space: pre;
+        }
+
+        .code-line.current {
+            background: rgba(245, 158, 11, 0.14);
+            border-left-color: var(--accent-amber);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .code-num {
+            width: 20px;
+            text-align: right;
+            margin-right: 12px;
+            color: var(--text-muted);
+            opacity: 0.45;
+            font-size: 0.74rem;
+            user-select: none;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+
+        .code-line.current .code-num {
+            color: var(--accent-amber);
+            opacity: 0.95;
+            font-weight: 700;
+        }
+
+        .code-text {
+            white-space: pre;
+            font-family: inherit;
+            color: inherit;
+        }
+
+        .code-hint {
+            margin-left: 14px;
+            color: #8b949e;
+            opacity: 0.75;
+            font-size: 0.74rem;
+            font-style: italic;
+            white-space: nowrap;
+        }
+
+        .code-active-tag {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 3px;
+            padding: 1px 5px;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+
+        .tok-op { color: #e3b341; font-weight: 700; }
+        .tok-kw { color: #ff7b72; font-weight: 600; }
+        .tok-fn { color: #d2a8ff; font-weight: 600; }
+        .tok-num { color: #79c0ff; }
+        .tok-comment { color: #8b949e; font-style: italic; }
+
+        .anchor-bar {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            height: 36px;
+            min-height: 36px;
+            max-height: 36px;
+        }
+        .anchor-bar .anchor-tag {
+            color: var(--accent-amber);
+            font-weight: 800;
+            font-family: monospace;
+        }
+
+        .scenario-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .btn-scenario {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-sub);
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-scenario:hover {
+            border-color: var(--accent-amber);
+            color: var(--text-main);
+        }
+        .btn-scenario.active {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+            font-weight: 800;
+        }
+
+        /* Simulator Right Container */
+        .cache-sim-container {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+        }
+
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .metric-title {
+            font-size: 0.68rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .metric-val {
+            font-size: 1.05rem;
+            font-weight: 800;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        /* L1 Cache Slots */
+        .cache-slots-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #0d1117;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        .cache-slot-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 5px;
+            padding: 5px 8px;
+            font-size: 0.74rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            transition: all 0.25s ease;
+        }
+        .cache-slot-row.active-hit {
+            background: rgba(61, 220, 247, 0.18);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px var(--glow-blue);
+        }
+        .cache-slot-row.active-miss {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: var(--accent-amber);
+            box-shadow: 0 0 10px var(--glow-amber);
+        }
+
+        /* 2D Memory Array Grid */
+        .array-map-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            background: #0d1117;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        .array-row {
+            display: grid;
+            grid-template-columns: 80px repeat(4, 1fr);
+            gap: 4px;
+            align-items: center;
+        }
+        .row-label {
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: var(--text-sub);
+            font-weight: 700;
+        }
+        .arr-cell {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            padding: 4px 2px;
+            text-align: center;
+            font-size: 0.72rem;
+            font-family: monospace;
+            transition: all 0.2s ease;
+        }
+        .arr-cell.cached {
+            border-color: rgba(61, 220, 247, 0.5);
+            background: rgba(61, 220, 247, 0.08);
+            color: var(--accent-blue);
+        }
+        .arr-cell.current-access {
+            background: rgba(245, 158, 11, 0.35) !important;
+            border-color: var(--accent-amber) !important;
+            color: #ffffff !important;
+            font-weight: 800;
+            box-shadow: 0 0 8px var(--glow-amber);
+            transform: scale(1.05);
+        }
+
+        /* Hit Rate Gauge */
+        .gauge-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+        .gauge-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-rose), var(--accent-amber), var(--accent-green));
+            transition: width 0.3s ease;
+        }
+
+        /* Footer & Navigation */
+        footer {
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-amber);
+        }
+        .nav-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .shortcut-hint {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+        .shortcut-hint b {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span style="color: var(--accent-amber);">⚡</span>
+            <span>pargame / Core CS</span>
+            <span class="badge">PART 06 // CACHE & LOCALITY</span>
+        </div>
+        <div class="slide-progress" id="slideIndicator">Slide 1 / 4</div>
+    </header>
+
+    <div class="presentation-container">
+
+        <!-- SLIDE 1: Memory Wall & Memory Hierarchy -->
+        <div class="slide active" id="slide-1">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>01. 메모리 계층 구조와 속도 격차 (Memory Wall)</span>
+                </h1>
+                <p class="slide-subtitle">
+                    CPU 코어 연산 속도와 메인 메모리(DRAM) 접근 속도 사이의 거대한 지연시간 격차와 캐시의 필연성
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Hierarchy Pyramid & Latency Comparison -->
+                <div class="diagram-card">
+                    <span class="tech-badge">MEMORY HIERARCHY PYRAMID</span>
+
+                    <div class="pyramid-container">
+                        <div class="pyramid-level p-reg">
+                            <span>1. CPU 레지스터</span>
+                            <span>&lt; 0.5 ns (&lt; 1 cyc) | ~1 KB</span>
+                        </div>
+                        <div class="pyramid-level p-l1">
+                            <span>2. L1 캐시 (SRAM)</span>
+                            <span>~1 ns (4 cyc) | 64 KB</span>
+                        </div>
+                        <div class="pyramid-level p-l2">
+                            <span>3. L2 캐시 (SRAM)</span>
+                            <span>~4 ns (14 cyc) | 1 MB</span>
+                        </div>
+                        <div class="pyramid-level p-l3">
+                            <span>4. L3 캐시 (LLC SRAM)</span>
+                            <span>~15 ns (50 cyc) | 32 MB</span>
+                        </div>
+                        <div class="pyramid-level p-dram">
+                            <span>5. 메인 메모리 (DRAM)</span>
+                            <span>~70 ns (200 cyc) | 32 GB</span>
+                        </div>
+                        <div class="pyramid-level p-ssd">
+                            <span>6. 보조기억장치 (NVMe SSD)</span>
+                            <span>~10,000 ns (10,000+ cyc) | 1 TB</span>
+                        </div>
+                    </div>
+
+                    <div class="latency-bar-box">
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.74rem;">⏱️ CPU 지연시간(Latency) 시각적 비교</div>
+                        <div class="lat-row">
+                            <span class="lat-label">L1 캐시</span>
+                            <div class="lat-track"><div class="lat-fill-l1"></div></div>
+                            <span style="font-family: monospace; font-size: 0.72rem; color: var(--accent-blue);">4 cyc</span>
+                        </div>
+                        <div class="lat-row">
+                            <span class="lat-label">메인 DRAM</span>
+                            <div class="lat-track"><div class="lat-fill-dram"></div></div>
+                            <span style="font-family: monospace; font-size: 0.72rem; color: var(--accent-amber);">200 cyc (200배 느림!)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Theory Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">🚧 폰 노이만 병목과 메모리 벽 (Memory Wall)</div>
+                        <div class="concept-body">
+                            무어의 법칙으로 CPU 코어 연산 속도는 수십 년간 수천 배 빨라졌지만, <b>메인 메모리(DRAM)의 접근 지연시간</b>은 고작 몇 배 개선되는 데 그쳤습니다.
+                            CPU가 DRAM에서 데이터를 직접 가져오려면 약 <b>150~200 사이클 동안 아무 일도 못 하고 멈춰 서 있는(Pipeline Stall)</b> 현상이 발생합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">⚡ SRAM 캐시의 구원: 계층적 완충망</div>
+                        <div class="concept-body">
+                            DRAM보다 수십 배 빠르지만 비싸고 전력을 많이 소모하는 <b>SRAM(Static RAM)</b>을 코어 바로 옆에 L1, L2, L3 다단계로 배치했습니다.
+                            자주 쓰는 데이터를 고속 캐시에 미리 올려둠으로써, CPU가 느린 DRAM 버스를 직접 두드리는 횟수를 극적으로 줄입니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">📊 수치로 체감하는 인간 시간 환산</div>
+                        <div class="concept-body">
+                            CPU 1 클럭(0.3ns)을 인간 시간 <b>1초</b>로 가정하면:
+                            <br>• L1 캐시: <b>4초</b> (책상 위 펼쳐진 노트)
+                            <br>• L3 캐시: <b>1분</b> (옆방 서랍장)
+                            <br>• 메인 메모리 DRAM: <b>4분 30초</b> (건물 밖 편의점 왕복)
+                            <br>• NVMe SSD: <b>수일 ~ 수개월</b> (우주선 타고 지구 반대편 왕복)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Locality of Reference & 64B Cache Line -->
+        <div class="slide" id="slide-2">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>02. 참조 지역성의 원리와 64바이트 캐시 라인</span>
+                </h1>
+                <p class="slide-subtitle">
+                    한 번 가져올 때 덩어리로 퍼오는 64B Cache Line과 시간적·공간적 지역성의 하드웨어 메커니즘
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: 64B Cache Line Architecture -->
+                <div class="diagram-card">
+                    <span class="tech-badge">64-BYTE CACHE LINE ARCHITECTURE</span>
+
+                    <div class="cache-line-diagram">
+                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-main); display: flex; justify-content: space-between;">
+                            <span>📦 64B 캐시 라인 = 16개의 32-bit int 블록</span>
+                            <span class="addr-chip addr-cache">@4000 ~ @4063</span>
+                        </div>
+
+                        <div class="cl-grid">
+                            <div class="cl-cell target">arr[0]<br><b>요청</b></div>
+                            <div class="cl-cell bundled">arr[1]<br>동반</div>
+                            <div class="cl-cell bundled">arr[2]<br>동반</div>
+                            <div class="cl-cell bundled">arr[3]<br>동반</div>
+                            <div class="cl-cell bundled">arr[4]<br>동반</div>
+                            <div class="cl-cell bundled">arr[5]<br>동반</div>
+                            <div class="cl-cell bundled">arr[6]<br>동반</div>
+                            <div class="cl-cell bundled">arr[7]<br>동반</div>
+                            <div class="cl-cell bundled">arr[8]<br>동반</div>
+                            <div class="cl-cell bundled">arr[9]<br>동반</div>
+                            <div class="cl-cell bundled">arr[10]<br>동반</div>
+                            <div class="cl-cell bundled">arr[11]<br>동반</div>
+                            <div class="cl-cell bundled">arr[12]<br>동반</div>
+                            <div class="cl-cell bundled">arr[13]<br>동반</div>
+                            <div class="cl-cell bundled">arr[14]<br>동반</div>
+                            <div class="cl-cell bundled">arr[15]<br>동반</div>
+                        </div>
+
+                        <div style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px;">
+                            CPU가 단 4바이트 <span class="val-card">arr[0]</span>을 요청하더라도, 하드웨어는 메모리 버스를 통해 <b>64바이트 블록 전체(16개 int)</b>를 통째로 L1 캐시 슬롯에 적재합니다.
+                        </div>
+                    </div>
+
+                    <div style="width: 100%; max-width: 450px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; font-size: 0.72rem; font-family: monospace;">
+                        <span>주소 비트 분할:</span>
+                        <span style="color: var(--accent-rose);">Tag (상위 비트)</span>
+                        <span>|</span>
+                        <span style="color: var(--accent-blue);">Index (슬롯 선택)</span>
+                        <span>|</span>
+                        <span style="color: var(--accent-green);">Offset (0~63B)</span>
+                    </div>
+                </div>
+
+                <!-- Right: Locality Concepts -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">⏱️ 시간적 지역성 (Temporal Locality)</div>
+                        <div class="concept-body">
+                            <b>"방금 접근한 메모리는 아주 가까운 미래에 다시 접근할 가능성이 극도로 높다."</b>
+                            <br>• 대표 사례: 반복문 카운터 변수 <code>i</code>, 누적합 <code>sum</code>, 빈번히 호출되는 함수 코드 및 스택 프레임.
+                            <br>• 하드웨어 대처: 최근 접근한 데이터를 캐시 최상위에 유지(LRU 알고리즘)하여 다음 접근 시 1사이클에 적중(Hit)시킵니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">📐 공간적 지역성 (Spatial Locality)</div>
+                        <div class="concept-body">
+                            <b>"어떤 메모리 주소에 접근했다면, 그 주변 주소들도 곧이어 접근할 가능성이 매우 높다."</b>
+                            <br>• 대표 사례: 1차원 연속 배열 순차 순회, 연속된 구조체 멤버 필드 참조, 순차 인스트럭션 실행(PC = PC + 4).
+                            <br>• 하드웨어 대처: 캐시는 바이트 단위가 아닌 <b>64B Cache Line</b> 단위로 주변 데이터를 넉넉히 퍼옵니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">📦 왜 64바이트인가?</div>
+                        <div class="concept-body">
+                            메모리 버스를 열고 닫는 오버헤드 때문에 4바이트씩 찔끔찔끔 가져오는 것은 대역폭 낭비입니다. 현대 x86-64 및 ARM64(Apple Silicon 포함)는 <b>64바이트</b>를 하드웨어 표준 전송 블록 단위로 채택하고 있습니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: Cache-Friendly Code (Row-Major vs Column-Major) -->
+        <div class="slide" id="slide-3">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>03. 2차원 배열과 캐시 친화적 순회 패턴</span>
+                </h1>
+                <p class="slide-subtitle">
+                    행 우선(Row-Major) vs 열 우선(Column-Major) 메모리 배치에 따른 캐시 적중률과 극단적인 성능 격차
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Traversal Pattern Diagram -->
+                <div class="diagram-card">
+                    <span class="tech-badge">MEMORY LAYOUT & TRAVERSAL</span>
+
+                    <div class="traversal-box">
+                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--accent-green); margin-bottom: 2px;">
+                            ✅ 행 우선 순회 (Row-Major Traversal: Cache-Friendly)
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4;">
+                            가로 방향 순차 전진: <code>arr[0][0] → arr[0][1] → arr[0][2] → arr[0][3]</code>
+                            <br>➔ <b>첫 1회 Miss로 64B(16개) 적재 후, 다음 15회 연속 Hit! (적중률 93.75%)</b>
+                        </div>
+                        <div style="background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 4px; padding: 4px 8px; font-family: monospace; font-size: 0.72rem; color: var(--accent-green);">
+                            [MISS] ➔ [HIT] ➔ [HIT] ➔ [HIT] ➔ [HIT] ➔ [HIT] ...
+                        </div>
+                    </div>
+
+                    <div class="traversal-box">
+                        <div style="font-size: 0.74rem; font-weight: 700; color: var(--accent-rose); margin-bottom: 2px;">
+                            ❌ 열 우선 순회 (Column-Major Traversal: Cache-Unfriendly)
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-sub); line-height: 1.4;">
+                            세로 방향 스트라이드 점프: <code>arr[0][0] → arr[1][0] → arr[2][0] → arr[3][0]</code>
+                            <br>➔ <b>매 스텝마다 64B 라인 경계를 벗어나 매번 Miss 발생! (적중률 0~10%)</b>
+                        </div>
+                        <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 4px; padding: 4px 8px; font-family: monospace; font-size: 0.72rem; color: var(--accent-rose);">
+                            [MISS] ➔ [MISS] ➔ [MISS] ➔ [MISS] ➔ [MISS] ...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Analysis Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">🚀 행 우선 순회: 공간 지역성의 극대화</div>
+                        <div class="concept-body">
+                            C/C++ 표준에서 2차원 배열은 메모리 상에 <b>행(Row) 단위로 연속</b> 배치됩니다.
+                            루프의 안쪽 인덱스를 열(Column)로 두면, CPU는 메모리에 놓인 물리적 순서 그대로 순차 전진합니다.
+                            하드웨어 프리페처(Hardware Prefetcher)가 다음 캐시 라인을 예측하여 미리 당겨오므로 병목이 전혀 없습니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">💥 열 우선 순회: 공간 지역성 완전 파괴</div>
+                        <div class="concept-body">
+                            루프의 안쪽 인덱스를 행(Row)으로 두면 다음 원소의 주소가 <b>행 크기(Stride)만큼 크게 점프</b>합니다.
+                            앞서 캐시 라인으로 함께 퍼온 15개의 인접 데이터를 전혀 쓰지 않고 버린 뒤, 나중에 다시 돌아왔을 땐 이미 캐시에서 쫓겨나 매번 DRAM을 찔러야 합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">📊 실측 벤치마크: 알고리즘 복잡도의 함정</div>
+                        <div class="concept-body">
+                            두 코드의 수학적 연산 횟수는 <b>O(N × M)</b>으로 100% 동일합니다.
+                            그러나 대규모 배열에서 실제 실행 시간은 <b>열 우선 순회가 10배~30배 이상 느립니다</b>.
+                            알고리즘의 점근적 표기법보다 하드웨어 캐시 라인을 고려한 설계가 실전 성능을 결정합니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Interactive Studio (Cache Line & Locality Simulator) -->
+        <div class="slide" id="slide-4">
+            <div class="slide-header-wrap" style="margin-bottom: 8px;">
+                <h1 class="slide-title">
+                    <span>04. 종합 인터랙티브 스튜디오: 캐시 라인 & 지역성 시뮬레이터</span>
+                </h1>
+                <p class="slide-subtitle">
+                    L1 데이터 캐시 슬롯과 메모리 맵 상에서 발생하는 HIT / MISS 파이프라인과 레이턴시 누적을 실시간으로 제어하고 관찰하세요.
+                </p>
+            </div>
+
+            <!-- Scenario Selection -->
+            <div class="scenario-selector">
+                <button class="btn-scenario active" onclick="simSetScenario(0)">1. 행 우선 순회 (Row-Major: 공간 지역성 극대화)</button>
+                <button class="btn-scenario" onclick="simSetScenario(1)">2. 열 우선 순회 (Column-Major: 공간 지역성 파괴)</button>
+                <button class="btn-scenario" onclick="simSetScenario(2)">3. 시간적 지역성 루프 (Temporal Locality Loop)</button>
+            </div>
+
+            <!-- Contextual Anchor Bar -->
+            <div class="anchor-bar" id="sim-anchor-bar">
+                <span class="anchor-tag">[ANCHOR]</span>
+                <span id="sim-anchor">대기 중: [다음 단계]를 눌러 시뮬레이션을 시작하세요</span>
+                <span class="badge" id="sim-badge" style="margin-left: auto;">READY</span>
+            </div>
+
+            <div class="sim-grid" style="margin-top: 10px;">
+                <!-- Left: Code & Hardware HUD -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="code-view-container">
+                        <div class="code-view-header">
+                            <div class="code-dots">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                                <span class="code-filename">main.cpp</span>
+                            </div>
+                            <span class="code-lang-tag">C++26 / Memory Access Pipeline</span>
+                        </div>
+                        <div class="code-view" id="sim-code-view">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Hardware HUD -->
+                    <div style="background: #0d111d; border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 0.74rem;">
+                        <div>PC: <span class="addr-chip addr-code" id="hud-pc">@1000</span></div>
+                        <div>접근: <span class="val-card" id="hud-target">-</span></div>
+                        <div>주소: <span class="addr-chip addr-dram" id="hud-addr">-</span></div>
+                        <div>캐시 판정: <span id="hud-status" style="font-weight:700; color:var(--text-sub);">-</span></div>
+                    </div>
+
+                    <!-- Description -->
+                    <div style="background: rgba(18, 20, 30, 0.85); border: 1px solid var(--card-border); border-radius: 8px; padding: 10px; font-size: 0.82rem; line-height: 1.5; min-height: 54px;">
+                        <p id="sim-desc">
+                            [다음 단계] 또는 [Enter]를 눌러 디버거 실행 순서대로 캐시 라인 적재와 지역성 원리를 관찰하세요.
+                        </p>
+                    </div>
+
+                    <!-- Nav Controls -->
+                    <div style="display: flex; gap: 6px;">
+                        <button class="nav-btn" onclick="simPrev()" id="sim-prev-btn">◀ 이전</button>
+                        <button class="nav-btn" style="flex: 1; justify-content: center; background: #059669;" onclick="simNext()" id="sim-next-btn">▶ 다음 단계 (Next)</button>
+                        <button class="nav-btn" style="background: #0284c7; color: white;" onclick="simToggleAuto()" id="sim-auto-btn">▶▶ 자동</button>
+                        <button class="nav-btn" onclick="simReset()">초기화</button>
+                    </div>
+                </div>
+
+                <!-- Right: Cache Simulator Visualizer -->
+                <div class="cache-sim-container" id="cache-sim-wrap">
+                    <!-- Real-time Metrics HUD -->
+                    <div class="metrics-bar">
+                        <div class="metric-card">
+                            <span class="metric-title">메모리 접근</span>
+                            <span class="metric-val" id="metric-access">0</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">캐시 HIT / MISS</span>
+                            <span class="metric-val" id="metric-hits-misses" style="font-size: 0.88rem;"><span style="color:var(--accent-blue);">0</span> / <span style="color:var(--accent-rose);">0</span></span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">적중률 (Hit Rate)</span>
+                            <span class="metric-val" id="metric-hitrate" style="color:var(--accent-green);">0.0%</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">누적 지연시간</span>
+                            <span class="metric-val" id="metric-cycles" style="color:var(--accent-amber);">0 cyc</span>
+                        </div>
+                    </div>
+
+                    <!-- Hit Rate Gauge Track -->
+                    <div class="gauge-track">
+                        <div class="gauge-fill" id="gauge-fill"></div>
+                    </div>
+
+                    <!-- L1 Cache Rack -->
+                    <div class="cache-slots-wrap">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 700; color: var(--text-sub);">
+                            <span>L1 데이터 캐시 랙 (4 SLOTS, 64B CACHE LINE)</span>
+                            <span id="cache-rack-tag">READY</span>
+                        </div>
+                        <div id="cache-slots-container" style="display: flex; flex-direction: column; gap: 4px;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- 2D Memory Array Map -->
+                    <div class="array-map-wrap">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 700; color: var(--text-sub);">
+                            <span>메모리 맵: 2차원 배열 int arr[4][4] (@4000 ~ @4252)</span>
+                            <span style="color: var(--accent-blue); font-size: 0.68rem;">🟦 캐시 라인 상주 블록</span>
+                        </div>
+                        <div id="array-grid-container" style="display: flex; flex-direction: column; gap: 4px;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <button class="nav-btn" id="prevSlideBtn" onclick="prevSlide()" disabled>◀ 이전 슬라이드</button>
+        <div class="shortcut-hint">
+            ⌨️ 단축키: <b>[←] [→]</b> 슬라이드 이동 &nbsp;|&nbsp; <b>[Enter] / [↓]</b> 시뮬레이터 다음 &nbsp;|&nbsp; <b>[↑]</b> 이전 &nbsp;|&nbsp; <b>[P]</b> 자동재생 &nbsp;|&nbsp; <b>[R]</b> 초기화
+        </div>
+        <button class="nav-btn" id="nextSlideBtn" onclick="nextSlide()">다음 슬라이드 ▶</button>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+        let simScenario = 0;
+        let simStep = 0;
+        let simAutoTimer = null;
+
+        const SCENARIOS = [
+            {
+                title: "행 우선 순회 (Row-Major)",
+                maxStep: 8,
+                code: [
+                    { text: "// 1. 행 우선 순회 (Row-Major: 공간 지역성 극대화)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입점 실행 (L1 캐시 초기 상태)" },
+                    { text: "    int sum = 0;", hint: "// Step 1: arr[0][0] 접근 ➔ Line #0 MISS 적재" },
+                    { text: "    for (int r = 0; r < 4; ++r) {", hint: "// Step 2: arr[0][1] 접근 ➔ L1 HIT!" },
+                    { text: "        for (int c = 0; c < 4; ++c) {", hint: "// Step 3~4: arr[0][2..3] ➔ 연속 HIT!" },
+                    { text: "            sum += arr[r][c];", hint: "// Step 5~6: 다음 행 arr[1][0..1] 순회" },
+                    { text: "        }", hint: "// Step 7: 잔여 원소 순회 완료 (연속 Hit)" },
+                    { text: "    }", hint: "" },
+                    { text: "    return sum;", hint: "// Step 8: 종료 (적중률 ~93.8% 달성)" },
+                    { text: "}", hint: "" }
+                ]
+            },
+            {
+                title: "열 우선 순회 (Column-Major)",
+                maxStep: 7,
+                code: [
+                    { text: "// 2. 열 우선 순회 (Column-Major: 공간 지역성 파괴)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입점 실행 (L1 캐시 초기 상태)" },
+                    { text: "    int sum = 0;", hint: "// Step 1: arr[0][0] 접근 ➔ Line #0 MISS 적재" },
+                    { text: "    for (int c = 0; c < 4; ++c) {", hint: "// Step 2: arr[1][0] 64B 점프 ➔ Line #1 MISS!" },
+                    { text: "        for (int r = 0; r < 4; ++r) {", hint: "// Step 3: arr[2][0] 64B 점프 ➔ Line #2 MISS!" },
+                    { text: "            sum += arr[r][c];", hint: "// Step 4: arr[3][0] 64B 점프 ➔ 4연속 MISS!" },
+                    { text: "        }", hint: "// Step 5~6: 열 우선 순회 지속 ➔ 캐시 스래싱" },
+                    { text: "    }", hint: "" },
+                    { text: "    return sum;", hint: "// Step 7: 종료 (적중률 ~10%대 추락, 버스 정체)" },
+                    { text: "}", hint: "" }
+                ]
+            },
+            {
+                title: "시간적 지역성 루프 (Temporal Locality)",
+                maxStep: 7,
+                code: [
+                    { text: "// 3. 시간적 지역성 루프 (Temporal Locality Loop)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입점 실행 (SP: @8000)" },
+                    { text: "    int sum = 0; int* ptr = &sum;", hint: "// Step 1: 지역 변수 sum 할당 (스택 @8000)" },
+                    { text: "    for (int i = 0; i < 1000; ++i) {", hint: "// Step 2: 루프 0회차 *ptr 접근 ➔ MISS (라인 적재)" },
+                    { text: "        *ptr += i;", hint: "// Step 3~5: 루프 1~3회차 재참조 ➔ 100% L1 HIT!" },
+                    { text: "    }", hint: "// Step 6: 1,000회 루프 완주 (누적 999회 HIT)" },
+                    { text: "    return sum;", hint: "// Step 7: main() 정상 종료 (100%에 근접한 속도)" },
+                    { text: "}", hint: "" }
+                ]
+            }
+        ];
+
+        function updateSlide() {
+            simStopAuto();
+            document.querySelectorAll('.slide').forEach((s, idx) => {
+                s.classList.toggle('active', (idx + 1) === currentSlide);
+            });
+            document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevSlideBtn').disabled = (currentSlide === 1);
+            document.getElementById('nextSlideBtn').disabled = (currentSlide === totalSlides);
+
+            if (currentSlide === 4) {
+                simRender();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (currentSlide === 4) {
+                if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === ' ') {
+                    e.preventDefault();
+                    simNext();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    simPrev();
+                } else if (e.key.toLowerCase() === 'p') {
+                    simToggleAuto();
+                } else if (e.key.toLowerCase() === 'r') {
+                    simReset();
+                }
+            }
+        });
+
+        function simSetScenario(sc) {
+            simScenario = sc;
+            document.querySelectorAll('#slide-4 .btn-scenario').forEach((b, idx) => {
+                b.classList.toggle('active', idx === sc);
+            });
+            simReset();
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function simRenderCodeView(activeLineIdx) {
+            const view = document.getElementById('sim-code-view');
+            const lines = SCENARIOS[simScenario].code;
+            view.innerHTML = lines.map((item, idx) => {
+                const isCurr = (idx === activeLineIdx);
+                const lineText = item.text;
+                const lineHint = item.hint || '';
+
+                let codeHtml = escapeHtml(lineText);
+                if (codeHtml.trim().startsWith('//')) {
+                    codeHtml = `<span class="tok-comment">${codeHtml}</span>`;
+                } else {
+                    codeHtml = codeHtml.replace(/\b(int|void|return|for)\b/g, '<span class="tok-kw">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(main)\b(?=\s*\()/g, '<span class="tok-fn">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="tok-num">$1</span>');
+                }
+
+                const numHtml = `<span class="code-num">${idx + 1}</span>`;
+                const hintHtml = lineHint ? `<span class="code-hint">${escapeHtml(lineHint)}</span>` : '';
+                const activeTag = isCurr ? `<span class="code-active-tag">▶ CURRENT</span>` : '';
+
+                return `<div class="code-line ${isCurr ? 'current' : ''}">
+                    ${numHtml}
+                    <span class="code-text">${codeHtml}</span>
+                    ${hintHtml}
+                    ${activeTag}
+                </div>`;
+            }).join('');
+        }
+
+        function renderCacheSlots(slots, activeIdx, isHit) {
+            const container = document.getElementById('cache-slots-container');
+            let html = '';
+            for (let i = 0; i < 4; ++i) {
+                const s = slots[i] || { valid: false, tag: '-', range: '-', label: 'Empty' };
+                let rowClass = 'cache-slot-row';
+                let statusBadge = '<span style="color:var(--text-muted);">EMPTY</span>';
+
+                if (s.valid) {
+                    if (i === activeIdx) {
+                        rowClass += isHit ? ' active-hit' : ' active-miss';
+                        statusBadge = isHit
+                            ? '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>'
+                            : '<span style="color:var(--accent-amber); font-weight:800;">LOADED (+100 cyc)</span>';
+                    } else {
+                        statusBadge = '<span style="color:var(--accent-green);">VALID (64B)</span>';
+                    }
+                }
+
+                html += `<div class="${rowClass}">
+                    <div><span>Slot ${i}</span> &nbsp;|&nbsp; <span class="addr-chip ${s.valid ? 'addr-cache' : ''}">${s.tag}</span></div>
+                    <div><span style="color:var(--text-sub);">${s.range}</span></div>
+                    <div>${statusBadge}</div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderArrayGrid(activeRow, activeCol, cachedRows) {
+            const container = document.getElementById('array-grid-container');
+            const baseAddrs = [4000, 4064, 4128, 4192];
+            let html = '';
+
+            for (let r = 0; r < 4; ++r) {
+                const isRowCached = cachedRows.includes(r);
+                html += `<div class="array-row">
+                    <span class="row-label addr-chip ${isRowCached ? 'addr-cache' : 'addr-dram'}">@${baseAddrs[r]} (r${r})</span>`;
+
+                for (let c = 0; c < 4; ++c) {
+                    const isTarget = (r === activeRow && c === activeCol);
+                    let cellClass = 'arr-cell';
+                    if (isRowCached) cellClass += ' cached';
+                    if (isTarget) cellClass += ' current-access';
+
+                    html += `<div class="${cellClass}">arr[${r}][${c}]</div>`;
+                }
+                html += `</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function simRender() {
+            const anchor = document.getElementById('sim-anchor');
+            const badge = document.getElementById('sim-badge');
+            const desc = document.getElementById('sim-desc');
+            const hudPc = document.getElementById('hud-pc');
+            const hudTarget = document.getElementById('hud-target');
+            const hudAddr = document.getElementById('hud-addr');
+            const hudStatus = document.getElementById('hud-status');
+            const nextBtn = document.getElementById('sim-next-btn');
+
+            const mAccess = document.getElementById('metric-access');
+            const mHitsMisses = document.getElementById('metric-hits-misses');
+            const mHitRate = document.getElementById('metric-hitrate');
+            const mCycles = document.getElementById('metric-cycles');
+            const gaugeFill = document.getElementById('gauge-fill');
+            const rackTag = document.getElementById('cache-rack-tag');
+
+            let accesses = 0, hits = 0, misses = 0, cycles = 0;
+
+            if (simScenario === 0) {
+                // SCENARIO 0: Row-Major Traversal (Step 0 ~ 8)
+                if (simStep === 0) {
+                    simRenderCodeView(1);
+                    anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 (L1 캐시 초기 상태)";
+                    badge.innerText = "INIT";
+                    badge.style.background = "#059669";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1000</span>';
+                    hudTarget.innerText = "-";
+                    hudAddr.innerText = "-";
+                    hudStatus.innerHTML = '<span style="color:var(--text-sub);">대기 중</span>';
+                    desc.innerText = "2차원 배열 행 우선(Row-Major) 순회 시작 전입니다. L1 데이터 캐시는 완전히 비어 있습니다.";
+                    rackTag.innerText = "CACHE COLD";
+                    renderCacheSlots([], -1, false);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 1) {
+                    simRenderCodeView(2);
+                    accesses = 1; misses = 1; cycles = 100;
+                    anchor.innerText = "[Step 1] arr[0][0] (@4000) 접근 ➔ L1 캐시 MISS! 메인 메모리에서 64B Line #0 일괄 로드 (+100 cyc)";
+                    badge.innerText = "CACHE MISS";
+                    badge.style.background = "var(--accent-amber)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1004</span>';
+                    hudTarget.innerText = "arr[0][0]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-amber); font-weight:800;">MISS (+100 cyc)</span>';
+                    desc.innerText = "@4000 번지가 캐시에 없어 DRAM 인출이 발생했습니다. 하지만 4바이트뿐 아니라 64바이트 Line #0(arr[0][0..15]) 전체가 L1 Slot 0에 통째로 올라옵니다.";
+                    rackTag.innerText = "SLOT 0 LOADED";
+                    const slots = [{ valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" }];
+                    renderCacheSlots(slots, 0, false);
+                    renderArrayGrid(0, 0, [0]);
+                } else if (simStep === 2) {
+                    simRenderCodeView(3);
+                    accesses = 2; hits = 1; misses = 1; cycles = 101;
+                    anchor.innerText = "[Step 2] arr[0][1] (@4004) 접근 ➔ L1 캐시 HIT! (방금 함께 적재된 64B 라인에 상주, +1 cyc)";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1008</span>';
+                    hudTarget.innerText = "arr[0][1]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@4004</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "공간적 지역성(Spatial Locality)의 마법! 앞서 로드된 64바이트 캐시 라인에 arr[0][1]이 이미 담겨 있어 1사이클 만에 초고속 적중했습니다.";
+                    rackTag.innerText = "SLOT 0 HIT";
+                    const slots = [{ valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(0, 1, [0]);
+                } else if (simStep === 3) {
+                    simRenderCodeView(4);
+                    accesses = 3; hits = 2; misses = 1; cycles = 102;
+                    anchor.innerText = "[Step 3] arr[0][2] (@4008) 접근 ➔ L1 캐시 HIT! (2회 연속 적중 달성)";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1012</span>';
+                    hudTarget.innerText = "arr[0][2]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@4008</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "L1 캐시 Slot 0에서 데이터를 즉시 읽어옵니다. CPU 코어 파이프라인 정지 없이 클럭 사이클이 낭비되지 않습니다.";
+                    rackTag.innerText = "SLOT 0 HIT";
+                    const slots = [{ valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(0, 2, [0]);
+                } else if (simStep === 4) {
+                    simRenderCodeView(4);
+                    accesses = 4; hits = 3; misses = 1; cycles = 103;
+                    anchor.innerText = "[Step 4] arr[0][3] (@4012) 접근 ➔ L1 캐시 HIT! (0번 행 순회 3회 연속 적중 완료)";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1016</span>';
+                    hudTarget.innerText = "arr[0][3]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@4012</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "0번 행의 4개 원소를 읽는 동안 단 1번의 Cache Miss 이후 3번 연속 100% 적중(Hit Rate = 75%)을 기록했습니다.";
+                    rackTag.innerText = "ROW 0 HIT COMPLETED";
+                    const slots = [{ valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(0, 3, [0]);
+                } else if (simStep === 5) {
+                    simRenderCodeView(5);
+                    accesses = 5; hits = 3; misses = 2; cycles = 203;
+                    anchor.innerText = "[Step 5] arr[1][0] (@4064) 접근 ➔ 1번 행 진입으로 L1 캐시 MISS! 새 64B Line #1 적재 (+100 cyc)";
+                    badge.innerText = "CACHE MISS";
+                    badge.style.background = "var(--accent-amber)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1020</span>';
+                    hudTarget.innerText = "arr[1][0]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4064</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-amber); font-weight:800;">MISS (+100 cyc)</span>';
+                    desc.innerText = "행 경계를 넘어 새 64B 캐시 라인 주소(@4064)에 도달했습니다. DRAM에서 Line #1을 L1 Slot 1에 새로 적재합니다.";
+                    rackTag.innerText = "SLOT 1 LOADED";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 1, false);
+                    renderArrayGrid(1, 0, [0, 1]);
+                } else if (simStep === 6) {
+                    simRenderCodeView(5);
+                    accesses = 6; hits = 4; misses = 2; cycles = 204;
+                    anchor.innerText = "[Step 6] arr[1][1] (@4068) 접근 ➔ L1 캐시 HIT! (Slot 1 적중, 공간 지역성 재발휘)";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1024</span>';
+                    hudTarget.innerText = "arr[1][1]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@4068</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "새로 올라온 Slot 1 캐시 라인 덕분에 다시 1사이클 적중 파이프라인이 재개됩니다.";
+                    rackTag.innerText = "SLOT 1 HIT";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 1, true);
+                    renderArrayGrid(1, 1, [0, 1]);
+                } else if (simStep === 7) {
+                    simRenderCodeView(6);
+                    accesses = 16; hits = 12; misses = 4; cycles = 412;
+                    anchor.innerText = "[Step 7] 나머지 원소 순회 완주 ➔ 연속 10회 HIT 발생 (총 16접근 중 Miss 4회, Hit 12회)";
+                    badge.innerText = "LOOP COMPLETE";
+                    badge.style.background = "var(--accent-green)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1028</span>';
+                    hudTarget.innerText = "arr[3][3]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@4204</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">TOTAL HIT 75.0%</span>';
+                    desc.innerText = "각 행(Row)마다 최초 1회씩만 Miss가 발생하고 나머지 원소들은 100% 적중하여 총 75.0% 적중률(실제 16개 단위에선 93.8%)을 달성했습니다.";
+                    rackTag.innerText = "4 SLOTS FULLY CACHED";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" },
+                        { valid: true, tag: "@4192", range: "arr[3][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 3, true);
+                    renderArrayGrid(3, 3, [0, 1, 2, 3]);
+                } else {
+                    simRenderCodeView(8);
+                    accesses = 16; hits = 12; misses = 4; cycles = 412;
+                    anchor.innerText = "[Step 8] main() 정상 종료 ➔ Hit Rate ~93.8% 수준 달성! DRAM 접근 80% 이상 차단 성공";
+                    badge.innerText = "OPTIMAL SPEED";
+                    badge.style.background = "var(--accent-green)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1032</span>';
+                    hudTarget.innerText = "-";
+                    hudAddr.innerText = "-";
+                    hudStatus.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">OPTIMAL</span>';
+                    desc.innerText = "행 우선 순회의 공간 지역성 극대화 효과를 확인했습니다. [처음부터 다시] 버튼을 누르면 초기 상태로 순환합니다.";
+                    rackTag.innerText = "SIM COMPLETED";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" },
+                        { valid: true, tag: "@4192", range: "arr[3][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, -1, false);
+                    renderArrayGrid(-1, -1, [0, 1, 2, 3]);
+                }
+            } else if (simScenario === 1) {
+                // SCENARIO 1: Column-Major Traversal (Step 0 ~ 7)
+                if (simStep === 0) {
+                    simRenderCodeView(1);
+                    anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 (열 우선 순회 준비)";
+                    badge.innerText = "INIT";
+                    badge.style.background = "#059669";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1000</span>';
+                    hudTarget.innerText = "-";
+                    hudAddr.innerText = "-";
+                    hudStatus.innerHTML = '<span style="color:var(--text-sub);">대기 중</span>';
+                    desc.innerText = "열 우선(Column-Major) 순회를 시작합니다. 외부 루프가 열(c), 내부 루프가 행(r)이 되어 메모리를 세로로 건너뜁니다.";
+                    rackTag.innerText = "CACHE COLD";
+                    renderCacheSlots([], -1, false);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 1) {
+                    simRenderCodeView(2);
+                    accesses = 1; misses = 1; cycles = 100;
+                    anchor.innerText = "[Step 1] arr[0][0] (@4000) 접근 ➔ L1 캐시 MISS! 메인 메모리에서 Line #0 적재 (+100 cyc)";
+                    badge.innerText = "CACHE MISS";
+                    badge.style.background = "var(--accent-amber)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1004</span>';
+                    hudTarget.innerText = "arr[0][0]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-amber); font-weight:800;">MISS (+100 cyc)</span>';
+                    desc.innerText = "첫 번째 접근에서 Miss가 발생하여 64B Line #0이 적재되었습니다.";
+                    rackTag.innerText = "SLOT 0 LOADED";
+                    const slots = [{ valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" }];
+                    renderCacheSlots(slots, 0, false);
+                    renderArrayGrid(0, 0, [0]);
+                } else if (simStep === 2) {
+                    simRenderCodeView(3);
+                    accesses = 2; misses = 2; cycles = 200;
+                    anchor.innerText = "[Step 2] arr[1][0] (@4064) 접근 ➔ 64B 스트라이드 점프! Line #0 데이터 버리고 또 MISS (+100 cyc)";
+                    badge.innerText = "CACHE MISS";
+                    badge.style.background = "var(--accent-rose)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1008</span>';
+                    hudTarget.innerText = "arr[1][0]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4064</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-rose); font-weight:800;">MISS (+100 cyc)</span>';
+                    desc.innerText = "가로로 가지 않고 세로로 뛰어넘었습니다! 방금 적재한 Line #0의 15개 원소를 전혀 쓰지 못하고 또 DRAM 인출이 발생했습니다.";
+                    rackTag.innerText = "SLOT 1 LOADED (MISS)";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 1, false);
+                    renderArrayGrid(1, 0, [0, 1]);
+                } else if (simStep === 3) {
+                    simRenderCodeView(4);
+                    accesses = 3; misses = 3; cycles = 300;
+                    anchor.innerText = "[Step 3] arr[2][0] (@4128) 접근 ➔ 또 64B 점프! 공간 지역성 완전 상실로 연속 MISS (+100 cyc)";
+                    badge.innerText = "CACHE MISS";
+                    badge.style.background = "var(--accent-rose)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1012</span>';
+                    hudTarget.innerText = "arr[2][0]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4128</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-rose); font-weight:800;">MISS (+100 cyc)</span>';
+                    desc.innerText = "3연속 Cache Miss! CPU 코어는 100 사이클씩 DRAM 응답을 기다리며 파이프라인 스톨 상태에 빠집니다.";
+                    rackTag.innerText = "SLOT 2 LOADED (MISS)";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 2, false);
+                    renderArrayGrid(2, 0, [0, 1, 2]);
+                } else if (simStep === 4) {
+                    simRenderCodeView(5);
+                    accesses = 4; misses = 4; cycles = 400;
+                    anchor.innerText = "[Step 4] arr[3][0] (@4192) 접근 ➔ 4회 연속 MISS 발생! 캐시 라인 내 15개 원소 완전 방치 (+100 cyc)";
+                    badge.innerText = "4x MISS";
+                    badge.style.background = "var(--accent-rose)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1016</span>';
+                    hudTarget.innerText = "arr[3][0]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4192</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-rose); font-weight:800;">4x MISS (400 cyc)</span>';
+                    desc.innerText = "4개 원소를 읽는 데 4번 모두 Miss 발생! 공간 지역성이 0%로 무력화되었습니다.";
+                    rackTag.innerText = "ALL SLOTS DIRTY/STRIDED";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" },
+                        { valid: true, tag: "@4192", range: "arr[3][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 3, false);
+                    renderArrayGrid(3, 0, [0, 1, 2, 3]);
+                } else if (simStep === 5) {
+                    simRenderCodeView(5);
+                    accesses = 5; misses = 5; cycles = 500;
+                    anchor.innerText = "[Step 5] 1열 순회 시작 arr[0][1] (@4004) ➔ 대규모 행렬이었다면 이전 라인 방출로 또 MISS!";
+                    badge.innerText = "THRASHING MISS";
+                    badge.style.background = "var(--accent-rose)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1020</span>';
+                    hudTarget.innerText = "arr[0][1]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4004</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-rose); font-weight:800;">THRASHING</span>';
+                    desc.innerText = "실제 수만 행 단위의 대규모 2차원 배열에서는 첫 행으로 돌아왔을 때 이미 캐시 슬롯에서 밀려나(Evicted) 다시 Miss가 발생합니다(캐시 스래싱).";
+                    rackTag.innerText = "EVICTION / THRASHING";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" },
+                        { valid: true, tag: "@4192", range: "arr[3][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 0, false);
+                    renderArrayGrid(0, 1, [0, 1, 2, 3]);
+                } else if (simStep === 6) {
+                    simRenderCodeView(6);
+                    accesses = 16; hits = 2; misses = 14; cycles = 1402;
+                    anchor.innerText = "[Step 6] 열 우선 순회 완료 ➔ 메모리 버스 대역폭 포화 및 1400+ 사이클 지연시간 폭증!";
+                    badge.innerText = "BUS STALL";
+                    badge.style.background = "var(--accent-rose)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1024</span>';
+                    hudTarget.innerText = "arr[3][3]";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-dram">@4204</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-rose); font-weight:800;">HIT RATE 12.5%</span>';
+                    desc.innerText = "행 우선 순위(412 사이클) 대비 3.4배~10배 이상 지연시간이 폭증했습니다. 메모리 버스가 계속 포화 상태를 유지합니다.";
+                    rackTag.innerText = "BUS CONGESTION";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" },
+                        { valid: true, tag: "@4192", range: "arr[3][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, 3, false);
+                    renderArrayGrid(3, 3, [0, 1, 2, 3]);
+                } else {
+                    simRenderCodeView(8);
+                    accesses = 16; hits = 2; misses = 14; cycles = 1402;
+                    anchor.innerText = "[Step 7] main() 종료 ➔ Hit Rate ~12.5% 추락! 동일 알고리즘 대비 치명적인 성능 저하 확인";
+                    badge.innerText = "PERF DEGRADED";
+                    badge.style.background = "var(--accent-rose)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1028</span>';
+                    hudTarget.innerText = "-";
+                    hudAddr.innerText = "-";
+                    hudStatus.innerHTML = '<span style="color:var(--accent-rose); font-weight:800;">DEGRADED</span>';
+                    desc.innerText = "열 우선 순회의 치명적인 캐시 파괴 효과를 확인했습니다. [처음부터 다시] 버튼을 눌러 다시 관찰할 수 있습니다.";
+                    rackTag.innerText = "SIM COMPLETED";
+                    const slots = [
+                        { valid: true, tag: "@4000", range: "arr[0][0..15] (64B)" },
+                        { valid: true, tag: "@4064", range: "arr[1][0..15] (64B)" },
+                        { valid: true, tag: "@4128", range: "arr[2][0..15] (64B)" },
+                        { valid: true, tag: "@4192", range: "arr[3][0..15] (64B)" }
+                    ];
+                    renderCacheSlots(slots, -1, false);
+                    renderArrayGrid(-1, -1, [0, 1, 2, 3]);
+                }
+            } else {
+                // SCENARIO 2: Temporal Locality Loop (Step 0 ~ 7)
+                if (simStep === 0) {
+                    simRenderCodeView(1);
+                    anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 (SP: @8000)";
+                    badge.innerText = "INIT";
+                    badge.style.background = "#059669";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1000</span>';
+                    hudTarget.innerText = "-";
+                    hudAddr.innerText = "-";
+                    hudStatus.innerHTML = '<span style="color:var(--text-sub);">대기 중</span>';
+                    desc.innerText = "시간적 지역성(Temporal Locality) 루프를 관찰합니다. 동일한 변수(포인터 주소)를 반복 접근할 때 캐시의 동작을 시뮬레이션합니다.";
+                    rackTag.innerText = "CACHE COLD";
+                    renderCacheSlots([], -1, false);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 1) {
+                    simRenderCodeView(2);
+                    anchor.innerText = "[Step 1] 지역 변수 sum 할당 (스택 번지 @8000, ptr = &sum)";
+                    badge.innerText = "ALLOC STACK";
+                    badge.style.background = "var(--accent-purple)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1004</span>';
+                    hudTarget.innerText = "sum";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-stack">@8000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-purple); font-weight:700;">STACK ALLOC</span>';
+                    desc.innerText = "스택 프레임 내에 변수 sum(@8000)이 생성되고 포인터 ptr이 이를 가리킵니다.";
+                    rackTag.innerText = "STACK ALLOCATED";
+                    renderCacheSlots([], -1, false);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 2) {
+                    simRenderCodeView(3);
+                    accesses = 1; misses = 1; cycles = 100;
+                    anchor.innerText = "[Step 2] *ptr (@8000) 최초 읽기/쓰기 ➔ L1 캐시 MISS! 메인 메모리에서 스택 라인 적재 (+100 cyc)";
+                    badge.innerText = "CACHE MISS";
+                    badge.style.background = "var(--accent-amber)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1008</span>';
+                    hudTarget.innerText = "*ptr";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-stack">@8000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-amber); font-weight:800;">MISS (+100 cyc)</span>';
+                    desc.innerText = "첫 번째 루프 실행 시 sum 주소가 캐시에 없어 Miss가 발생하고 L1 Slot 0에 적재됩니다.";
+                    rackTag.innerText = "SLOT 0 LOADED (STACK)";
+                    const slots = [{ valid: true, tag: "@8000", range: "Stack Frame sum (64B)" }];
+                    renderCacheSlots(slots, 0, false);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 3) {
+                    simRenderCodeView(4);
+                    accesses = 2; hits = 1; misses = 1; cycles = 101;
+                    anchor.innerText = "[Step 3] *ptr (@8000) 2회차 재참조 ➔ 시간적 지역성 100% 발휘! L1 캐시 HIT (+1 cyc)";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1012</span>';
+                    hudTarget.innerText = "*ptr";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@8000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "방금 썼던 변수를 다시 접근하므로 L1 Slot 0에서 1사이클 만에 즉시 적중합니다.";
+                    rackTag.innerText = "SLOT 0 HIT";
+                    const slots = [{ valid: true, tag: "@8000", range: "Stack Frame sum (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 4) {
+                    simRenderCodeView(4);
+                    accesses = 3; hits = 2; misses = 1; cycles = 102;
+                    anchor.innerText = "[Step 4] *ptr (@8000) 3회차 재참조 ➔ L1 캐시 최상위 상주로 1 사이클 유지";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1012</span>';
+                    hudTarget.innerText = "*ptr";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@8000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "시간적 지역성 덕분에 루프가 도는 동안 캐시 라인이 계속 살아있어 DRAM 버스를 전혀 건드리지 않습니다.";
+                    rackTag.innerText = "SLOT 0 HIT";
+                    const slots = [{ valid: true, tag: "@8000", range: "Stack Frame sum (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 5) {
+                    simRenderCodeView(4);
+                    accesses = 4; hits = 3; misses = 1; cycles = 103;
+                    anchor.innerText = "[Step 5] *ptr (@8000) 4회차 재참조 ➔ 3회 연속 적중 달성 (Hit Rate 75% 상승)";
+                    badge.innerText = "CACHE HIT";
+                    badge.style.background = "var(--accent-blue)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1012</span>';
+                    hudTarget.innerText = "*ptr";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@8000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-blue); font-weight:800;">HIT! (+1 cyc)</span>';
+                    desc.innerText = "연속된 적중으로 평균 접근 지연시간이 DRAM의 1/100 수준으로 수렴합니다.";
+                    rackTag.innerText = "SLOT 0 HIT";
+                    const slots = [{ valid: true, tag: "@8000", range: "Stack Frame sum (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(-1, -1, []);
+                } else if (simStep === 6) {
+                    simRenderCodeView(5);
+                    accesses = 1000; hits = 999; misses = 1; cycles = 1099;
+                    anchor.innerText = "[Step 6] 1,000회 루프 완주 ➔ 누적 999회 HIT (적중률 99.9%, 레지스터급 초고속 연산 달성)";
+                    badge.innerText = "99.9% HIT";
+                    badge.style.background = "var(--accent-green)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1016</span>';
+                    hudTarget.innerText = "*ptr";
+                    hudAddr.innerHTML = '<span class="addr-chip addr-cache">@8000</span>';
+                    hudStatus.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">HIT RATE 99.9%</span>';
+                    desc.innerText = "1,000번의 반복 중 최초 단 1번만 Miss가 발생하고 999번 모두 L1 캐시에서 1사이클에 처리되었습니다. 평균 레이턴시는 약 1.1사이클입니다!";
+                    rackTag.innerText = "TEMPORAL LOCALITY 99.9%";
+                    const slots = [{ valid: true, tag: "@8000", range: "Stack Frame sum (64B)" }];
+                    renderCacheSlots(slots, 0, true);
+                    renderArrayGrid(-1, -1, []);
+                } else {
+                    simRenderCodeView(7);
+                    accesses = 1000; hits = 999; misses = 1; cycles = 1099;
+                    anchor.innerText = "[Step 7] main() 정상 종료 ➔ 시간적 지역성의 강력한 캐시 가속 효과 검증 완료";
+                    badge.innerText = "SIM COMPLETED";
+                    badge.style.background = "var(--accent-green)";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1020</span>';
+                    hudTarget.innerText = "-";
+                    hudAddr.innerText = "-";
+                    hudStatus.innerHTML = '<span style="color:var(--accent-green); font-weight:800;">COMPLETED</span>';
+                    desc.innerText = "동일 변수 재참조가 만들어내는 극적인 성능 향상을 확인했습니다. [처음부터 다시] 버튼을 누르면 초기 상태로 순환합니다.";
+                    rackTag.innerText = "SIM COMPLETED";
+                    const slots = [{ valid: true, tag: "@8000", range: "Stack Frame sum (64B)" }];
+                    renderCacheSlots(slots, -1, false);
+                    renderArrayGrid(-1, -1, []);
+                }
+            }
+
+            // Metrics Update
+            mAccess.innerText = accesses;
+            mHitsMisses.innerHTML = `<span style="color:var(--accent-blue);">${hits}</span> / <span style="color:var(--accent-rose);">${misses}</span>`;
+            const rate = accesses > 0 ? ((hits / accesses) * 100).toFixed(1) : "0.0";
+            mHitRate.innerText = `${rate}%`;
+            mCycles.innerText = `${cycles} cyc`;
+            gaugeFill.style.width = `${rate}%`;
+
+            const currentMax = SCENARIOS[simScenario].maxStep;
+            document.getElementById('sim-prev-btn').disabled = (simStep === 0);
+
+            if (simStep === currentMax) {
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = "🔄 처음부터 다시 (Step 0)";
+                nextBtn.style.background = "#4f46e5";
+            } else {
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = "▶ 다음 단계 (Next)";
+                nextBtn.style.background = "#059669";
+            }
+        }
+
+        function simNext() {
+            const currentMax = SCENARIOS[simScenario].maxStep;
+            if (simStep < currentMax) {
+                simStep++;
+            } else {
+                simStep = 0;
+            }
+            simRender();
+        }
+
+        function simPrev() {
+            if (simStep > 0) {
+                simStep--;
+                simRender();
+            }
+        }
+
+        function simReset() {
+            simStopAuto();
+            simStep = 0;
+            simRender();
+        }
+
+        function simToggleAuto() {
+            if (simAutoTimer) {
+                simStopAuto();
+            } else {
+                document.getElementById('sim-auto-btn').innerText = "⏸ 정지";
+                simAutoTimer = setInterval(() => {
+                    simNext();
+                }, 2000);
+            }
+        }
+
+        function stopCycleAuto() {
+            if (simAutoTimer) {
+                clearInterval(simAutoTimer);
+                simAutoTimer = null;
+                document.getElementById('sim-auto-btn').innerText = "▶▶ 자동";
+            }
+        }
+        const simStopAuto = stopCycleAuto;
+
+        window.addEventListener('load', () => {
+            updateSlide();
+        });
+    </script>
+</body>
+</html>

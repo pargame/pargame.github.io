@@ -526,11 +526,11 @@ std::println("코드 번호: &#123;:04d&#125;", id); // 출력: 0007</code></pre
         </table>
       </div>
 
-      <!-- 실무 스타일 가이드 비교: 구글 C++ vs 모던 C++ 코어 가이드라인 -->
+      <!-- 실무 스타일 가이드 비교: 구글 C++ 스타일 가이드 vs 모던 C++ 코어 가이드라인 -->
       <div class="style-comparison-card">
         <div class="style-card-header">
           <span class="style-badge">STYLE GUIDE DEBATE</span>
-          <span class="style-card-title">실무 표준 관례 비교: 구글 C++ 스타일 가이드 vs C++ Core Guidelines</span>
+          <span class="style-card-title">실무 표준 관례 비교: 표준 I/O와 네임스페이스 (Google vs Core Guidelines)</span>
         </div>
         <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
           실제 엔지니어링 현장에서는 코드 일관성과 유지보수 안정성을 위해 엄격한 코딩 스타일 가이드를 적용합니다. 표준 I/O와 네임스페이스에 대한 두 주요 진영의 철학을 비교해 봅니다:
@@ -544,7 +544,7 @@ std::println("코드 번호: &#123;:04d&#125;", id); // 출력: 0007</code></pre
             </p>
           </div>
           <div class="style-column">
-            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 & C++26</div>
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
               <strong>1. 명시적 네임스페이스 정규화:</strong> <code>std::</code> 접두사를 명시하거나 제한적인 로컬 스코프 내부 별칭만 권장합니다.<br>
               <strong>2. <code>std::println</code>으로의 표준화:</strong> C++23/C++26부터는 스트림 연산자(<code>&lt;&lt;</code>) 체이닝과 버퍼 플러시 논쟁 자체를 끝내기 위해, 포맷팅 안정성과 성능이 월등한 <strong><code>std::println</code>(&lt;print&gt;)</strong>을 기본 표준 I/O 수단으로 적극 채택합니다.
@@ -1060,11 +1060,11 @@ if (a &lt; b) &#123;
         </div>
       </div>
 
-      <!-- 실무 스타일 가이드 비교: 구글 C++ vs C++ 표준 라이브러리 (size_t) -->
+      <!-- 실무 스타일 가이드 비교: 구글 C++ 스타일 가이드 vs 모던 C++ 코어 가이드라인 -->
       <div class="style-comparison-card">
         <div class="style-card-header">
           <span class="style-badge">STYLE GUIDE DEBATE</span>
-          <span class="style-card-title">실무 표준 관례 비교: 정수형 선택 (Google vs C++ 표준 라이브러리)</span>
+          <span class="style-card-title">실무 표준 관례 비교: 정수형 부호 선택 (Google vs Core Guidelines)</span>
         </div>
         <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
           "음수가 나올 수 없는 수치나 인덱스에 무부호형(unsigned)을 써야 하는가?"는 C++ 실무에서 가장 뜨거운 논쟁 주제 중 하나입니다:
@@ -1079,10 +1079,10 @@ if (a &lt; b) &#123;
             </p>
           </div>
           <div class="style-column">
-            <div class="style-col-title">🌐 C++ 표준 라이브러리 (STL)의 관례 &amp; 해법</div>
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>"역사적 std::size_t 관례와 모던 해법"</strong><br>
-              STL 컨테이너의 <code>.size()</code>와 <code>sizeof</code>는 표준 규약상 무부호 정수인 <code>std::size_t</code>를 반환하므로 실무에서 unsigned와 마주치는 것은 불가피합니다.<br>
+              <strong>"ES.100 권장 원칙과 STL 관례의 모던 해법"</strong><br>
+              코어 가이드라인 또한 단순히 양수를 표현하기 위해 unsigned를 쓰지 말 것을 권장(ES.100)하면서도, STL 컨테이너의 <code>.size()</code>와 <code>sizeof</code>가 역사적으로 <code>std::size_t</code>를 반환하는 현실을 조화롭게 해결합니다.<br>
               이에 따라 최신 C++에서는 <strong><code>std::ssize()</code> (C++20, signed 크기 반환)</strong>와 <strong><code>std::cmp_less()</code> (헤더 &lt;utility&gt;)</strong>를 도입하여, 부호 불일치 경고 없이 안전하게 비교·순회하는 모던 표준 해법을 권장합니다.
             </p>
           </div>
@@ -1333,9 +1333,9 @@ int old_val = 3.141592; // 컴파일 성공! 소수점(.141592)이 유실되어 
             </p>
           </div>
           <div class="style-column">
-            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (ES.23)</div>
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>"벡터의 혼란에도 불구하고 왜 항상 중괄호(&#123;&#125;)를 기본으로 추구하는가?"</strong><br>
+              <strong>"ES.23: 벡터의 혼란에도 불구하고 왜 항상 중괄호(&#123;&#125;)를 기본으로 추구하는가?"</strong><br>
               비야네 스트롭스트룹과 헙 서터가 주도하는 코어 가이드라인은 <strong>축소 변환(Narrowing) 방지와 Most Vexing Parse 해결</strong>이라는 압도적인 안전성 이점을 위해 <code>int x&#123;0&#125;;</code>를 기본 표준으로 권장합니다.<br>
               <strong>[모던 C++의 벡터 혼란 해법: 명확한 의미적 분리]</strong><br>
               &bull; <strong><code>&#123;&#125;</code> (중괄호):</strong> 명시적인 <em>"원소들의 목록(List of Elements)"</em>을 담을 때 기본값으로 사용<br>

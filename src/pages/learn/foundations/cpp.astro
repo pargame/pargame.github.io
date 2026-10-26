@@ -2522,10 +2522,10 @@ val++ 실행 후 현재값: 11
       <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
-            <col style="width: 12%; min-width: 85px;" />
-            <col style="width: 26%; min-width: 160px;" />
+            <col style="width: 15%; min-width: 115px;" />
+            <col style="width: 25%; min-width: 160px;" />
             <col style="width: 34%; min-width: 200px;" />
-            <col style="width: 28%; min-width: 165px;" />
+            <col style="width: 26%; min-width: 165px;" />
           </colgroup>
           <thead>
             <tr>
@@ -2673,15 +2673,15 @@ int main() &#123;
       <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
-            <col style="width: 15%; min-width: 105px;" />
-            <col style="width: 18%; min-width: 120px;" />
-            <col style="width: 35%; min-width: 200px;" />
-            <col style="width: 32%; min-width: 180px;" />
+            <col style="width: 20%; min-width: 135px;" />
+            <col style="width: 20%; min-width: 135px;" />
+            <col style="width: 32%; min-width: 220px;" />
+            <col style="width: 28%; min-width: 190px;" />
           </colgroup>
           <thead>
             <tr>
-              <th>저장 수명 주기</th>
-              <th>할당 메모리 영역</th>
+              <th>수명 주기 (Storage)</th>
+              <th>메모리 영역</th>
               <th>생성 및 초기화 시점</th>
               <th>소멸 및 메모리 해제 시점</th>
             </tr>
@@ -2689,25 +2689,25 @@ int main() &#123;
           <tbody>
             <tr>
               <td><strong>자동 (Automatic)</strong></td>
-              <td>스택(Stack) 영역</td>
+              <td>스택 (Stack) 영역</td>
               <td>해당 블록 진입 시 선언문 도달 시점</td>
               <td>블록을 벗어나는 즉시 (역순 파괴)</td>
             </tr>
             <tr>
               <td><strong>정적 (Static)</strong></td>
-              <td>데이터/BSS 세그먼트</td>
+              <td>데이터 / BSS 영역</td>
               <td>프로그램 시작 전(전역) 또는 최초 선언문 도달 시(static 지역) 단 1회</td>
-              <td>프로그램 완전히 종료 시(exit)</td>
+              <td>프로그램 완전히 종료 시 (exit)</td>
             </tr>
             <tr>
               <td><strong>스레드 (Thread)</strong></td>
-              <td>스레드 로컬 스토리지 (TLS)</td>
+              <td>스레드 로컬 (TLS)</td>
               <td>해당 스레드가 시작될 때 (<code>thread_local</code>)</td>
               <td>해당 스레드가 종료될 때</td>
             </tr>
             <tr>
               <td><strong>동적 (Dynamic)</strong></td>
-              <td>힙(Heap) 영역</td>
+              <td>힙 (Heap) 영역</td>
               <td>프로그래머가 <code>new</code>로 요청한 시점</td>
               <td>프로그래머가 <code>delete</code>를 호출한 시점 (단원 08 예고)</td>
             </tr>

@@ -512,6 +512,11 @@
             line-height: 1.2;
         }
 
+        .tok-op {
+            color: #e3b341;
+            font-weight: 700;
+        }
+
         .tok-kw {
             color: #ff7b72;
             font-weight: 600;
@@ -975,9 +980,9 @@
 
             <!-- Scenario Selection -->
             <div class="scenario-selector">
-                <button class="btn-scenario active" onclick="simSetScenario(0)">1. 표준 할당 및 정상 반납 파이프라인</button>
-                <button class="btn-scenario" onclick="simSetScenario(1)">2. 메모리 누수 (Memory Leak) 시뮬레이션</button>
-                <button class="btn-scenario" onclick="simSetScenario(2)">3. 외부 단편화 (Fragmentation) 할당 실패</button>
+                <button class="btn-scenario active" onclick="simSetScenario(0)">1. 표준 new / delete 정상 반납 파이프라인</button>
+                <button class="btn-scenario" onclick="simSetScenario(1)">2. delete 누락 메모리 누수 (Memory Leak)</button>
+                <button class="btn-scenario" onclick="simSetScenario(2)">3. 외부 단편화 할당 실패 (std::bad_alloc)</button>
             </div>
 
             <!-- Contextual Anchor Bar -->
@@ -996,9 +1001,9 @@
                                 <span class="dot red"></span>
                                 <span class="dot yellow"></span>
                                 <span class="dot green"></span>
-                                <span class="code-filename">main.c</span>
+                                <span class="code-filename">main.cpp</span>
                             </div>
-                            <span class="code-lang-tag">C99 / Pointer View</span>
+                            <span class="code-lang-tag">C++20 / Dynamic Object View</span>
                         </div>
                         <div class="code-view" id="sim-code-view">
                             <!-- Populated by JS -->
@@ -1009,7 +1014,7 @@
                     <div style="background: #0d111d; border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; font-size: 0.74rem;">
                         <div>PC: <span class="addr-chip addr-code" id="hud-pc">@1300</span></div>
                         <div>SP: <span class="addr-chip addr-stack" id="hud-sp">@8000</span></div>
-                        <div>ptr: <span class="addr-chip addr-heap" id="hud-ptr">NULL</span></div>
+                        <div>ptr: <span class="addr-chip addr-heap" id="hud-ptr">nullptr</span></div>
                         <div>힙 점유: <span id="hud-usage" style="color:var(--accent-green); font-weight:700;">0 B</span></div>
                     </div>
 
@@ -1069,29 +1074,28 @@
 
         const SCENARIOS = [
             {
-                title: "표준 할당 및 정상 반납",
-                maxStep: 6,
+                title: "표준 new / delete 정상 반납",
+                maxStep: 5,
                 code: [
-                    { text: "// 1. 표준 동적 할당 및 정상 반납 파이프라인", hint: "" },
-                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
-                    { text: "    int* ptr = NULL;", hint: "// Step 1: 포인터 초기화" },
-                    { text: "    ptr = (int*)malloc(16);", hint: "// Step 2: 힙 @3040에 16B 할당" },
-                    { text: "    ptr[0] = 42;", hint: "// Step 3: 힙 메모리에 값 쓰기" },
-                    { text: "    free(ptr);", hint: "// Step 4: 힙 메모리 정상 반납" },
-                    { text: "    ptr = NULL;", hint: "// Step 5: 포인터 안전 초기화" },
-                    { text: "    return 0;", hint: "// Step 6: main() 정상 종료" },
+                    { text: "// 1. C++ new / delete 동적 객체 생성 및 정상 반납", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입점 실행 (SP: @8000)" },
+                    { text: "    int* ptr = nullptr;", hint: "// Step 1: 포인터 안전 초기화" },
+                    { text: "    ptr = new int(42);", hint: "// Step 2: 힙 @3040에 int 할당 및 값 42 기록" },
+                    { text: "    delete ptr;", hint: "// Step 3: 힙 메모리 정상 반납" },
+                    { text: "    ptr = nullptr;", hint: "// Step 4: 댕글링 포인터 방지 초기화" },
+                    { text: "    return 0;", hint: "// Step 5: main() 정상 종료" },
                     { text: "}", hint: "" }
                 ]
             },
             {
-                title: "메모리 누수 발생",
+                title: "delete 누락 메모리 누수",
                 maxStep: 4,
                 code: [
-                    { text: "// 2. free() 누락으로 인한 메모리 누수(Memory Leak)", hint: "" },
-                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
-                    { text: "    int* ptr = (int*)malloc(32);", hint: "// Step 1: 힙 @3040에 32B 할당" },
-                    { text: "    ptr[0] = 100;", hint: "// Step 2: 힙 메모리 작업 수행" },
-                    { text: "    ptr = (int*)malloc(32);", hint: "// Step 3: 이전 주소 덮어쓰기 (free 누락 ➔ 고립)" },
+                    { text: "// 2. delete 누락으로 인한 메모리 누수 (Memory Leak)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입점 실행 (SP: @8000)" },
+                    { text: "    int* ptr = new int(100);", hint: "// Step 1: 힙 @3040에 객체 A 생성 (32B 풀)" },
+                    { text: "    *ptr += 50;", hint: "// Step 2: 힙 메모리 연산 수행" },
+                    { text: "    ptr = new int(200);", hint: "// Step 3: 이전 주소 덮어쓰기 (delete 누락 ➔ 고립)" },
                     { text: "    return 0;", hint: "// Step 4: main() 종료 (총 64B 영구 누수 확정)" },
                     { text: "}", hint: "" }
                 ]
@@ -1100,13 +1104,13 @@
                 title: "외부 단편화 할당 실패",
                 maxStep: 6,
                 code: [
-                    { text: "// 3. 외부 단편화로 인한 메모리 할당 실패(OOM)", hint: "" },
-                    { text: "int main() {", hint: "// Step 0: 진입 (SP: @8000)" },
-                    { text: "    void *b1 = malloc(64);", hint: "// Step 1: b1 할당 (@3000)" },
-                    { text: "    void *b2 = malloc(64);", hint: "// Step 2: b2 할당 (@3064)" },
-                    { text: "    void *b3 = malloc(64);", hint: "// Step 3: b3 할당 (@3128)" },
-                    { text: "    free(b1); free(b3);", hint: "// Step 4: 양 끝 블록 해제 (128B 여유)" },
-                    { text: "    void *big = malloc(100);", hint: "// Step 5: 100B 연속 할당 ➔ OOM 실패!" },
+                    { text: "// 3. 외부 단편화로 인한 new 할당 실패 (std::bad_alloc)", hint: "" },
+                    { text: "int main() {", hint: "// Step 0: 진입점 실행 (SP: @8000)" },
+                    { text: "    char* b1 = new char[64];", hint: "// Step 1: b1 할당 (@3000)" },
+                    { text: "    char* b2 = new char[64];", hint: "// Step 2: b2 할당 (@3064)" },
+                    { text: "    char* b3 = new char[64];", hint: "// Step 3: b3 할당 (@3128)" },
+                    { text: "    delete[] b1; delete[] b3;", hint: "// Step 4: 양 끝 블록 해제 (128B 여유)" },
+                    { text: "    char* big = new char[100];", hint: "// Step 5: 100B 연속 할당 ➔ std::bad_alloc!" },
                     { text: "    return 0;", hint: "// Step 6: 시뮬레이션 완료" },
                     { text: "}", hint: "" }
                 ]
@@ -1181,8 +1185,9 @@
                 if (codeHtml.trim().startsWith('//')) {
                     codeHtml = `<span class="tok-comment">${codeHtml}</span>`;
                 } else {
-                    codeHtml = codeHtml.replace(/\b(int|void|return|NULL)\b/g, '<span class="tok-kw">$1</span>');
-                    codeHtml = codeHtml.replace(/\b(malloc|free|main)\b(?=\s*\()/g, '<span class="tok-fn">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(int|char|void|return|nullptr)\b/g, '<span class="tok-kw">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(new|delete)\b/g, '<span class="tok-op">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(main)\b(?=\s*\()/g, '<span class="tok-fn">$1</span>');
                     codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="tok-num">$1</span>');
                 }
 
@@ -1221,7 +1226,7 @@
             void rackWrap.offsetWidth;
 
             if (simScenario === 0) {
-                // Scenario 0: Standard malloc & free (Step 0 ~ 6)
+                // Scenario 0: Standard C++ new & delete (Step 0 ~ 5)
                 if (simStep === 0) {
                     simRenderCodeView(1);
                     anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 및 스택 프레임 생성 (SP: @8000)";
@@ -1233,64 +1238,49 @@
                     hudUsage.innerText = "0 B";
                     gauge.style.width = "0%";
                     tag.innerText = "STATUS: 0 B ALLOCATED";
-                    desc.innerText = "프로그램 진입점 main()이 시작되어 스택 프레임이 배정되었습니다. 힙 풀(@3000)은 비어 있습니다.";
-                    rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(할당된 힙 블록 없음)</div>`;
+                    desc.innerText = "프로그램 진입점 main()이 시작되어 스택 프레임이 배정되었습니다. 힙 풀(@3000)은 아직 비어 있습니다.";
+                    rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(할당된 힙 객체 없음)</div>`;
                 } else if (simStep === 1) {
                     simRenderCodeView(2);
-                    anchor.innerText = "[Step 1] 포인터 변수 ptr을 NULL로 안전하게 초기화";
+                    anchor.innerText = "[Step 1] 포인터 변수 ptr 선언 및 nullptr로 안전하게 초기화 (스택 @7992)";
                     badge.innerText = "PTR INIT";
                     badge.style.background = "#059669";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1304</span>';
-                    hudPtr.innerHTML = '<span class="val-card">NULL</span>';
-                    desc.innerText = "스택 프레임에 포인터 변수 ptr이 생성되고 NULL로 초기화되었습니다. 아직 어떤 힙 주소도 가리키지 않습니다.";
-                    rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(할당된 힙 블록 없음 - ptr = NULL)</div>`;
+                    hudPtr.innerHTML = '<span class="val-card">nullptr</span>';
+                    desc.innerText = "스택 프레임에 int* 타입의 포인터 변수 ptr이 생성되고 nullptr로 초기화되었습니다. 아직 어떤 힙 주소도 가리키지 않습니다.";
+                    rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(할당된 힙 객체 없음 - ptr = nullptr)</div>`;
                 } else if (simStep === 2) {
                     simRenderCodeView(3);
-                    anchor.innerText = "[Step 2] malloc(16) 호출 ➔ 힙 번지 @3040에 16B 블록 할당 및 ptr에 주소 반환";
-                    badge.innerText = "MALLOC 16B";
+                    anchor.innerText = "[Step 2] ptr = new int(42) 실행 ➔ 힙 @3040에 메모리 할당 + 값 42 생성자 초기화 완료 (ptr = @3040)";
+                    badge.innerText = "NEW INT(42)";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1308</span>';
                     hudPtr.innerHTML = '<span class="addr-chip addr-heap">@3040</span>';
                     hudUsage.innerText = "16 B";
                     gauge.style.width = "25%";
                     tag.innerText = "STATUS: 16 B ALLOCATED";
-                    desc.innerText = "힙 관리자가 힙 영역 번지 @3040에 16바이트 메모리 블록을 할당하고, 그 시작 주소(@3040)를 스택의 ptr에 저장했습니다.";
+                    desc.innerText = "C++ new 연산자가 힙 관리자에게 16B를 요청하여 @3040 번지에 int 객체를 할당하고 값 42를 직접 기록한 뒤, 시작 주소(@3040)를 스택의 ptr에 반환했습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box">
                             <div>
-                                <span style="font-weight:800; color:var(--accent-green);">📦 Block 1 (@3040)</span>
-                                <span style="color:var(--text-sub); font-size:0.72rem;">&nbsp;| 크기: 16 Bytes</span>
+                                <span style="font-weight:800; color:var(--accent-green);">📦 int 객체 (@3040)</span>
+                                <span style="color:var(--text-sub); font-size:0.72rem;">&nbsp;| 크기: 16B (데이터: </span>
+                                <span class="val-card" style="color:var(--accent-green);">42</span>
+                                <span style="color:var(--text-sub); font-size:0.72rem;">)</span>
                             </div>
                             <div><span class="addr-chip addr-stack">ptr이 참조 중 ➔</span></div>
                         </div>
                     `;
                 } else if (simStep === 3) {
                     simRenderCodeView(4);
-                    anchor.innerText = "[Step 3] 힙 메모리 역참조: ptr이 가리키는 @3040 번지에 값 42 기록";
-                    badge.innerText = "WRITE 42";
-                    badge.style.background = "var(--accent-green)";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1312</span>';
-                    desc.innerText = "포인터 역참조를 통해 힙 메모리 번지 @3040에 정수값 42가 안전하게 기록되었습니다.";
-                    rack.innerHTML = `
-                        <div class="heap-block-box">
-                            <div>
-                                <span style="font-weight:800; color:var(--accent-green);">📦 Block 1 (@3040)</span>
-                                <span style="color:var(--text-sub); font-size:0.72rem;">&nbsp;| 데이터: </span>
-                                <span class="val-card" style="color:var(--accent-green);">42</span>
-                            </div>
-                            <div><span class="addr-chip addr-stack">ptr ➔ @3040</span></div>
-                        </div>
-                    `;
-                } else if (simStep === 4) {
-                    simRenderCodeView(5);
-                    anchor.innerText = "[Step 4] free(ptr) 실행 ➔ 힙 블록 @3040이 힙 관리자에 정상 반납됨";
-                    badge.innerText = "FREE OK";
+                    anchor.innerText = "[Step 3] delete ptr 실행 ➔ 힙 객체 소멸 및 메모리 @3040 정상 반납 (Free List 보관)";
+                    badge.innerText = "DELETE OK";
                     badge.style.background = "var(--accent-amber)";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1316</span>';
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1312</span>';
                     hudUsage.innerText = "0 B (회수됨)";
                     gauge.style.width = "0%";
                     tag.innerText = "STATUS: 0 B (ALL FREED)";
-                    desc.innerText = "free(ptr) 호출로 16B 블록이 힙 관리자의 프리 리스트로 반환되었습니다. 이제 이 공간은 재사용될 수 있습니다.";
+                    desc.innerText = "delete ptr 호출로 소멸자가 실행되고 16B 힙 블록(@3040)이 힙 관리자의 프리 리스트로 안전하게 반납되었습니다. 이제 이 공간은 재사용 가능합니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box free-block">
                             <div>
@@ -1300,27 +1290,28 @@
                             <div><span style="color:var(--text-sub); font-size:0.72rem;">(Free List 보관)</span></div>
                         </div>
                     `;
-                } else if (simStep === 5) {
-                    simRenderCodeView(6);
-                    anchor.innerText = "[Step 5] ptr = NULL 처리 ➔ 댕글링 포인터(Dangling Pointer) 방지";
-                    badge.innerText = "NULL RESET";
+                } else if (simStep === 4) {
+                    simRenderCodeView(5);
+                    anchor.innerText = "[Step 4] ptr = nullptr 설정 ➔ 반납된 해제 번지를 가리키는 댕글링 포인터(Dangling Pointer) 원천 차단";
+                    badge.innerText = "NULLPTR RESET";
                     badge.style.background = "#059669";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1320</span>';
-                    hudPtr.innerHTML = '<span class="val-card">NULL</span>';
-                    desc.innerText = "이미 해제된 메모리를 다시 가리키지 않도록 ptr을 NULL로 설정하여 댕글링 포인터 버그를 원천 차단했습니다.";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1316</span>';
+                    hudPtr.innerHTML = '<span class="val-card">nullptr</span>';
+                    desc.innerText = "이미 해제된 메모리를 ptr이 계속 가리키지 않도록 ptr을 nullptr로 설정하여 댕글링 포인터 버그를 원천 차단했습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box free-block">
                             <div><span>♻️ Free Block (@3040)</span></div>
-                            <div><span style="color:var(--accent-green); font-size:0.72rem;">안전하게 연결 해제됨</span></div>
+                            <div><span style="color:var(--accent-green); font-size:0.72rem;">안전하게 연결 해제됨 (ptr = nullptr)</span></div>
                         </div>
                     `;
                 } else {
-                    simRenderCodeView(7);
-                    anchor.innerText = "[Step 6] main() 정상 종료: 힙 메모리 누수 없이 완벽한 자원 회수 완료";
+                    simRenderCodeView(6);
+                    anchor.innerText = "[Step 5] main() 정상 종료: 힙 메모리 누수 0 B로 완벽한 자원 회수 완료";
                     badge.innerText = "ALL COMPLETED";
                     badge.style.background = "var(--accent-green)";
-                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1324</span>';
-                    desc.innerText = "동적 메모리 할당 및 해제 라이프사이클이 메모리 누수 없이 완벽하게 종료되었습니다.";
+                    hudPc.innerHTML = '<span class="addr-chip addr-code">@1320</span>';
+                    hudPtr.innerHTML = '<span class="val-card">소멸됨</span>';
+                    desc.innerText = "C++ 동적 메모리의 할당(new), 초기화, 해제(delete), 안전 초기화(nullptr) 라이프사이클이 누수 없이 완벽하게 종료되었습니다.";
                     rack.innerHTML = `
                         <div style="color:var(--accent-green); font-size:0.82rem; font-weight:700; padding:10px; text-align:center;">
                             ✅ 메모리 누수 0 B - 완벽한 자원 반납
@@ -1328,7 +1319,7 @@
                     `;
                 }
             } else if (simScenario === 1) {
-                // Scenario 1: Memory Leak (Step 0 ~ 4)
+                // Scenario 1: Memory Leak without delete (Step 0 ~ 4)
                 if (simStep === 0) {
                     simRenderCodeView(1);
                     anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 (SP: @8000)";
@@ -1336,32 +1327,32 @@
                     badge.style.background = "#059669";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1400</span>';
                     hudSp.innerHTML = '<span class="addr-chip addr-stack">@8000</span>';
-                    hudPtr.innerHTML = '<span class="val-card">NULL</span>';
+                    hudPtr.innerHTML = '<span class="val-card">nullptr</span>';
                     hudUsage.innerText = "0 B";
                     gauge.style.width = "0%";
                     tag.innerText = "STATUS: 0 B ALLOCATED";
-                    desc.innerText = "main() 함수가 실행되었습니다. 메모리 누수 발생 과정을 관찰합니다.";
+                    desc.innerText = "main() 함수가 실행되었습니다. C++에서 delete를 누락했을 때 발생하는 메모리 누수 과정을 관찰합니다.";
                     rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(할당 대기 중)</div>`;
                 } else if (simStep === 1) {
                     simRenderCodeView(2);
-                    anchor.innerText = "[Step 1] malloc(32) 호출 ➔ 힙 번지 @3040에 32B 블록 할당 (ptr = @3040)";
-                    badge.innerText = "MALLOC 32B";
+                    anchor.innerText = "[Step 1] ptr = new int(100) 호출 ➔ 힙 번지 @3040에 객체 A 할당 (ptr = @3040)";
+                    badge.innerText = "NEW OBJECT A";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1404</span>';
                     hudPtr.innerHTML = '<span class="addr-chip addr-heap">@3040</span>';
                     hudUsage.innerText = "32 B";
                     gauge.style.width = "30%";
                     tag.innerText = "STATUS: 32 B ALLOCATED";
-                    desc.innerText = "첫 번째 32바이트 블록이 힙 @3040에 정상 할당되었습니다.";
+                    desc.innerText = "첫 번째 32바이트 객체 A가 힙 @3040에 정상 할당되고 값 100이 기록되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box">
-                            <div><span style="font-weight:800; color:var(--accent-green);">📦 Block A (@3040)</span><span> [32B]</span></div>
+                            <div><span style="font-weight:800; color:var(--accent-green);">📦 Block A (@3040)</span><span> [32B, 데이터: 100]</span></div>
                             <div><span class="addr-chip addr-stack">ptr ➔ @3040</span></div>
                         </div>
                     `;
                 } else if (simStep === 2) {
                     simRenderCodeView(3);
-                    anchor.innerText = "[Step 2] 힙 번지 @3040에 값 100 기록 및 데이터 처리 완료";
+                    anchor.innerText = "[Step 2] *ptr += 50 연산 수행 (*ptr: 100 ➔ 150) 및 작업 완료";
                     badge.innerText = "WORK DONE";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1408</span>';
@@ -1369,16 +1360,16 @@
                     hudUsage.innerText = "32 B";
                     gauge.style.width = "30%";
                     tag.innerText = "STATUS: 32 B ALLOCATED";
-                    desc.innerText = "데이터 작업이 완료되었으나, free(ptr)로 메모리를 반납하지 않고 다음 단계로 진행합니다.";
+                    desc.innerText = "데이터 작업이 완료되었으나, delete ptr로 메모리를 반납하지 않고 다음 단계로 진행합니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box">
-                            <div><span style="font-weight:800; color:var(--accent-green);">📦 Block A (@3040)</span><span> [32B, 데이터: 100]</span></div>
+                            <div><span style="font-weight:800; color:var(--accent-green);">📦 Block A (@3040)</span><span> [32B, 데이터: 150]</span></div>
                             <div><span class="addr-chip addr-stack">ptr ➔ @3040</span></div>
                         </div>
                     `;
                 } else if (simStep === 3) {
                     simRenderCodeView(4);
-                    anchor.innerText = "[Step 3] free 없이 새 malloc(32) 호출 ➔ ptr에 새 주소(@3072) 대입 (이전 @3040 블록 고립 누수!)";
+                    anchor.innerText = "[Step 3] delete 없이 새 new int(200) 호출 ➔ ptr에 새 주소(@3072) 덮어씀 (이전 @3040 블록 고립 누수!)";
                     badge.innerText = "LEAK OCCURRED";
                     badge.style.background = "var(--accent-rose)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1412</span>';
@@ -1386,7 +1377,7 @@
                     hudUsage.innerText = "64 B (32B 누수)";
                     gauge.style.width = "60%";
                     tag.innerText = "STATUS: 64 B (32 B LEAKED)";
-                    desc.innerText = "ptr 변수에 새 주소(@3072)가 덮어써지면서, 이전 블록(@3040)의 주소를 영원히 분실했습니다! 누구도 free()를 호출할 수 없게 되었습니다.";
+                    desc.innerText = "ptr 변수에 새 주소(@3072)가 덮어써지면서, 이전 블록(@3040)의 주소를 영원히 분실했습니다! 누구도 delete ptr을 호출할 수 없게 되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box leaked-block">
                             <div><span>💥 고립된 Block A (@3040) [32B]</span></div>
@@ -1408,7 +1399,7 @@
                     hudUsage.innerText = "64 B (누수)";
                     gauge.style.width = "60%";
                     tag.innerText = "STATUS: 64 B (LEAKED)";
-                    desc.innerText = "프로그램이 종료될 때까지 힙 블록들이 해제되지 못하고 메모리를 점유했습니다. 장시간 가동 서버라면 OOM 크래시로 이어집니다.";
+                    desc.innerText = "프로그램이 종료될 때까지 힙 블록들이 delete되지 못하고 메모리를 점유했습니다. 장시간 가동 서버라면 OOM 크래시로 이어집니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box leaked-block">
                             <div><span>💥 영구 누수된 메모리 블록 (@3040 & @3072, 총 64B)</span></div>
@@ -1417,7 +1408,7 @@
                     `;
                 }
             } else {
-                // Scenario 2: External Fragmentation (Step 0 ~ 6)
+                // Scenario 2: External Fragmentation with new / delete[] (Step 0 ~ 6)
                 if (simStep === 0) {
                     simRenderCodeView(1);
                     anchor.innerText = "[Step 0] 프로그램 시작: 진입점 main() 실행 (SP: @8000)";
@@ -1429,11 +1420,11 @@
                     hudUsage.innerText = "0 B";
                     gauge.style.width = "0%";
                     tag.innerText = "STATUS: 0 B ALLOCATED";
-                    desc.innerText = "외부 단편화(External Fragmentation)로 인한 할당 실패 메커니즘을 관찰합니다.";
+                    desc.innerText = "외부 단편화(External Fragmentation)로 인한 C++ new 연산자 할당 실패(std::bad_alloc) 메커니즘을 관찰합니다.";
                     rack.innerHTML = `<div style="color:var(--text-sub); font-size:0.78rem; font-style:italic; padding:10px; text-align:center;">(힙 풀 초기화 상태)</div>`;
                 } else if (simStep === 1) {
                     simRenderCodeView(2);
-                    anchor.innerText = "[Step 1] b1 = malloc(64) ➔ @3000 번지에 64B 할당";
+                    anchor.innerText = "[Step 1] b1 = new char[64] ➔ @3000 번지에 64B 동적 배열 할당";
                     badge.innerText = "ALLOC B1";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1504</span>';
@@ -1441,13 +1432,13 @@
                     hudUsage.innerText = "64 B";
                     gauge.style.width = "25%";
                     tag.innerText = "STATUS: 64 B ALLOCATED";
-                    desc.innerText = "첫 번째 64바이트 블록이 할당되었습니다.";
+                    desc.innerText = "첫 번째 64바이트 동적 배열 객체가 @3000 번지에 정상 할당되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box"><span>📦 b1: 64B (@3000)</span><span>사용 중</span></div>
                     `;
                 } else if (simStep === 2) {
                     simRenderCodeView(3);
-                    anchor.innerText = "[Step 2] b2 = malloc(64) ➔ @3064 번지에 연속으로 64B 할당";
+                    anchor.innerText = "[Step 2] b2 = new char[64] ➔ @3064 번지에 연속으로 64B 동적 배열 할당";
                     badge.innerText = "ALLOC B2";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1508</span>';
@@ -1455,14 +1446,14 @@
                     hudUsage.innerText = "128 B";
                     gauge.style.width = "50%";
                     tag.innerText = "STATUS: 128 B ALLOCATED";
-                    desc.innerText = "두 번째 64바이트 블록이 연속으로 할당되었습니다.";
+                    desc.innerText = "두 번째 64바이트 동적 배열이 연속으로 할당되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box"><span>📦 b1: 64B (@3000)</span><span>사용 중</span></div>
                         <div class="heap-block-box"><span>📦 b2: 64B (@3064)</span><span>사용 중</span></div>
                     `;
                 } else if (simStep === 3) {
                     simRenderCodeView(4);
-                    anchor.innerText = "[Step 3] b3 = malloc(64) ➔ @3128 번지에 64B 추가 할당 (총 192B 점유)";
+                    anchor.innerText = "[Step 3] b3 = new char[64] ➔ @3128 번지에 64B 추가 할당 (총 192B 점유)";
                     badge.innerText = "ALLOC B3";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1512</span>';
@@ -1470,7 +1461,7 @@
                     hudUsage.innerText = "192 B";
                     gauge.style.width = "75%";
                     tag.innerText = "STATUS: 192 B ALLOCATED";
-                    desc.innerText = "세 번째 64바이트 블록이 할당되어 힙에 총 192바이트가 연속으로 들어찼습니다.";
+                    desc.innerText = "세 번째 64바이트 배열이 할당되어 힙에 총 192바이트가 연속으로 들어찼습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box"><span>📦 b1: 64B (@3000)</span><span>사용 중</span></div>
                         <div class="heap-block-box"><span>📦 b2: 64B (@3064)</span><span>사용 중</span></div>
@@ -1478,7 +1469,7 @@
                     `;
                 } else if (simStep === 4) {
                     simRenderCodeView(5);
-                    anchor.innerText = "[Step 4] free(b1), free(b3) 실행 ➔ 양 끝 해제로 총 128B 빈 공간 형성 (가운데 b2로 단편화!)";
+                    anchor.innerText = "[Step 4] delete[] b1, delete[] b3 실행 ➔ 양 끝 해제로 총 128B 빈 공간 형성 (가운데 b2로 단편화!)";
                     badge.innerText = "FRAGMENTED";
                     badge.style.background = "var(--accent-amber)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1516</span>';
@@ -1486,7 +1477,7 @@
                     hudUsage.innerText = "64 B (b2만 점유)";
                     gauge.style.width = "25%";
                     tag.innerText = "STATUS: 64 B (128 B FRAGMENTED)";
-                    desc.innerText = "b1과 b3이 해제되어 힙에 총 128바이트의 여유 공간이 생겼지만, 가운데 b2(64B)가 버티고 있어 64B짜리 두 조각으로 분리되었습니다.";
+                    desc.innerText = "delete[] 연산자로 b1과 b3이 해제되어 힙에 총 128바이트의 여유 공간이 생겼지만, 가운데 b2(64B)가 버티고 있어 64B짜리 두 조각으로 분리되었습니다.";
                     rack.innerHTML = `
                         <div class="heap-block-box free-block"><span>♻️ FREE: 64B (@3000)</span><span>빈 조각 1</span></div>
                         <div class="heap-block-box"><span>📦 b2: 64B (@3064)</span><span>가운데 점유 중</span></div>
@@ -1494,27 +1485,27 @@
                     `;
                 } else if (simStep === 5) {
                     simRenderCodeView(6);
-                    anchor.innerText = "[Step 5] malloc(100) 요청 ➔ 빈 공간 총합은 128B이나 연속 100B가 없어 할당 실패 (OOM)!";
-                    badge.innerText = "ALLOC FAILED";
+                    anchor.innerText = "[Step 5] new char[100] 요청 ➔ 빈 공간 총합은 128B이나 연속 100B가 없어 std::bad_alloc 예외 발생 (할당 실패)!";
+                    badge.innerText = "BAD_ALLOC FAIL";
                     badge.style.background = "var(--accent-rose)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1520</span>';
-                    hudPtr.innerHTML = '<span class="val-card" style="color:var(--accent-rose); font-weight:700;">NULL (할당 실패)</span>';
+                    hudPtr.innerHTML = '<span class="val-card" style="color:var(--accent-rose); font-weight:700;">std::bad_alloc 예외</span>';
                     hudUsage.innerText = "64 B";
                     gauge.style.width = "25%";
-                    tag.innerText = "STATUS: 64 B (OOM FAIL)";
-                    desc.innerText = "프로그램이 100바이트를 요구했습니다. 전체 빈 공간의 합은 128B이지만, 연속된 100B짜리 블록이 존재하지 않아 malloc은 NULL을 반환하고 실패합니다!";
+                    tag.innerText = "STATUS: 64 B (BAD_ALLOC FAIL)";
+                    desc.innerText = "프로그램이 연속 100바이트를 요구했습니다. 전체 빈 공간의 합은 128B이지만, 연속된 100B짜리 블록이 존재하지 않아 new 연산자가 std::bad_alloc 예외를 던지며 실패합니다!";
                     rack.innerHTML = `
                         <div class="heap-block-box free-block"><span>♻️ 64B 여유 (부족: 100B 불가)</span></div>
                         <div class="heap-block-box"><span>📦 b2: 64B 점유 중</span></div>
                         <div class="heap-block-box free-block"><span>♻️ 64B 여유 (부족: 100B 불가)</span></div>
                         <div style="color:var(--accent-rose); font-weight:800; font-size:0.78rem; text-align:center; padding:6px; border:1px solid var(--accent-rose); border-radius:4px; margin-top:4px;">
-                            💥 외부 단편화 발생: 연속 100B 공간 없음 (malloc ➔ NULL 반환)
+                            💥 외부 단편화 발생: 연속 100B 공간 없음 (new ➔ std::bad_alloc 예외 던짐)
                         </div>
                     `;
                     rackWrap.classList.add('shake');
                 } else {
                     simRenderCodeView(7);
-                    anchor.innerText = "[Step 6] 외부 단편화(External Fragmentation) 원리 시뮬레이션 완료";
+                    anchor.innerText = "[Step 6] 외부 단편화(External Fragmentation) 및 std::bad_alloc 원리 시뮬레이션 완료";
                     badge.innerText = "SIM COMPLETED";
                     badge.style.background = "var(--accent-green)";
                     hudPc.innerHTML = '<span class="addr-chip addr-code">@1524</span>';
@@ -1522,10 +1513,10 @@
                     hudUsage.innerText = "64 B";
                     gauge.style.width = "25%";
                     tag.innerText = "STATUS: 64 B ALLOCATED";
-                    desc.innerText = "외부 단편화의 치명적인 문제점을 확인했습니다. [처음부터 다시] 버튼을 눌러 다시 조작할 수 있습니다.";
+                    desc.innerText = "외부 단편화로 인한 C++ 동적 할당 실패 메커니즘을 확인했습니다. [처음부터 다시] 버튼을 눌러 다시 조작할 수 있습니다.";
                     rack.innerHTML = `
                         <div style="color:var(--accent-green); font-size:0.82rem; font-weight:700; padding:10px; text-align:center;">
-                            ✅ 외부 단편화 원리 학습 완료
+                            ✅ 외부 단편화 및 std::bad_alloc 원리 학습 완료
                         </div>
                     `;
                 }

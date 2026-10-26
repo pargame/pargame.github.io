@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Architecture: Instruction Pipeline & Branch Prediction Studio</title>
+    <style>
+        :root {
+            --bg-color: #0b0d14;
+            --card-bg: #12141e;
+            --card-border: #222636;
+            --accent-primary: #ec4899;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --text-main: #ebeef5;
+            --text-sub: #82889a;
+            --text-muted: #525866;
+            --code-bg: #07090e;
+            --glow-rose: rgba(244, 63, 94, 0.35);
+            --glow-blue: rgba(59, 130, 246, 0.35);
+            --glow-amber: rgba(245, 158, 11, 0.35);
+            --glow-green: rgba(16, 185, 129, 0.35);
+            --glow-purple: rgba(139, 92, 246, 0.35);
+            --glow-cyan: rgba(6, 182, 212, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro", "Pretendard", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            user-select: none;
+        }
+
+        header {
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: var(--accent-primary);
+            color: #ffffff;
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .slide-progress {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-family: monospace;
+        }
+
+        .presentation-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 18px;
+            min-height: 0;
+            position: relative;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            max-width: 1180px;
+            max-height: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 18px 26px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            animation: fadeIn 0.25s ease-out;
+            position: relative;
+            overflow-y: auto;
+            box-sizing: border-box;
+            flex-direction: column;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-header-wrap {
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+
+        .slide-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .slide-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-sub);
+            line-height: 1.45;
+        }
+
+        .theory-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 18px;
+            flex: 1;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        .diagram-card {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-card {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .concept-box {
+            background: rgba(18, 20, 30, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            line-height: 1.55;
+        }
+
+        .concept-box b {
+            color: var(--accent-primary);
+        }
+
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(236, 72, 153, 0.12);
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            color: var(--accent-primary);
+            font-weight: 700;
+            font-size: 0.74rem;
+            margin-bottom: 4px;
+        }
+
+        .concept-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .concept-body {
+            font-size: 0.82rem;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .addr-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.82em;
+            font-weight: 700;
+            border-radius: 5px;
+            line-height: 1.2;
+            vertical-align: middle;
+            letter-spacing: 0.4px;
+        }
+        .addr-code {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            border: 1.5px solid rgba(244, 63, 94, 0.55);
+        }
+        .addr-mem {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1.5px solid rgba(16, 185, 129, 0.55);
+        }
+        .addr-reg {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            border: 1.5px solid rgba(139, 92, 246, 0.55);
+        }
+        .val-card {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.82em;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* Slide 1 Laundry Comparison Diagram */
+        .laundry-container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .laundry-block {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .laundry-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-sub);
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 50px repeat(6, 1fr);
+            gap: 4px;
+            align-items: center;
+        }
+        .t-label {
+            font-size: 0.7rem;
+            font-family: monospace;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .t-cell {
+            padding: 5px 2px;
+            text-align: center;
+            font-size: 0.68rem;
+            font-family: monospace;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+        .c-wash { background: rgba(59, 130, 246, 0.25); border: 1px solid var(--accent-blue); color: var(--accent-blue); }
+        .c-dry  { background: rgba(245, 158, 11, 0.25); border: 1px solid var(--accent-amber); color: var(--accent-amber); }
+        .c-iron { background: rgba(16, 185, 129, 0.25); border: 1px solid var(--accent-green); color: var(--accent-green); }
+        .c-idle { background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(255, 255, 255, 0.1); color: var(--text-muted); }
+
+        /* Slide 2 5-Stage Datapath Diagram */
+        .datapath-container {
+            width: 100%;
+            max-width: 490px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stages-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .stage-box {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            padding: 8px 6px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .sb-if { border: 1.5px solid var(--accent-rose); }
+        .sb-id { border: 1.5px solid var(--accent-amber); }
+        .sb-ex { border: 1.5px solid var(--accent-blue); }
+        .sb-mem { border: 1.5px solid var(--accent-green); }
+        .sb-wb { border: 1.5px solid var(--accent-purple); }
+
+        .sb-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            font-family: monospace;
+        }
+        .sb-desc {
+            font-size: 0.65rem;
+            color: var(--text-sub);
+            line-height: 1.2;
+        }
+
+        .pipe-reg-divider {
+            width: 12px;
+            height: 52px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-rl;
+            font-size: 0.58rem;
+            color: var(--text-muted);
+            font-family: monospace;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Slide 3 Hazard Boxes */
+        .hazard-card-list {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .hazard-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .hz-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .hz-body {
+            font-size: 0.74rem;
+            color: var(--text-sub);
+            line-height: 1.4;
+        }
+        .hz-solution {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            font-weight: 700;
+            background: rgba(6, 182, 212, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        /* Slide 4 Simulator Grid */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .code-view-container {
+            background: #0d1117;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .code-view-header {
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .code-dots {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-dots .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .code-dots .dot.red { background: #ff5f56; }
+        .code-dots .dot.yellow { background: #ffbd2e; }
+        .code-dots .dot.green { background: #27c93f; }
+
+        .code-filename {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.74rem;
+            color: var(--text-sub);
+            margin-left: 6px;
+            font-weight: 600;
+        }
+
+        .code-lang-tag {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .code-view {
+            background: transparent;
+            padding: 8px 6px;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-x: auto;
+        }
+
+        .code-line {
+            display: flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
+            color: var(--text-sub);
+            white-space: pre;
+        }
+
+        .code-line.current {
+            background: rgba(236, 72, 153, 0.14);
+            border-left-color: var(--accent-primary);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .code-num {
+            width: 20px;
+            text-align: right;
+            margin-right: 12px;
+            color: var(--text-muted);
+            opacity: 0.45;
+            font-size: 0.72rem;
+            user-select: none;
+            flex-shrink: 0;
+            font-family: inherit;
+        }
+
+        .code-line.current .code-num {
+            color: var(--accent-primary);
+            opacity: 0.95;
+            font-weight: 700;
+        }
+
+        .code-text {
+            white-space: pre;
+            font-family: inherit;
+            color: inherit;
+        }
+
+        .code-hint {
+            margin-left: 12px;
+            color: #8b949e;
+            opacity: 0.75;
+            font-size: 0.72rem;
+            font-style: italic;
+            white-space: nowrap;
+        }
+
+        .code-active-tag {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            color: var(--accent-primary);
+            background: rgba(236, 72, 153, 0.15);
+            border: 1px solid rgba(236, 72, 153, 0.4);
+            border-radius: 3px;
+            padding: 1px 5px;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+
+        .tok-op { color: #e3b341; font-weight: 700; }
+        .tok-kw { color: #ff7b72; font-weight: 600; }
+        .tok-fn { color: #d2a8ff; font-weight: 600; }
+        .tok-num { color: #79c0ff; }
+        .tok-comment { color: #8b949e; font-style: italic; }
+
+        .anchor-bar {
+            background: rgba(236, 72, 153, 0.08);
+            border: 1px solid rgba(236, 72, 153, 0.25);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            height: 38px;
+            min-height: 38px;
+            max-height: 38px;
+        }
+        .anchor-bar .anchor-tag {
+            color: var(--accent-primary);
+            font-weight: 800;
+            font-family: monospace;
+        }
+
+        .scenario-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .btn-scenario {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-sub);
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-scenario:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-main);
+        }
+        .btn-scenario.active {
+            background: rgba(236, 72, 153, 0.15);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            font-weight: 800;
+        }
+
+        /* Right Panel: Simulator Workspace */
+        .pipe-sim-container {
+            background: var(--code-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+        }
+
+        .event-banner {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.76rem;
+            font-family: monospace;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            min-height: 32px;
+        }
+        .event-banner.ev-forward {
+            background: rgba(6, 182, 212, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--glow-cyan);
+        }
+        .event-banner.ev-flush {
+            background: rgba(244, 63, 94, 0.18);
+            border-color: var(--accent-rose);
+            color: var(--accent-rose);
+            box-shadow: 0 0 10px var(--glow-rose);
+        }
+        .event-banner.ev-steady {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* 5-Stage Rack */
+        .pipeline-rack {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            background: #0d1117;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .rack-stage {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 5px;
+            padding: 6px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+            border: 1px solid var(--card-border);
+            transition: all 0.25s ease;
+        }
+
+        .rack-stage.rs-if { border-color: rgba(244, 63, 94, 0.4); }
+        .rack-stage.rs-id { border-color: rgba(245, 158, 11, 0.4); }
+        .rack-stage.rs-ex { border-color: rgba(59, 130, 246, 0.4); }
+        .rack-stage.rs-mem { border-color: rgba(16, 185, 129, 0.4); }
+        .rack-stage.rs-wb { border-color: rgba(139, 92, 246, 0.4); }
+
+        .rack-stage.active-stage {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+        .rack-stage.fwd-highlight {
+            border-color: var(--accent-cyan) !important;
+            box-shadow: 0 0 12px var(--glow-cyan);
+            background: rgba(6, 182, 212, 0.12) !important;
+        }
+        .rack-stage.flush-highlight {
+            border-color: var(--accent-rose) !important;
+            box-shadow: 0 0 12px var(--glow-rose);
+            background: rgba(244, 63, 94, 0.15) !important;
+        }
+
+        .stage-tag {
+            font-size: 0.68rem;
+            font-weight: 800;
+            font-family: monospace;
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+        .st-if { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+        .st-id { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+        .st-ex { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+        .st-mem { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        .st-wb { background: rgba(139, 92, 246, 0.2); color: var(--accent-purple); }
+
+        .stage-inst-badge {
+            font-size: 0.7rem;
+            font-family: monospace;
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            padding: 2px 0;
+        }
+
+        .stage-sub-info {
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .reg-chip {
+            width: 8px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        /* Cycle Timeline Matrix */
+        .matrix-wrap {
+            background: #0d1117;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .matrix-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .matrix-row {
+            display: grid;
+            grid-template-columns: 82px repeat(9, 1fr);
+            gap: 3px;
+            align-items: center;
+        }
+        .m-inst-label {
+            font-size: 0.68rem;
+            font-family: monospace;
+            color: var(--text-sub);
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .m-head-col {
+            font-size: 0.64rem;
+            font-family: monospace;
+            text-align: center;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .m-head-col.active-col {
+            color: var(--accent-primary);
+            font-weight: 800;
+        }
+
+        .m-cell {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 3px;
+            padding: 4px 1px;
+            text-align: center;
+            font-size: 0.65rem;
+            font-family: monospace;
+            font-weight: 700;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+        .m-cell.mc-if { background: rgba(244, 63, 94, 0.25); border-color: var(--accent-rose); color: var(--accent-rose); }
+        .m-cell.mc-id { background: rgba(245, 158, 11, 0.25); border-color: var(--accent-amber); color: var(--accent-amber); }
+        .m-cell.mc-ex { background: rgba(59, 130, 246, 0.25); border-color: var(--accent-blue); color: var(--accent-blue); }
+        .m-cell.mc-mem { background: rgba(16, 185, 129, 0.25); border-color: var(--accent-green); color: var(--accent-green); }
+        .m-cell.mc-wb { background: rgba(139, 92, 246, 0.25); border-color: var(--accent-purple); color: var(--accent-purple); }
+        .m-cell.mc-flush { background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.4); color: #f87171; text-decoration: line-through; }
+        .m-cell.current-cycle {
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+            font-weight: 900;
+            transform: scale(1.04);
+        }
+
+        /* Metrics Bar */
+        .metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .metric-title {
+            font-size: 0.66rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .metric-val {
+            font-size: 1.05rem;
+            font-weight: 800;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        .gauge-track {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            margin-top: 2px;
+        }
+        .gauge-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-rose), var(--accent-amber), var(--accent-green));
+            transition: width 0.3s ease;
+        }
+
+        /* HUD & Controls */
+        .hud-wrap {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .hud-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 5px;
+            padding: 5px 6px;
+            text-align: center;
+        }
+        .hud-lbl { font-size: 0.62rem; color: var(--text-muted); font-weight: 700; }
+        .hud-val { font-size: 0.78rem; font-family: monospace; font-weight: 800; color: var(--text-main); }
+
+        .ctrl-bar {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex: 1;
+            text-align: center;
+        }
+        .ctrl-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--accent-primary);
+        }
+        .ctrl-btn.primary {
+            background: rgba(236, 72, 153, 0.2);
+            border-color: var(--accent-primary);
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .ctrl-btn.primary:hover {
+            background: rgba(236, 72, 153, 0.35);
+        }
+
+        /* Footer & Navigation */
+        footer {
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--card-border);
+            background: rgba(11, 13, 20, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-primary);
+        }
+        .nav-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .shortcut-hint {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+        }
+        .shortcut-hint b {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span style="color: var(--accent-primary);">⚡</span>
+            <span>pargame / Core CS</span>
+            <span class="badge">PART 07 // INSTRUCTION PIPELINE</span>
+        </div>
+        <div class="slide-progress" id="slideIndicator">Slide 1 / 4</div>
+    </header>
+
+    <div class="presentation-container">
+
+        <!-- SLIDE 1: Pipelining Principle & Laundry Model -->
+        <div class="slide active" id="slide-1">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>01. 순차 실행 vs 파이프라인 병렬화 (Pipelining Principle)</span>
+                </h1>
+                <p class="slide-subtitle">
+                    단일 사이클 CPU의 하드웨어 유휴 비효율을 극복하고 명령어 처리량(Throughput)을 극대화하는 조립 라인(Assembly Line)의 원리
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Laundry Model Diagram -->
+                <div class="diagram-card">
+                    <span class="tech-badge">LAUNDRY ASSEMBLY LINE ANALOGY</span>
+
+                    <div class="laundry-container">
+                        <!-- Non-pipelined -->
+                        <div class="laundry-block">
+                            <div class="laundry-title">
+                                <span>1. 비파이프라인 순차 실행 (Single-Cycle Sequential)</span>
+                                <span style="color: var(--accent-rose);">총 360분 소요</span>
+                            </div>
+                            <div class="timeline-row">
+                                <span class="t-label">빨래 1</span>
+                                <div class="t-cell c-wash">세탁</div>
+                                <div class="t-cell c-dry">건조</div>
+                                <div class="t-cell c-iron">다림</div>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-idle">-</div>
+                            </div>
+                            <div class="timeline-row">
+                                <span class="t-label">빨래 2</span>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-wash">세탁</div>
+                                <div class="t-cell c-dry">건조</div>
+                                <div class="t-cell c-iron">다림</div>
+                            </div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); text-align: right;">빨래 1이 다림질까지 완전히 끝나야 빨래 2 시작 (자원 66% 유휴)</div>
+                        </div>
+
+                        <!-- Pipelined -->
+                        <div class="laundry-block">
+                            <div class="laundry-title">
+                                <span>2. 파이프라인 중첩 실행 (Pipelined Execution)</span>
+                                <span style="color: var(--accent-green);">총 180분 (시간 50% 단축!)</span>
+                            </div>
+                            <div class="timeline-row">
+                                <span class="t-label">빨래 1</span>
+                                <div class="t-cell c-wash">세탁</div>
+                                <div class="t-cell c-dry">건조</div>
+                                <div class="t-cell c-iron">다림</div>
+                                <div class="t-cell c-idle">완료</div>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-idle">-</div>
+                            </div>
+                            <div class="timeline-row">
+                                <span class="t-label">빨래 2</span>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-wash">세탁</div>
+                                <div class="t-cell c-dry">건조</div>
+                                <div class="t-cell c-iron">다림</div>
+                                <div class="t-cell c-idle">완료</div>
+                                <div class="t-cell c-idle">-</div>
+                            </div>
+                            <div class="timeline-row">
+                                <span class="t-label">빨래 3</span>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-idle">-</div>
+                                <div class="t-cell c-wash">세탁</div>
+                                <div class="t-cell c-dry">건조</div>
+                                <div class="t-cell c-iron">다림</div>
+                                <div class="t-cell c-idle">완료</div>
+                            </div>
+                            <div style="font-size: 0.68rem; color: var(--accent-green); text-align: right;">세탁기, 건조기, 다리미가 매 시간 100% 동시 가동</div>
+                        </div>
+                    </div>
+
+                    <div style="width: 100%; max-width: 480px; background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 6px; padding: 6px 10px; font-size: 0.72rem; color: var(--text-sub); display: flex; justify-content: space-between;">
+                        <span>개별 지연시간 (Latency): 동일</span>
+                        <b style="color: var(--accent-green);">단위시간 처리량 (Throughput): 최대 N배 폭증</b>
+                    </div>
+                </div>
+
+                <!-- Right: Theory Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>1. 단일 사이클 CPU의 치명적 한계</span>
+                        </div>
+                        <div class="concept-body">
+                            단일 사이클 프로세서는 <b>가장 실행 시간이 긴 명령어</b>(예: 메모리 로드 <code>LDR</code> = 1,000ps)에 맞춰 클럭 주기를 설정해야 합니다.<br>
+                            결과적으로 400ps면 충분한 단순 <code>ADD</code> 연산도 1,000ps 동안 기다려야 하므로, <b>클럭 주파수를 1GHz 이상으로 끌어올릴 수 없는 구조적 병목</b>이 발생합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>2. 5단계 분할과 클럭 주기 단축</span>
+                        </div>
+                        <div class="concept-body">
+                            명령어 실행 경로를 200ps 단위의 <b>5개 독립 하드웨어 스테이지</b>로 물리 분할하면, 클럭 주기를 1,000ps에서 200ps로 단축할 수 있습니다.<br>
+                            클럭 주파수가 <b>1GHz ➔ 5GHz로 5배</b> 향상되며, 파이프라인이 가득 차면(Steady-state) <b>매 200ps마다 1개씩 명령어가 완료</b>됩니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>3. 하드웨어 엔지니어링 핵심 멘탈 모델</span>
+                        </div>
+                        <div class="concept-body">
+                            <b>Latency vs Throughput</b>: 단일 명령어의 시작부터 종료까지 걸리는 물리 시간(Latency)은 줄어들지 않거나 파이프라인 레지스터 지연으로 미세하게 늘어납니다. 그러나 CPU 전체 관점에서 <b>단위 시간당 배출되는 명령어 개수(Throughput)는 스테이지 개수(k)에 비례하여 비약적으로 폭증</b>합니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: Classic RISC 5-Stage Datapath -->
+        <div class="slide" id="slide-2">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>02. 클래식 RISC 5단계 파이프라인과 파이프라인 레지스터</span>
+                </h1>
+                <p class="slide-subtitle">
+                    명령어 인출부터 레지스터 기록까지: 5대 독립 하드웨어 스테이지와 클럭 동기화 래치(Latch)의 격리 원리
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Datapath Diagram -->
+                <div class="diagram-card">
+                    <span class="tech-badge">CLASSIC RISC 5-STAGE PIPELINE DATAPATH</span>
+
+                    <div class="datapath-container">
+                        <div class="stages-flow">
+                            <div class="stage-box sb-if">
+                                <span class="sb-title" style="color: var(--accent-rose);">IF</span>
+                                <span class="sb-desc">명령어 인출<br>I-Cache &amp; PC</span>
+                            </div>
+                            <div class="pipe-reg-divider">IF/ID</div>
+                            <div class="stage-box sb-id">
+                                <span class="sb-title" style="color: var(--accent-amber);">ID</span>
+                                <span class="sb-desc">디코드 &amp; 판독<br>RegFile Rn,Rm</span>
+                            </div>
+                            <div class="pipe-reg-divider">ID/EX</div>
+                            <div class="stage-box sb-ex">
+                                <span class="sb-title" style="color: var(--accent-blue);">EX</span>
+                                <span class="sb-desc">연산 &amp; 판정<br>ALU &amp; Branch</span>
+                            </div>
+                            <div class="pipe-reg-divider">EX/MEM</div>
+                            <div class="stage-box sb-mem">
+                                <span class="sb-title" style="color: var(--accent-green);">MEM</span>
+                                <span class="sb-desc">데이터 접근<br>D-Cache LDR/STR</span>
+                            </div>
+                            <div class="pipe-reg-divider">MEM/WB</div>
+                            <div class="stage-box sb-wb">
+                                <span class="sb-title" style="color: var(--accent-purple);">WB</span>
+                                <span class="sb-desc">레지스터 기록<br>Dest Reg Rd</span>
+                            </div>
+                        </div>
+
+                        <!-- Latch details -->
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--card-border); border-radius: 6px; padding: 10px; font-size: 0.72rem; line-height: 1.45;">
+                            <div style="color: var(--text-main); font-weight: 700; margin-bottom: 4px;">🛡️ 파이프라인 레지스터(Pipeline Registers)의 핵심 책무</div>
+                            <div style="color: var(--text-sub);">
+                                • 스테이지 사이에 배치된 <span class="val-card">IF/ID</span>, <span class="val-card">ID/EX</span>, <span class="val-card">EX/MEM</span>, <span class="val-card">MEM/WB</span> 레지스터<br>
+                                • 매 <b>클럭 상승 엣지(Clock Rising Edge)</b>에만 중간 연산값과 제어 신호를 동기화 래치(Latch)<br>
+                                • 다음 명령어가 이전 명령어의 실행 중간값을 덮어쓰지 못하도록 <b>전기적 차단벽(Firewall)</b> 형성
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Theory Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>1. 5대 파이프라인 스테이지 상세 분석</span>
+                        </div>
+                        <div class="concept-body">
+                            • <span class="addr-chip addr-code">IF</span>: <span class="val-card">PC</span>가 가리키는 메모리에서 32비트 명령어 인출 후 <code>PC += 4</code> 전진<br>
+                            • <span class="addr-chip" style="color:var(--accent-amber); border-color:var(--accent-amber);">ID</span>: 32비트 opcode 해독, 레지스터 파일에서 소스 피연산자(<code>Rn</code>, <code>Rm</code>) 값 판독<br>
+                            • <span class="addr-chip" style="color:var(--accent-blue); border-color:var(--accent-blue);">EX</span>: ALU를 통해 산술·논리 연산 수행, 메모리 주소 계산, 조건 분기 판정<br>
+                            • <span class="addr-chip addr-mem">MEM</span>: 데이터 캐시(D-Cache)에 로드(<code>LDR</code>) 또는 저장(<code>STR</code>) 수행<br>
+                            • <span class="addr-chip addr-reg">WB</span>: 최종 연산 결과 또는 메모리 로드 값을 목적지 레지스터(<code>Rd</code>)에 영구 기록
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>2. 하드웨어 격리와 중간 레지스터의 필연성</span>
+                        </div>
+                        <div class="concept-body">
+                            스테이지 간 중간 레지스터가 없다면, <code>EX</code> 단계가 <code>ADD</code>를 연산하는 도중에 뒤따라온 <code>SUB</code> 명령어가 레지스터 판독 값을 덮어써서 <b>데이터 오염</b>이 발생합니다.<br>
+                            파이프라인 레지스터는 각 스테이지의 입출력 신호를 1클럭 동안 단단히 붙잡아두어 <b>5개 명령어가 서로 간섭 없이 동시 실행</b>되도록 보장합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>3. 이상적 Throughput: IPC = 1.0</span>
+                        </div>
+                        <div class="concept-body">
+                            5사이클이 지나 파이프라인이 가득 채워지면(Pipeline Filled), 매 클럭마다 1개씩 <code>WB</code>가 완료됩니다.<br>
+                            이로써 <b>클럭당 명령어 처리 수(IPC, Instructions Per Cycle)는 이론적 상한선인 1.0</b>에 도달합니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: The 3 Pipeline Hazards -->
+        <div class="slide" id="slide-3">
+            <div class="slide-header-wrap">
+                <h1 class="slide-title">
+                    <span>03. 파이프라인 3대 해저드와 하드웨어 극복 기법</span>
+                </h1>
+                <p class="slide-subtitle">
+                    순차 실행 환상을 깨뜨리는 구조적·데이터·제어 충돌과 이를 해결하는 포워딩, 분기 예측, 플러시 메커니즘
+                </p>
+            </div>
+
+            <div class="theory-grid">
+                <!-- Left: Hazards Diagram -->
+                <div class="diagram-card">
+                    <span class="tech-badge">3 MAJOR PIPELINE HAZARDS</span>
+
+                    <div class="hazard-card-list">
+                        <!-- Hazard 1 -->
+                        <div class="hazard-item">
+                            <div class="hz-head">
+                                <span style="color: var(--accent-rose);">1. 구조적 해저드 (Structural Hazard)</span>
+                                <span class="val-card">자원 경합</span>
+                            </div>
+                            <div class="hz-body">
+                                동일 하드웨어 유닛을 두 개 이상의 명령어가 동시 요구 (예: 단일 메모리에서 IF와 MEM 단계 동시 충돌).
+                            </div>
+                            <div class="hz-solution">
+                                <span>해결: 하버드 아키텍처 (명령어 I-Cache와 데이터 D-Cache 물리 분리)</span>
+                            </div>
+                        </div>
+
+                        <!-- Hazard 2 -->
+                        <div class="hazard-item">
+                            <div class="hz-head">
+                                <span style="color: var(--accent-amber);">2. 데이터 해저드 (Data Hazard: RAW)</span>
+                                <span class="val-card">Read-After-Write</span>
+                            </div>
+                            <div class="hz-body">
+                                앞선 연산(<code>add x0</code>)의 결과가 레지스터에 기록(WB)되기 전에 뒷 연산(<code>sub x3, x0</code>)이 읽으려 함.
+                            </div>
+                            <div class="hz-solution">
+                                <span>해결: 하드웨어 포워딩/바이패싱 (ALU 출력을 다음 EX MUX로 직결)</span>
+                            </div>
+                        </div>
+
+                        <!-- Hazard 3 -->
+                        <div class="hazard-item">
+                            <div class="hz-head">
+                                <span style="color: var(--accent-primary);">3. 제어 해저드 (Control / Branch Hazard)</span>
+                                <span class="val-card">분기 판정 지연</span>
+                            </div>
+                            <div class="hz-body">
+                                조건 분기문(<code>b.eq</code>) 판정이 EX 단계에서 날 때까지 다음 Fetch할 PC 주소를 알 수 없음.
+                            </div>
+                            <div class="hz-solution">
+                                <span>해결: 분기 예측기 + 오예측 시 파이프라인 플러시(Flush 버블)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Theory Content -->
+                <div class="content-card">
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>1. 하드웨어 포워딩 (Forwarding / Bypassing)의 마법</span>
+                        </div>
+                        <div class="concept-body">
+                            RAW 데이터 해저드를 레지스터 파일 쓰기(WB)까지 기다려 해결하려면 <b>2~3클럭의 Stall(파이프라인 정지)</b>이 발생하여 성능이 반토막 납니다.<br>
+                            하드웨어는 <b>EX 단계 연산이 끝난 즉시 ALU 출력 버스에서 와이어를 직접 따서</b>, 다음 사이클에 실행되는 후속 명령어의 ALU 입력 MUX로 직결 공급합니다. 이로써 <b>0사이클 지연(Stall 없음)</b>으로 RAW 문제를 극복합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>2. 로드-사용 해저드 (Load-Use Data Hazard)</span>
+                        </div>
+                        <div class="concept-body">
+                            단, <code>LDR x0, [sp]</code>처럼 메모리에서 읽어오는 값은 <code>MEM</code> 단계(사이클 4)가 끝나야 비로소 도착합니다.<br>
+                            따라서 바로 다음 명령어가 해당 값을 쓰려면 <b>어떠한 포워딩으로도 막을 수 없는 1사이클 하드웨어 인터록(Stall Bubble)</b>이 불가피합니다.
+                        </div>
+                    </div>
+
+                    <div class="concept-box">
+                        <div class="concept-title">
+                            <span>3. 분기 예측 실패와 파이프라인 플러시 페널티</span>
+                        </div>
+                        <div class="concept-body">
+                            최신 CPU는 분기 예측기(Branch Predictor)를 통해 분기 여부를 투기적으로 추측(Speculative Execution)하여 파이프라인을 멈추지 않습니다.<br>
+                            그러나 <b>예측이 빗나가면(Misprediction)</b>, 이미 파이프라인에 잘못 투입된 명령어들을 즉시 <code>NOP</code> 버블로 소각하는 <b>파이프라인 플러시(Pipeline Flush)</b>가 발동하며 <b>3~15 사이클의 막대한 페널티</b>를 치릅니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: Interactive Pipeline Simulator -->
+        <div class="slide" id="slide-4">
+            <div class="slide-header-wrap" style="margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1 class="slide-title" style="font-size: 1.35rem;">
+                        <span>04. 5단계 파이프라인 &amp; 해저드 인터랙티브 시뮬레이터</span>
+                    </h1>
+                    <div class="scenario-selector">
+                        <button class="btn-scenario active" onclick="simSetScenario(0)">1. 이상적 파이프라인 (No Hazard)</button>
+                        <button class="btn-scenario" onclick="simSetScenario(1)">2. 데이터 해저드 &amp; 포워딩 (RAW)</button>
+                        <button class="btn-scenario" onclick="simSetScenario(2)">3. 분기 예측 실패 &amp; 플러시 (Flush)</button>
+                    </div>
+                </div>
+                <div class="anchor-bar" style="margin-top: 4px;">
+                    <span class="anchor-tag">[ANCHOR]</span>
+                    <span id="sim-anchor">Cycle 0 // 대기 상태: 파이프라인이 비어 있으며 첫 명령어 인출 대기 중</span>
+                    <span class="badge" id="sim-badge" style="margin-left: auto; font-size: 0.68rem; padding: 2px 7px;">IDLE</span>
+                </div>
+            </div>
+
+            <div class="sim-grid">
+                <!-- Left Panel: Code & HUD -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="code-view-container" style="flex: 1; min-height: 250px;">
+                        <div class="code-view-header">
+                            <div class="code-dots">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                                <span class="code-filename">main.cpp // C++26 ARM64 Sequence</span>
+                            </div>
+                            <span class="code-lang-tag">ASSEMBLY MAPPED</span>
+                        </div>
+                        <div class="code-view" id="sim-code-view">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Hardware HUD -->
+                    <div class="hud-wrap">
+                        <div class="hud-card">
+                            <div class="hud-lbl">CLOCK CYCLE</div>
+                            <div class="hud-val" id="hud-cycle">0 cyc</div>
+                        </div>
+                        <div class="hud-card">
+                            <div class="hud-lbl">PROGRAM COUNTER</div>
+                            <div class="hud-val addr-chip addr-code" id="hud-pc" style="font-size: 0.72rem;">@1000</div>
+                        </div>
+                        <div class="hud-card">
+                            <div class="hud-lbl">PIPE STATUS</div>
+                            <div class="hud-val" id="hud-status" style="color: var(--accent-primary);">EMPTY</div>
+                        </div>
+                        <div class="hud-card">
+                            <div class="hud-lbl">INST RETIRED</div>
+                            <div class="hud-val" id="hud-retired">0 / 5</div>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="ctrl-bar">
+                        <button class="ctrl-btn" onclick="simPrev()" id="sim-prev-btn">◀ 이전</button>
+                        <button class="ctrl-btn primary" onclick="simNext()" id="sim-next-btn">다음 단계 (Next) ▶</button>
+                        <button class="ctrl-btn" onclick="simToggleAuto()" id="sim-auto-btn">▶ 자동</button>
+                        <button class="ctrl-btn" onclick="simReset()">↺ 초기화</button>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Pipeline Rack & Matrix -->
+                <div class="pipe-sim-container">
+                    <!-- Event Banner -->
+                    <div class="event-banner" id="sim-event-banner">
+                        <span>⚡ 파이프라인 초기 상태: 클럭 펄스 대기 중</span>
+                    </div>
+
+                    <!-- 5-Stage Hardware Rack -->
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-sub); display: flex; justify-content: space-between;">
+                        <span>5-STAGE PIPELINE HARDWARE RACK</span>
+                        <span style="color: var(--text-muted);">Clock Edge Synchronized</span>
+                    </div>
+                    <div class="pipeline-rack" id="pipeline-rack">
+                        <div class="rack-stage rs-if" id="rack-if">
+                            <span class="stage-tag st-if">IF</span>
+                            <span class="stage-inst-badge" id="rack-if-inst">-</span>
+                            <span class="stage-sub-info" id="rack-if-sub">I-Cache</span>
+                        </div>
+                        <div class="reg-chip">|</div>
+                        <div class="rack-stage rs-id" id="rack-id">
+                            <span class="stage-tag st-id">ID</span>
+                            <span class="stage-inst-badge" id="rack-id-inst">-</span>
+                            <span class="stage-sub-info" id="rack-id-sub">Decode</span>
+                        </div>
+                        <div class="reg-chip">|</div>
+                        <div class="rack-stage rs-ex" id="rack-ex">
+                            <span class="stage-tag st-ex">EX</span>
+                            <span class="stage-inst-badge" id="rack-ex-inst">-</span>
+                            <span class="stage-sub-info" id="rack-ex-sub">ALU</span>
+                        </div>
+                        <div class="reg-chip">|</div>
+                        <div class="rack-stage rs-mem" id="rack-mem">
+                            <span class="stage-tag st-mem">MEM</span>
+                            <span class="stage-inst-badge" id="rack-mem-inst">-</span>
+                            <span class="stage-sub-info" id="rack-mem-sub">D-Cache</span>
+                        </div>
+                        <div class="reg-chip">|</div>
+                        <div class="rack-stage rs-wb" id="rack-wb">
+                            <span class="stage-tag st-wb">WB</span>
+                            <span class="stage-inst-badge" id="rack-wb-inst">-</span>
+                            <span class="stage-sub-info" id="rack-wb-sub">RegWrite</span>
+                        </div>
+                    </div>
+
+                    <!-- Cycle Matrix Grid -->
+                    <div class="matrix-wrap">
+                        <div class="matrix-title">
+                            <span>CYCLE TIMELINE MATRIX (SPACE-TIME DIAGRAM)</span>
+                            <span style="color: var(--accent-primary);" id="matrix-curr-cycle">Cycle 0</span>
+                        </div>
+                        <div id="cycle-matrix-content">
+                            <!-- Matrix rows dynamically injected -->
+                        </div>
+                    </div>
+
+                    <!-- Metrics Bar -->
+                    <div class="metrics-bar">
+                        <div class="metric-card">
+                            <span class="metric-title">Total Cycles</span>
+                            <span class="metric-val" id="metric-cycles" style="color: var(--accent-amber);">0</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">Retired Insts</span>
+                            <span class="metric-val" id="metric-retired" style="color: var(--accent-green);">0</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">Current IPC</span>
+                            <span class="metric-val" id="metric-ipc" style="color: var(--accent-cyan);">0.00</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-title">IPC Saturation</span>
+                            <span class="metric-val" id="metric-pct" style="color: var(--accent-primary);">0%</span>
+                            <div class="gauge-track">
+                                <div class="gauge-fill" id="gauge-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <button class="nav-btn" id="prevSlideBtn" onclick="prevSlide()" disabled>
+            <span>←</span>
+            <span>이전 슬라이드</span>
+        </button>
+        <div class="shortcut-hint">
+            슬라이드 이동: <b>←</b> <b>→</b> &nbsp;|&nbsp; 스튜디오 조작: <b>Enter</b> <b>Space</b> <b>↓</b> (다음) / <b>↑</b> (이전) / <b>P</b> (자동) / <b>R</b> (초기화)
+        </div>
+        <button class="nav-btn" id="nextSlideBtn" onclick="nextSlide()">
+            <span>다음 슬라이드</span>
+            <span>→</span>
+        </button>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        let simScenario = 0;
+        let simStep = 0;
+        let simAutoTimer = null;
+
+        // Scenarios definition
+        const SCENARIOS = [
+            {
+                title: "이상적인 5단 파이프라인 (No Hazard)",
+                maxStep: 9,
+                code: [
+                    { text: "// 1. 이상적 파이프라인 (No Hazard: 완전 독립 연산)", hint: "" },
+                    { text: "int a = b + c;   // 1000: add  x0, x1, x2", hint: "// Step 1: I1 IF 인출" },
+                    { text: "int d = e - f;   // 1004: sub  x3, x4, x5", hint: "// Step 2: I2 IF 인출" },
+                    { text: "int g = h * k;   // 1008: mul  x6, x7, x8", hint: "// Step 3: I3 IF 인출" },
+                    { text: "int m = n | p;   // 1012: orr  x9, x10, x11", hint: "// Step 4: I4 IF 인출" },
+                    { text: "int q = r + s;   // 1016: add  x12, x13, x14", hint: "// Step 5: I5 IF 인출 (완전 충전!)" },
+                    { text: "// --- 파이프라인 배출 (Drain) ---", hint: "// Step 6~8: 매 사이클 1명령 완료" },
+                    { text: "return q;        // 1020: ret", hint: "// Step 9: 5개 완주 (IPC ~1.0 달성)" }
+                ],
+                instLabels: ["I1: add x0", "I2: sub x3", "I3: mul x6", "I4: orr x9", "I5: add x12"],
+                steps: [
+                    {
+                        cycle: 0, pc: 1000, activeLine: 1, retired: 0, status: "IDLE",
+                        anchor: "Cycle 0 // 대기 상태: 파이프라인이 비어 있으며 첫 명령어(PC @1000) 인출 대기 중",
+                        event: "⚡ 파이프라인 대기: 클럭 펄스를 주면 첫 번째 명령어가 인출(IF)됩니다",
+                        eventClass: "",
+                        rack: { if: "-", id: "-", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 1, pc: 1004, activeLine: 1, retired: 0, status: "FILL",
+                        anchor: "Cycle 1 // IF 단계: I1(add x0) 명령어 인출 완료. PC는 4바이트 증가하여 @1004로 전진",
+                        event: "🚀 [FETCH] I1(add x0) I-Cache에서 인출 ➔ IF/ID 레지스터로 래치",
+                        eventClass: "ev-steady",
+                        rack: { if: "I1: add x0", id: "-", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 2, pc: 1008, activeLine: 2, retired: 0, status: "FILL",
+                        anchor: "Cycle 2 // I1은 ID(해독)로 이동, I2(sub x3)가 IF로 진입. 두 유닛이 동시 병렬 가동",
+                        event: "🚀 [PARALLEL] I1 해독(ID)과 동시에 I2 인출(IF) 진행",
+                        eventClass: "ev-steady",
+                        rack: { if: "I2: sub x3", id: "I1: add x0", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","ID","-","-","-","-","-","-","-"],
+                            ["-","IF","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 3, pc: 1012, activeLine: 3, retired: 0, status: "FILL",
+                        anchor: "Cycle 3 // I1은 ALU 연산(EX) 시작, I2는 해독(ID), I3(mul x6)이 인출(IF) 진입",
+                        event: "🚀 [PARALLEL] 3개 하드웨어 유닛(EX, ID, IF) 동시 포화 가동 중",
+                        eventClass: "ev-steady",
+                        rack: { if: "I3: mul x6", id: "I2: sub x3", ex: "I1: add x0", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","-","-","-","-","-","-"],
+                            ["-","IF","ID","-","-","-","-","-","-"],
+                            ["-","-","IF","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 4, pc: 1016, activeLine: 4, retired: 0, status: "FILL",
+                        anchor: "Cycle 4 // I1 메모리 단계(MEM), I2 EX 연산, I3 ID, I4 IF 진입",
+                        event: "🚀 [PARALLEL] 4개 명령어 동시 중첩 실행 (하드웨어 가동률 80%)",
+                        eventClass: "ev-steady",
+                        rack: { if: "I4: orr x9", id: "I3: mul x6", ex: "I2: sub x3", mem: "I1: add x0", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","-","-","-","-","-"],
+                            ["-","IF","ID","EX","-","-","-","-","-"],
+                            ["-","-","IF","ID","-","-","-","-","-"],
+                            ["-","-","-","IF","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 5, pc: 1020, activeLine: 5, retired: 1, status: "STEADY",
+                        anchor: "Cycle 5 // 🎉 [파이프라인 완전 충전] 5개 스테이지 100% 가동! I1(add x0) WB 완료",
+                        event: "🎉 [FULL PIPELINE] 5개 스테이지 완전 포화! I1 레지스터 쓰기(WB) 은퇴 완료!",
+                        eventClass: "ev-steady",
+                        rack: { if: "I5: add x12", id: "I4: orr x9", ex: "I3: mul x6", mem: "I2: sub x3", wb: "I1: add x0" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","-","-","-","-"],
+                            ["-","-","IF","ID","EX","-","-","-","-"],
+                            ["-","-","-","IF","ID","-","-","-","-"],
+                            ["-","-","-","-","IF","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 6, pc: 1020, activeLine: 6, retired: 2, status: "STEADY",
+                        anchor: "Cycle 6 // [Steady State] I2(sub x3) WB 완료! 매 사이클마다 1개 명령어씩 완료",
+                        event: "🚀 [STEADY STATE] I2 WB 완료! 이상적 Throughput = 매 사이클 1명령 배출!",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "I5: add x12", ex: "I4: orr x9", mem: "I3: mul x6", wb: "I2: sub x3" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","-","-","-"],
+                            ["-","-","-","IF","ID","EX","-","-","-"],
+                            ["-","-","-","-","IF","ID","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 7, pc: 1020, activeLine: 6, retired: 3, status: "DRAIN",
+                        anchor: "Cycle 7 // I3(mul x6) WB 완료! 하드웨어 파이프라인이 후속 명령어들을 순차 배출",
+                        event: "🚀 [DRAIN] I3 WB 완료! 잔여 명령어들이 파이프라인을 통과 중",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "I5: add x12", mem: "I4: orr x9", wb: "I3: mul x6" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","WB","-","-"],
+                            ["-","-","-","IF","ID","EX","MEM","-","-"],
+                            ["-","-","-","-","IF","ID","EX","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 8, pc: 1020, activeLine: 6, retired: 4, status: "DRAIN",
+                        anchor: "Cycle 8 // I4(orr x9) WB 완료! 파이프라인 마무리 단계",
+                        event: "🚀 [DRAIN] I4 WB 완료! 마지막 명령어 I5가 MEM 단계 통과",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "-", mem: "I5: add x12", wb: "I4: orr x9" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","WB","-","-"],
+                            ["-","-","-","IF","ID","EX","MEM","WB","-"],
+                            ["-","-","-","-","IF","ID","EX","MEM","-"]
+                        ]
+                    },
+                    {
+                        cycle: 9, pc: 1020, activeLine: 7, retired: 5, status: "DONE",
+                        anchor: "Cycle 9 // 🏁 [실행 완료] 총 5개 명령어 9사이클 완주! 정상 상태 시 매 사이클 1명령 완료(Throughput ~5배 극대화)",
+                        event: "🏁 [EXECUTION DONE] 5개 명령어 완주! 순차 실행(25사이클) 대비 2.8배 속도 달성!",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "-", mem: "-", wb: "I5: add x12" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","WB","-","-"],
+                            ["-","-","-","IF","ID","EX","MEM","WB","-"],
+                            ["-","-","-","-","IF","ID","EX","MEM","WB"]
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "데이터 해저드 & 포워딩 (RAW Bypass)",
+                maxStep: 8,
+                code: [
+                    { text: "// 2. 데이터 해저드와 포워딩 (RAW Dependency)", hint: "" },
+                    { text: "int x = a + b;   // 1000: add  x0, x1, x2  [x0 생성]", hint: "// Step 1: I1 IF 인출" },
+                    { text: "int y = x - c;   // 1004: sub  x3, x0, x4  [x0 읽기: RAW!]", hint: "// Step 2: I2 IF 인출" },
+                    { text: "int z = y * 2;   // 1008: mul  x5, x3, #2  [x3 읽기: RAW!]", hint: "// Step 3: I3 IF 인출" },
+                    { text: "int w = z + 1;   // 1012: add  x6, x5, #1  [x5 읽기: RAW!]", hint: "// Step 4: I4 IF 인출" },
+                    { text: "// --- 포워딩 바이패스로 Stall 0사이클 해결 ---", hint: "// Step 5~7: EX 출력을 다음 EX MUX로 직결" },
+                    { text: "return w;        // 1016: ret", hint: "// Step 8: 0클럭 지연 완주" }
+                ],
+                instLabels: ["I1: add x0", "I2: sub x3", "I3: mul x5", "I4: add x6", "-"],
+                steps: [
+                    {
+                        cycle: 0, pc: 1000, activeLine: 1, retired: 0, status: "IDLE",
+                        anchor: "Cycle 0 // 대기: RAW(Read-After-Write) 데이터 종속성을 가진 연산 시퀀스 준비",
+                        event: "⚡ 데이터 해저드 테스트: 앞선 명령어의 결과가 레지스터에 기록되기 전에 뒷 명령어가 읽으려 함",
+                        eventClass: "",
+                        rack: { if: "-", id: "-", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 1, pc: 1004, activeLine: 1, retired: 0, status: "FILL",
+                        anchor: "Cycle 1 // IF: I1(add x0) 인출. x1과 x2를 더해 x0에 저장할 예정",
+                        event: "🚀 [FETCH] I1(add x0) 인출 진행",
+                        eventClass: "ev-steady",
+                        rack: { if: "I1: add x0", id: "-", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 2, pc: 1008, activeLine: 2, retired: 0, status: "FILL",
+                        anchor: "Cycle 2 // I1 ID(해독), I2 IF 인출. I2는 x0 값이 필요하지만 아직 x0는 계산조차 안 됨!",
+                        event: "⚠️ [DEPENDENCY] I2는 x0를 원하지만 x0는 사이클 5(WB)에나 기록됨",
+                        eventClass: "",
+                        rack: { if: "I2: sub x3", id: "I1: add x0", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","ID","-","-","-","-","-","-","-"],
+                            ["-","IF","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 3, pc: 1012, activeLine: 3, retired: 0, status: "HAZARD_DETECTED",
+                        anchor: "Cycle 3 // I1이 EX 단계에서 x0 = x1 + x2 연산 완료! I2는 ID 단계에서 RAW 해저드(x0 미기록) 감지",
+                        event: "⚠️ [RAW HAZARD] I2가 x0를 요구! 하드웨어 포워딩 유닛이 EX 출력을 감지",
+                        eventClass: "",
+                        rack: { if: "I3: mul x5", id: "I2: sub x3", ex: "I1: add x0", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","-","-","-","-","-","-"],
+                            ["-","IF","ID","-","-","-","-","-","-"],
+                            ["-","-","IF","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 4, pc: 1016, activeLine: 4, retired: 0, status: "FORWARD",
+                        anchor: "Cycle 4 // ⚡ [하드웨어 포워딩 발동!] I1의 EX/MEM 레지스터 출력(x0)이 I2의 EX 입력 MUX로 직결 바이패스! Stall 0사이클!",
+                        event: "⚡ [FORWARDING ACTIVE] EX/MEM(x0) ➔ EX(I2 ALU In) 실시간 직결 바이패스! Stall = 0!",
+                        eventClass: "ev-forward",
+                        rack: { if: "I4: add x6", id: "I3: mul x5", ex: "I2: sub [FWD]", mem: "I1: add x0", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","-","-","-","-","-"],
+                            ["-","IF","ID","EX","-","-","-","-","-"],
+                            ["-","-","IF","ID","-","-","-","-","-"],
+                            ["-","-","-","IF","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 5, pc: 1020, activeLine: 4, retired: 1, status: "FORWARD",
+                        anchor: "Cycle 5 // ⚡ [2차 포워딩 발동!] I2의 연산 결과(x3)가 다음 I3의 EX 입력으로 연속 직결 바이패스! I1 WB 완료",
+                        event: "⚡ [FORWARDING ACTIVE] EX/MEM(x3) ➔ EX(I3 ALU In) 연속 직결 바이패스!",
+                        eventClass: "ev-forward",
+                        rack: { if: "-", id: "I4: add x6", ex: "I3: mul [FWD]", mem: "I2: sub x3", wb: "I1: add x0" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","-","-","-","-"],
+                            ["-","-","IF","ID","EX","-","-","-","-"],
+                            ["-","-","-","IF","ID","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 6, pc: 1020, activeLine: 5, retired: 2, status: "FORWARD",
+                        anchor: "Cycle 6 // ⚡ [3차 포워딩 발동!] I3 결과(x5)가 I4의 EX 입력으로 직결! I2 WB 완료",
+                        event: "⚡ [FORWARDING ACTIVE] EX/MEM(x5) ➔ EX(I4 ALU In) 직결 바이패스!",
+                        eventClass: "ev-forward",
+                        rack: { if: "-", id: "-", ex: "I4: add [FWD]", mem: "I3: mul x5", wb: "I2: sub x3" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","-","-","-"],
+                            ["-","-","-","IF","ID","EX","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 7, pc: 1020, activeLine: 6, retired: 3, status: "DRAIN",
+                        anchor: "Cycle 7 // I3 WB 완료. 포워딩 유닛 덕분에 단 1클럭의 정지(Stall)도 없이 연속 실행 완주",
+                        event: "🚀 [DRAIN] I3 은퇴 완료, I4 메모리 단계 통과 중",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "-", mem: "I4: add x6", wb: "I3: mul x5" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","WB","-","-"],
+                            ["-","-","-","IF","ID","EX","MEM","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 8, pc: 1020, activeLine: 6, retired: 4, status: "DONE",
+                        anchor: "Cycle 8 // 🏁 [포워딩 완료] 포워딩 회로가 없었다면 6사이클 이상 Stall 되었을 RAW 종속성을 0클럭 지연으로 완벽 해결!",
+                        event: "🏁 [HAZARD RESOLVED] 포워딩 덕분에 0사이클 버블로 4개 연산 완주 완료!",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "-", mem: "-", wb: "I4: add x6" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","EX","MEM","WB","-","-"],
+                            ["-","-","-","IF","ID","EX","MEM","WB","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "분기 예측 실패 & 플러시 (Flush Penalty)",
+                maxStep: 9,
+                code: [
+                    { text: "// 3. 분기 예측 실패와 파이프라인 플러시", hint: "" },
+                    { text: "if (flag == 0) { // 1000: cmp  x0, #0", hint: "// Step 1: I1(cmp) IF 인출" },
+                    { text: "                 // 1004: b.eq @1020 [예측: Not Taken]", hint: "// Step 2: I2(b.eq) IF 인출" },
+                    { text: "    x = a + 1;   // 1008: add  x1, x2, #1 [잘못 투입!]", hint: "// Step 3: 투기적 인출 진행" },
+                    { text: "    y = b - 1;   // 1012: sub  x3, x4, #1 [잘못 투입!]", hint: "// Step 4: 분기 참 판정 ➔ 오예측 감지!" },
+                    { text: "}                // 1016: b    @1028", hint: "// Step 5: 🚨 파이프라인 플러시 발동!" },
+                    { text: "// target:", hint: "" },
+                    { text: "z = c * 2;       // 1020: mul  x5, x6, #2 [실제 타겟!]", hint: "// Step 6~9: @1020 재인출 및 완주" }
+                ],
+                instLabels: ["I1: cmp x0", "I2: b.eq", "I3: add x1", "I4: sub x3", "I5: mul @1020"],
+                steps: [
+                    {
+                        cycle: 0, pc: 1000, activeLine: 1, retired: 0, status: "IDLE",
+                        anchor: "Cycle 0 // 대기: if 조건 분기문 실행 준비 (분기 예측기: Not-Taken으로 기본 예측)",
+                        event: "⚡ 제어 해저드 테스트: 분기 판정 전 투기적 실행과 예측 실패 시 플러시 페널티 관찰",
+                        eventClass: "",
+                        rack: { if: "-", id: "-", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 1, pc: 1004, activeLine: 1, retired: 0, status: "FILL",
+                        anchor: "Cycle 1 // IF: I1(cmp x0, #0) 인출. PC는 @1004로 전진",
+                        event: "🚀 [FETCH] I1(cmp x0) 인출 진행",
+                        eventClass: "ev-steady",
+                        rack: { if: "I1: cmp x0", id: "-", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 2, pc: 1008, activeLine: 2, retired: 0, status: "FILL",
+                        anchor: "Cycle 2 // I1 ID 해독, I2(b.eq @1020) IF 인출. 분기 예측기 작동!",
+                        event: "🔮 [BRANCH PREDICT] 분기 예측기가 'Not Taken(분기 안 함)'으로 기본 추측!",
+                        eventClass: "",
+                        rack: { if: "I2: b.eq", id: "I1: cmp x0", ex: "-", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","ID","-","-","-","-","-","-","-"],
+                            ["-","IF","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 3, pc: 1012, activeLine: 3, retired: 0, status: "SPECULATIVE",
+                        anchor: "Cycle 3 // 🔮 [투기적 실행] 예측대로 PC @1008의 I3(add x1)를 파이프라인에 선제 투입!",
+                        event: "🔮 [SPECULATIVE FETCH] Predictor: Not Taken ➔ I3(add x1) 투기적 인출 진행",
+                        eventClass: "",
+                        rack: { if: "I3: add x1", id: "I2: b.eq", ex: "I1: cmp x0", mem: "-", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","-","-","-","-","-","-"],
+                            ["-","IF","ID","-","-","-","-","-","-"],
+                            ["-","-","IF","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 4, pc: 1016, activeLine: 4, retired: 0, status: "MISPREDICT",
+                        anchor: "Cycle 4 // 💥 [분기 예측 실패 감지!] I2가 EX 단계에서 분기 조건(Zero Flag=1) 판정! '분기 실행(Taken)'으로 판명!",
+                        event: "💥 [MISPREDICTION DETECTED] b.eq Taken! 실제 목표는 @1020 (투기적 투입 실패!)",
+                        eventClass: "ev-flush",
+                        rack: { if: "I4: sub x3", id: "I3: add x1", ex: "I2: b.eq", mem: "I1: cmp x0", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","-","-","-","-","-"],
+                            ["-","IF","ID","EX","-","-","-","-","-"],
+                            ["-","-","IF","ID","-","-","-","-","-"],
+                            ["-","-","-","IF","-","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 5, pc: 1020, activeLine: 7, retired: 1, status: "FLUSH",
+                        anchor: "Cycle 5 // 🚨 [파이프라인 플러시(FLUSH)!] 잘못 들어온 I3, I4를 즉각 NOP 버블로 소각! PC를 @1020으로 강제 복구!",
+                        event: "🚨 [PIPELINE FLUSH] 잘못 인출된 명령어 NOP 소각 & PC ➔ @1020 강제 리셋!",
+                        eventClass: "ev-flush",
+                        rack: { if: "NOP (Bubble)", id: "NOP (Bubble)", ex: "NOP (Bubble)", mem: "I2: b.eq", wb: "I1: cmp x0" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","-","-","-","-"],
+                            ["-","-","IF","ID","NOP","-","-","-","-"],
+                            ["-","-","-","IF","NOP","-","-","-","-"],
+                            ["-","-","-","-","-","-","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 6, pc: 1024, activeLine: 7, retired: 2, status: "PENALTY",
+                        anchor: "Cycle 6 // ⏱️ [페널티 사이클] 플러시 버블이 지나가고 실제 타겟 I5(mul x5)가 비로소 IF로 진입 (3사이클 페널티)",
+                        event: "⏱️ [PENALTY CYCLE] 분기 오예측 버블 통과 중 (-3 사이클 낭비)",
+                        eventClass: "ev-flush",
+                        rack: { if: "I5: mul @1020", id: "NOP (Bubble)", ex: "NOP (Bubble)", mem: "NOP", wb: "I2: b.eq" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","NOP","-","-","-","-"],
+                            ["-","-","-","IF","NOP","-","-","-","-"],
+                            ["-","-","-","-","-","IF","-","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 7, pc: 1024, activeLine: 7, retired: 2, status: "RECOVER",
+                        anchor: "Cycle 7 // I5(mul x5) ID 해독 진행. 파이프라인이 다시 정상 궤도를 회복하기 시작",
+                        event: "🚀 [RECOVERING] I5 해독 진행 중",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "I5: mul @1020", ex: "NOP", mem: "NOP", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","NOP","-","-","-","-"],
+                            ["-","-","-","IF","NOP","-","-","-","-"],
+                            ["-","-","-","-","-","IF","ID","-","-"]
+                        ]
+                    },
+                    {
+                        cycle: 8, pc: 1024, activeLine: 7, retired: 2, status: "RECOVER",
+                        anchor: "Cycle 8 // I5 EX 연산 수행 (x5 = x6 * 2)",
+                        event: "🚀 [RECOVERING] I5 ALU 연산 중",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "I5: mul @1020", mem: "NOP", wb: "-" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","NOP","-","-","-","-"],
+                            ["-","-","-","IF","NOP","-","-","-","-"],
+                            ["-","-","-","-","-","IF","ID","EX","-"]
+                        ]
+                    },
+                    {
+                        cycle: 9, pc: 1024, activeLine: 7, retired: 3, status: "DONE",
+                        anchor: "Cycle 9 // 🏁 [플러시 복구 완료] I5 WB 완료! 단 1번의 분기 오예측으로 인해 3사이클이 낭비되고 IPC가 급락함을 확인",
+                        event: "🏁 [FLUSH PENALTY DEMO DONE] 오예측 페널티로 인해 IPC가 0.33으로 급락!",
+                        eventClass: "ev-steady",
+                        rack: { if: "-", id: "-", ex: "-", mem: "-", wb: "I5: mul @1020" },
+                        matrix: [
+                            ["IF","ID","EX","MEM","WB","-","-","-","-"],
+                            ["-","IF","ID","EX","MEM","WB","-","-","-"],
+                            ["-","-","IF","ID","NOP","-","-","-","-"],
+                            ["-","-","-","IF","NOP","-","-","-","-"],
+                            ["-","-","-","-","-","IF","ID","EX","WB"]
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        function updateSlide() {
+            simStopAuto();
+            document.querySelectorAll('.slide').forEach((s, idx) => {
+                s.classList.toggle('active', (idx + 1) === currentSlide);
+            });
+            document.getElementById('slideIndicator').innerText = `Slide ${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevSlideBtn').disabled = (currentSlide === 1);
+            document.getElementById('nextSlideBtn').disabled = (currentSlide === totalSlides);
+
+            if (currentSlide === 4) {
+                simRender();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (currentSlide === 4) {
+                if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === ' ') {
+                    e.preventDefault();
+                    simNext();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    simPrev();
+                } else if (e.key.toLowerCase() === 'p') {
+                    simToggleAuto();
+                } else if (e.key.toLowerCase() === 'r') {
+                    simReset();
+                }
+            }
+        });
+
+        function simSetScenario(sc) {
+            simScenario = sc;
+            document.querySelectorAll('#slide-4 .btn-scenario').forEach((b, idx) => {
+                b.classList.toggle('active', idx === sc);
+            });
+            simReset();
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function simRenderCodeView(activeLineIdx) {
+            const view = document.getElementById('sim-code-view');
+            const lines = SCENARIOS[simScenario].code;
+            view.innerHTML = lines.map((item, idx) => {
+                const isCurr = (idx === activeLineIdx);
+                const lineText = item.text;
+                const lineHint = item.hint || '';
+
+                let codeHtml = escapeHtml(lineText);
+                if (codeHtml.trim().startsWith('//')) {
+                    codeHtml = `<span class="tok-comment">${codeHtml}</span>`;
+                } else {
+                    codeHtml = codeHtml.replace(/\b(int|void|return|if)\b/g, '<span class="tok-kw">$1</span>');
+                    codeHtml = codeHtml.replace(/\b(\d+)\b/g, '<span class="tok-num">$1</span>');
+                }
+
+                const numHtml = `<span class="code-num">${idx + 1}</span>`;
+                const hintHtml = lineHint ? `<span class="code-hint">${escapeHtml(lineHint)}</span>` : '';
+                const activeTag = isCurr ? `<span class="code-active-tag">▶ CURRENT</span>` : '';
+
+                return `<div class="code-line ${isCurr ? 'current' : ''}">
+                    ${numHtml}
+                    <span class="code-text">${codeHtml}</span>
+                    ${hintHtml}
+                    ${activeTag}
+                </div>`;
+            }).join('');
+        }
+
+        function renderMatrix(currCycle, matrixData, instLabels) {
+            const container = document.getElementById('cycle-matrix-content');
+            let html = '';
+
+            // Header row: C1 to C9
+            html += `<div class="matrix-row" style="margin-bottom: 2px;">
+                <span class="m-inst-label" style="color:var(--text-muted);">INSTRUCTION</span>`;
+            for (let c = 1; c <= 9; ++c) {
+                const isColActive = (c === currCycle);
+                html += `<span class="m-head-col ${isColActive ? 'active-col' : ''}">C${c}</span>`;
+            }
+            html += `</div>`;
+
+            // Data rows (5 insts)
+            for (let i = 0; i < 5; ++i) {
+                const label = instLabels[i] || `I${i+1}`;
+                html += `<div class="matrix-row">
+                    <span class="m-inst-label" title="${escapeHtml(label)}">${escapeHtml(label)}</span>`;
+
+                for (let c = 0; c < 9; ++c) {
+                    const st = matrixData[i][c] || "-";
+                    const isColActive = ((c + 1) === currCycle && st !== "-");
+                    let cellClass = "m-cell";
+                    if (st === "IF") cellClass += " mc-if";
+                    else if (st === "ID") cellClass += " mc-id";
+                    else if (st === "EX") cellClass += " mc-ex";
+                    else if (st === "MEM") cellClass += " mc-mem";
+                    else if (st === "WB") cellClass += " mc-wb";
+                    else if (st === "NOP") cellClass += " mc-flush";
+
+                    if (isColActive) cellClass += " current-cycle";
+
+                    html += `<div class="${cellClass}">${st}</div>`;
+                }
+                html += `</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function simRender() {
+            const sc = SCENARIOS[simScenario];
+            const maxStep = sc.maxStep;
+            const stepData = sc.steps[simStep];
+
+            // 1. Anchor & Badge
+            document.getElementById('sim-anchor').innerText = stepData.anchor;
+            const badge = document.getElementById('sim-badge');
+            badge.innerText = stepData.status;
+
+            if (stepData.status === "FORWARD") {
+                badge.style.background = "var(--accent-cyan)";
+            } else if (stepData.status === "FLUSH" || stepData.status === "MISPREDICT") {
+                badge.style.background = "var(--accent-rose)";
+            } else if (stepData.status === "STEADY" || stepData.status === "DONE") {
+                badge.style.background = "var(--accent-green)";
+            } else {
+                badge.style.background = "var(--accent-primary)";
+            }
+
+            // 2. Code View
+            simRenderCodeView(stepData.activeLine);
+
+            // 3. Hardware HUD
+            document.getElementById('hud-cycle').innerText = `${stepData.cycle} cyc`;
+            document.getElementById('hud-pc').innerText = `@${stepData.pc}`;
+            document.getElementById('hud-status').innerText = stepData.status;
+            document.getElementById('hud-retired').innerText = `${stepData.retired} / 5`;
+
+            // 4. Buttons
+            document.getElementById('sim-prev-btn').disabled = (simStep === 0);
+            const nextBtn = document.getElementById('sim-next-btn');
+            if (simStep === maxStep) {
+                nextBtn.innerText = "🔄 처음부터 다시 (Step 0)";
+                nextBtn.classList.remove('primary');
+            } else {
+                nextBtn.innerText = "다음 단계 (Next) ▶";
+                nextBtn.classList.add('primary');
+            }
+
+            // 5. Event Banner
+            const evBanner = document.getElementById('sim-event-banner');
+            evBanner.innerHTML = `<span>${stepData.event}</span>`;
+            evBanner.className = `event-banner ${stepData.eventClass || ''}`;
+
+            // 6. Pipeline Rack
+            const r = stepData.rack;
+            document.getElementById('rack-if-inst').innerText = r.if;
+            document.getElementById('rack-id-inst').innerText = r.id;
+            document.getElementById('rack-ex-inst').innerText = r.ex;
+            document.getElementById('rack-mem-inst').innerText = r.mem;
+            document.getElementById('rack-wb-inst').innerText = r.wb;
+
+            const rackEx = document.getElementById('rack-ex');
+            rackEx.classList.toggle('fwd-highlight', stepData.status === "FORWARD");
+
+            const rackIf = document.getElementById('rack-if');
+            const rackId = document.getElementById('rack-id');
+            const isFlush = (stepData.status === "FLUSH" || stepData.status === "MISPREDICT");
+            rackIf.classList.toggle('flush-highlight', isFlush);
+            rackId.classList.toggle('flush-highlight', isFlush);
+
+            // 7. Cycle Matrix
+            document.getElementById('matrix-curr-cycle').innerText = `Current: Cycle ${stepData.cycle}`;
+            renderMatrix(stepData.cycle, stepData.matrix, sc.instLabels);
+
+            // 8. Metrics
+            const cycles = stepData.cycle;
+            const retired = stepData.retired;
+            const ipc = cycles > 0 ? (retired / cycles).toFixed(2) : "0.00";
+            const ipcPercent = Math.min(100, Math.round((parseFloat(ipc) / 1.0) * 100));
+
+            document.getElementById('metric-cycles').innerText = cycles;
+            document.getElementById('metric-retired').innerText = retired;
+            document.getElementById('metric-ipc').innerText = ipc;
+            document.getElementById('metric-pct').innerText = `${ipcPercent}%`;
+            document.getElementById('gauge-fill').style.width = `${ipcPercent}%`;
+        }
+
+        function simNext() {
+            const sc = SCENARIOS[simScenario];
+            if (simStep >= sc.maxStep) {
+                simStep = 0; // Pure cyclical loop
+            } else {
+                simStep++;
+            }
+            simRender();
+        }
+
+        function simPrev() {
+            if (simStep > 0) {
+                simStep--;
+                simRender();
+            }
+        }
+
+        function simReset() {
+            simStep = 0;
+            simStopAuto();
+            simRender();
+        }
+
+        function simToggleAuto() {
+            if (simAutoTimer) {
+                simStopAuto();
+            } else {
+                simAutoTimer = setInterval(() => {
+                    const sc = SCENARIOS[simScenario];
+                    if (simStep >= sc.maxStep) {
+                        simReset();
+                    } else {
+                        simNext();
+                    }
+                }, 1200);
+                document.getElementById('sim-auto-btn').innerText = "⏸ 정지";
+                document.getElementById('sim-auto-btn').style.borderColor = "var(--accent-primary)";
+            }
+        }
+
+        function simStopAuto() {
+            if (simAutoTimer) {
+                clearInterval(simAutoTimer);
+                simAutoTimer = null;
+                const autoBtn = document.getElementById('sim-auto-btn');
+                if (autoBtn) {
+                    autoBtn.innerText = "▶ 자동";
+                    autoBtn.style.borderColor = "";
+                }
+            }
+        }
+
+        // Init
+        updateSlide();
+    </script>
+</body>
+</html>

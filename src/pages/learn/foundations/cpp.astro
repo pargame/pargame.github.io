@@ -2556,42 +2556,82 @@ val++ 실행 후 현재값: 11
   document.addEventListener('DOMContentLoaded', () => {
     const topBtn = document.getElementById('scrollTopBtn');
     const bottomBtn = document.getElementById('scrollBottomBtn');
+    const navCard = document.querySelector('.floating-nav-card');
     const tocLinks = document.querySelectorAll('.floating-toc-link');
     const sections = Array.from(document.querySelectorAll('.lesson-section'));
 
-    function setActiveLink(targetId) {
+    let currentActiveId = null;
+    let isNavHovered = false;
+    let isManualClick = false;
+    let clickTimeout = null;
+
+    if (navCard) {
+      navCard.addEventListener('mouseenter', () => { isNavHovered = true; });
+      navCard.addEventListener('mouseleave', () => { isNavHovered = false; });
+    }
+
+    // 본문 스크롤에 맞춰 사이드바 내부 스크롤도 활성 항목을 따라가도록 자동 동기화
+    function scrollNavCardToActive(linkEl, force = false) {
+      if (!navCard || !linkEl) return;
+      if (window.innerWidth <= 1180) return; // 모바일/태블릿 반응형 뷰에서는 제외
+      if (isNavHovered && !force) return; // 마우스로 사이드바를 직접 탐색 중일 때는 자동 스크롤 간섭 방지
+
+      const cardRect = navCard.getBoundingClientRect();
+      const linkRect = linkEl.getBoundingClientRect();
+
+      // 링크가 사이드바 가시 영역의 상/하단 여백(45px) 밖으로 벗어났거나 강제 이동 시 스크롤
+      const isPartiallyHidden = linkRect.top < cardRect.top + 45 || linkRect.bottom > cardRect.bottom - 45;
+      if (isPartiallyHidden || force) {
+        const relativeTop = linkRect.top - cardRect.top;
+        const targetScrollTop = navCard.scrollTop + relativeTop - (navCard.clientHeight / 2) + (linkRect.height / 2);
+        navCard.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth'
+        });
+      }
+    }
+
+    function setActiveLink(targetId, forceScroll = false) {
       if (!targetId) return;
+      if (targetId === currentActiveId && !forceScroll) return;
+      currentActiveId = targetId;
+
+      let activeLinkEl = null;
       tocLinks.forEach((link) => {
         if (link.getAttribute('data-target') === targetId) {
           link.classList.add('active');
           link.setAttribute('aria-current', 'true');
+          activeLinkEl = link;
         } else {
           link.classList.remove('active');
           link.removeAttribute('aria-current');
         }
       });
+
+      if (activeLinkEl) {
+        scrollNavCardToActive(activeLinkEl, forceScroll);
+      }
     }
 
     if (topBtn) {
       topBtn.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (navCard) navCard.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
 
     if (bottomBtn) {
       bottomBtn.addEventListener('click', () => {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        if (navCard) navCard.scrollTo({ top: navCard.scrollHeight, behavior: 'smooth' });
       });
     }
 
-    let isManualClick = false;
-    let clickTimeout = null;
-
-    // 링크 클릭 시 즉시 active 전환
+    // 링크 클릭 시 즉시 active 전환 및 중앙 정렬
     tocLinks.forEach((link) => {
       link.addEventListener('click', () => {
         const targetId = link.getAttribute('data-target');
-        setActiveLink(targetId);
+        setActiveLink(targetId, true);
         isManualClick = true;
         clearTimeout(clickTimeout);
         clickTimeout = setTimeout(() => {
@@ -2608,7 +2648,7 @@ val++ 실행 후 현재값: 11
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
 
-      // 1. 페이지 바닥 근처(150px 이내)에 도달한 경우 마지막 섹션(sec-2-7) 강제 활성화
+      // 1. 페이지 바닥 근처(150px 이내)에 도달한 경우 마지막 섹션 강제 활성화
       if (scrollY + windowHeight >= documentHeight - 150) {
         if (sections.length > 0) {
           const lastSection = sections[sections.length - 1];
@@ -3535,6 +3575,7 @@ val++ 실행 후 현재값: 11
     width: 215px;
     max-height: calc(100vh - 7rem);
     overflow-y: auto;
+    scroll-behavior: smooth;
     box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;

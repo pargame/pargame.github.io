@@ -1,0 +1,2590 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Modern C++: 언어 코어 및 표준 규약" description="공식 C++ 표준 규약(ISO/IEC 14882)에 기반한 단계별 C++ 학습 로드맵 및 단원 01(프로그램 구조와 번역 모델), 단원 02(기본 타입 시스템과 객체 모델)">
+  <div class="note-header">
+    <nav class="breadcrumb">
+      <a href="/learn">Study Notes</a>
+      <span>/</span>
+      <a href="/learn">Foundations</a>
+      <span>/</span>
+      <span class="current">Modern C++</span>
+    </nav>
+    
+    <div class="topic-tag">ISO/IEC 14882 C++ STANDARD</div>
+    <h1>Modern C++: 언어 규약 기반 코어 & 저수준 아키텍처</h1>
+    <p class="topic-desc">
+      국제 C++ 표준 규약(ISO/IEC 14882) 및 C++ Core Guidelines의 계통적 학습 순서에 따라, 
+      소스 코드 번역 모델부터 메모리 수명주기, 객체 지향 모델, 제네릭 템플릿, 그리고 C++20/23 모던 기능까지 단계별로 엄밀하게 정리한 스터디 노트입니다.
+    </p>
+  </div>
+
+  <!-- 전체 학습 로드맵 개요 (Curriculum Overview) -->
+  <section class="curriculum-overview">
+    <div class="section-title-wrap">
+      <span class="badge">CURRICULUM ROADMAP</span>
+      <h2>C++ 표준 학습 단계 구성</h2>
+      <p>공식 문서와 표준 규약이 정의하는 언어 의존성 순서에 따라 5개의 페이즈(Phase)와 세부 단원으로 구성됩니다.</p>
+    </div>
+
+    <div class="roadmap-grid">
+      <!-- Phase 1 -->
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">PHASE 01</span>
+          <span class="phase-status active">학습 진행 중</span>
+        </div>
+        <h3>기초 구조 및 번역 모델</h3>
+        <p class="phase-desc">컴파일러 파이프라인, 번역 단위, 기본 타입 시스템 및 제어 흐름</p>
+        <ul class="phase-list">
+          <li class="current-lesson"><span class="lesson-num">01</span> 프로그램 구조 & 번역 모델</li>
+          <li class="current-lesson"><span class="lesson-num">02</span> 기본 타입 시스템 & 객체 모델 (현재 단원)</li>
+          <li><span class="lesson-num">03</span> 표현식(Expressions) & 연산자 우선순위</li>
+          <li><span class="lesson-num">04</span> 함수 선언·정의 & 인자 전달 메커니즘</li>
+        </ul>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <span class="phase-num">PHASE 02</span>
+          <span class="phase-status">예정</span>
+        </div>
+        <h3>저수준 메모리와 간접 참조</h3>
+        <p class="phase-desc">물리 메모리 모델, 포인터 연산, 참조자, 동적 할당과 수명주기</p>
+        <ul class="phase-list">
+          <li><span class="lesson-num">05</span> 포인터와 주소 연산 체계</li>
+          <li><span class="lesson-num">06</span> 참조자(References)와 const 한정자</li>
+          <li><span class="lesson-num">07</span> 배열, std::span & std::string_view</li>
+          <li><span class="lesson-num">08</span> 힙 메모리와 수동 자원 관리 (new/delete)</li>
+        </ul>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <span class="phase-num">PHASE 03</span>
+          <span class="phase-status">예정</span>
+        </div>
+        <h3>사용자 정의 타입과 객체 모델</h3>
+        <p class="phase-desc">캡슐화, 생성자/소멸자, RAII 철학, 상속과 가상 함수(vtable)</p>
+        <ul class="phase-list">
+          <li><span class="lesson-num">09</span> 구조체(struct)와 클래스(class)</li>
+          <li><span class="lesson-num">10</span> 생성자, 소멸자 및 RAII 자원 관리</li>
+          <li><span class="lesson-num">11</span> 연산자 오버로딩 & Rule of 0/3/5</li>
+          <li><span class="lesson-num">12</span> 클래스 상속과 다형성(vtable)</li>
+        </ul>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <span class="phase-num">PHASE 04</span>
+          <span class="phase-status">예정</span>
+        </div>
+        <h3>일반화 프로그래밍 (Templates)</h3>
+        <p class="phase-desc">컴파일 타임 메타프로그래밍, 템플릿 특수화, constexpr과 C++20 컨셉</p>
+        <ul class="phase-list">
+          <li><span class="lesson-num">13</span> 함수 템플릿 & 클래스 템플릿 기초</li>
+          <li><span class="lesson-num">14</span> 템플릿 특수화와 SFINAE</li>
+          <li><span class="lesson-num">15</span> constexpr과 컴파일 타임 연산</li>
+          <li><span class="lesson-num">16</span> C++20 컨셉(Concepts)과 제약 조건</li>
+        </ul>
+      </div>
+
+      <!-- Phase 5 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <span class="phase-num">PHASE 05</span>
+          <span class="phase-status">예정</span>
+        </div>
+        <h3>STL 및 모던 시스템 프로그래밍</h3>
+        <p class="phase-desc">표준 라이브러리 컨테이너, 스마트 포인터, 완벽 전달과 이동 시맨틱</p>
+        <ul class="phase-list">
+          <li><span class="lesson-num">17</span> STL 시퀀스 & 연관 컨테이너 내부 구조</li>
+          <li><span class="lesson-num">18</span> 스마트 포인터 (unique_ptr, shared_ptr)</li>
+          <li><span class="lesson-num">19</span> 이동 시맨틱(Move)과 완벽 전달(Forwarding)</li>
+          <li><span class="lesson-num">20</span> C++20 모듈(Modules)과 Ranges</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 상세 학습 본문 및 사이드 플로팅 네비게이션 -->
+  <div class="study-layout">
+    <article class="lesson-article">
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">PHASE 01 // CHAPTER 01</span>
+        <span class="read-time">예상 학습 시간: 20분</span>
+      </div>
+
+      <header class="lesson-header">
+        <h2>단원 01: 프로그램 구조와 번역 모델 (Translation Model)</h2>
+        <p class="lesson-intro">
+          C++ 프로그램을 작성할 때 텍스트 파일(.cpp)에 적힌 소스 코드가 컴퓨터 하드웨어(CPU)가 실행할 수 있는 바이너리 기계어로 변환되는 전체 과정과, 
+          모든 C++ 프로그램의 필수 시작점인 <code>main</code> 함수의 규약 및 표준 입출력 스트림의 내부 동작 원리를 학습합니다.
+        </p>
+      </header>
+
+      <div class="content-toc">
+        <div class="toc-title">단원 목차</div>
+        <ul>
+          <li><a href="#sec-1-1">1.1 소스 코드에서 실행 파일까지 (C++ 컴파일 파이프라인)</a></li>
+          <li><a href="#sec-1-2">1.2 최소 C++ 프로그램과 main 함수의 규약</a></li>
+          <li><a href="#sec-1-3">1.3 표준 입출력: C++26 권장 출력 (&lt;print&gt;)과 표준 스트림</a></li>
+          <li><a href="#sec-1-4">1.4 주석(Comments)과 문장 종료 규약</a></li>
+          <li><a href="#sec-1-5">1.5 터미널 빌드 실습 및 흔한 컴파일 오류 대처법</a></li>
+        </ul>
+      </div>
+
+    <!-- 1.1 컴파일 파이프라인 -->
+    <section id="sec-1-1" class="lesson-section">
+      <h3>1.1 소스 코드에서 실행 파일까지 (C++ 컴파일 파이프라인)</h3>
+      <p>
+        C++은 파이썬이나 자바스크립트처럼 인터프리터가 코드를 한 줄씩 즉석에서 읽어 실행하는 언어가 아닙니다.
+        인간이 작성한 고수준 텍스트 코드를 CPU가 직접 처리할 수 있는 네이티브 기계어(Machine Code) 명령어로 사전에 일괄 변환해야 합니다.
+        C++ 표준 규약에서는 이 일련의 변환 과정을 <strong>번역(Translation)</strong>이라고 정의하며, 크게 3단계의 파이프라인을 거칩니다.
+      </p>
+
+      <div class="pipeline-card">
+        <div class="pipeline-step">
+          <div class="step-badge">1단계: 전처리 (Preprocessing)</div>
+          <h4>전처리기 (Preprocessor)</h4>
+          <p>
+            소스 코드 중에서 <code>#</code> 기호로 시작하는 전처리기 지시문(<code>#include</code>, <code>#define</code> 등)을 가장 먼저 처리합니다.
+            외부 헤더 파일의 내용을 해당 위치에 텍스트 형태로 통째로 붙여넣고, 매크로를 치환합니다.
+            이 단계가 끝나면 순수한 C++ 코드만 남은 <strong>번역 단위(Translation Unit, TU)</strong>가 완성됩니다.
+          </p>
+          <div class="tool-flag">컴파일러 플래그: <code>clang++ -E main.cpp</code> (전처리 결과만 확인)</div>
+        </div>
+
+        <div class="pipeline-arrow">➔</div>
+
+        <div class="pipeline-step">
+          <div class="step-badge">2단계: 컴파일 (Compilation)</div>
+          <h4>컴파일러 (Compiler)</h4>
+          <p>
+            전처리가 완료된 번역 단위의 문법(Syntax)을 검사하고 분석합니다.
+            문법 오류가 없다면 기계어 명령어와 심볼 테이블이 담긴 중간 산출물인 <strong>오브젝트 파일(.o 또는 .obj)</strong>을 생성합니다.
+            이때 함수나 변수의 이름은 심볼(Symbol) 형태로 남아 있으며, 아직 실제 물리 메모리 주소는 완전히 확정되지 않은 상태입니다.
+          </p>
+          <div class="tool-flag">컴파일러 플래그: <code>clang++ -c main.cpp -o main.o</code> (오브젝트 파일 생성)</div>
+        </div>
+
+        <div class="pipeline-arrow">➔</div>
+
+        <div class="pipeline-step">
+          <div class="step-badge">3단계: 링크 (Linking)</div>
+          <h4>링커 (Linker)</h4>
+          <p>
+            컴파일 단계에서 생성된 여러 개의 오브젝트 파일(.o)들과 C++ 표준 라이브러리(Standard Library)를 한데 결합합니다.
+            각 오브젝트 파일 간에 서로 호출하는 함수나 변수의 심볼 주소를 하나로 연결(Resolution)하고,
+            운영체제가 메모리에 적재하여 실행할 수 있는 최종 <strong>실행 바이너리 파일(Linux/macOS: .out/무확장자, Windows: .exe)</strong>을 생성합니다.
+          </p>
+          <div class="tool-flag">컴파일러 플래그: <code>clang++ main.o -o main</code> (최종 실행 파일 링크)</div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 기술 개념: 번역 단위 (Translation Unit, TU)</div>
+        <p>
+          단일 <code>.cpp</code> 소스 파일 하나와, 그 소스 파일이 <code>#include</code> 지시문을 통해 포함한 모든 헤더 파일들의 내용이 합쳐진 단일 소스 덩어리를 <strong>번역 단위(Translation Unit)</strong>라고 부릅니다.
+          C++ 컴파일러는 각 번역 단위를 서로 완전히 격리된 독립적인 상태로 컴파일한 뒤, 최종 링커 단계에서 비로소 이들을 하나로 묶습니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 1.2 최소 프로그램과 main -->
+    <section id="sec-1-2" class="lesson-section">
+      <h3>1.2 최소 C++ 프로그램과 main 함수의 규약</h3>
+      <p>
+        C++ 표준 규약(ISO/IEC 14882)에 따르면, 모든 독립형(Hosted) C++ 프로그램은 반드시 단 하나의 <code>main</code> 함수를 시작점(Entry Point)으로 가져야 합니다.
+        운영체제가 프로그램을 메모리에 올린 후 가장 먼저 CPU의 프로그램 카운터(PC)를 위치시키는 주소가 바로 이 <code>main</code> 함수입니다.
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">minimal.cpp</span>
+          <span class="code-lang">C++</span>
+        </div>
+        <pre><code>// 가장 기본적인 최소 실행 C++ 프로그램
+int main() &#123;
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>각 요소의 표준 규약 분석</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 26%; min-width: 175px;" />
+            <col style="width: 44%;" />
+            <col style="width: 30%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>문법 요소</th>
+              <th>표준 규약 및 의미</th>
+              <th>주의 사항</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>int</code> (반환 타입)</td>
+              <td>
+                프로그램이 종료될 때 운영체제(OS)에게 전달할 <strong>종료 상태 코드(Exit Code)</strong>의 타입입니다.
+                정수형 값으로 결과를 보고합니다.
+              </td>
+              <td>
+                일부 오래된 비표준 코드에서 <code>void main()</code>을 사용하는 경우가 있으나, <strong>ISO C++ 표준 위반(컴파일 거부 사유)</strong>입니다. 반드시 <code>int</code>여야 합니다.
+              </td>
+            </tr>
+            <tr>
+              <td><code>main()</code> (함수명 및 매개변수)</td>
+              <td>
+                프로그램의 시작점을 가리키는 예약된 고유 함수명입니다.
+                매개변수가 없는 형태 <code>int main()</code> 또는 명령행 인자를 받는 형태 <code>int main(int argc, char* argv[])</code> 두 가지만 표준으로 허용됩니다.
+              </td>
+              <td>
+                프로그램 내에 <code>main</code> 함수가 둘 이상 존재하면 링커(Linker) 충돌 에러가 발생하며, 아예 없어도 진입점을 찾을 수 없어 링킹 에러가 발생합니다.
+              </td>
+            </tr>
+            <tr>
+              <td><code>&#123; ... &#125;</code> (함수 본문)</td>
+              <td>
+                함수가 호출되었을 때 순차적으로 실행될 명령어들이 위치하는 코드 블록(Compound Statement)의 시작과 끝을 정의합니다.
+              </td>
+              <td>
+                중괄호의 열림과 닫힘은 항상 정확히 일치해야 합니다.
+              </td>
+            </tr>
+            <tr>
+              <td><code>return 0;</code> (반환문)</td>
+              <td>
+                운영체제에게 <code>0</code>을 반환하며 프로그램이 <strong>성공적으로 에러 없이 정상 종료</strong>되었음을 알립니다.
+                (관례상 0은 성공, 0이 아닌 값은 비정상 종료를 의미)
+              </td>
+              <td>
+                <strong>C++ 표준의 특별 규약:</strong> <code>main</code> 함수에 한하여 <code>return 0;</code>을 생략하더라도, 컴파일러가 함수 끝(<code>&#125;</code>)에 도달할 때 암묵적으로 <code>return 0;</code>을 자동 삽입하도록 규정되어 있습니다.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 1.3 표준 입출력 스트림과 C++26 print -->
+    <section id="sec-1-3" class="lesson-section">
+      <h3>1.3 표준 입출력: C++26 권장 출력 (&lt;print&gt;)과 표준 스트림 (&lt;iostream&gt;)</h3>
+      <p>
+        프로그램이 사용자와 상호작용하기 위해 화면에 결과를 출력하고 키보드 입력을 받는 것은 모든 C++ 학습의 시작점입니다.
+        최신 <strong>ISO C++26 표준</strong>에서는 기존 스트림(<code>std::cout</code>)의 복잡성과 성능 저하를 극복한 
+        <strong><code>&lt;print&gt;</code> 헤더의 <code>std::println</code>과 <code>std::print</code>가 공식 출력 수단으로 전면 권장</strong>됩니다.
+        입력은 표준 스트림 헤더 <code>&lt;iostream&gt;</code>의 <code>std::cin</code>과 결합하여 현대적이고 안전하게 구성합니다.
+      </p>
+
+      <h4>모던 C++26 표준 입출력 완성형 실습 예제</h4>
+      <p>
+        C++26에서 가장 모범적으로 권장되는 입출력 작성 패턴입니다.
+        사용자 프롬프트 출력 시에는 개행이 없는 <code>std::print</code>를, 결과 출력 시에는 자동 개행을 지원하는 <code>std::println</code>을 사용합니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">modern_io_c++26.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;iostream&gt; // 표준 입력 스트림: std::cin
+#include &lt;string&gt;   // 문자열 타입: std::string
+#include &lt;print&gt;    // C++26 모던 표준 출력: std::println, std::print
+
+int main() &#123;
+    // 1. 단순 텍스트 출력과 자동 개행 (std::println)
+    std::println("=== Modern C++26 입출력 실습 ===");
+
+    // 2. 입력 프롬프트 출력: 개행 없이 같은 줄에서 입력 대기 (std::print)
+    std::print("사용자 이름과 나이를 입력하세요 (예: Alice 20): ");
+
+    std::string name;
+    int age = 0;
+    // 3. 표준 입력 스트림(std::cin)으로 공백 기준 데이터 추출
+    std::cin &gt;&gt; name &gt;&gt; age;
+
+    // 4. &#123;&#125; 플레이스홀더를 활용한 직관적인 포맷팅 출력 (std::println)
+    std::println("반갑습니다, &#123;&#125;님! 내년에는 &#123;&#125;세가 됩니다.", name, age + 1);
+
+    // 5. 소수점 서식 지정 출력 (&#123;:.2f&#125;)
+    double height = 175.456;
+    std::println("신장: &#123;:.1f&#125; cm (소수점 첫째 자리까지 반올림)", height);
+
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>std::println &amp; std::print 핵심 4대 사용법 단계별 가이드</h4>
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>1. 단순 텍스트 출력과 자동 줄바꿈 (std::println)</h4>
+          <p>
+            기존 C++에서 화면에 문자열을 출력할 때마다 번거롭게 적어야 했던 <code>&lt;&lt; '\n'</code>이나 <code>std::endl</code>이 필요 없습니다.
+            <code>std::println</code>은 문자열 끝에 운영체제(macOS, Linux, Windows)에 적합한 개행 문자를 <strong>자동으로 삽입하여 플러시 오버헤드 없이 최적 속도로 출력</strong>합니다:
+          </p>
+          <div class="code-block-wrap">
+            <pre><code>std::println("Hello, Modern C++26!"); // 한 줄 출력 후 자동으로 다음 줄 이동</code></pre>
+          </div>
+        </div>
+
+        <div class="concept-item">
+          <h4>2. 입력 유도 프롬프트를 위한 줄바꿈 없는 출력 (std::print)</h4>
+          <p>
+            사용자의 키보드 입력을 유도할 때는 콘솔 커서가 안내 문구 바로 옆 같은 줄에서 깜빡여야 합니다.
+            이때는 자동 줄바꿈이 없는 <strong><code>std::print()</code></strong>를 사용합니다:
+          </p>
+          <div class="code-block-wrap">
+            <pre><code>std::print("점수를 입력하세요: "); // 줄바꿈을 하지 않고 대기
+int score = 0;
+std::cin &gt;&gt; score; // 사용자 입력이 '점수를 입력하세요: 95' 형태로 같은 줄에 입력됨</code></pre>
+          </div>
+        </div>
+
+        <div class="concept-item">
+          <h4>3. &#123;&#125; 플레이스홀더와 변수 바인딩 &amp; 기초 서식 지정</h4>
+          <p>
+            출력 문자열 속에 중괄호 <code>&#123;&#125;</code>를 적어두면, 콤마(<code>,</code>) 뒤에 나열된 변수들이 왼쪽부터 순서대로 바인딩되어 문자열로 변환됩니다.
+            또한 중괄호 내부에 포맷 지정자(Format Specifier)를 넣어 출력 형태를 세밀하게 제어할 수 있습니다:
+          </p>
+          <div class="code-block-wrap">
+            <pre><code>int id = 7;
+double score = 98.4567;
+
+// 1. 다중 변수 순차 바인딩
+std::println("ID: &#123;&#125;, 성적: &#123;&#125;", id, score);
+
+// 2. 소수점 정밀도 제어 (&#123;:.2f&#125;: 소수점 둘째 자리까지 반올림)
+std::println("반올림 점수: &#123;:.2f&#125;", score); // 출력: 98.46
+
+// 3. 자릿수 채우기 (&#123;:04d&#125;: 4자리 공간에 빈칸 0 채움)
+std::println("코드 번호: &#123;:04d&#125;", id); // 출력: 0007</code></pre>
+          </div>
+        </div>
+
+        <div class="concept-item">
+          <h4>4. 컴파일 타임 안전성 검증 (Compile-time Safety)</h4>
+          <p>
+            과거 C 언어의 <code>printf("%s %d", 100);</code> 함수는 포맷 지정자와 인자 타입/개수가 어긋나면 런타임에 프로그램이 강제 종료(Segmentation Fault)되거나 메모리가 오염되는 치명적인 결함이 있었습니다.
+            반면 C++26의 <code>std::println</code>은 <strong>컴파일 타임(Compile-time)에 포맷 스트링을 검사</strong>합니다:
+          </p>
+          <div class="code-block-wrap">
+            <pre><code>// ❌ 컴파일 에러 적발 사례 1: 플레이스홀더는 2개인데 인자는 1개만 전달한 경우
+// std::println("값: &#123;&#125;, &#123;&#125;", 10);
+// 컴파일 에러: error: format string specifies 2 arguments but 1 was provided!
+
+// ❌ 컴파일 에러 적발 사례 2: 타입과 서식 지정자 불일치
+// std::println("&#123;:.2f&#125;", "문자열");
+// 컴파일 에러: 문자열에는 부동소수점 서식(:.2f)을 적용할 수 없음!</code></pre>
+          </div>
+          <div class="rule-tip">
+            <strong>표준 규약의 핵심:</strong> 컴파일러가 빌드 단계에서 포맷 오류를 100% 잡아내므로, 런타임에 서식 오류로 인한 크래시나 취약점이 발생하지 않습니다.
+          </div>
+        </div>
+      </div>
+
+      <h4>스트림(Stream)과 버퍼(Buffer)의 내부 동작 메커니즘</h4>
+      <p>
+        C++에서 전통적인 입출력 스트림(<code>&lt;iostream&gt;</code>)이 어떻게 동작하는지 이해하는 것은 C++의 메모리 및 I/O 시스템 모델을 학습하는 데 필수적입니다.
+        스트림이란 하드웨어 장치(모니터 콘솔, 키보드, 파일 등)와 프로그램 사이를 잇는 <strong>바이트(Byte) 데이터의 순차적인 흐름 통로</strong>를 의미합니다.
+      </p>
+
+      <div class="stream-diagram">
+        <div class="stream-box program">
+          <span class="box-title">C++ 프로그램</span>
+          <code>std::cout</code> / <code>std::println</code>
+        </div>
+        <div class="stream-pipe">
+          <span class="pipe-arrow">➔ ➔ [ 버퍼 적재: Buffer Write ] ➔ ➔</span>
+          <div class="buffer-zone">메모리 출력 버퍼 (Buffer)</div>
+          <span class="pipe-arrow">➔ ➔ [ 플러시 (Flush) ] ➔ ➔</span>
+        </div>
+        <div class="stream-box hardware">
+          <span class="box-title">출력 장치</span>
+          <span>터미널 모니터 화면</span>
+        </div>
+      </div>
+
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>1. <code>#include &lt;iostream&gt;</code> 과 <code>std::cin</code> (입력 스트림)</h4>
+          <p>
+            <code>std::cin</code>(Character Input)은 키보드로부터 입력된 문자열을 받아들이는 표준 입력 스트림 객체입니다.
+            추출 연산자 <code>&gt;&gt;</code>는 입력 버퍼에서 공백 문자(스페이스, 탭, 엔터)를 기준으로 데이터를 분리하여 우측 변수 메모리에 파싱해 저장합니다.
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <h4>2. <code>std::cout</code> 과 <code>&lt;&lt;</code> 연산자 (전통적 스트림 출력)</h4>
+          <p>
+            <code>std::cout</code>(Character Output)은 표준 출력 스트림 객체이며, <code>&lt;&lt;</code>(삽입 연산자)는 오른쪽 데이터를 출력 스트림 버퍼로 밀어 넣습니다.
+            단, 연속된 <code>&lt;&lt;</code> 체이닝은 코드가 길어지고 포맷팅이 불편하여 최신 코드에서는 점차 <code>std::println</code>으로 전환되고 있습니다.
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <h4>3. <code>std::endl</code> vs <code>'\n'</code> (성능과 버퍼 플러시)</h4>
+          <p>
+            줄바꿈을 수행할 때 <code>std::endl</code>과 문자 <code>'\n'</code> 두 방식에는 중요한 시스템적 차이가 있습니다:
+          </p>
+          <ul>
+            <li><code>'\n'</code>: 단순히 줄바꿈 문자 하나를 출력 버퍼에 추가합니다. 버퍼가 꽉 찰 때까지 화면 출력을 미루어 <strong>I/O 실행 속도가 매우 빠릅니다</strong>.</li>
+            <li><code>std::endl</code>: 줄바꿈 문자를 버퍼에 넣은 직후, <strong>운영체제에게 당장 버퍼를 비우고 화면에 즉시 그리라는 강제 플러시(Flush) 시스템 콜</strong>을 발생시킵니다. 빈번한 플러시는 극심한 속도 저하를 부릅니다.</li>
+          </ul>
+        </div>
+
+        <div class="concept-item">
+          <h4>4. <code>std::</code> 네임스페이스(Namespace)와 <code>using namespace</code> 금지</h4>
+          <p>
+            <code>std</code>는 C++ 표준 라이브러리의 모든 기능이 속한 이름공간(Namespace)입니다.
+            초보자 코드에서 편의를 위해 파일 최상단에 <code>using namespace std;</code>를 적는 경우가 많으나,
+            이는 수만 개의 표준 식별자를 전역 공간에 쏟아부어 대규모 프로젝트에서 이름 충돌(Ambiguity) 에러를 일으키므로 실무에서는 엄격히 지양해야 합니다.
+          </p>
+        </div>
+      </div>
+
+      <h4>비교: 레거시 std::cout 스트림 vs 모던 C++26 std::println</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 24%; min-width: 160px;" />
+            <col style="width: 38%;" />
+            <col style="width: 38%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>비교 항목</th>
+              <th>레거시 방식 (<code>std::cout</code>)</th>
+              <th>최신 표준 권장 (<code>std::println</code>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>포맷팅 가독성</td>
+              <td><code>&lt;&lt;</code> 연산자 체이닝으로 복잡하고 장황함</td>
+              <td><code>&#123;&#125;</code> 포맷 스트링으로 간결하고 직관적</td>
+            </tr>
+            <tr>
+              <td>줄바꿈 처리</td>
+              <td>수동으로 <code>'\n'</code> 또는 <code>std::endl</code> 추가</td>
+              <td>함수 자체에서 최적의 줄바꿈 자동 포함</td>
+            </tr>
+            <tr>
+              <td>실행 성능</td>
+              <td>스트림 버퍼 동기화 오버헤드로 상대적 느림</td>
+              <td>바이너리 직결 버퍼 전송으로 월등히 빠름</td>
+            </tr>
+            <tr>
+              <td>타입 안전성</td>
+              <td>런타임 포맷 플래그 오동작 위험</td>
+              <td>컴파일 타임에 인수 개수 및 타입 오류 즉시 적발</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 실무 스타일 가이드 비교: 구글 C++ vs 모던 C++ 코어 가이드라인 -->
+      <div class="style-comparison-card">
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: 구글 C++ 스타일 가이드 vs C++ Core Guidelines</span>
+        </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          실제 엔지니어링 현장에서는 코드 일관성과 유지보수 안정성을 위해 엄격한 코딩 스타일 가이드를 적용합니다. 표준 I/O와 네임스페이스에 대한 두 주요 진영의 철학을 비교해 봅니다:
+        </p>
+        <div class="style-grid">
+          <div class="style-column">
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p>
+              <strong>1. <code>using namespace</code> 전면 금지:</strong> 특히 헤더 파일 및 <code>.cpp</code> 파일 스코프에서 <code>using namespace foo;</code> 선언을 절대 금지합니다. 심볼 오염 및 업스트림 라이브러리 업데이트 시 이름 충돌을 원천 차단하기 위함입니다.<br>
+              <strong>2. <code>std::endl</code> 사용 금지:</strong> 불필요한 OS 버퍼 플러시로 인한 심각한 I/O 성능 저하를 방지하기 위해 <code>std::endl</code> 대신 반드시 <code>'\n'</code>을 사용하도록 강제합니다.
+            </p>
+          </div>
+          <div class="style-column">
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 & C++26</div>
+            <p>
+              <strong>1. 명시적 네임스페이스 정규화:</strong> <code>std::</code> 접두사를 명시하거나 제한적인 로컬 스코프 내부 별칭만 권장합니다.<br>
+              <strong>2. <code>std::println</code>으로의 표준화:</strong> C++23/C++26부터는 스트림 연산자(<code>&lt;&lt;</code>) 체이닝과 버퍼 플러시 논쟁 자체를 끝내기 위해, 포맷팅 안정성과 성능이 월등한 <strong><code>std::println</code>(&lt;print&gt;)</strong>을 기본 표준 I/O 수단으로 적극 채택합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1.4 주석과 토큰 -->
+    <section id="sec-1-4" class="lesson-section">
+      <h3>1.4 주석(Comments)과 문장 종료 규약</h3>
+      <p>
+        C++ 컴파일러가 소스 코드를 읽을 때 무시하는 설명글(주석)과 코드의 문법 단위를 구분하는 기본 규칙입니다.
+      </p>
+
+      <div class="syntax-grid">
+        <div class="syntax-card">
+          <h4>단일 행 주석 (Single-line Comment)</h4>
+          <p><code>//</code> 뒤부터 해당 줄의 끝까지 컴파일러가 완전히 무시합니다.</p>
+          <pre><code>int speed = 100; // 차량의 초기 속도 설정</code></pre>
+        </div>
+
+        <div class="syntax-card">
+          <h4>다중 행 주석 (Multi-line Comment)</h4>
+          <p><code>/*</code> 와 <code>*/</code> 사이에 들어가는 모든 내용은 여러 줄에 걸쳐 주석 처리됩니다.</p>
+          <pre><code>/* 
+ * 복잡한 알고리즘 공식 설명
+ * 작성자: pargame
+ */
+int result = calculate();</code></pre>
+        </div>
+
+        <div class="syntax-card full-width">
+          <h4>세미콜론 (<code>;</code>) - 문장의 종결자</h4>
+          <p>
+            C++에서 대부분의 명령문(Statement)은 반드시 세미콜론(<code>;</code>)으로 끝나야 합니다.
+            파이썬과 달리 줄바꿈(엔터) 자체는 문법적 의미를 갖지 않는 단순 공백(Whitespace)으로 취급되므로, 세미콜론이 나타나야 비로소 컴파일러가 하나의 명령문이 끝났음을 인지합니다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1.5 터미널 빌드 실습 -->
+    <section id="sec-1-5" class="lesson-section">
+      <h3>1.5 터미널 빌드 실습 및 흔한 컴파일 오류 대처법</h3>
+      <p>
+        macOS (Apple Silicon M4) 터미널 환경에서 Clang++ 툴체인을 사용하여 직접 코드를 컴파일하고 실행하는 실습 절차입니다.
+      </p>
+
+      <div class="terminal-guide">
+        <div class="term-step">
+          <div class="term-badge">STEP 1</div>
+          <div class="term-content">
+            <h4>소스 파일 생성</h4>
+            <p>텍스트 에디터나 터미널을 이용해 <code>main.cpp</code> 파일을 작성합니다.</p>
+          </div>
+        </div>
+
+        <div class="term-step">
+          <div class="term-badge">STEP 2</div>
+          <div class="term-content">
+            <h4>최신 C++ 표준으로 컴파일 및 링킹</h4>
+            <p>터미널에서 아래 명령어를 실행하여 C++26 표준 플래그와 함께 최적화된 실행 파일을 만듭니다.</p>
+            <div class="cli-command">
+              <code>/opt/homebrew/opt/llvm/bin/clang++ -std=c++26 main.cpp -o my_program</code>
+            </div>
+            <ul>
+              <li><code>-std=c++26</code>: C++26 최신 언어 표준 규격을 적용합니다.</li>
+              <li><code>main.cpp</code>: 컴파일할 대상 소스 코드 파일입니다.</li>
+              <li><code>-o my_program</code>: 생성될 최종 실행 파일의 이름을 지정합니다 (생략 시 기본 <code>a.out</code> 생성).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="term-step">
+          <div class="term-badge">STEP 3</div>
+          <div class="term-content">
+            <h4>프로그램 실행 및 종료 코드 확인</h4>
+            <div class="cli-command">
+              <code>./my_program</code>
+            </div>
+            <p>직전 프로그램의 반환값(종료 코드)을 터미널에서 확인하려면 아래 명령어를 입력합니다:</p>
+            <div class="cli-command">
+              <code>echo $?</code>
+              <span class="cmd-desc">➔ 정상 종료 시 0 출력</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h4>초보자가 가장 자주 만나는 3가지 에러와 해결법</h4>
+      <div class="error-trouble-grid">
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: expected ';' after expression</code>
+          </div>
+          <p><strong>원인:</strong> 특정 명령문 끝에 세미콜론(<code>;</code>)을 빼먹었습니다.</p>
+          <p class="fix"><strong>해결:</strong> 컴파일러가 지목한 줄 바로 윗줄 또는 해당 줄의 끝에 세미콜론을 추가합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: use of undeclared identifier 'cout'</code>
+          </div>
+          <p><strong>원인:</strong> <code>#include &lt;iostream&gt;</code>을 누락했거나, 네임스페이스인 <code>std::</code> 접두사를 빼먹었습니다.</p>
+          <p class="fix"><strong>해결:</strong> <code>#include &lt;iostream&gt;</code>을 상단에 추가하고 <code>std::cout</code>으로 수정합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">링커 오류 (Linker Error)</span>
+            <code>undefined reference to 'main'</code>
+          </div>
+          <p><strong>원인:</strong> <code>main</code> 함수의 이름을 <code>Main</code>이나 <code>mian</code>으로 잘못 입력하여 진입점을 찾지 못했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 함수명을 정확히 소문자 <code>main</code>으로 변경합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 단원 정리 및 다음 단계 안내 -->
+    <footer class="lesson-summary">
+      <div class="summary-box">
+        <h3>1단원 핵심 요약</h3>
+        <ul>
+          <li>C++은 <strong>전처리(Preprocessing) ➔ 컴파일(Compilation) ➔ 링크(Linking)</strong>의 엄격한 3단계 번역 파이프라인을 거쳐 기계어 실행 파일로 만들어집니다.</li>
+          <li>모든 C++ 프로그램의 진입점은 <code>int main()</code>이며, 정상 종료 시 운영체제에 <code>0</code>을 반환합니다.</li>
+          <li>기존 I/O는 <code>std::cout</code> 스트림을 사용했으나, 최신 <strong>C++26 표준에서는 안전성과 성능이 뛰어난 <code>std::println()</code> (&lt;print&gt;)</strong>이 공식 권장됩니다.</li>
+          <li>스트림 사용 시 불필요한 버퍼 플러시 오버헤드를 막기 위해 <code>std::endl</code>보다는 <code>'\n'</code>을 사용하는 것이 권장됩니다.</li>
+        </ul>
+      </div>
+
+      <div class="next-lesson-card">
+        <div class="next-info">
+          <span class="next-label">CONTINUE STUDY</span>
+          <h4>단원 02: 기본 타입 시스템과 객체 모델 (Primitive Types & Object Model)</h4>
+          <p>정수형/부동소수점 크기 규약, &lt;cstdint&gt; 고정 너비 정수, signed overflow UB, sizeof/alignof, 균일 초기화 및 C++26 '_' 와일드카드를 학습합니다.</p>
+        </div>
+        <div class="next-status">
+          <a href="#ch-02" class="chapter-scroll-btn">단원 02 이어보기 ↓</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- 단원 02: 기본 타입 시스템과 객체 모델 -->
+    <!-- ========================================== -->
+    <div class="chapter-separator" id="ch-02"></div>
+
+    <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
+      <span class="lesson-badge">PHASE 01 // CHAPTER 02</span>
+      <span class="read-time">예상 학습 시간: 35분</span>
+    </div>
+
+    <header class="lesson-header">
+      <h2>단원 02: 기본 타입 시스템과 객체 모델 (Primitive Types & Object Model)</h2>
+      <p class="lesson-intro">
+        C++ 프로그램에서 메모리에 생성되는 모든 값은 엄격한 타입(Type)과 수명, 정렬 규약을 따릅니다.
+        ISO C++26 공식 표준(ISO/IEC 14882)에 기반하여 기본 데이터 타입의 최소 크기 규약, 플랫폼 독립적인 <code>&lt;cstdint&gt;</code> 고정 너비 정수형,
+        부호형 오버플로의 미정의 동작(UB)과 무부호형 랩어라운드 원리, 메모리 정렬(<code>alignof</code>)과 패딩 바이트 메커니즘,
+        축소 변환을 차단하는 균일 초기화(Uniform Initialization), 그리고 최신 C++26 신규 규약인 단일 밑줄 플레이스홀더 변수(<code>_</code>, P2169R4)까지
+        단계별로 체계적으로 학습합니다.
+      </p>
+    </header>
+
+    <div class="content-toc">
+      <div class="toc-title">2단원 목차</div>
+      <ul>
+        <li><a href="#sec-2-1">2.1 기본 데이터 타입 (Primitive Types)과 최소 크기 규약</a></li>
+        <li><a href="#sec-2-2">2.2 고정 너비 정수형과 표준 크기 타입 (&lt;cstdint&gt;, &lt;cstddef&gt;)</a></li>
+        <li><a href="#sec-2-3">2.3 부호형(signed) vs 무부호형(unsigned)과 미정의 동작 (UB)</a></li>
+        <li><a href="#sec-2-4">2.4 메모리 크기(sizeof)와 정렬 바운더리(alignof)</a></li>
+        <li><a href="#sec-2-5">2.5 변수 선언과 초기화 문법 (Uniform Initialization)</a></li>
+        <li><a href="#sec-2-6">2.6 C++26 신규 기능: 단일 밑줄 플레이스홀더 변수 (_, P2169R4)</a></li>
+        <li><a href="#sec-2-7">2.7 터미널 실습 및 컴파일러 경고·오류 디버깅</a></li>
+      </ul>
+    </div>
+
+    <!-- 2.1 기본 데이터 타입 -->
+    <section id="sec-2-1" class="lesson-section">
+      <h3>2.1 기본 데이터 타입 (Primitive Types)과 최소 크기 규약</h3>
+      <p>
+        C++은 강력한 <strong>정적 타입 언어(Statically Typed Language)</strong>입니다. 
+        프로그램에서 사용되는 모든 변수는 컴파일 타임에 타입이 확정되어야 하며, 컴파일러는 이 타입을 바탕으로 필요한 메모리 공간의 크기와 허용되는 연산을 엄격히 검증합니다.
+      </p>
+
+      <h4>기본 타입의 4대 계열 분류</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>분류</th>
+              <th>키워드 및 타입</th>
+              <th>기술적 역할 및 메모리 표현</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>정수 계열<br>(Integral Types)</td>
+              <td><code>bool</code>, <code>char</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code></td>
+              <td>소수점이 없는 정수 및 문자를 표현합니다. 각 타입은 부호형(signed)과 무부호형(unsigned)으로 분기됩니다.</td>
+            </tr>
+            <tr>
+              <td>부동소수점 계열<br>(Floating-point)</td>
+              <td><code>float</code>, <code>double</code>, <code>long double</code></td>
+              <td>소수점 이하 값을 갖는 실수를 IEEE 754 표준(부호 비트, 지수부, 가수부)에 따라 근사치로 저장합니다.</td>
+            </tr>
+            <tr>
+              <td>불완전 타입<br>(Incomplete Type)</td>
+              <td><code>void</code></td>
+              <td>값이 존재하지 않음을 나타냅니다. <code>void</code> 타입의 변수는 메모리를 할당받을 수 없으므로 선언할 수 없으며, 주로 반환값이 없는 함수나 타입 미확정 제네릭 포인터(<code>void*</code>)에 사용됩니다.</td>
+            </tr>
+            <tr>
+              <td>널 포인터 타입</td>
+              <td><code>std::nullptr_t</code> (리터럴 <code>nullptr</code>)</td>
+              <td>유효하지 않은 포인터 주소를 명시적으로 나타내기 위한 C++11 표준 타입입니다. 정수 <code>0</code>과 명확히 구분됩니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>ISO C++ 표준의 핵심: 최소 크기 규약 (Minimum Size Invariants)</h4>
+      <p>
+        많은 입문자들이 <code>int</code>는 무조건 4바이트, <code>long</code>은 무조건 8바이트라고 잘못 기억합니다. 
+        하지만 <strong>ISO C++ 표준(ISO/IEC 14882)은 특정 아키텍처에 언어를 구속하지 않기 위해 각 타입의 절대적인 바이트 크기를 못 박지 않습니다.</strong>
+        대신 표준은 각 타입이 반드시 만족해야 하는 <strong>최소 비트 수(Minimum Bits)</strong>와 <strong>상대적 크기 순서 불변식</strong>만을 규정합니다.
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📐 ISO C++ 표준 크기 불변식 공식</div>
+        <p>
+          <code>1 == sizeof(char) &le; sizeof(short) &le; sizeof(int) &le; sizeof(long) &le; sizeof(long long)</code>
+        </p>
+      </div>
+
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>기본 타입</th>
+              <th>표준 최소 비트</th>
+              <th>일반적 크기 (Apple Silicon / x86_64)</th>
+              <th>값의 표현 범위 (부호형 기준)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>char</code></td>
+              <td>최소 8비트</td>
+              <td>1 바이트 (표준상 <code>sizeof(char) == 1</code> 강제)</td>
+              <td>-128 ~ 127 (또는 0 ~ 255, 플랫폼 기본값에 따름)</td>
+            </tr>
+            <tr>
+              <td><code>short</code></td>
+              <td>최소 16비트</td>
+              <td>2 바이트 (16비트)</td>
+              <td>-32,768 ~ 32,767</td>
+            </tr>
+            <tr>
+              <td><code>int</code></td>
+              <td>최소 16비트</td>
+              <td>4 바이트 (32비트)</td>
+              <td>-2,147,483,648 ~ 2,147,483,647</td>
+            </tr>
+            <tr>
+              <td><code>long</code></td>
+              <td>최소 32비트</td>
+              <td>4 바이트(Windows x64) / 8 바이트(macOS·Linux)</td>
+              <td>플랫폼 아키텍처에 따라 달라짐 (LLP64 vs LP64)</td>
+            </tr>
+            <tr>
+              <td><code>long long</code></td>
+              <td>최소 64비트</td>
+              <td>8 바이트 (64비트)</td>
+              <td>약 -9.22 &times; 10<sup>18</sup> ~ 9.22 &times; 10<sup>18</sup></td>
+            </tr>
+            <tr>
+              <td><code>float</code></td>
+              <td>32비트 (IEEE 754)</td>
+              <td>4 바이트</td>
+              <td>유효숫자 약 7자리 (단정밀도)</td>
+            </tr>
+            <tr>
+              <td><code>double</code></td>
+              <td>64비트 (IEEE 754)</td>
+              <td>8 바이트</td>
+              <td>유효숫자 약 15~17자리 (배정밀도)</td>
+            </tr>
+            <tr>
+              <td><code>bool</code></td>
+              <td>1비트 정보 표현</td>
+              <td>1 바이트 (하드웨어 주소 최소 지정 단위)</td>
+              <td><code>true</code> (1) 또는 <code>false</code> (0)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 기술 심층: std::nullptr_t와 NULL 매크로의 결정적 차이</div>
+        <p>
+          C 언어 시절 사용하던 <code>NULL</code> 매크로는 전처리기에 의해 단순한 정수 <code>0</code> 또는 <code>(void*)0</code>으로 치환되었습니다.
+          이로 인해 다음과 같이 정수와 포인터를 오버로딩한 함수가 있을 때 심각한 컴파일 오류나 의도치 않은 함수 호출이 발생했습니다:
+        </p>
+        <div class="code-block-wrap" style="margin-top: 0.5rem;">
+          <pre><code>void process(int code);
+void process(char* ptr);
+
+process(0);       // process(int) 호출
+// process(NULL); // 컴파일러에 따라 int로 갈지 모호성 컴파일 에러 발생!
+process(nullptr); // 타입이 std::nullptr_t이므로 완벽하게 process(char*)를 정확히 호출</code></pre>
+        </div>
+        <p>
+          <code>nullptr</code>은 포인터 타입으로만 암묵적 변환이 허용되며, 정수형(<code>int</code>)으로는 절대 변환되지 않으므로 타입 안정성을 완벽히 보장합니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 2.2 고정 너비 정수형과 표준 크기 타입 -->
+    <section id="sec-2-2" class="lesson-section">
+      <h3>2.2 고정 너비 정수형과 표준 크기 타입 (&lt;cstdint&gt;, &lt;cstddef&gt;)</h3>
+      <p>
+        기본 타입의 크기가 운영체제와 컴파일러마다 달라질 수 있다는 점은 대규모 크로스 플랫폼 소프트웨어 개발에서 치명적인 버그를 유발합니다.
+      </p>
+
+      <h4>64비트 데이터 모델의 함정: Windows (LLP64) vs macOS/Linux (LP64)</h4>
+      <p>
+        동일한 64비트 CPU라도 운영체제에 따라 채택한 데이터 모델이 다릅니다:
+      </p>
+      <ul>
+        <li><strong>LLP64 (Windows 64-bit):</strong> <code>int</code>는 32비트, <strong><code>long</code>은 32비트</strong>, <code>long long</code>과 포인터만 64비트입니다.</li>
+        <li><strong>LP64 (macOS Apple Silicon/Intel, Linux 64-bit):</strong> <code>int</code>는 32비트, <strong><code>long</code>은 64비트</strong>, 포인터도 64비트입니다.</li>
+      </ul>
+      <p>
+        따라서 <code>long</code> 변수를 네트워크 패킷이나 파일 포맷에 그대로 저장하면, macOS에서 생성한 파일을 Windows 프로그램이 읽을 때 바이트 오프셋이 뒤틀려 데이터가 완전히 손상됩니다.
+      </p>
+
+      <h4>해결책: &lt;cstdint&gt; 명시적 고정 너비 정수형</h4>
+      <p>
+        어떤 하드웨어, 어떤 OS에서 컴파일하더라도 <strong>정확히 고정된 비트 수</strong>를 보장받기 위해 C++ 표준 헤더 <code>&lt;cstdint&gt;</code>의 타입을 사용해야 합니다.
+      </p>
+
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>부호형 고정 너비 (Signed)</th>
+              <th>무부호형 고정 너비 (Unsigned)</th>
+              <th>보장 비트 수</th>
+              <th>주요 사용 용도</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>int8_t</code></td>
+              <td><code>uint8_t</code></td>
+              <td>정확히 8비트 (1 바이트)</td>
+              <td>바이트 버퍼, 하드웨어 레지스터 8비트 플래그</td>
+            </tr>
+            <tr>
+              <td><code>int16_t</code></td>
+              <td><code>uint16_t</code></td>
+              <td>정확히 16비트 (2 바이트)</td>
+              <td>오디오 PCM 16비트 샘플, 네트워크 포트 번호</td>
+            </tr>
+            <tr>
+              <td><code>int32_t</code></td>
+              <td><code>uint32_t</code></td>
+              <td>정확히 32비트 (4 바이트)</td>
+              <td>IPv4 주소, 바이너리 파일 크기, 게임 엔티티 ID</td>
+            </tr>
+            <tr>
+              <td><code>int64_t</code></td>
+              <td><code>uint64_t</code></td>
+              <td>정확히 64비트 (8 바이트)</td>
+              <td>UNIX 타임스탬프(마이크로초), 파일 오프셋, 대용량 카운터</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>메모리 주소 및 크기를 표현하는 표준 크기 타입 (&lt;cstddef&gt;)</h4>
+      <p>
+        데이터 통신이 아닌 '현재 시스템의 메모리 객체 크기'나 '포인터 간 오프셋'을 다룰 때는 아키텍처에 맞게 자동으로 조정되는 표준 크기 타입을 사용합니다:
+      </p>
+      <ul>
+        <li>
+          <strong><code>std::size_t</code>:</strong>
+          현재 컴퓨터에서 객체가 가질 수 있는 이론상 최대 바이트 크기를 표현할 수 있는 <strong>무부호 정수형(Unsigned)</strong>입니다.
+          <code>sizeof</code> 연산자의 반환 타입이며, C++ 표준 라이브러리(STL 컨테이너의 <code>.size()</code>, 배열 인덱스)의 표준 규약 타입입니다. (32비트 OS에서는 4바이트, 64비트 OS에서는 8바이트)
+        </li>
+        <li>
+          <strong><code>std::ptrdiff_t</code>:</strong>
+          동일한 연속 메모리(배열) 내에서 두 포인터를 뺐을 때의 거리(오프셋)를 표현하는 <strong>부호 있는 정수형(Signed)</strong>입니다.
+          앞뒤 방향을 나타내기 위해 음수 값을 가질 수 있습니다.
+        </li>
+      </ul>
+    </section>
+
+    <!-- 2.3 부호형 vs 무부호형과 UB -->
+    <section id="sec-2-3" class="lesson-section">
+      <h3>2.3 부호형(signed) vs 무부호형(unsigned)과 미정의 동작 (UB)</h3>
+      <p>
+        C++ 표준 규약에서 가장 주의해야 할 영역 중 하나가 바로 정수 연산의 오버플로 규약입니다.
+        부호형과 무부호형은 오버플로 시 컴파일러와 런타임의 동작 규약이 완전히 정반대로 규정되어 있습니다.
+      </p>
+
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>오버플로 발생 시 표준 규약</th>
+              <th>컴파일러의 동작 및 최적화 영향</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Signed 정수</strong><br>(<code>int</code>, <code>int32_t</code> 등)</td>
+              <td><strong>미정의 동작 (Undefined Behavior, UB)</strong></td>
+              <td>
+                컴파일러는 부호형 오버플로가 <strong>절대 발생하지 않는다고 가정</strong>합니다.
+                만약 오버플로가 발생하면 코드가 예기치 않게 삭제되거나 보안 취약점이 발생합니다.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Unsigned 정수</strong><br>(<code>unsigned int</code>, <code>uint32_t</code> 등)</td>
+              <td><strong>$2^N$ 모듈로 랩어라운드 (Defined Behavior)</strong></td>
+              <td>
+                표준에 의해 정확히 규정된 동작입니다. 최대값을 넘으면 다시 0으로 순환(Wrap-around)합니다.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Signed Overflow가 일으키는 보안 취약점 사례</h4>
+      <p>
+        컴파일러 최적화기는 ISO C++ 규약에 따라 "Signed 오버플로는 UB이므로 정상적인 프로그램에서는 결코 일어나지 않는다"고 전제합니다.
+        따라서 다음과 같은 방어 코드를 작성하면 컴파일러가 이를 상수로 간주하고 아예 삭제해 버립니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">signed_ub_danger.cpp</span>
+          <span class="code-lang">C++</span>
+        </div>
+        <pre><code>bool is_overflow_safe(int x) &#123;
+    // 개발자의 의도: x + 10이 오버플로되어 음수로 뒤집히면 false를 반환하려 함
+    // 하지만 컴파일러 최적화기(Clang/GCC -O2)는:
+    // "Signed 오버플로는 UB이므로 일어날 수 없다. 따라서 (x + 10 > x)는 수학적으로 언제나 참(true)이다."
+    // 라고 판단하여 이 함수 본문을 'return true;' 한 줄로 영구 대체해 버립니다!
+    return (x + 10) > x;
+&#125;</code></pre>
+      </div>
+
+      <h4>무부호형(Unsigned) 사용 시 빠지기 쉬운 2대 함정</h4>
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>함정 1: 무부호형 역방향 반복문의 무한 루프</h4>
+          <p>
+            배열을 역순으로 순회할 때 <code>std::size_t</code>나 <code>unsigned int</code>를 카운터로 사용하면 치명적인 무한 루프가 발생합니다:
+          </p>
+          <div class="code-block-wrap">
+            <pre><code>// ❌ 잘못된 코드: i는 unsigned이므로 결코 0 미만(-1)이 될 수 없음!
+for (std::size_t i = 5; i &gt;= 0; --i) &#123;
+    // i가 0일 때 --i를 실행하면 $2^N$ 랩어라운드에 의해 18,446,744,073,709,551,615로 순환
+    // 조건식 'i &gt;= 0'은 영원히 true이므로 프로그램이 종료되지 않음
+&#125;
+
+// ✅ 올바른 해결법: 부호 있는 정수를 사용하거나 첨자 인덱싱 기법 적용
+for (int i = 5; i &gt;= 0; --i) &#123;
+    // 정상적으로 i가 -1이 되는 순간 루프 탈출
+&#125;</code></pre>
+          </div>
+        </div>
+
+        <div class="concept-item">
+          <h4>함정 2: 암묵적 산술 변환(Usual Arithmetic Conversions)의 배신</h4>
+          <p>
+            C++에서 <code>signed</code>와 <code>unsigned</code>가 같은 표현식에서 비교되거나 연산될 때,
+            컴파일러는 부호 있는 정수를 암묵적으로 무부호 정수로 변환(Promotion)합니다:
+          </p>
+          <div class="code-block-wrap">
+            <pre><code>int a = -1;
+unsigned int b = 1;
+
+if (a &lt; b) &#123;
+    // 상식적으로 -1은 1보다 작으므로 실행될 것 같지만, 실행되지 않습니다!
+&#125; else &#123;
+    // 'a'(-1)가 unsigned int로 승격되면서 4,294,967,295(0xFFFFFFFF)라는 거대한 수가 됩니다.
+    // 따라서 4294967295 < 1 은 거짓(false)이 되어 이 블록이 실행됩니다!
+&#125;</code></pre>
+          </div>
+          <div class="rule-tip">
+            <strong>C++ Core Guidelines 권장 (ES.100):</strong>
+            단순히 "음수가 나오지 않는 양수 값"이라는 이유만으로 <code>unsigned</code>를 남용하지 마십시오.
+            일반적인 산술 연산과 제어 흐름에는 <code>int</code>를 기본으로 사용하고, 비트마스크, 바이트 조작, 암호학 등 명시적인 모듈로 연산이 필요한 경우에만 <code>unsigned</code>를 사용하십시오.
+          </div>
+        </div>
+      </div>
+
+      <!-- 실무 스타일 가이드 비교: 구글 C++ vs C++ 표준 라이브러리 (size_t) -->
+      <div class="style-comparison-card">
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: 정수형 선택 (Google vs C++ 표준 라이브러리)</span>
+        </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          "음수가 나올 수 없는 수치나 인덱스에 무부호형(unsigned)을 써야 하는가?"는 C++ 실무에서 가장 뜨거운 논쟁 주제 중 하나입니다:
+        </p>
+        <div class="style-grid">
+          <div class="style-column">
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p>
+              <strong>"수치 계산과 배열 인덱스에 unsigned를 쓰지 말라"</strong><br>
+              구글 가이드는 단순히 '값이 음수가 아니다'라는 이유로 unsigned를 사용하는 것을 엄격히 금지합니다.
+              0에서 1을 뺐을 때의 언더플로 랩어라운드 버그와, signed와의 혼합 연산 시 암묵적 형변환으로 인한 치명적 취약점이 너무 자주 발생하기 때문입니다. 비트 조작(Bitwise) 플래그를 제외한 일반 수치와 루프에는 <code>int</code> 또는 <code>int64_t</code>를 일관되게 권장합니다.
+            </p>
+          </div>
+          <div class="style-column">
+            <div class="style-col-title">🌐 C++ 표준 라이브러리 (STL)의 관례 &amp; 해법</div>
+            <p>
+              <strong>"역사적 std::size_t 관례와 모던 해법"</strong><br>
+              STL 컨테이너의 <code>.size()</code>와 <code>sizeof</code>는 표준 규약상 무부호 정수인 <code>std::size_t</code>를 반환하므로 실무에서 unsigned와 마주치는 것은 불가피합니다.<br>
+              이에 따라 최신 C++에서는 <strong><code>std::ssize()</code> (C++20, signed 크기 반환)</strong>와 <strong><code>std::cmp_less()</code> (헤더 &lt;utility&gt;)</strong>를 도입하여, 부호 불일치 경고 없이 안전하게 비교·순회하는 모던 표준 해법을 권장합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.4 메모리 크기(sizeof)와 정렬(alignof) -->
+    <section id="sec-2-4" class="lesson-section">
+      <h3>2.4 메모리 크기(sizeof)와 정렬 바운더리(alignof)</h3>
+      <p>
+        C++ 프로그램이 실행될 때 각 변수는 하드웨어 RAM(랜덤 액세스 메모리)의 특정 주소에 바이트 단위로 배치됩니다.
+        이때 컴파일러가 메모리를 어떻게 배치하는지 이해하는 것은 성능 최적화와 메모리 낭비 방지의 기본입니다.
+      </p>
+
+      <h4>sizeof 연산자: 컴파일 타임 비평가 연산자 (Unevaluated Operand)</h4>
+      <p>
+        <code>sizeof</code>는 인자로 전달된 타입 또는 표현식의 메모리 크기를 <strong>바이트 단위(std::size_t)</strong>로 계산합니다.
+        가장 중요한 특성은 <strong>컴파일 타임에 평가</strong>된다는 점입니다:
+      </p>
+      <div class="code-block-wrap">
+        <pre><code>int x = 10;
+// sizeof 내부의 표현식 (x++)는 실제 런타임에 실행되지 않습니다!
+std::size_t s = sizeof(x++); 
+
+// s는 4 (int의 크기)가 되지만, x는 여전히 10입니다! (증감 연산 무시됨)</code></pre>
+      </div>
+
+      <h4>메모리 정렬(Alignment)과 alignof 연산자</h4>
+      <p>
+        현대 CPU(Apple M-시리즈, x86_64)는 메모리에서 데이터를 가져올 때 1바이트씩 임의 주소에서 읽지 않습니다.
+        하드웨어 데이터 버스(Data Bus) 폭에 맞춰 <strong>자신의 크기 배수에 해당하는 메모리 주소(자연 정렬, Natural Alignment)</strong>에서 데이터를 읽을 때 가장 빠른 처리 속도를 냅니다.
+      </p>
+      <p>
+        <code>alignof(Type)</code> 연산자는 해당 타입의 객체가 위치해야 하는 <strong>메모리 주소의 최소 배수 단위(정렬 요구치)</strong>를 반환합니다:
+      </p>
+      <ul>
+        <li><code>alignof(char)</code> == 1 (모든 1바이트 경계 주소 가능: 0x1000, 0x1001, 0x1002 ...)</li>
+        <li><code>alignof(int)</code> == 4 (주소가 반드시 4의 배수여야 함: 0x1000, 0x1004, 0x1008 ...)</li>
+        <li><code>alignof(double)</code> == 8 (주소가 반드시 8의 배수여야 함: 0x1000, 0x1008, 0x1010 ...)</li>
+      </ul>
+
+      <h4>구조체 패딩(Padding)과 메모리 낭비 메커니즘</h4>
+      <p>
+        여러 멤버를 가진 구조체를 정의할 때, 컴파일러는 각 멤버 변수가 자신의 정렬 배수 주소에 정확히 오도록 멤버 사이에 비어 있는 빈 공간인 <strong>패딩 바이트(Padding Bytes)</strong>를 자동으로 삽입합니다.
+        이로 인해 변수의 배치 순서에 따라 구조체의 전체 크기가 크게 달라집니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">alignment_demo.cpp</span>
+          <span class="code-lang">C++</span>
+        </div>
+        <pre><code>// 1. 비효율적인 멤버 배치: 12 바이트 소비!
+struct BadLayout &#123;
+    char a;    // 1 바이트
+    // [3 바이트 패딩 삽입] -> 다음 int 멤버 'b'의 4바이트 정렬을 맞추기 위함
+    int b;     // 4 바이트
+    char c;    // 1 바이트
+    // [3 바이트 테일 패딩 삽입] -> 구조체 전체 정렬(4의 배수)을 맞추기 위함
+&#125;; // sizeof(BadLayout) == 12 바이트!
+
+// 2. 최적화된 멤버 배치: 8 바이트 소비! (33% 메모리 절약)
+struct GoodLayout &#123;
+    int b;     // 4 바이트
+    char a;    // 1 바이트
+    char c;    // 1 바이트
+    // [2 바이트 테일 패딩 삽입] -> 구조체 전체 정렬(4의 배수)을 맞추기 위함
+&#125;; // sizeof(GoodLayout) == 8 바이트!</code></pre>
+      </div>
+
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [메모리 시각화: BadLayout (총 12바이트)]
+        </div>
+        <div class="memory-row">
+          <div class="mem-cell data" style="flex: 1;"><code>a</code> (1B)</div>
+          <div class="mem-cell padding" style="flex: 3;">패딩 바이트 (3B)</div>
+          <div class="mem-cell data" style="flex: 4;"><code>b</code> (int 4B)</div>
+          <div class="mem-cell data" style="flex: 1;"><code>c</code> (1B)</div>
+          <div class="mem-cell padding" style="flex: 3;">테일 패딩 (3B)</div>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent); margin-top: 0.8rem;">
+          [메모리 시각화: GoodLayout (총 8바이트)]
+        </div>
+        <div class="memory-row">
+          <div class="mem-cell data" style="flex: 4;"><code>b</code> (int 4B)</div>
+          <div class="mem-cell data" style="flex: 1;"><code>a</code> (1B)</div>
+          <div class="mem-cell data" style="flex: 1;"><code>c</code> (1B)</div>
+          <div class="mem-cell padding" style="flex: 2;">테일 패딩 (2B)</div>
+        </div>
+      </div>
+      <div class="rule-tip">
+        <strong>구조체 설계 팁:</strong> 크기가 큰 멤버(8바이트 포인터, double, int64_t)를 먼저 배치하고, 작은 멤버(char, bool)를 뒤에 몰아서 배치하면 컴파일러가 삽입하는 패딩 공간을 최소화할 수 있습니다.
+      </div>
+    </section>
+
+    <!-- 2.5 변수 선언과 초기화 문법 -->
+    <section id="sec-2-5" class="lesson-section">
+      <h3>2.5 변수 선언과 초기화 문법 (Uniform Initialization)</h3>
+      <p>
+        변수를 메모리에 만들 때 초기값을 어떻게 부여하느냐는 프로그램의 안전성을 결정짓는 가장 중요한 습관입니다.
+      </p>
+
+      <h4>미초기화 변수의 위험성 (Default Initialization)</h4>
+      <p>
+        함수 내부의 지역 변수를 초기값 없이 <code>int x;</code> 형태로만 선언하면, 컴파일러는 메모리를 0으로 초기화해주지 않습니다.
+        해당 메모리 주소에 이전에 다른 프로그램이나 함수가 쓰다 남겨둔 임의의 비트 찌꺼기인 <strong>쓰레기 값(Indeterminate Value)</strong>이 그대로 남아 있게 되며,
+        이 값을 읽어 산술 연산에 사용하는 것은 <strong>미정의 동작(UB)</strong>입니다.
+      </p>
+
+      <h4>C++의 4가지 초기화 문법 비교</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead>
+            <tr>
+              <th>초기화 문법</th>
+              <th>예시 코드</th>
+              <th>동작 방식 및 특징</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>복사 초기화<br>(Copy Init)</td>
+              <td><code>int a = 10;</code></td>
+              <td>C 언어로부터 계승된 가장 전통적인 문법입니다. 우측의 값을 좌측 변수에 대입 복사합니다.</td>
+            </tr>
+            <tr>
+              <td>직접 초기화<br>(Direct Init)</td>
+              <td><code>int b(10);</code></td>
+              <td>생성자 매개변수를 직접 괄호로 전달하는 방식입니다. C++ 객체 지향에서 흔히 쓰입니다.</td>
+            </tr>
+            <tr>
+              <td>값 초기화<br>(Value Init)</td>
+              <td><code>int c&#123;&#125;;</code></td>
+              <td>중괄호 내부에 아무 값도 전달하지 않으면, 기본 정수형은 <strong>0</strong>으로 안전하게 자동 초기화됩니다.</td>
+            </tr>
+            <tr>
+              <td>균일 / 리스트 초기화<br>(Uniform Init)</td>
+              <td><code>int d&#123;10&#125;;</code></td>
+              <td>
+                C++11에서 도입된 중괄호(<code>&#123;&#125;</code>) 기반의 현대적 표준 초기화 문법입니다.
+                기본 타입, 배열, STL 컨테이너, 구조체에 일관된 문법을 제공합니다.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>균일 초기화의 절대 규칙: 축소 변환(Narrowing Conversion) 컴파일 거부</h4>
+      <p>
+        균일 초기화(중괄호 초기화)가 현대 C++에서 최우선 권장되는 가장 결정적인 이유는 바로 <strong>축소 변환(Narrowing Conversion)을 컴파일 타임에 원천 차단</strong>하기 때문입니다.
+      </p>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">narrowing_prevention.cpp</span>
+          <span class="code-lang">C++</span>
+        </div>
+        <pre><code>// 1. 기존 복사 초기화 (=)의 문제점:
+int old_val = 3.141592; // 컴파일 성공! 소수점(.141592)이 유실되어 3만 저장됨 (버그의 온상)
+
+// 2. 모던 균일 초기화 (&#123;&#125;)의 엄격한 규약:
+// int new_val&#123;3.141592&#125;; 
+// ❌ 컴파일 에러 발생:
+// error: type 'double' cannot be narrowed to 'int' in a constant expression!
+
+// 3. 타입 범위 초과 축소 변환 차단:
+// char ch&#123;1000&#125;; 
+// ❌ 컴파일 에러: 1000은 8비트 char(-128~127)의 표현 범위를 초과하므로 컴파일 거부!</code></pre>
+      </div>
+
+      <div class="callout callout-info">
+        <div class="callout-title">💡 Most Vexing Parse 문제의 종결</div>
+        <p>
+          C++에서는 <code>Timer t();</code>와 같이 객체를 기본 생성자로 직접 초기화하려 할 때, 컴파일러가 이를 "Timer 객체 생성"이 아니라 "매개변수가 없고 Timer를 반환하는 함수 <code>t</code>의 선언"으로 오해하는 문법적 모호성(Most Vexing Parse)이 존재했습니다.
+          하지만 균일 초기화 <code>Timer t&#123;&#125;;</code>를 사용하면 함수 선언과 결코 혼동되지 않아 객체가 깔끔하게 생성됩니다.
+        </p>
+      </div>
+
+      <!-- 실무 스타일 가이드 비교: 모던 C++ 코어 가이드라인 vs 구글 C++ 스타일 가이드 -->
+      <div class="style-comparison-card">
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: 변수 초기화 문법 (Core Guidelines vs Google)</span>
+        </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          변수를 초기화할 때 <code>int x&#123;0&#125;;</code> (중괄호)를 쓸 것인가, <code>int x = 0;</code> (등호)를 쓸 것인가에 대한 실무 표준의 관점 차이입니다:
+        </p>
+        <div class="style-grid">
+          <div class="style-column">
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (ES.23)</div>
+            <p>
+              <strong>"항상 중괄호 균일 초기화(&#123;&#125;)를 기본으로 채택하라"</strong><br>
+              비야네 스트롭스트룹(Bjarne Stroustrup)과 헙 서터(Herb Sutter)가 주도하는 코어 가이드라인은 <strong>축소 변환(Narrowing Conversion)을 컴파일 타임에 원천 차단</strong>하고, 모든 객체와 기본 타입에 일관된 문법을 제공하기 위해 <code>int x&#123;0&#125;;</code>를 기본 표준으로 권장합니다.
+            </p>
+          </div>
+          <div class="style-column">
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p>
+              <strong>"기본 스칼라 타입에는 전통적인 대입 초기화(=)를 유지하라"</strong><br>
+              구글 가이드는 <code>int x = 0;</code>처럼 기본 정수·실수형에는 친숙한 대입 복사 문법을 권장합니다. 중괄호 초기화는 <code>std::initializer_list</code> 생성자와 모호성을 빚거나(예: <code>std::vector&lt;int&gt; v&#123;10&#125;</code>이 크기 10이 아닌 요소 [10]을 생성), 과도한 구문 복잡성을 낳을 수 있어 구조체나 컨테이너 구성 등 필요한 곳에만 선택적으로 사용하도록 규정합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.6 C++26 신규 기능: 단일 밑줄 플레이스홀더 변수 -->
+    <section id="sec-2-6" class="lesson-section">
+      <h3>2.6 C++26 신규 기능: 단일 밑줄 플레이스홀더 변수 (_, P2169R4)</h3>
+      <p>
+        변수를 선언할 때, 코드 로직상 이름이 전혀 필요 없거나 결과값 중 일부를 의도적으로 버려야 하는 경우가 빈번히 발생합니다.
+        예를 들어 RAII 자원 잠금을 위한 객체나, 여러 개의 값을 묶어 반환하는 튜플/구조체 분해에서 특정 필드에 관심이 없는 상황입니다.
+      </p>
+
+      <h4>C++23 이전의 한계와 심볼 중복 충돌</h4>
+      <p>
+        C++23까지는 단일 밑줄 <code>_</code>도 일반 식별자(Identifier) 이름 중 하나로 취급되었습니다.
+        따라서 동일한 스코프 내에서 사용하지 않는 변수를 선언할 때 중복 선언 오류가 발생했습니다:
+      </p>
+      <div class="code-block-wrap">
+        <pre><code>void example() &#123;
+    std::lock_guard&lt;std::mutex&gt; _(mtx1);
+    // std::lock_guard&lt;std::mutex&gt; _(mtx2); 
+    // ❌ C++23 컴파일 에러: redefinition of '_' (식별자 '_' 중복 정의)
+    
+    // 개발자들은 어쩔 수 없이 dummy1, dummy2 같은 불필요한 이름을 지어내야 했습니다.
+&#125;</code></pre>
+      </div>
+
+      <h4>C++26의 혁신 규약: P2169R4 (A nice placeholder with no name)</h4>
+      <p>
+        최신 <strong>ISO C++26 표준</strong>에서는 단일 밑줄 <code>_</code>가 독립적인 <strong>이름 없는 플레이스홀더(Placeholder / Wildcard)</strong>로 공식 언어 규약에 채택되었습니다.
+      </p>
+      <ul>
+        <li>
+          <strong>동일 스코프 내 중복 선언 허용:</strong>
+          동일한 블록 내에서 <code>auto _ = ...</code> 또는 자원 관리 객체를 <code>_</code>라는 이름으로 몇 번을 선언하더라도 컴파일러가 심볼 충돌을 일으키지 않고 각각 독립된 무명 객체로 처리합니다.
+        </li>
+        <li>
+          <strong>구조화된 바인딩(Structured Binding)과의 완벽한 결합:</strong>
+          여러 반환값 중 불필요한 값을 밑줄 <code>_</code>로 깔끔하게 무시할 수 있습니다.
+        </li>
+      </ul>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">cpp26_placeholder.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;tuple&gt;
+#include &lt;string&gt;
+#include &lt;print&gt;
+
+// 학번(int), 이름(string), 학점(double)을 반환하는 함수
+std::tuple&lt;int, std::string, double&gt; get_student_record() &#123;
+    return &#123;2026001, "Alice", 4.3&#125;;
+&#125;
+
+int main() &#123;
+    // C++26: 이름(2번째 필드)은 사용하지 않으므로 단일 밑줄 '_' 플레이스홀더로 버림!
+    auto [id, _, gpa] = get_student_record();
+    
+    std::println("학번: &#123;&#125;, 학점: &#123;&#125;", id, gpa);
+
+    // 동일 스코프에서 또 다른 무명 변수에 '_'를 다시 사용해도 컴파일 에러 없음!
+    auto _ = 42; 
+    auto _ = 99; // C++26에서는 완벽하게 유효함 (심볼 재정의 에러 없음)
+
+    return 0;
+&#125;</code></pre>
+      </div>
+      <div class="callout callout-info">
+        <div class="callout-title">⚠️ C++26 플레이스홀더 사용 시 주의점</div>
+        <p>
+          단일 밑줄 <code>_</code>로 선언된 객체는 컴파일러에 의해 '이름이 없는 변수'로 취급되므로,
+          선언한 이후에 <code>_ = 10;</code> 또는 <code>std::println("&#123;&#125;", _);</code>처럼 그 이름을 참조하여 값을 읽거나 수정하려 하면 컴파일 오류가 발생합니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 2.7 터미널 실습 및 디버깅 -->
+    <section id="sec-2-7" class="lesson-section">
+      <h3>2.7 터미널 실습 및 컴파일러 경고·오류 디버깅</h3>
+      <p>
+        이번 단원에서 학습한 기본 타입의 크기, 정렬 바운더리, 균일 초기화의 축소 변환 방지, 그리고 C++26 단일 밑줄 플레이스홀더를 터미널에서 직접 빌드하고 실측해 봅니다.
+      </p>
+
+      <h4>실습 종합 코드 작성</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">types_demo.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+#include &lt;cstdint&gt;
+#include &lt;cstddef&gt;
+#include &lt;tuple&gt;
+
+struct HardwarePacket &#123;
+    uint8_t  header; // 1 바이트
+    uint32_t payload;// 4 바이트
+    uint8_t  checksum;// 1 바이트
+&#125;;
+
+std::tuple&lt;int, double, int&gt; get_sensor_data() &#123;
+    return &#123;101, 23.5, 404&#125;;
+&#125;
+
+int main() &#123;
+    // 1. 고정 너비 정수 및 표준 크기 타입 실측
+    std::println("=== 1. 정수형 크기 및 정렬 실측 ===");
+    std::println("sizeof(int32_t): &#123;&#125; B, alignof: &#123;&#125; B", sizeof(int32_t), alignof(int32_t));
+    std::println("sizeof(uint64_t): &#123;&#125; B, alignof: &#123;&#125; B", sizeof(uint64_t), alignof(uint64_t));
+    std::println("sizeof(std::size_t): &#123;&#125; B", sizeof(std::size_t));
+
+    // 2. 구조체 패딩(Padding) 확인
+    std::println("\n=== 2. 메모리 정렬과 패딩 ===");
+    std::println("순수 멤버 크기 합: 1B + 4B + 1B = 6 바이트");
+    std::println("실제 sizeof(HardwarePacket): &#123;&#125; 바이트 (패딩으로 인해 증가)", sizeof(HardwarePacket));
+    std::println("alignof(HardwarePacket): &#123;&#125; 바이트", alignof(HardwarePacket));
+
+    // 3. Unsigned 정수의 $2^N$ 모듈로 랩어라운드 실측
+    std::println("\n=== 3. 무부호 정수 랩어라운드 ===");
+    uint8_t u_val&#123;255&#125;;
+    u_val = u_val + 1; // 255 + 1 -> 0으로 순환 (Defined Behavior)
+    std::println("uint8_t(255) + 1 의 결과: &#123;&#125;", u_val);
+
+    // 4. C++26 단일 밑줄 플레이스홀더 '_' 실습
+    std::println("\n=== 4. C++26 플레이스홀더 변수 실습 ===");
+    auto [sensor_id, temp, _] = get_sensor_data(); // 에러 코드(404)는 '_'로 무시
+    std::println("센서 ID: &#123;&#125;, 온도: &#123;&#125; C", sensor_id, temp);
+
+    auto _ = 100; // 독립 무명 변수 선언
+    auto _ = 200; // C++26 심볼 충돌 없음!
+
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>터미널 컴파일 및 실행 명령어</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">Terminal (macOS zsh)</span>
+          <span class="code-lang">Shell</span>
+        </div>
+        <pre><code># 1. LLVM 최신 Clang++로 C++26 표준 및 모든 경고 옵션(-Wall -Wextra -pedantic)을 켜고 컴파일
+/opt/homebrew/opt/llvm/bin/clang++ -std=c++26 -Wall -Wextra -pedantic types_demo.cpp -o types_demo
+
+# 2. 실행
+./types_demo</code></pre>
+      </div>
+
+      <h4>실행 결과 출력</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
+        </div>
+        <pre><code>=== 1. 정수형 크기 및 정렬 실측 ===
+sizeof(int32_t): 4 B, alignof: 4 B
+sizeof(uint64_t): 8 B, alignof: 8 B
+sizeof(std::size_t): 8 B
+
+=== 2. 메모리 정렬과 패딩 ===
+순수 멤버 크기 합: 1B + 4B + 1B = 6 바이트
+실제 sizeof(HardwarePacket): 12 바이트 (패딩으로 인해 증가)
+alignof(HardwarePacket): 4 바이트
+
+=== 3. 무부호 정수 랩어라운드 ===
+uint8_t(255) + 1 의 결과: 0
+
+=== 4. C++26 플레이스홀더 변수 실습 ===
+센서 ID: 101, 온도: 23.5 C</code></pre>
+      </div>
+
+      <h4>자주 겪는 컴파일 에러 & 경고 트러블슈팅 카드</h4>
+      <div class="trouble-list">
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: type 'double' cannot be narrowed to 'int' in a constant expression</code>
+          </div>
+          <p><strong>원인:</strong> 균일 초기화(<code>int x&#123;3.14&#125;;</code>)를 사용하면서 소수점이 유실되는 부동소수점 값을 전달하여 컴파일러가 축소 변환을 차단했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 타입을 <code>double x&#123;3.14&#125;;</code>로 변경하거나, 명시적 형변환(<code>static_cast&lt;int&gt;(3.14)</code>)을 적용하여 의도를 드러냅니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 경고 (Compiler Warning)</span>
+            <code>warning: comparison of integers of different signs: 'int' and 'std::size_t'</code>
+          </div>
+          <p><strong>원인:</strong> 부호형 <code>int</code> 변수와 무부호형 <code>std::size_t</code>(또는 <code>.size()</code>)를 직접 비교하여 음수가 거대한 양수로 왜곡 변환될 위험이 있습니다.</p>
+          <p class="fix"><strong>해결:</strong> 루프 인덱스 변수의 타입을 <code>std::size_t</code>로 일치시키거나, C++20 표준 유틸리티인 <code>std::cmp_less(a, b)</code> (헤더 <code>&lt;utility&gt;</code>)를 사용합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 경고 (Compiler Warning)</span>
+            <code>warning: variable 'raw_val' is uninitialized when used here</code>
+          </div>
+          <p><strong>원인:</strong> <code>int raw_val;</code>처럼 초기값 없이 선언한 뒤 값을 읽으려 하여 스택의 쓰레기 값을 참조(UB)했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 변수 선언 시 반드시 <code>int raw_val&#123;&#125;;</code> (값 초기화)를 적용하여 0으로 초기화합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 단원 02 정리 및 다음 단계 안내 -->
+    <footer class="lesson-summary">
+      <div class="summary-box">
+        <h3>2단원 핵심 요약</h3>
+        <ul>
+          <li>C++ 표준은 기본 타입의 절대 크기를 강제하지 않으며, 최소 비트 수와 상대 크기 순서(<code>char &le; short &le; int &le; long &le; long long</code>)만 보장합니다.</li>
+          <li>플랫폼 독립적인 아키텍처 설계를 위해 네트워크/파일 I/O에는 <code>&lt;cstdint&gt;</code>의 <strong>고정 너비 정수(<code>int32_t</code>, <code>uint64_t</code>)</strong>를, 메모리 크기에는 <strong><code>std::size_t</code></strong>를 사용합니다.</li>
+          <li><strong>Signed 오버플로는 미정의 동작(UB)</strong>으로 컴파일러 최적화 시 코드가 삭제될 수 있으며, <strong>Unsigned 오버플로는 $2^N$ 모듈로 연산</strong>으로 규정되어 있습니다.</li>
+          <li>CPU의 메모리 버스 효율을 위해 <strong>메모리 정렬(<code>alignof</code>)</strong>이 필수적이며, 구조체 멤버 순서에 따라 <strong>패딩 바이트</strong>가 삽입되어 전체 크기가 달라집니다.</li>
+          <li>모던 C++에서는 <strong>균일 초기화(<code>&#123;&#125;</code>)</strong>를 기본으로 사용하여 값 유실(Narrowing Conversion)을 컴파일 타임에 원천 차단해야 합니다.</li>
+          <li><strong>최신 C++26</strong>에서는 단일 밑줄 <strong><code>_</code> 플레이스홀더(P2169R4)</strong>를 통해 불필요한 변수명을 짓지 않고도 심볼 충돌 없이 안전하게 값을 버릴 수 있습니다.</li>
+        </ul>
+      </div>
+
+      <div class="next-lesson-card">
+        <div class="next-info">
+          <span class="next-label">NEXT LESSON</span>
+          <h4>단원 03: 표현식(Expressions)과 연산자 우선순위</h4>
+          <p>값 카테고리(lvalue, rvalue, prvalue), 산술·비트 연산자, 우선순위 및 결합 법칙, 단락 평가(Short-circuit evaluation)의 원리를 학습합니다.</p>
+        </div>
+        <div class="next-status">
+          <span>작성 준비 중</span>
+        </div>
+      </div>
+    </footer>
+  </article>
+
+  <!-- 사이드 플로팅 네비게이션 UI -->
+  <aside class="floating-nav" id="floatingNav" aria-label="사이드 퀵 네비게이션">
+    <div class="floating-nav-card">
+      <!-- 상단 점프 버튼 -->
+      <button type="button" class="nav-jump-btn" id="scrollTopBtn" title="맨 위로 이동">
+        <span class="jump-icon">▲</span>
+        <span class="jump-text">TOP</span>
+      </button>
+
+      <div class="floating-divider"></div>
+
+      <!-- 세부 섹션 목차 링크 -->
+      <div class="floating-toc-wrap">
+        <div class="floating-toc-label">CHAPTER 01</div>
+        <nav class="floating-toc-list">
+          <a href="#sec-1-1" class="floating-toc-link" data-target="sec-1-1">
+            <span class="toc-badge">1.1</span>
+            <span class="toc-name">컴파일 파이프라인</span>
+          </a>
+          <a href="#sec-1-2" class="floating-toc-link" data-target="sec-1-2">
+            <span class="toc-badge">1.2</span>
+            <span class="toc-name">main 함수 규약</span>
+          </a>
+          <a href="#sec-1-3" class="floating-toc-link" data-target="sec-1-3">
+            <span class="toc-badge">1.3</span>
+            <span class="toc-name">I/O & std::println</span>
+          </a>
+          <a href="#sec-1-4" class="floating-toc-link" data-target="sec-1-4">
+            <span class="toc-badge">1.4</span>
+            <span class="toc-name">주석 & 문법 규약</span>
+          </a>
+          <a href="#sec-1-5" class="floating-toc-link" data-target="sec-1-5">
+            <span class="toc-badge">1.5</span>
+            <span class="toc-name">터미널 빌드 실습</span>
+          </a>
+        </nav>
+
+        <div class="floating-divider" style="margin: 0.6rem 0;"></div>
+
+        <div class="floating-toc-label">CHAPTER 02</div>
+        <nav class="floating-toc-list">
+          <a href="#sec-2-1" class="floating-toc-link" data-target="sec-2-1">
+            <span class="toc-badge">2.1</span>
+            <span class="toc-name">기본 데이터 타입</span>
+          </a>
+          <a href="#sec-2-2" class="floating-toc-link" data-target="sec-2-2">
+            <span class="toc-badge">2.2</span>
+            <span class="toc-name">고정 너비 & 크기 타입</span>
+          </a>
+          <a href="#sec-2-3" class="floating-toc-link" data-target="sec-2-3">
+            <span class="toc-badge">2.3</span>
+            <span class="toc-name">signed/unsigned & UB</span>
+          </a>
+          <a href="#sec-2-4" class="floating-toc-link" data-target="sec-2-4">
+            <span class="toc-badge">2.4</span>
+            <span class="toc-name">sizeof & alignof</span>
+          </a>
+          <a href="#sec-2-5" class="floating-toc-link" data-target="sec-2-5">
+            <span class="toc-badge">2.5</span>
+            <span class="toc-name">변수 초기화 문법</span>
+          </a>
+          <a href="#sec-2-6" class="floating-toc-link" data-target="sec-2-6">
+            <span class="toc-badge">2.6</span>
+            <span class="toc-name">C++26 '_' 플레이스홀더</span>
+          </a>
+          <a href="#sec-2-7" class="floating-toc-link" data-target="sec-2-7">
+            <span class="toc-badge">2.7</span>
+            <span class="toc-name">터미널 실습 & 디버깅</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="floating-divider"></div>
+
+      <!-- 하단 점프 버튼 -->
+      <button type="button" class="nav-jump-btn" id="scrollBottomBtn" title="맨 아래로 이동">
+        <span class="jump-icon">▼</span>
+        <span class="jump-text">BOTTOM</span>
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- 사이드 네비게이션 동작 스크립트 -->
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const topBtn = document.getElementById('scrollTopBtn');
+    const bottomBtn = document.getElementById('scrollBottomBtn');
+    const tocLinks = document.querySelectorAll('.floating-toc-link');
+    const sections = document.querySelectorAll('.lesson-section');
+
+    if (topBtn) {
+      topBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    if (bottomBtn) {
+      bottomBtn.addEventListener('click', () => {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      });
+    }
+
+    // 스크롤 시 현재 섹션 하이라이트 감지
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            tocLinks.forEach((link) => {
+              if (link.getAttribute('data-target') === id) {
+                link.classList.add('active');
+                link.setAttribute('aria-current', 'true');
+              } else {
+                link.classList.remove('active');
+                link.removeAttribute('aria-current');
+              }
+            });
+          }
+        });
+      },
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0.1 }
+    );
+
+    sections.forEach((sec) => observer.observe(sec));
+  });
+</script>
+</BaseLayout>
+
+<style>
+  .note-header {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 2.5rem;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-3);
+    margin-bottom: 1rem;
+  }
+  .breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb .current {
+    color: var(--accent);
+  }
+  .topic-tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+  .note-header h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.8rem, 1.5rem + 1.5vw, 2.5rem);
+  }
+  .topic-desc {
+    font-size: 1.05rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    max-width: 850px;
+  }
+
+  /* Curriculum Roadmap Overview */
+  .curriculum-overview {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2.2rem;
+    margin-bottom: 3.5rem;
+  }
+  .section-title-wrap {
+    margin-bottom: 1.8rem;
+  }
+  .section-title-wrap .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .section-title-wrap h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.5rem;
+  }
+  .section-title-wrap p {
+    color: var(--text-3);
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.4rem;
+  }
+  .phase-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: calc(var(--radius) - 2px);
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+  }
+  .active-phase {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface-2));
+  }
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+  }
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .phase-status {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface-1);
+  }
+  .phase-status.active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    font-weight: 700;
+  }
+  .phase-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+  }
+  .phase-desc {
+    font-size: 0.86rem;
+    color: var(--text-3);
+    line-height: 1.5;
+    margin: 0 0 1rem;
+  }
+  .phase-list {
+    list-style: none;
+    padding: 0;
+    margin: auto 0 0;
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    color: var(--text-2);
+  }
+  .phase-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .current-lesson {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .lesson-num {
+    font-family: var(--font-mono);
+    color: var(--text-3);
+    font-size: 0.75rem;
+  }
+
+  /* Lesson Article Section */
+  .lesson-article {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .lesson-nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  .lesson-badge {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .read-time {
+    color: var(--text-3);
+  }
+  .lesson-header {
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .lesson-header h2 {
+    margin: 0 0 0.8rem;
+    font-size: clamp(1.6rem, 1.3rem + 1vw, 2.2rem);
+  }
+  .lesson-intro {
+    font-size: 1.05rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* Table of Contents */
+  .content-toc {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.6rem;
+    margin-bottom: 3rem;
+  }
+  .toc-title {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 0.6rem;
+  }
+  .content-toc ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .content-toc a {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color var(--dur-fast);
+  }
+  .content-toc a:hover {
+    color: var(--accent);
+  }
+
+  /* Lesson Sections */
+  .lesson-section {
+    margin-bottom: 4rem;
+    scroll-margin-top: 5rem;
+  }
+  .lesson-section h3 {
+    font-size: 1.45rem;
+    margin: 0 0 1rem;
+    color: var(--text-1);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .lesson-section h4 {
+    font-size: 1.15rem;
+    margin: 1.8rem 0 0.6rem;
+    color: var(--text-1);
+  }
+  .lesson-section p {
+    color: var(--text-2);
+    line-height: 1.8;
+    margin: 0 0 1.2rem;
+  }
+
+  /* Pipeline Card */
+  .pipeline-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin: 2rem 0;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.8rem;
+  }
+  .pipeline-step {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 1.2rem;
+  }
+  .step-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+  .pipeline-step h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+  }
+  .pipeline-step p {
+    font-size: 0.92rem;
+    margin: 0 0 0.8rem;
+  }
+  .tool-flag {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent-2);
+    background: var(--surface-1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .pipeline-arrow {
+    text-align: center;
+    color: var(--text-3);
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  /* Code Block */
+  .code-block-wrap {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 1.5rem 0 2rem;
+  }
+  .code-header {
+    background: var(--surface-2);
+    padding: 0.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  .code-block-wrap pre {
+    margin: 0;
+    padding: 1.2rem 1.4rem;
+    overflow-x: auto;
+    line-height: 1.65;
+  }
+  .code-block-wrap code {
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    color: var(--text-1);
+  }
+
+  /* Spec Table */
+  .spec-table-wrap {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+  }
+  .spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    text-align: left;
+  }
+  .spec-table th, .spec-table td {
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-subtle);
+  }
+  .spec-table th {
+    background: var(--surface-2);
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+  .spec-table td {
+    background: var(--surface-1);
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  /* 1열 너비 확보(최소 22%~28% 규약) 및 단어 단위 무분별 개행 방지 */
+  .spec-table th:first-child,
+  .spec-table td:first-child {
+    width: 26%;
+    min-width: 165px;
+    word-break: keep-all;
+    white-space: normal;
+  }
+  .spec-table code {
+    color: var(--accent);
+  }
+
+  /* Stream Diagram */
+  .stream-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+  .stream-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1rem 1.4rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+  }
+  .stream-box.program {
+    border-color: var(--accent);
+  }
+  .stream-box.hardware {
+    border-color: var(--accent-2);
+  }
+  .box-title {
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  .stream-pipe {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pipe-arrow {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+  .buffer-zone {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px dashed var(--accent);
+    border-radius: 4px;
+    color: var(--text-1);
+  }
+
+  /* Concept Breakdown */
+  .concept-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+    margin-top: 1.5rem;
+  }
+  .concept-item {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 1.4rem;
+  }
+  .concept-item h4 {
+    margin: 0 0 0.6rem;
+    font-size: 1.05rem;
+    color: var(--accent);
+  }
+  .concept-item ul {
+    margin: 0.6rem 0;
+    padding-left: 1.2rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    font-size: 0.92rem;
+  }
+  .rule-tip {
+    margin-top: 0.8rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-left: 3px solid var(--accent);
+    font-size: 0.88rem;
+    color: var(--text-1);
+  }
+
+  /* Callouts */
+  .callout {
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    margin: 1.5rem 0;
+    line-height: 1.65;
+  }
+  .callout-info {
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
+    border: 1px solid var(--accent);
+  }
+  .callout-warn {
+    background: color-mix(in srgb, var(--warn) 8%, var(--surface-1));
+    border: 1px solid var(--warn);
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+  .callout-info .callout-title { color: var(--accent); }
+  .callout-warn .callout-title { color: var(--warn); }
+  .callout p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--text-2);
+  }
+
+  /* Syntax Grid */
+  .syntax-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.4rem;
+    margin: 1.5rem 0;
+  }
+  .syntax-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+  }
+  .syntax-card.full-width {
+    grid-column: 1 / -1;
+  }
+  .syntax-card h4 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--text-1);
+  }
+  .syntax-card p {
+    font-size: 0.9rem;
+    margin: 0 0 0.8rem;
+  }
+  .syntax-card pre {
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 6px;
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-1);
+  }
+
+  /* Terminal Guide */
+  .terminal-guide {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin: 1.5rem 0 2rem;
+  }
+  .term-step {
+    display: flex;
+    gap: 1.2rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 1.4rem;
+  }
+  .term-badge {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent-2);
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--surface-2);
+    height: fit-content;
+  }
+  .term-content {
+    flex: 1;
+  }
+  .term-content h4 {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+  }
+  .term-content p {
+    font-size: 0.92rem;
+    margin: 0 0 0.6rem;
+  }
+  .cli-command {
+    background: var(--code-bg);
+    border: 1px solid var(--border-subtle);
+    padding: 0.6rem 0.9rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.6rem;
+  }
+  .cmd-desc {
+    color: var(--text-3);
+    font-size: 0.78rem;
+  }
+  .term-content ul {
+    margin: 0.6rem 0 0;
+    padding-left: 1.2rem;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  /* Error Grid */
+  .error-trouble-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+    margin: 1.5rem 0;
+  }
+  .trouble-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-left: 3px solid var(--danger);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    font-size: 0.88rem;
+  }
+  .err-header {
+    margin-bottom: 0.6rem;
+  }
+  .err-type {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--danger);
+    font-weight: 700;
+  }
+  .err-header code {
+    font-size: 0.78rem;
+    color: var(--text-1);
+    background: var(--surface-2);
+    display: block;
+    margin-top: 0.3rem;
+    padding: 3px 6px;
+  }
+  .trouble-card p {
+    margin: 0 0 0.4rem;
+    line-height: 1.5;
+  }
+  .trouble-card .fix {
+    color: var(--accent);
+    margin: 0;
+  }
+
+  /* Lesson Summary & Footer */
+  .lesson-summary {
+    margin-top: 4rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .summary-box {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.8rem;
+  }
+  .summary-box h3 {
+    margin: 0 0 1rem;
+    font-size: 1.2rem;
+    color: var(--accent);
+  }
+  .summary-box ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+
+  .next-lesson-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 1.6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .next-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .next-info h4 {
+    margin: 0.3rem 0;
+    font-size: 1.15rem;
+  }
+  .next-info p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-3);
+  }
+  .next-status {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-3);
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--surface-1);
+    white-space: nowrap;
+  }
+
+  .chapter-separator {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border), var(--accent), var(--border), transparent);
+    margin: 4.5rem 0 2rem;
+    position: relative;
+    scroll-margin-top: 4rem;
+  }
+
+  .chapter-scroll-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--accent);
+    color: var(--surface-0);
+    padding: 0.5rem 0.95rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .chapter-scroll-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+    color: var(--surface-0);
+  }
+
+  .memory-layout-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.4rem;
+    margin: 1.5rem 0;
+  }
+  .memory-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+  .mem-cell {
+    padding: 0.65rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    border-right: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+  .mem-cell:last-child {
+    border-right: none;
+  }
+  .mem-cell.data {
+    background: color-mix(in srgb, var(--accent) 15%, var(--surface-2));
+    color: var(--text-1);
+  }
+  .mem-cell.padding {
+    background: color-mix(in srgb, #ef4444 14%, var(--surface-2));
+    color: #f87171;
+    font-style: italic;
+  }
+
+  /* Style Guide Comparison Card */
+  .style-comparison-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.3rem 1.5rem;
+    margin: 1.8rem 0;
+  }
+  .style-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .style-badge {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .style-card-title {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+  .style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 0.8rem;
+  }
+  .style-column {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 1rem;
+  }
+  .style-col-title {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .style-column p {
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .style-column code {
+    color: var(--accent);
+  }
+
+  /* Study Layout & Floating Side Navigation */
+  .study-layout {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    align-items: flex-start;
+  }
+  .lesson-article {
+    flex: 1;
+    max-width: 860px;
+    min-width: 0;
+  }
+
+  .floating-nav {
+    position: sticky;
+    top: 5.5rem;
+    height: fit-content;
+    align-self: flex-start;
+    z-index: 40;
+  }
+  .floating-nav-card {
+    background: var(--surface-1);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem;
+    width: 215px;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+  }
+  .floating-nav-card::-webkit-scrollbar {
+    width: 4px;
+  }
+  .floating-nav-card::-webkit-scrollbar-thumb {
+    background: var(--border-subtle);
+    border-radius: 2px;
+  }
+
+  .nav-jump-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.45rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all var(--dur-fast);
+  }
+  .nav-jump-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+    transform: translateY(-1px);
+  }
+  .jump-icon {
+    font-size: 0.65rem;
+  }
+
+  .floating-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 0.7rem 0;
+  }
+
+  .floating-toc-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .floating-toc-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--text-3);
+    margin-bottom: 0.5rem;
+    padding-left: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .floating-toc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .floating-toc-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--text-3);
+    font-size: 0.8rem;
+    transition: all var(--dur-fast);
+    border-left: 2px solid transparent;
+  }
+  .floating-toc-link:hover {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+  .floating-toc-link.active {
+    color: var(--accent);
+    font-weight: 700;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-left-color: var(--accent);
+  }
+  .toc-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .toc-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Responsive Behavior */
+  @media (max-width: 1180px) {
+    .study-layout {
+      flex-direction: column;
+    }
+    .floating-nav {
+      position: fixed;
+      top: auto;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 100;
+    }
+    .floating-nav-card {
+      flex-direction: row;
+      gap: 0.5rem;
+      padding: 0.4rem;
+      width: auto;
+      box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.7);
+    }
+    .floating-toc-wrap, .floating-divider {
+      display: none;
+    }
+    .nav-jump-btn {
+      width: auto;
+      padding: 0.5rem 0.8rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .stream-diagram {
+      flex-direction: column;
+    }
+    .next-lesson-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .floating-nav {
+      bottom: 1.5rem;
+      right: 1.5rem;
+    }
+  }
+</style>

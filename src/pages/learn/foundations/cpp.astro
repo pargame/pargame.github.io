@@ -2,7 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="C++: 언어 코어 및 표준 규약" description="공식 C++ 표준 규약(ISO/IEC 14882) 및 최신 C++26에 기반한 단계별 C++ 학습 로드맵: 1단원(번역 모델), 2단원(타입 시스템), 3단원(연산자와 제어 흐름), 4단원(함수 선언·정의 & 인자 전달 메커니즘)">
+<BaseLayout title="C++: 언어 코어 및 표준 규약" description="공식 C++ 표준 규약(ISO/IEC 14882) 및 최신 C++26에 기반한 단계별 C++ 학습 로드맵: Phase 1(1~4단원 언어 코어 모델), Phase 2(5단원 포인터와 주소 연산 체계)">
   <div class="note-header">
     <nav class="breadcrumb">
       <a href="/learn">Study Notes</a>
@@ -30,10 +30,10 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
     <div class="roadmap-grid">
       <!-- Phase 1 -->
-      <div class="phase-card active-phase">
+      <div class="phase-card">
         <div class="phase-header">
           <span class="phase-num">PHASE 01</span>
-          <span class="phase-status active">학습 진행 중</span>
+          <span class="phase-status">완료</span>
         </div>
         <h3>기초 구조 및 번역 모델</h3>
         <p class="phase-desc">컴파일러 파이프라인, 번역 단위, 기본 타입 시스템 및 제어 흐름</p>
@@ -105,18 +105,45 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       </div>
 
       <!-- Phase 2 -->
-      <div class="phase-card">
+      <div class="phase-card active-phase">
         <div class="phase-header">
           <span class="phase-num">PHASE 02</span>
-          <span class="phase-status">예정</span>
+          <span class="phase-status active">학습 진행 중</span>
         </div>
         <h3>저수준 메모리와 간접 참조</h3>
         <p class="phase-desc">물리 메모리 모델, 포인터 연산, 참조자, 동적 할당과 수명주기</p>
         <ul class="phase-list">
-          <li><span class="lesson-num">05</span> 포인터와 주소 연산 체계</li>
-          <li><span class="lesson-num">06</span> 참조자(References)와 const 한정자</li>
-          <li><span class="lesson-num">07</span> 배열, std::span & std::string_view</li>
-          <li><span class="lesson-num">08</span> 힙 메모리와 수동 자원 관리 (new/delete)</li>
+          <li class="current-lesson-item">
+            <a href="#ch-05" class="phase-chapter-link">
+              <span class="lesson-num">05</span>
+              <span class="chapter-name">포인터와 주소 연산 체계</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="5단원 세부 소단원 이동">
+              <a href="#sec-5-1" class="sub-chip">5.1 메모리 & 주소</a>
+              <a href="#sec-5-2" class="sub-chip">5.2 nullptr & NULL</a>
+              <a href="#sec-5-3" class="sub-chip">5.3 포인터 산술</a>
+              <a href="#sec-5-4" class="sub-chip">5.4 argc/argv & 이중 포인터</a>
+              <a href="#sec-5-5" class="sub-chip">5.5 포인터와 const</a>
+              <a href="#sec-5-6" class="sub-chip">5.6 실무 스타일 비교</a>
+              <a href="#sec-5-7" class="sub-chip">5.7 실습·디버깅</a>
+            </div>
+          </li>
+          <li class="pending-item">
+            <span class="lesson-num">06</span>
+            <span class="chapter-name">참조자(References)와 const 한정자</span>
+            <span class="pending-tag">준비중</span>
+          </li>
+          <li class="pending-item">
+            <span class="lesson-num">07</span>
+            <span class="chapter-name">배열, std::span & std::string_view</span>
+            <span class="pending-tag">준비중</span>
+          </li>
+          <li class="pending-item">
+            <span class="lesson-num">08</span>
+            <span class="chapter-name">힙 메모리와 수동 자원 관리 (new/delete)</span>
+            <span class="pending-tag">준비중</span>
+          </li>
         </ul>
       </div>
 
@@ -3409,6 +3436,791 @@ add_numbers(15, 27) = 42
         </ul>
       </div>
     </footer>
+
+    <!-- ========================================== -->
+    <!-- 단원 05: 포인터와 주소 연산 체계 -->
+    <!-- ========================================== -->
+    <div class="chapter-separator" id="ch-05"></div>
+
+    <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
+      <span class="lesson-badge">PHASE 02 // CHAPTER 05</span>
+      <span class="read-time">예상 학습 시간: 45분</span>
+    </div>
+
+    <header class="lesson-header">
+      <h2>단원 05: 포인터와 주소 연산 체계 (Pointers &amp; Address Arithmetic)</h2>
+      <p class="lesson-intro">
+        컴퓨터의 주기억장치(RAM)는 바이트(Byte) 단위의 연속된 번지(Address)로 관리되며, C++의 포인터는 이러한 물리 메모리 주소를 직접 제어하는 가장 강력하고 원초적인 도구입니다.
+        64비트 평면 가상 메모리 모델에서 주소 연산자(<code>&amp;</code>)와 역참조 연산자(<code>*</code>)의 기계적 작동 원리,
+        C 언어 매크로 <code>NULL</code>(0)의 치명적 타입 결함과 모던 C++의 타입 안전 널 포인터 <code>nullptr</code>(<code>std::nullptr_t</code>),
+        <code>sizeof(T)</code> 단위로 보폭이 결정되는 포인터 산술 연산과 두 포인터 사이의 간격을 표현하는 부호 있는 표준 정수형 <code>std::ptrdiff_t</code>,
+        운영체제 셸에서 프로그램으로 전달되는 명령행 인자(<code>argc</code>, <code>char* argv[]</code>)와 이중 포인터(<code>char**</code>)의 메모리 배치,
+        포인터와 <code>const</code> 한정자의 3대 결합 규칙, 그리고 원시 포인터의 소유권(Ownership) 배제 철학까지
+        저수준 시스템 프로그래밍의 기초를 체계적으로 학습합니다.
+      </p>
+    </header>
+
+    <div class="content-toc">
+      <div class="toc-title">5단원 목차</div>
+      <ul>
+        <li><a href="#sec-5-1">5.1 컴퓨터 메모리 모델과 주소(&amp;) 및 역참조(*) 연산자</a></li>
+        <li><a href="#sec-5-2">5.2 널 포인터(nullptr, std::nullptr_t)와 구식 NULL/0의 결함</a></li>
+        <li><a href="#sec-5-3">5.3 포인터 산술 연산(Pointer Arithmetic)과 간격 타입(std::ptrdiff_t)</a></li>
+        <li><a href="#sec-5-4">5.4 명령행 인자(int argc, char* argv[])와 다중 포인터 메모리 구조</a></li>
+        <li><a href="#sec-5-5">5.5 포인터와 const 한정자: 가리키는 대상 vs 포인터 자체의 불변성</a></li>
+        <li><a href="#sec-5-6">5.6 실무 스타일 가이드 비교: 원시 포인터와 소유권 규칙 (Google vs Core Guidelines)</a></li>
+        <li><a href="#sec-5-7">5.7 터미널 실습 및 컴파일러 오류 디버깅</a></li>
+      </ul>
+    </div>
+
+    <!-- 5.1 컴퓨터 메모리 모델과 주소/역참조 -->
+    <section id="sec-5-1" class="lesson-section">
+      <h3>5.1 컴퓨터 메모리 모델과 주소(&amp;) 및 역참조(*) 연산자</h3>
+      <p>
+        C++ 프로그램을 실행하면 운영체제(OS)는 프로세스에게 독립적인 <strong>가상 주소 공간(Virtual Address Space)</strong>을 할당합니다.
+        현대 컴퓨터 아키텍처에서 메모리는 <strong>1바이트(8비트)마다 고유한 16진수 번지(Address)가 순차적으로 매겨지는 바이트 주소 지정(Byte-addressable)</strong> 방식을 따릅니다.
+      </p>
+
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>1. 주소 연산자 (Address-of Operator, <code>&amp;</code>)</h4>
+          <p>
+            메모리에 실재하는 lvalue 객체(변수)의 시작 메모리 주소를 추출합니다. 
+            타입이 <code>T</code>인 변수에 <code>&amp;</code>를 적용하면 <strong>"T를 가리키는 포인터(<code>T*</code>)"</strong> 타입의 주소값이 반환됩니다.
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <h4>2. 포인터 변수(Pointer Variable)의 실체와 크기</h4>
+          <p>
+            포인터는 일반 변수와 마찬가지로 메모리에 할당되는 변수이지만, <em>데이터 값 대신 다른 메모리의 번지수(주소)를 값으로 저장</em>합니다.
+          </p>
+          <ul>
+            <li><strong>64비트 아키텍처 고정 크기:</strong> 64비트 시스템(Apple Silicon arm64, x86-64)에서 모든 메모리 주소는 64비트(8바이트) 정수로 표현됩니다. 따라서 가리키는 대상이 1바이트 <code>char</code>이든, 4바이트 <code>int</code>이든, 수천 바이트의 구조체이든 <strong>포인터 변수 자체의 크기는 항상 8바이트(<code>sizeof(T*) == 8</code>)</strong>입니다.</li>
+            <li><strong>포인터 타입의 목적:</strong> 포인터에 명시된 타입(<code>int*</code>, <code>double*</code>)은 포인터 자체의 크기가 아니라, <em>"해당 주소로 찾아갔을 때 몇 바이트를 어떤 방식으로 해석해야 하는가"</em>를 컴파일러에게 지시하는 타입 해석기 역할을 합니다.</li>
+          </ul>
+        </div>
+
+        <div class="concept-item">
+          <h4>3. 역참조 연산자 (Dereference Operator, <code>*</code> / 간접 참조)</h4>
+          <p>
+            포인터가 저장하고 있는 메모리 번지로 직접 건너가 그곳에 저장된 실제 객체에 접근하는 연산자입니다.
+            역참조를 통해 원본 메모리의 값을 <strong>읽거나(Read)</strong> 새로운 값을 <strong>직접 덮어쓸(Write)</strong> 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <h4>기본 변수 vs 포인터 변수의 메모리 구조 비교</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 20%;" />
+            <col style="width: 40%;" />
+            <col style="width: 40%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>비교 항목</th>
+              <th>일반 변수 (<code>int x = 42;</code>)</th>
+              <th>포인터 변수 (<code>int* ptr = &amp;x;</code>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>저장하는 값</strong></td>
+              <td>데이터 그 자체 (정수 <code>42</code>)</td>
+              <td>다른 객체의 메모리 주소 번지 (예: <code>0x16fdff418</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>변수 자체의 크기</strong></td>
+              <td>타입에 따름 (<code>sizeof(int) == 4</code> 바이트)</td>
+              <td><strong>아키텍처에 따름 (64비트에서 항상 8바이트)</strong></td>
+            </tr>
+            <tr>
+              <td><strong>접근 연산자</strong></td>
+              <td>변수명으로 직접 접근 (<code>x</code>)</td>
+              <td>역참조 연산자로 간접 접근 (<code>*ptr</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>메모리 변경 파급</strong></td>
+              <td>자신의 메모리 공간만 변경</td>
+              <td>역참조 수정 시 <strong>가리키는 원본 변수가 직접 변경</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">C++26</span>
+          <span class="code-title">주소 추출, 역참조 수정 및 64비트 크기 실증</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+int main() &#123;
+    int target&#123;100&#125;;
+    int* ptr&#123;&amp;target&#125;; // target의 시작 메모리 주소를 ptr에 저장
+
+    // static_cast&lt;const void*&gt;를 통해 16진수 메모리 주소 출력
+    std::println("target의 값: &#123;&#125;, 주소: &#123;&#125;", target, static_cast&lt;const void*&gt;(&amp;target));
+    std::println("ptr이 저장한 주소: &#123;&#125;, 역참조 값: &#123;&#125;", static_cast&lt;const void*&gt;(ptr), *ptr);
+
+    // 역참조(*)를 통해 원본 메모리의 값을 직접 수정
+    *ptr = 250;
+    std::println("역참조 수정 후 target의 값: &#123;&#125;", target); // 250 출력!
+
+    // 64비트 환경에서 포인터 변수 크기 실측: 대상 타입과 무관하게 모두 8바이트
+    char c = 'A';
+    double d = 3.14;
+    char* p_char = &amp;c;
+    double* p_double = &amp;d;
+
+    std::println("sizeof(char*): &#123;&#125; B, sizeof(int*): &#123;&#125; B, sizeof(double*): &#123;&#125; B",
+                 sizeof(p_char), sizeof(ptr), sizeof(p_double));
+
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 5.2 널 포인터와 NULL 결함 -->
+    <section id="sec-5-2" class="lesson-section">
+      <h3>5.2 널 포인터(nullptr, std::nullptr_t)와 구식 NULL/0의 결함</h3>
+      <p>
+        포인터 변수를 초기화하지 않고 선언(<code>int* p;</code>)하면 스택 프레임에 남아 있던 쓰레기 주소(Garbage Address)를 갖게 됩니다.
+        이러한 포인터를 <strong>와일드 포인터(Wild Pointer)</strong>라 부르며, 이를 역참조하면 프로세스가 즉사하거나 미정의 동작(UB)이 발생합니다.
+        따라서 가리킬 대상이 없는 포인터는 <strong>"유효한 객체를 가리키고 있지 않음"을 나타내는 널 포인터(Null Pointer)</strong>로 명시 초기화해야 합니다.
+      </p>
+
+      <h4>1. C 언어 매크로 <code>NULL</code>과 숫자 <code>0</code>의 치명적 결함</h4>
+      <p>
+        C 언어 시절부터 사용된 <code>NULL</code> 매크로는 <code>&lt;stddef.h&gt;</code> 등에서 일반적으로 숫자 리터럴 <code>0</code>으로 정의되어 있습니다.
+        C++에서는 <code>void*</code>의 암묵적 변환을 엄격히 차단하므로, C++에서 <code>NULL</code>은 결국 단순 정수 <code>0</code>으로 전처리 치환됩니다.
+        이로 인해 <strong>함수 오버로딩(Function Overloading)</strong> 상황에서 치명적인 모호성과 버그가 발생합니다.
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">C++</span>
+          <span class="code-title">구식 NULL이 유발하는 함수 오버로딩 결함 실증</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+void process(int value) &#123;
+    std::println("정수 오버로드 호출: &#123;&#125;", value);
+&#125;
+
+void process(char* ptr) &#123;
+    std::println("포인터 오버로드 호출: &#123;&#125;", static_cast&lt;void*&gt;(ptr));
+&#125;
+
+int main() &#123;
+    // 프로그래머의 의도는 포인터에 널을 넘기려 했으나...
+    // NULL이 정수 0으로 치환되어 process(int)가 호출되는 치명적 버그 발생!
+    process(0);    // process(int) 호출
+    process(NULL); // 컴파일 경고 또는 process(int) 호출!
+    
+    // 모던 C++의 해결책:
+    process(nullptr); // 정확히 process(char*) 호출!
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>2. C++11 표준 키워드 <code>nullptr</code>과 <code>std::nullptr_t</code></h4>
+      <p>
+        ISO C++11은 이러한 정수-포인터 혼동을 완전히 근절하기 위해 전용 키워드 <strong><code>nullptr</code></strong>과 
+        표준 헤더 <code>&lt;cstddef&gt;</code>에 그 타입인 <strong><code>std::nullptr_t</code></strong>를 도입했습니다.
+      </p>
+      <ul>
+        <li><strong>엄격한 타입 안전성:</strong> <code>nullptr</code>은 모든 원시 포인터(<code>T*</code>) 및 멤버 포인터 타입으로 암묵적 변환되지만, <strong>정수형(<code>int</code>, <code>long</code>)으로는 절대 암묵적 변환되지 않습니다.</strong></li>
+        <li><strong>부울 조건문 변환:</strong> <code>if (ptr != nullptr)</code> 또는 축약형 <code>if (ptr)</code>을 통해 포인터가 유효한지 안전하게 검증할 수 있습니다.</li>
+      </ul>
+
+      <h4>0 vs NULL vs nullptr 공식 규약 비교</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 20%;" />
+            <col style="width: 24%;" />
+            <col style="width: 32%;" />
+            <col style="width: 24%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>구분</th>
+              <th>문법적 정체성</th>
+              <th>데이터 타입</th>
+              <th>모던 C++ 권장 규약</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>0</code></td>
+              <td>정수 리터럴</td>
+              <td><code>int</code></td>
+              <td>순수 정수 연산에만 사용 (포인터 사용 금지)</td>
+            </tr>
+            <tr>
+              <td><code>NULL</code></td>
+              <td>전처리기 매크로</td>
+              <td>구현에 따라 <code>0</code> 또는 <code>0L</code></td>
+              <td><strong>사용 전면 금지 (레거시 유물)</strong></td>
+            </tr>
+            <tr>
+              <td><code>nullptr</code></td>
+              <td><strong>C++ 표준 키워드</strong></td>
+              <td><strong><code>std::nullptr_t</code></strong></td>
+              <td><strong>모든 널 포인터 표현의 유일한 표준</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5.3 포인터 산술 연산과 std::ptrdiff_t -->
+    <section id="sec-5-3" class="lesson-section">
+      <h3>5.3 포인터 산술 연산(Pointer Arithmetic)과 간격 타입(std::ptrdiff_t)</h3>
+      <p>
+        포인터에 정수를 더하거나 빼는 <strong>포인터 산술 연산(Pointer Arithmetic)</strong>은 
+        단순히 주소 번지수를 1바이트씩 이동하는 연산이 아닙니다.
+        컴파일러는 포인터가 가리키는 대상 타입의 크기(<code>sizeof(T)</code>)를 곱하여 보폭을 자동으로 계산합니다.
+      </p>
+
+      <h4>1. 포인터 주소 증감 공식</h4>
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>포인터 덧셈 / 뺄셈 공식</h4>
+          <p>
+            포인터 <code>ptr</code>의 타입이 <code>T*</code>일 때, 정수 <code>n</code>을 더하거나 뺀 실제 메모리 번지는 다음과 같습니다:
+          </p>
+          <div class="cli-command" style="margin-top: 0.6rem;">
+            <code>새로운 주소 = 기존 주소 &plusmn; (n &times; sizeof(T))</code>
+          </div>
+          <ul>
+            <li><code>int* ptr</code> (4바이트): <code>ptr + 1</code>은 실제 주소가 <strong>4바이트</strong> 증가합니다.</li>
+            <li><code>double* ptr</code> (8바이트): <code>ptr + 1</code>은 실제 주소가 <strong>8바이트</strong> 증가합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4>2. 배열 인덱싱(<code>arr[i]</code>)의 기계어 실체</h4>
+      <p>
+        C++에서 연속 메모리에 배치된 배열을 <code>arr[i]</code> 형태로 접근하는 것은 사실 
+        컴파일러가 제공하는 <strong>문법 설탕(Syntactic Sugar)</strong>에 불과합니다.
+        컴파일러는 <code>arr[i]</code> 표현식을 내부적으로 <strong><code>*(arr + i)</code></strong>로 완전히 동일하게 변환하여 역참조합니다.
+      </p>
+
+      <h4>3. 두 포인터 간의 뺄셈과 표준 간격 타입 <code>std::ptrdiff_t</code></h4>
+      <p>
+        동일한 배열 내를 가리키는 두 포인터 <code>ptr2</code>와 <code>ptr1</code> 사이를 뺄셈(<code>ptr2 - ptr1</code>)하면, 
+        바이트 차이가 아니라 <strong>두 포인터 사이에 존재하는 원소의 개수(Distance, 거리)</strong>가 반환됩니다.
+      </p>
+      <ul>
+        <li><strong>부호 있는 표준 정수형 <code>std::ptrdiff_t</code>:</strong> 헤더 <code>&lt;cstddef&gt;</code>에 정의된 구현체 정의 부호 있는 정수형입니다. 역방향 간격(<code>ptr1 - ptr2</code>)은 음수가 나올 수 있으므로 반드시 부호형(signed)이어야 합니다. 64비트 아키텍처에서 보통 8바이트 정수(<code>int64_t</code>와 동치)입니다.</li>
+        <li><strong>미정의 동작(UB) 주의:</strong> 서로 다른 배열이나 독립적인 메모리 객체를 가리키는 두 포인터 간의 뺄셈이나 크기 비교(<code>ptr_a &lt; ptr_b</code>)는 <strong>ISO C++ 표준상 엄격한 미정의 동작(UB)</strong>입니다.</li>
+      </ul>
+
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">C++26</span>
+          <span class="code-title">포인터 산술 보폭 및 std::ptrdiff_t 거리 계산</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+#include &lt;cstddef&gt; // std::ptrdiff_t
+
+int main() &#123;
+    int numbers[5]&#123;10, 20, 30, 40, 50&#125;;
+    int* p_begin = &amp;numbers[0]; // 또는 numbers (배열의 암묵적 포인터 붕괴)
+    int* p_end   = &amp;numbers[4];
+
+    std::println("p_begin 주소: &#123;&#125;", static_cast&lt;void*&gt;(p_begin));
+    std::println("p_begin + 1 주소: &#123;&#125; (정확히 4바이트 증가)", static_cast&lt;void*&gt;(p_begin + 1));
+
+    // 배열 인덱싱 문법과 포인터 산술 역참조의 완전한 동치성
+    std::println("numbers[2] = &#123;&#125;, *(numbers + 2) = &#123;&#125;", numbers[2], *(numbers + 2));
+
+    // 두 포인터 사이의 간격(원소 개수) 계산
+    std::ptrdiff_t distance = p_end - p_begin;
+    std::ptrdiff_t rev_dist = p_begin - p_end;
+
+    std::println("원소 간격 (순방향): &#123;&#125;개", distance); // 4
+    std::println("원소 간격 (역방향): &#123;&#125;개", rev_dist); // -4
+    std::println("sizeof(std::ptrdiff_t): &#123;&#125; 바이트", sizeof(std::ptrdiff_t));
+
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 5.4 명령행 인자와 다중 포인터 -->
+    <section id="sec-5-4" class="lesson-section">
+      <h3>5.4 명령행 인자(int argc, char* argv[])와 다중 포인터 메모리 구조</h3>
+      <p>
+        사용자가 셸(Terminal)에서 <code>./app --port 8080 -v</code>와 같이 프로그램을 실행할 때, 
+        운영체제 커널과 런타임 로더는 스택 메모리에 인자 문자열들을 배치하고 이들의 시작 주소 배열을 구성하여 <code>main</code> 함수로 넘겨줍니다.
+      </p>
+
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>1. <code>argc</code> (Argument Count, 인자 개수)</h4>
+          <p>
+            전달된 명령행 인자의 총 개수를 나타내는 정수입니다. 
+            운영체제는 실행 파일 이름 자체(예: <code>./app</code>)를 항상 첫 번째 인자로 전달하므로 <strong><code>argc</code>는 최소 1 이상</strong>입니다.
+          </p>
+        </div>
+
+        <div class="concept-item">
+          <h4>2. <code>char* argv[]</code>와 이중 포인터(<code>char**</code>)의 동치성</h4>
+          <p>
+            함수 매개변수 선언에서 배열 문법 <code>char* argv[]</code>는 컴파일러에 의해 <strong>이중 포인터 <code>char** argv</code>(문자열 포인터를 가리키는 포인터)</strong>로 취급됩니다.
+          </p>
+          <ul>
+            <li><code>argv</code>: 포인터들의 배열이 시작하는 메모리 주소(8바이트 포인터).</li>
+            <li><code>argv[i]</code>: i번째 인자 문자열(널 종료 <code>\0</code> C-스타일 문자열)의 시작 메모리 주소.</li>
+            <li><code>argv[argc]</code>: ISO C++ 공식 표준에 의해 <strong>항상 널 포인터(<code>nullptr</code>)임이 보장</strong>됩니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4>명령행 인자의 2차원 메모리 배치 구조</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 15%;" />
+            <col style="width: 25%;" />
+            <col style="width: 35%;" />
+            <col style="width: 25%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>인덱스</th>
+              <th>포인터 슬롯 (8바이트)</th>
+              <th>실제 가리키는 스택 문자열 데이터</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>argv[0]</code></td>
+              <td><code>0x16fdff500</code></td>
+              <td class="nowrap-code"><code>"./my_server\0"</code></td>
+              <td>실행 프로그램 명칭</td>
+            </tr>
+            <tr>
+              <td><code>argv[1]</code></td>
+              <td><code>0x16fdff520</code></td>
+              <td class="nowrap-code"><code>"--port\0"</code></td>
+              <td>첫 번째 옵션 플래그</td>
+            </tr>
+            <tr>
+              <td><code>argv[2]</code></td>
+              <td><code>0x16fdff530</code></td>
+              <td class="nowrap-code"><code>"8080\0"</code></td>
+              <td>두 번째 옵션 값</td>
+            </tr>
+            <tr>
+              <td><code>argv[argc]</code></td>
+              <td><code>0x0 (nullptr)</code></td>
+              <td>가리키는 데이터 없음</td>
+              <td><strong>표준 종료 센티널</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">C++26</span>
+          <span class="code-title">명령행 인자 순회 (인덱스 순회 vs 포인터 전진 순회)</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+int main(int argc, char* argv[]) &#123;
+    std::println("=== 1. 인덱스 기반 argc 순회 ===");
+    std::println("총 인자 개수(argc): &#123;&#125;개", argc);
+
+    for (int i&#123;0&#125;; i &lt; argc; ++i) &#123;
+        // argv[i]는 i번째 C 문자열의 시작 주소 char*
+        std::println("  argv[&#123;&#125;] = '&#123;&#125;' (주소: &#123;&#125;)", 
+                     i, argv[i], static_cast&lt;void*&gt;(argv[i]));
+    &#125;
+
+    std::println("\n=== 2. 센티널 nullptr 기반 포인터 전진 순회 ===");
+    char** current = argv;
+    int idx&#123;0&#125;;
+    while (*current != nullptr) &#123;
+        std::println("  순회 인자: '&#123;&#125;'", *current);
+        ++current; // 다음 char* 슬롯으로 8바이트 전진
+        ++idx;
+    &#125;
+
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 5.5 포인터와 const 한정자 -->
+    <section id="sec-5-5" class="lesson-section">
+      <h3>5.5 포인터와 const 한정자: 가리키는 대상 vs 포인터 자체의 불변성</h3>
+      <p>
+        C++에서 포인터와 <code>const</code> 한정자의 결합은 저수준 메모리 안전성의 핵심입니다.
+        <code>const</code> 키워드가 애스터리스크(<code>*</code>)의 좌측에 위치하는가, 우측에 위치하는가에 따라 불변성의 대상이 완전히 달라집니다.
+        <strong>"오른쪽에서 왼쪽으로 읽기(Right-to-Left Rule)"</strong> 원칙을 적용하면 직관적으로 판별할 수 있습니다.
+      </p>
+
+      <div class="concept-breakdown">
+        <div class="concept-item">
+          <h4>1. 상수 지시 포인터 (Pointer to const / Low-level const)</h4>
+          <p>
+            문법: <code>const int* ptr;</code> 또는 <code>int const* ptr;</code>
+          </p>
+          <ul>
+            <li><strong>의미:</strong> <em>"포인터가 가리키는 대상의 값이 상수"</em>입니다.</li>
+            <li><strong>동작:</strong> <code>*ptr = 20;</code> 처럼 역참조를 통해 원본 메모리를 수정하는 것은 컴파일러가 차단합니다. 그러나 <code>ptr = &amp;other;</code> 처럼 포인터가 다른 대상을 가리키도록 주소를 바꾸는 것은 허용됩니다.</li>
+            <li><strong>실무 용도:</strong> 함수에 대형 버퍼나 읽기 전용 데이터를 넘길 때 원본 훼손을 방지하기 위한 표준 규약입니다.</li>
+          </ul>
+        </div>
+
+        <div class="concept-item">
+          <h4>2. 상수 포인터 (Const pointer / Top-level const)</h4>
+          <p>
+            문법: <code>int* const ptr = &amp;x;</code>
+          </p>
+          <ul>
+            <li><strong>의미:</strong> <em>"포인터 변수 자신(주소값)이 상수"</em>입니다.</li>
+            <li><strong>동작:</strong> 포인터 변수 자신이 상수이므로 반드시 선언과 동시에 초기화되어야 하며, 이후 <code>ptr = &amp;other;</code> 처럼 다른 주소를 가리킬 수 없습니다. 그러나 <code>*ptr = 99;</code> 처럼 가리키는 대상의 데이터를 변경하는 것은 자유롭습니다.</li>
+            <li><strong>실무 용도:</strong> 고정된 하드웨어 I/O 레지스터 번지를 가리킬 때 사용됩니다.</li>
+          </ul>
+        </div>
+
+        <div class="concept-item">
+          <h4>3. 상수 지시 상수 포인터 (Const pointer to const)</h4>
+          <p>
+            문법: <code>const int* const ptr = &amp;x;</code>
+          </p>
+          <ul>
+            <li><strong>의미:</strong> <em>"가리키는 대상도 상수이고, 포인터 변수 자신도 상수"</em>입니다.</li>
+            <li><strong>동작:</strong> 대상 데이터 수정(<code>*ptr = 10;</code>)도 불가능하고, 포인터 주소 변경(<code>ptr = &amp;y;</code>)도 모두 컴파일 에러입니다. 완벽한 읽기 전용 고정 뷰를 형성합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h4>포인터와 const 3종 조합 공식 비교표</h4>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 25%;" />
+            <col style="width: 25%;" />
+            <col style="width: 25%;" />
+            <col style="width: 25%;" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>문법</th>
+              <th>가리키는 대상 값 수정(<code>*ptr</code>)</th>
+              <th>포인터 주소 변경(<code>ptr</code>)</th>
+              <th>선언 시 초기화 필수 여부</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="nowrap-code"><code>const int* p</code></td>
+              <td><strong>불가 (Compile Error)</strong></td>
+              <td>가능</td>
+              <td>선택</td>
+            </tr>
+            <tr>
+              <td class="nowrap-code"><code>int* const p</code></td>
+              <td>가능</td>
+              <td><strong>불가 (Compile Error)</strong></td>
+              <td><strong>필수</strong></td>
+            </tr>
+            <tr>
+              <td class="nowrap-code"><code>const int* const p</code></td>
+              <td><strong>불가 (Compile Error)</strong></td>
+              <td><strong>불가 (Compile Error)</strong></td>
+              <td><strong>필수</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">C++26</span>
+          <span class="code-title">포인터와 const 불변성 검증 코드</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+int main() &#123;
+    int a&#123;10&#125;;
+    int b&#123;20&#125;;
+
+    // 1. 상수 지시 포인터: 대상 수정 불가, 주소 변경 가능
+    const int* p1 = &amp;a;
+    // *p1 = 30; // 컴파일 에러! read-only variable is not assignable
+    p1 = &amp;b;     // 정상: 다른 주소를 가리킴
+
+    // 2. 상수 포인터: 대상 수정 가능, 주소 변경 불가
+    int* const p2 = &amp;a;
+    *p2 = 50;    // 정상: 원본 a의 값이 50으로 변경됨
+    // p2 = &amp;b;  // 컴파일 에러! cannot assign to variable 'p2' with const-qualified type
+
+    // 3. 상수 지시 상수 포인터: 둘 다 불가
+    const int* const p3 = &amp;a;
+    // *p3 = 99; // 컴파일 에러!
+    // p3 = &amp;b;  // 컴파일 에러!
+
+    std::println("최종 a: &#123;&#125;, b: &#123;&#125;, *p1: &#123;&#125;, *p2: &#123;&#125;, *p3: &#123;&#125;", a, b, *p1, *p2, *p3);
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 5.6 실무 스타일 가이드 비교 -->
+    <section id="sec-5-6" class="lesson-section">
+      <h3>5.6 실무 스타일 가이드 비교: 원시 포인터의 사용과 소유권(Ownership) 규칙 (Google vs Core Guidelines)</h3>
+      <p>
+        "원시 포인터(Raw Pointer, <code>T*</code>)는 직접 <code>delete</code>를 호출해야 하는 자원의 소유자인가, 
+        아니면 단순히 주소를 빌려보기만 하는 관찰자인가?"는 모던 C++ 자원 관리 아키텍처의 가장 중대한 분수령입니다.
+      </p>
+
+      <!-- 실무 스타일 가이드 비교: 구글 C++ 스타일 가이드 vs 모던 C++ 코어 가이드라인 -->
+      <div class="style-comparison-card">
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: 원시 포인터와 소유권 규칙 (Google vs Core Guidelines)</span>
+        </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          메모리 누수와 댕글링 포인터를 원천 차단하기 위한 두 주요 진영의 원시 포인터 사용 철학을 비교합니다:
+        </p>
+        <div class="style-grid">
+          <!-- Google Guide -->
+          <div class="style-column">
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p>
+              <strong>1. 스마트 포인터 강제와 소유권 분리:</strong><br>
+              동적 할당 메모리의 소유권을 갖는 원시 포인터 사용을 전면 금지합니다. 자원의 독점 소유권은 반드시 <code>std::unique_ptr</code>로, 공유 소유권은 <code>std::shared_ptr</code>로만 표현합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>2. 원시 포인터는 '비소유 관찰자(Non-owning Observer)' 전용:</strong><br>
+              함수 매개변수의 원시 포인터(<code>T*</code>, <code>const T*</code>)는 오직 객체를 소유하지 않고 단순히 주소를 빌려보거나, 인자가 <code>nullptr</code>일 수 있는 선택적(Optional) 전달에만 허용됩니다. 절대 원시 포인터에 대해 수동 <code>delete</code>를 호출하지 않습니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>3. 명시적 포인터 출력 인자 관례:</strong><br>
+              과거부터 함수 내부에서 값이 변경되는 출력 인자는 호출부에서 <code>func(&amp;val)</code> 형태로 주소 연산자가 드러나 변경 사실을 알 수 있도록 포인터를 강제했으나, 최신 가이드는 값 반환을 우선 권장합니다.
+            </p>
+          </div>
+
+          <!-- Core Guidelines -->
+          <div class="style-column">
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
+            <p>
+              <strong>1. I.11 &amp; F.22 (소유권을 원시 포인터로 표현하지 말 것):</strong><br>
+              원시 포인터(<code>T*</code>)는 메모리 누수의 주범이므로 단 1바이트의 자원도 소유해서는 안 됩니다. 소유권이 필요한 경우 <code>std::unique_ptr</code>를 쓰거나, 명시적으로 <code>gsl::owner&lt;T*&gt;</code>를 표기해야 합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>2. I.13 (단일 객체 vs 배열 분리):</strong><br>
+              원시 포인터는 오직 '단일 객체'의 주소를 가리킬 때만 사용해야 합니다. 연속된 배열 메모리를 가리키거나 포인터 산술(<code>ptr + i</code>)로 순회하는 것을 엄격히 금지하며, 배열 범위는 반드시 <strong><code>std::span</code> (C++20)</strong>이나 <code>std::string_view</code>로 전달합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>3. F.60 (선택적 인자와 널 상태):</strong><br>
+              참조자(<code>T&amp;</code>)는 항상 유효한 객체를 전제하므로, 인자가 전달되지 않을 수 있는 <code>nullptr</code> 상태가 유효한 비즈니스 로직에 한해서만 <code>const T*</code> 포인터를 허용합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5.7 터미널 실습 및 디버깅 -->
+    <section id="sec-5-7" class="lesson-section">
+      <h3>5.7 터미널 실습 및 컴파일러 오류 디버깅</h3>
+      <p>
+        5단원에서 다룬 메모리 주소 추출, 역참조 수정, `nullptr` 검증, 포인터 산술 연산, `std::ptrdiff_t` 거리 계산,
+        그리고 명령행 인자(`argc`, `argv`) 순회를 하나의 통합 프로그램으로 실습합니다.
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">C++26</span>
+          <span class="code-title">ch05_pointers.cpp (단원 5 종합 실습 코드)</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+#include &lt;cstddef&gt;
+
+// 함수 오버로딩 테스트: nullptr vs int 모호성 해결 검증
+void process_input(int value) &#123;
+    std::println("[process_input] 정수 값 처리: &#123;&#125;", value);
+&#125;
+
+void process_input(const char* text_ptr) &#123;
+    if (text_ptr == nullptr) &#123;
+        std::println("[process_input] 널 포인터 수신 (안전 가드 통과)");
+        return;
+    &#125;
+    std::println("[process_input] 문자열 포인터 역참조: '&#123;&#125;'", text_ptr);
+&#125;
+
+int main(int argc, char* argv[]) &#123;
+    std::println("=== 1. 주소 추출(&amp;)과 역참조(*) 변수 수정 ===");
+    int score&#123;88&#125;;
+    int* p_score&#123;&amp;score&#125;;
+
+    std::println("수정 전 score: &#123;&#125; (주소: &#123;&#125;)", score, static_cast&lt;void*&gt;(p_score));
+    *p_score = 95; // 원본 변수 직접 갱신
+    std::println("수정 후 score: &#123;&#125;", score);
+
+    std::println("\n=== 2. nullptr의 타입 안전성과 오버로딩 ===");
+    process_input(42);       // process_input(int) 호출
+    process_input(nullptr);  // 정확히 process_input(const char*) 호출
+
+    std::println("\n=== 3. 포인터 산술과 std::ptrdiff_t 거리 계산 ===");
+    double metrics[4]&#123;1.1, 2.2, 3.3, 4.4&#125;;
+    double* start_ptr = metrics;
+    double* end_ptr   = metrics + 3;
+
+    std::println("start_ptr: &#123;&#125;, end_ptr: &#123;&#125;", 
+                 static_cast&lt;void*&gt;(start_ptr), static_cast&lt;void*&gt;(end_ptr));
+    std::println("배열 보폭: (end_ptr - start_ptr) = &#123;&#125;개 원소", end_ptr - start_ptr);
+
+    // 포인터 전진 순회
+    std::print("포인터 산술 순회: ");
+    for (double* p = start_ptr; p &lt;= end_ptr; ++p) &#123;
+        std::print("&#123;&#125; ", *p);
+    &#125;
+    std::println("");
+
+    std::println("\n=== 4. 명령행 인자(argc, argv) 메모리 순회 ===");
+    std::println("실행 인자 총합: &#123;&#125;개", argc);
+    for (int i&#123;0&#125;; i &lt; argc; ++i) &#123;
+        std::println("  argv[&#123;&#125;] = '&#123;&#125;'", i, argv[i]);
+    &#125;
+
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>터미널 빌드 가이드 및 컴파일 명령어</h4>
+      <div class="terminal-guide">
+        <div class="term-step">
+          <span class="term-badge">STEP 1</span>
+          <div class="term-content">
+            <h4>소스 파일 저장</h4>
+            <p>터미널에서 <code>cat</code> 명령어를 통해 위 코드를 <code>ch05_pointers.cpp</code> 파일로 생성합니다.</p>
+            <div class="cli-command">
+              <code>cat &lt;&lt; 'EOF' &gt; ch05_pointers.cpp</code>
+              <span class="cmd-desc"># 실습 소스 파일 작성</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="term-step">
+          <span class="term-badge">STEP 2</span>
+          <div class="term-content">
+            <h4>최신 Homebrew Clang++ C++26 컴파일</h4>
+            <p>엄격한 경고 플래그와 함께 최신 표준으로 빌드합니다.</p>
+            <div class="cli-command">
+              <code>/opt/homebrew/opt/llvm/bin/clang++ -std=c++26 -Wall -Wextra -pedantic ch05_pointers.cpp -o ch05_pointers</code>
+              <span class="cmd-desc"># C++26 빌드</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="term-step">
+          <span class="term-badge">STEP 3</span>
+          <div class="term-content">
+            <h4>명령행 인자와 함께 실행</h4>
+            <div class="cli-command">
+              <code>./ch05_pointers --mode debug --threads 4</code>
+              <span class="cmd-desc"># 인자 전달 실행</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h4>실행 결과 (예상 표준 출력)</h4>
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-lang">OUTPUT</span>
+          <span class="code-title">터미널 실행 결과</span>
+        </div>
+        <pre><code>=== 1. 주소 추출(&amp;)과 역참조(*) 변수 수정 ===
+수정 전 score: 88 (주소: 0x16fdff3c8)
+수정 후 score: 95
+
+=== 2. nullptr의 타입 안전성과 오버로딩 ===
+[process_input] 정수 값 처리: 42
+[process_input] 널 포인터 수신 (안전 가드 통과)
+
+=== 3. 포인터 산술과 std::ptrdiff_t 거리 계산 ===
+start_ptr: 0x16fdff3e0, end_ptr: 0x16fdff3f8
+배열 보폭: (end_ptr - start_ptr) = 3개 원소
+포인터 산술 순회: 1.1 2.2 3.3 4.4 
+
+=== 4. 명령행 인자(argc, argv) 메모리 순회 ===
+실행 인자 총합: 5개
+  argv[0] = './ch05_pointers'
+  argv[1] = '--mode'
+  argv[2] = 'debug'
+  argv[3] = '--threads'
+  argv[4] = '4'</code></pre>
+      </div>
+
+      <h4>자주 겪는 포인터 컴파일 &amp; 런타임 오류 트러블슈팅 카드</h4>
+      <div class="trouble-list">
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">치명적 런타임 크래시 (Runtime Crash)</span>
+            <code>zsh: segmentation fault  ./ch05_pointers</code>
+          </div>
+          <p><strong>원인:</strong> 널 포인터(<code>nullptr</code>) 또는 초기화되지 않은 와일드 포인터를 역참조(<code>*ptr</code>)하여 프로세스가 권한 없는 가상 메모리 영역에 접근하려다 OS 커널에 의해 강제 종료되었습니다.</p>
+          <p class="fix"><strong>해결:</strong> 포인터를 역참조하기 전에 반드시 <code>if (ptr != nullptr)</code> 또는 <code>if (ptr)</code> 안전 가드 검사를 선행합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: cannot initialize a variable of type 'int *' with an rvalue of type 'double *'</code>
+          </div>
+          <p><strong>원인:</strong> 포인터 타입 불일치입니다. 64비트 환경에서 두 포인터의 크기는 8바이트로 동일하지만, 대상 타입의 메모리 레이아웃(4B int vs 8B IEEE 754 double)이 다르므로 C++ 컴파일러가 암묵적 형변환을 원천 차단합니다.</p>
+          <p class="fix"><strong>해결:</strong> 동일한 대상 타입의 포인터를 사용하거나, 하드웨어 저수준 바이트 재해석이 꼭 필요한 경우 명시적 캐스팅(<code>reinterpret_cast&lt;int*&gt;</code>)을 사용합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: read-only variable is not assignable</code>
+          </div>
+          <p><strong>원인:</strong> <code>const int* ptr</code>처럼 상수 지시 포인터(Pointer to const)로 선언된 객체를 역참조하여 값을 쓰려(<code>*ptr = 10;</code>) 시도했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 대상 객체의 수정이 필요한 인터페이스라면 비-const 포인터(<code>int* ptr</code>)를 사용하고, 읽기 전용 뷰라면 대입 연산을 제거합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: call to 'process' is ambiguous</code>
+          </div>
+          <p><strong>원인:</strong> <code>process(int)</code>와 <code>process(char*)</code>가 오버로딩된 상태에서 <code>NULL</code> 또는 <code>0</code>을 전달하여 컴파일러가 정수와 포인터 중 어느 오버로드를 호출해야 할지 판정하지 못했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 구식 <code>NULL</code> 대신 C++11 표준 키워드인 <code>nullptr</code>를 전달하여 포인터 오버로드를 명확히 호출합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 단원 05 정리 (핵심 요약 상자) -->
+    <footer class="lesson-summary">
+      <div class="summary-box">
+        <h3>5단원 핵심 요약</h3>
+        <ul>
+          <li><strong>메모리 주소와 포인터:</strong> RAM은 바이트 단위 주소로 관리되며, 64비트 아키텍처에서 모든 포인터 변수의 크기는 대상 타입과 무관하게 <strong>항상 8바이트</strong>입니다. 포인터 타입은 역참조 시의 데이터 해석 규격을 의미합니다.</li>
+          <li><strong>주소 연산자와 역참조:</strong> <code>&amp;</code> 연산자로 lvalue 객체의 시작 메모리 번지를 추출하고, <code>*</code> 연산자로 원본 메모리에 직접 찾아가 읽거나 수정합니다.</li>
+          <li><strong>nullptr의 표준 규약:</strong> 정수 0으로 치환되어 오버로딩 결함을 유발하는 구식 <code>NULL</code>을 전면 배제하고, 타입 안전한 전용 키워드 <code>nullptr</code>(타입: <code>std::nullptr_t</code>)을 사용합니다.</li>
+          <li><strong>포인터 산술과 std::ptrdiff_t:</strong> <code>ptr + n</code>은 <code>n * sizeof(T)</code> 바이트만큼 이동하며, 동일 배열 내 두 포인터 간격 뺄셈 결과는 부호 있는 표준 정수형 <code>std::ptrdiff_t</code>로 반환됩니다.</li>
+          <li><strong>명령행 인자 메모리 구조:</strong> <code>main(int argc, char* argv[])</code>에서 <code>argv</code>는 문자열 포인터 배열을 가리키는 이중 포인터(<code>char**</code>)이며, <code>argv[argc]</code>는 항상 <code>nullptr</code>로 보장됩니다.</li>
+          <li><strong>const와 포인터의 3대 결합:</strong> <code>const int*</code>(대상 불변), <code>int* const</code>(포인터 주소 불변), <code>const int* const</code>(둘 다 불변)의 차이를 Right-to-Left 규칙으로 판별합니다.</li>
+          <li><strong>소유권 배제 원칙:</strong> 모던 C++에서 원시 포인터(<code>T*</code>)는 절대 자원의 소유권을 갖지 않으며 오직 비소유 관찰자(Non-owning Observer)로만 사용합니다. 동적 자원 소유권은 스마트 포인터(<code>std::unique_ptr</code>)로 관리합니다.</li>
+        </ul>
+      </div>
+    </footer>
   </article>
 
   <!-- 사이드 플로팅 네비게이션 UI -->
@@ -3550,6 +4362,40 @@ add_numbers(15, 27) = 42
           </a>
           <a href="#sec-4-7" class="floating-toc-link" data-target="sec-4-7">
             <span class="toc-badge">4.7</span>
+            <span class="toc-name">터미널 실습 & 디버깅</span>
+          </a>
+        </nav>
+
+        <div class="floating-divider" style="margin: 0.6rem 0;"></div>
+
+        <div class="floating-toc-label">CHAPTER 05</div>
+        <nav class="floating-toc-list">
+          <a href="#sec-5-1" class="floating-toc-link" data-target="sec-5-1">
+            <span class="toc-badge">5.1</span>
+            <span class="toc-name">메모리 & 주소·역참조</span>
+          </a>
+          <a href="#sec-5-2" class="floating-toc-link" data-target="sec-5-2">
+            <span class="toc-badge">5.2</span>
+            <span class="toc-name">nullptr & NULL 결함</span>
+          </a>
+          <a href="#sec-5-3" class="floating-toc-link" data-target="sec-5-3">
+            <span class="toc-badge">5.3</span>
+            <span class="toc-name">포인터 산술 & ptrdiff_t</span>
+          </a>
+          <a href="#sec-5-4" class="floating-toc-link" data-target="sec-5-4">
+            <span class="toc-badge">5.4</span>
+            <span class="toc-name">argc/argv & 이중 포인터</span>
+          </a>
+          <a href="#sec-5-5" class="floating-toc-link" data-target="sec-5-5">
+            <span class="toc-badge">5.5</span>
+            <span class="toc-name">포인터와 const 한정자</span>
+          </a>
+          <a href="#sec-5-6" class="floating-toc-link" data-target="sec-5-6">
+            <span class="toc-badge">5.6</span>
+            <span class="toc-name">실무 스타일 가이드</span>
+          </a>
+          <a href="#sec-5-7" class="floating-toc-link" data-target="sec-5-7">
+            <span class="toc-badge">5.7</span>
             <span class="toc-name">터미널 실습 & 디버깅</span>
           </a>
         </nav>

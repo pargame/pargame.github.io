@@ -3452,7 +3452,7 @@ add_numbers(15, 27) = 42
       <p class="lesson-intro">
         컴퓨터의 주기억장치(RAM)는 바이트(Byte) 단위의 연속된 번지(Address)로 관리되며, C++의 포인터는 이러한 물리 메모리 주소를 직접 제어하는 가장 강력하고 원초적인 도구입니다.
         64비트 평면 가상 메모리 모델에서 주소 연산자(<code>&amp;</code>)와 역참조 연산자(<code>*</code>)의 기계적 작동 원리,
-        C 언어 매크로 <code>NULL</code>(0)의 치명적 타입 결함과 모던 C++의 타입 안전 널 포인터 <code>nullptr</code>(<code>std::nullptr_t</code>),
+        C 언어 매크로 <code>NULL</code> 및 숫자 0의 치명적 타입 결함과 모던 C++의 타입 안전 널 포인터 <code>nullptr</code>(<code>std::nullptr_t</code>),
         <code>sizeof(T)</code> 단위로 보폭이 결정되는 포인터 산술 연산과 두 포인터 사이의 간격을 표현하는 부호 있는 표준 정수형 <code>std::ptrdiff_t</code>,
         운영체제 셸에서 프로그램으로 전달되는 명령행 인자(<code>argc</code>, <code>char* argv[]</code>)와 이중 포인터(<code>char**</code>)의 메모리 배치,
         포인터와 <code>const</code> 한정자의 3대 결합 규칙, 그리고 원시 포인터의 소유권(Ownership) 배제 철학까지
@@ -3464,7 +3464,7 @@ add_numbers(15, 27) = 42
       <div class="toc-title">5단원 목차</div>
       <ul>
         <li><a href="#sec-5-1">5.1 컴퓨터 메모리 모델과 주소(&amp;) 및 역참조(*) 연산자</a></li>
-        <li><a href="#sec-5-2">5.2 널 포인터(nullptr, std::nullptr_t)와 구식 NULL/0의 결함</a></li>
+        <li><a href="#sec-5-2">5.2 널 포인터(nullptr, std::nullptr_t)와 구식 NULL 및 숫자 0의 결함</a></li>
         <li><a href="#sec-5-3">5.3 포인터 산술 연산(Pointer Arithmetic)과 간격 타입(std::ptrdiff_t)</a></li>
         <li><a href="#sec-5-4">5.4 명령행 인자(int argc, char* argv[])와 다중 포인터 메모리 구조</a></li>
         <li><a href="#sec-5-5">5.5 포인터와 const 한정자: 가리키는 대상 vs 포인터 자체의 불변성</a></li>
@@ -3585,7 +3585,7 @@ int main() &#123;
 
     <!-- 5.2 널 포인터와 NULL 결함 -->
     <section id="sec-5-2" class="lesson-section">
-      <h3>5.2 널 포인터(nullptr, std::nullptr_t)와 구식 NULL/0의 결함</h3>
+      <h3>5.2 널 포인터(nullptr, std::nullptr_t)와 구식 NULL 및 숫자 0의 결함</h3>
       <p>
         포인터 변수를 초기화하지 않고 선언(<code>int* p;</code>)하면 스택 프레임에 남아 있던 쓰레기 주소(Garbage Address)를 갖게 됩니다.
         이러한 포인터를 <strong>와일드 포인터(Wild Pointer)</strong>라 부르며, 이를 역참조하면 프로세스가 즉사하거나 미정의 동작(UB)이 발생합니다.
@@ -4376,7 +4376,7 @@ start_ptr: 0x16fdff3e0, end_ptr: 0x16fdff3f8
           </a>
           <a href="#sec-5-2" class="floating-toc-link" data-target="sec-5-2">
             <span class="toc-badge">5.2</span>
-            <span class="toc-name">nullptr & NULL 결함</span>
+            <span class="toc-name">nullptr & 구식 NULL 결함</span>
           </a>
           <a href="#sec-5-3" class="floating-toc-link" data-target="sec-5-3">
             <span class="toc-badge">5.3</span>

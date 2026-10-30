@@ -5130,25 +5130,90 @@ int main() &#123;
         따라서 물리 메모리에는 모든 행(Row)이 끊김 없이 일렬로 직렬화되는 <strong>행 우선 순서(Row-major Order)</strong>로 배치됩니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">행 우선(Row-major) 직렬화 메모리 레이아웃 및 2차원 주소 계산 공식</div>
-        <pre class="ascii-diagram">
-선언: int grid[2][3] = &#123; &#123;10, 20, 30&#125;, &#123;40, 50, 60&#125; &#125;;
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [2차원 배열 행 우선(Row-major) 직렬화 메모리 레이아웃]
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-2); margin-top: 0.2rem;">
+          <code>int grid[2][3] = &#123; &#123;10, 20, 30&#125;, &#123;40, 50, 60&#125; &#125;;</code> (총 24 바이트 연속 블록)
+        </div>
 
-논리적 형태: (2행 3열)
-  Row 0: [ 10, 20, 30 ]
-  Row 1: [ 40, 50, 60 ]
+        <!-- 논리적 형태: 2행 3열 매트릭스 -->
+        <div style="margin-top: 0.6rem; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.75rem;">
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.4rem;">
+            논리적 형태 (2행 3열 구조)
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.35rem; font-family: var(--font-mono); font-size: 0.78rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="color: var(--accent); min-width: 48px;">Row 0:</span>
+              <span style="background: var(--surface-1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">10</span>
+              <span style="background: var(--surface-1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">20</span>
+              <span style="background: var(--surface-1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">30</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="color: #60a5fa; min-width: 48px;">Row 1:</span>
+              <span style="background: var(--surface-1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">40</span>
+              <span style="background: var(--surface-1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">50</span>
+              <span style="background: var(--surface-1); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">60</span>
+            </div>
+          </div>
+        </div>
 
-물리적 연속 메모리 배치:
-+-------------------------------------------------------------------------------+
-| grid[0][0] | grid[0][1] | grid[0][2] | grid[1][0] | grid[1][1] | grid[1][2] |
-|   (10)     |   (20)     |   (30)     |   (40)     |   (50)     |   (60)     |
-+-------------------------------------------------------------------------------+
-| &lt;---------- Row 0 (12 바이트) ----------&gt; | &lt;---------- Row 1 (12 바이트) ----------&gt; |
-0x2000       0x2004       0x2008       0x200C       0x2010       0x2014
+        <!-- 물리적 연속 메모리 배치 -->
+        <div style="margin-top: 0.8rem;">
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.4rem;">
+            물리적 연속 메모리 직렬화 배치 (Row-major Order)
+          </div>
+          <div class="memory-row" style="flex-wrap: nowrap; overflow-x: auto;">
+            <!-- Row 0: 3개 원소 -->
+            <div class="mem-cell data" style="flex: 1; min-width: 75px;">
+              <small style="opacity: 0.7;">0x2000</small>
+              <code>grid[0][0]</code>
+              <strong>10</strong>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 75px;">
+              <small style="opacity: 0.7;">0x2004</small>
+              <code>grid[0][1]</code>
+              <strong>20</strong>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 75px;">
+              <small style="opacity: 0.7;">0x2008</small>
+              <code>grid[0][2]</code>
+              <strong>30</strong>
+            </div>
+            <!-- Row 1: 3개 원소 -->
+            <div class="mem-cell data" style="flex: 1; min-width: 75px; background: color-mix(in srgb, #3b82f6 15%, var(--surface-2));">
+              <small style="opacity: 0.7;">0x200C</small>
+              <code>grid[1][0]</code>
+              <strong>40</strong>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 75px; background: color-mix(in srgb, #3b82f6 15%, var(--surface-2));">
+              <small style="opacity: 0.7;">0x2010</small>
+              <code>grid[1][1]</code>
+              <strong>50</strong>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 75px; background: color-mix(in srgb, #3b82f6 15%, var(--surface-2));">
+              <small style="opacity: 0.7;">0x2014</small>
+              <code>grid[1][2]</code>
+              <strong>60</strong>
+            </div>
+          </div>
+          <div style="display: flex; font-size: 0.72rem; color: var(--text-2); margin-top: 0.3rem;">
+            <div style="flex: 1; text-align: center; color: var(--accent); font-weight: 600;">▲ Row 0 (12 바이트)</div>
+            <div style="flex: 1; text-align: center; color: #60a5fa; font-weight: 600;">▲ Row 1 (12 바이트)</div>
+          </div>
+        </div>
 
-* 2차원 주소 오프셋 공식:
-  &amp;grid[r][c] == BaseAddress + (r * COLS + c) * sizeof(int)</pre>
+        <!-- 2차원 주소 공식 콜아웃 -->
+        <div class="callout callout-info" style="margin-top: 0.8rem; margin-bottom: 0;">
+          <div class="callout-title">📐 2차원 배열 주소 오프셋 계산 공식</div>
+          <p style="margin: 0; font-family: var(--font-mono); font-size: 0.84rem;">
+            <code>&amp;grid[r][c] == BaseAddress + (r * COLS + c) * sizeof(T)</code>
+          </p>
+          <p style="margin: 0.3rem 0 0 0; font-size: 0.82rem; color: var(--text-2);">
+            예: <code>&amp;grid[1][1]</code> = <code>0x2000 + (1 * 3 + 1) * 4</code> = <code>0x2000 + 16(0x10)</code> = <code>0x2010</code>
+          </p>
+        </div>
       </div>
 
       <h4>하드웨어 캐시 라인(Spatial Locality)과 순회 방향의 성능 차이</h4>

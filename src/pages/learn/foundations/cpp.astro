@@ -5036,18 +5036,49 @@ int main() &#123;
         표현식에서 평가되는 즉시 <strong>첫 번째 원소를 가리키는 포인터(<code>&amp;arr[0]</code>)로 암시적 형변환</strong>됩니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">함수 매개변수 전달 시 발생하는 포인터 퇴화와 크기 정보 증발</div>
-        <pre class="ascii-diagram">
-[ main() 함수 스택 프레임 ]                    [ print_array() 함수 프레임 ]
-int numbers[5] = &#123;1, 2, 3, 4, 5&#125;;             void print_array(int arr[5])
-+-------------------------------+              +-----------------------------------+
-| [1] | [2] | [3] | [4] | [5]   |  호출 시점   | arr (int* 포인터 변수 하나만 존재) |
-+-------------------------------+ ------------&gt; | 0x7ffee1234 (시작 주소만 복사)    |
-| sizeof(numbers) == 20 바이트  |   Decay!     +-----------------------------------+
-| (컴파일러가 원소 5개 인지함)  |              | sizeof(arr) == 8 바이트 (포인터 크기) |
-+-------------------------------+              | 원소 개수 정보(5) 영구 유실!       |
-                                               +-----------------------------------+</pre>
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [스택 프레임 전이: main() ➔ print_array(numbers) 호출 시 포인터 퇴화(Decay)]
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: stretch; margin-top: 0.4rem;">
+          <!-- 좌측: 호출자(main) 원본 배열 프레임 -->
+          <div style="flex: 1; min-width: 260px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.8rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.5rem;">
+              caller: <code>main()</code> 스택 프레임
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-2); margin-bottom: 0.4rem;">
+              <code>int numbers[5] = &#123;1, 2, 3, 4, 5&#125;;</code> (20 바이트 전체 블록)
+            </div>
+            <div class="memory-row">
+              <div class="mem-cell data" style="flex: 1;"><code>[1]</code></div>
+              <div class="mem-cell data" style="flex: 1;"><code>[2]</code></div>
+              <div class="mem-cell data" style="flex: 1;"><code>[3]</code></div>
+              <div class="mem-cell data" style="flex: 1;"><code>[4]</code></div>
+              <div class="mem-cell data" style="flex: 1;"><code>[5]</code></div>
+            </div>
+            <div style="font-size: 0.75rem; color: #10b981; margin-top: 0.5rem; font-weight: 600;">
+              ✓ 컴파일러가 원소 5개 인식 (sizeof == 20)
+            </div>
+          </div>
+
+          <!-- 우측: 피호출자(print_array) 포인터 프레임 -->
+          <div style="flex: 1; min-width: 260px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.8rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.5rem;">
+              callee: <code>print_array(int* arr)</code> 스택 프레임
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-2); margin-bottom: 0.4rem;">
+              <code>int* arr</code> (시작 주소만 복사된 단일 포인터 변수)
+            </div>
+            <div class="memory-row">
+              <div class="mem-cell padding" style="flex: 1; font-style: normal; color: var(--accent);">
+                <code>0x7ffee1234</code> (&amp;numbers[0])
+              </div>
+            </div>
+            <div style="font-size: 0.75rem; color: #ef4444; margin-top: 0.5rem; font-weight: 600;">
+              ⚠ 원소 개수 정보(5) 영구 유실 (sizeof == 8)
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="callout callout-warn">

@@ -4552,7 +4552,7 @@ int main() &#123;
           </p>
           <ul>
             <li><strong>유일한 합법적 용도:</strong> <code>const</code> 키워드가 도입되기 전에 작성된 구식 C 라이브러리 함수(시그니처가 <code>void legacy_func(char* p);</code>이지만 실제로는 값을 수정하지 않는 함수)를 호출할 때 <code>const_cast&lt;char*&gt;(str)</code> 형태로 넘기는 경우에만 한정됩니다.</li>
-            <li><strong>치명적 미정의 동작 (Undefined Behavior):</strong> 애초에 <code>const int x = 10;</code> 처럼 <strong>진짜 상수 메모리(Read-Only Data Segment)로 선언된 객체</strong>의 상수성을 <code>const_cast</code>로 벗겨내어 값을 수정하려 들면, 컴파일러 최적화로 인해 값이 바뀌지 않거나 런타임 세그멘테이션 폴트(Bus Error)로 프로세스가 즉시 크래시됩니다. (ISO C++ [dcl.type.cv] p4).</li>
+            <li><strong>치명적 미정의 동작 (Undefined Behavior):</strong> 애초에 <code>const int x = 10;</code> 처럼 <strong>진짜 상수 메모리(Read-Only Data Segment)로 선언된 객체</strong>의 상수성을 <code>const_cast</code>로 벗겨내어 값을 수정하려 들면, 컴파일러 최적화로 인해 값이 바뀌지 않거나 런타임 세그멘테이션 폴트(Bus Error)로 프로세스가 즉시 크래시됩니다 (ISO C++ 표준: '상수 객체 수정 금지' 규약 [dcl.type.cv] p4).</li>
           </ul>
         </div>
       </div>

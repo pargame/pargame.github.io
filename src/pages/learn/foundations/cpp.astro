@@ -4686,15 +4686,15 @@ int main() &#123;
           <div class="style-column">
             <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>1. F.16 &amp; F.17 (인플레이스 수정은 <code>T&amp;</code>):</strong><br>
+              <strong>1. Core Guidelines F.16 &amp; F.17 (인플레이스 수정은 <code>T&amp;</code>):</strong><br>
               코어 가이드라인은 구글의 포인터 출력 관례를 반대합니다. "포인터는 널(nullptr)이 유효할 때만 써야 한다"는 원칙에 따라, 객체가 반드시 존재해야 하는 수정 매개변수는 널 체크 오버헤드가 없는 <strong>비-const 참조(<code>T&amp;</code>)</strong>를 사용해야 합니다.
             </p>
             <p style="margin-top: 0.6rem;">
-              <strong>2. F.20 (출력 매개변수 지양 및 값 반환):</strong><br>
+              <strong>2. Core Guidelines F.20 (출력 매개변수 지양 및 값 반환):</strong><br>
               결과를 외부 변수에 채워주는 '출력 매개변수' 자체를 지양하고, 컴파일러 RVO가 보장되는 <strong>값 반환(Return by value)</strong> 또는 구조화된 바인딩(<code>auto [a, b] = f();</code>)을 적극 권장합니다.
             </p>
             <p style="margin-top: 0.6rem;">
-              <strong>3. Con.1 (기본 불변성 원칙):</strong><br>
+              <strong>3. Core Guidelines Con.1 (기본 불변성 원칙):</strong><br>
               "기본적으로 모든 객체는 <code>const</code>여야 한다." 오직 값이 변경되어야 하는 정당한 이유가 있을 때만 비-const로 선언하는 방어적 프로그래밍을 요구합니다.
             </p>
           </div>

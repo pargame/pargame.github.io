@@ -4915,20 +4915,39 @@ int main() &#123;
         컴파일러는 배열 선언 시 지정된 원소 개수 <code>N</code>과 원소 타입의 크기 <code>sizeof(T)</code>를 곱한 만큼의 단일 메모리 블록을 스택 또는 데이터 영역에 확보합니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">스택 프레임 내 C 스타일 원시 배열의 물리 메모리 연속 배치 모델</div>
-        <pre class="ascii-diagram">
-+-----------------------------------------------------------------------------------+
-| 배열 int arr[4] = &#123;10, 20, 30, 40&#125;; (총 16 바이트 연속 메모리 블록)               |
-+-----------------------------------------------------------------------------------+
-|  주소: 0x1000        0x1004        0x1008        0x100C       (0x1010 = end)      |
-| [ arr[0] = 10 ] [ arr[1] = 20 ] [ arr[2] = 30 ] [ arr[3] = 40 ]                   |
-| &lt;-- 4바이트 --&gt; &lt;-- 4바이트 --&gt; &lt;-- 4바이트 --&gt; &lt;-- 4바이트 --&gt;                   |
-+-----------------------------------------------------------------------------------+
-|  * arr == 0x1000 (배열 이름의 주소이자 첫 번째 원소 arr[0]의 주소)                |
-|  * arr + 1 == 0x1004 (sizeof(int) = 4바이트 전진)                                 |
-|  * sizeof(arr) == 4 * sizeof(int) == 16 바이트                                    |
-+-----------------------------------------------------------------------------------+</pre>
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [스택 메모리 배치: int arr[4] = &#123;10, 20, 30, 40&#125;; (총 16 바이트 연속 블록)]
+        </div>
+        <div class="memory-row">
+          <div class="mem-cell data" style="flex: 1;">
+            <small style="opacity: 0.7;">0x1000</small>
+            <code>arr[0] = 10</code>
+            <small>4B</small>
+          </div>
+          <div class="mem-cell data" style="flex: 1;">
+            <small style="opacity: 0.7;">0x1004</small>
+            <code>arr[1] = 20</code>
+            <small>4B</small>
+          </div>
+          <div class="mem-cell data" style="flex: 1;">
+            <small style="opacity: 0.7;">0x1008</small>
+            <code>arr[2] = 30</code>
+            <small>4B</small>
+          </div>
+          <div class="mem-cell data" style="flex: 1;">
+            <small style="opacity: 0.7;">0x100C</small>
+            <code>arr[3] = 40</code>
+            <small>4B</small>
+          </div>
+        </div>
+        <div class="callout callout-info" style="margin-top: 0.8rem; margin-bottom: 0;">
+          <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.88rem; line-height: 1.6;">
+            <li><code>arr</code> (시작 주소): <code>0x1000</code> (&amp;arr[0]과 동일)</li>
+            <li><code>arr + 1</code> (포인터 연산): <code>0x1004</code> (<code>sizeof(int) = 4바이트</code> 전진)</li>
+            <li><code>sizeof(arr)</code> (배열 전체 크기): <code>4 * 4 = 16바이트</code></li>
+          </ul>
+        </div>
       </div>
 
       <h4>원시 배열의 4대 초기화 문법 규약</h4>

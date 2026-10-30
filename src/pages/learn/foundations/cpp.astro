@@ -5267,20 +5267,68 @@ int main() &#123;
         64비트 환경에서 오직 <strong>16바이트의 가벼운 크기</strong>를 가지며, 값으로 복사(Pass-by-value)해도 오버헤드가 사실상 전무합니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">std::span의 내부 구조와 다형적 연속 메모리 참조 모델</div>
-        <pre class="ascii-diagram">
-std::span&lt;int&gt; sp (총 16바이트 경량 래퍼)
-+-----------------------+-----------------------+
-|  ptr_ (8 바이트)      |  size_ (8 바이트)     |
-|  = &amp;buffer[1]         |  = 3                  |
-+-----------------------+-----------------------+
-           |
-           v
-+----------+------------------------------------+
-| buffer:  | [0] | [1] | [2] | [3] | [4] |      | (원시 배열, std::vector, std::array 무관)
-+----------+------------------------------------+
-                   &lt;--- sp의 관측 범위 ---&gt;</pre>
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [std::span&lt;int&gt; 내부 구조와 다형적 연속 메모리 참조 모델]
+        </div>
+
+        <!-- 1. std::span 경량 래퍼 (16바이트) -->
+        <div style="margin-top: 0.6rem; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.8rem;">
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.4rem;">
+            <code>std::span&lt;int&gt; sp</code> (포인터 + 길이로 구성된 16바이트 경량 뷰 래퍼)
+          </div>
+          <div class="memory-row" style="max-width: 500px;">
+            <div class="mem-cell data" style="flex: 1;">
+              <small style="opacity: 0.7;">8 바이트 포인터</small>
+              <code>ptr_ = &amp;buffer[1]</code>
+            </div>
+            <div class="mem-cell data" style="flex: 1; background: color-mix(in srgb, #3b82f6 15%, var(--surface-2));">
+              <small style="opacity: 0.7;">8 바이트 원소 수</small>
+              <code>size_ = 3</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 원본 연속 버퍼와 관측 범위 슬라이스 -->
+        <div style="margin-top: 0.8rem;">
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-1); margin-bottom: 0.4rem;">
+            참조 대상 버퍼 (원시 배열, <code>std::vector</code>, <code>std::array</code> 등 메모리 연속 컨테이너)
+          </div>
+          <div class="memory-row" style="flex-wrap: nowrap; overflow-x: auto;">
+            <div class="mem-cell" style="flex: 1; min-width: 70px; opacity: 0.45; background: var(--surface-2);">
+              <small>buffer[0]</small>
+              <code>10</code>
+              <small style="font-size: 0.65rem;">범위 외</small>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 70px; border: 2px solid var(--accent);">
+              <small style="color: var(--accent); font-weight: 700;">sp[0]</small>
+              <code>buffer[1] (20)</code>
+              <small style="color: var(--accent);">▲ ptr_ 시작</small>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 70px; border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent);">
+              <small style="color: var(--accent); font-weight: 700;">sp[1]</small>
+              <code>buffer[2] (30)</code>
+              <small style="opacity: 0.7;">관측 중</small>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 70px; border: 2px solid var(--accent);">
+              <small style="color: var(--accent); font-weight: 700;">sp[2]</small>
+              <code>buffer[3] (40)</code>
+              <small style="color: var(--accent);">size_ = 3 끝</small>
+            </div>
+            <div class="mem-cell" style="flex: 1; min-width: 70px; opacity: 0.45; background: var(--surface-2);">
+              <small>buffer[4]</small>
+              <code>50</code>
+              <small style="font-size: 0.65rem;">범위 외</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info" style="margin-top: 0.8rem; margin-bottom: 0;">
+          <div class="callout-title">💡 무복사(Zero-copy) 뷰의 본질</div>
+          <p style="margin: 0; font-size: 0.85rem; line-height: 1.5;">
+            <code>std::span</code>은 데이터를 복사하거나 소유하지 않고, 원본 연속 메모리의 시작 주소(<code>ptr_</code>)와 길이(<code>size_</code>)만 빌려와 윈도우처럼 관측하는 경량 비소유 뷰(Non-owning View)입니다.
+          </p>
+        </div>
       </div>
 
       <h4>정적 익스텐트 vs 동적 익스텐트</h4>
@@ -5689,29 +5737,65 @@ raw[3] 주소: 0x16fdff1cc | 값: 400
         일반적인 운영체제 관점에서는 이를 <strong>힙(Heap)</strong> 영역이라 부릅니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">가상 주소 공간의 4대 메모리 레이아웃 구조도</div>
-        <pre class="ascii-diagram">
-+---------------------------------------------------------------+ (높은 주소: 0x7FFF_FFFF_FFFF)
-| 1. 스택 영역 (Stack Segment)                                  |
-|    - 지역 변수, 매개변수, 반환 주소 (LIFO 자동 수명)          |
-|    - 크기 제한 (기본 8MB 내외), 극도로 빠른 스택 포인터 이동  |
-|    |  아래 방향으로 확장 (High -&gt; Low)                        |
-|    v                                                          |
-|                         &lt;--- 가용 미할당 메모리 공간 ---&gt;     |
-|    ^                                                          |
-|    |  위 방향으로 확장 (Low -&gt; High)                          |
-| 2. 힙 / 자유 저장소 (Heap / Free Store)                       |
-|    - new / malloc으로 프로그래머가 런타임에 수동 할당 및 해제 |
-|    - 대용량 데이터 적재 가능, 단편화(Fragmentation) 오버헤드  |
-+---------------------------------------------------------------+
-| 3. 데이터 영역 (Data / BSS Segment)                           |
-|    - 전역 변수(Global), 정적 변수(static), 문자열 리터럴     |
-|    - 프로그램 시작부터 종료까지 영구 유지                     |
-+---------------------------------------------------------------+
-| 4. 코드 영역 (Text / Code Segment)                            |
-|    - 컴파일된 CPU 기계어 명령어, 읽기 전용(Read-Only) 실행 공간 |
-+---------------------------------------------------------------+ (낮은 주소: 0x0000_0000_0000)</pre>
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [프로세스 가상 주소 공간의 4대 메모리 세그먼트 아키텍처]
+        </div>
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-2); margin-top: 0.2rem;">
+          <span>높은 주소 (High Address: 0x7FFF_FFFF_FFFF)</span>
+          <span>스택 확장 방향 ▼ (High ➔ Low)</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+          <div style="background: color-mix(in srgb, #3b82f6 12%, var(--surface-2)); border: 1px solid #3b82f6; border-radius: 6px; padding: 0.8rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+              <span style="font-weight: 700; color: #60a5fa; font-size: 0.84rem;">1. 스택 영역 (Stack Segment)</span>
+              <span style="font-size: 0.72rem; background: var(--surface-1); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">LIFO 자동 수명 (CPU SP 이동)</span>
+            </div>
+            <p style="margin: 0; font-size: 0.78rem; color: var(--text-2); line-height: 1.5;">
+              함수 프레임, 지역 변수, 매개변수, 반환 주소 저장. 기본 크기 8MB 내외로 한정되나 극도로 빠름.
+            </p>
+          </div>
+
+          <div style="text-align: center; padding: 0.5rem; border: 1px dashed var(--border); border-radius: 6px; font-size: 0.74rem; color: var(--text-2); background: var(--surface-1);">
+            ▲ 힙 확장 (Low ➔ High) &nbsp;&nbsp;|&nbsp;&nbsp; <strong>가용 미할당 가상 주소 공간</strong> &nbsp;&nbsp;|&nbsp;&nbsp; ▼ 스택 확장 (High ➔ Low)
+          </div>
+
+          <div style="background: color-mix(in srgb, var(--accent) 12%, var(--surface-2)); border: 1px solid var(--accent); border-radius: 6px; padding: 0.8rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+              <span style="font-weight: 700; color: var(--accent); font-size: 0.84rem;">2. 힙 / 자유 저장소 (Heap / Free Store)</span>
+              <span style="font-size: 0.72rem; background: var(--surface-1); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">프로그래머 수동 수명 관리</span>
+            </div>
+            <p style="margin: 0; font-size: 0.78rem; color: var(--text-2); line-height: 1.5;">
+              <code>new</code> / <code>malloc</code>으로 런타임에 동적 할당 및 해제. 대용량 버퍼 적재 가능하나 단편화(Fragmentation) 오버헤드 존재.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.8rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+              <span style="font-weight: 700; color: var(--text-1); font-size: 0.84rem;">3. 데이터 영역 (Data / BSS Segment)</span>
+              <span style="font-size: 0.72rem; background: var(--surface-1); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">정적 수명 (Static)</span>
+            </div>
+            <p style="margin: 0; font-size: 0.78rem; color: var(--text-2); line-height: 1.5;">
+              전역 변수(Global), 정적 변수(static), 문자열 리터럴 저장. 프로그램 시작 시 초기화되어 종료 시까지 영구 상주.
+            </p>
+          </div>
+
+          <div style="background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.8rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+              <span style="font-weight: 700; color: var(--text-1); font-size: 0.84rem;">4. 코드 / 텍스트 영역 (Text / Code Segment)</span>
+              <span style="font-size: 0.72rem; background: var(--surface-1); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-subtle);">읽기 전용 (RX)</span>
+            </div>
+            <p style="margin: 0; font-size: 0.78rem; color: var(--text-2); line-height: 1.5;">
+              컴파일된 CPU 기계어 명령어 저장. 실행 중 코드 위변조 방지를 위한 Read-Only 권한 보호.
+            </p>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-2); margin-top: 0.3rem;">
+          <span>낮은 주소 (Low Address: 0x0000_0000_0000)</span>
+          <span>코드 진입점 (Entry Point)</span>
+        </div>
       </div>
 
       <div class="spec-table-wrap">
@@ -5764,17 +5848,50 @@ raw[3] 주소: 0x16fdff1cc | 값: 400
         C++의 <code>new</code>/<code>delete</code>는 <strong>객체의 수명 주기(생성자와 소멸자 호출)</strong>와 완벽하게 결합되어 동작합니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">new와 delete 실행 시 일어나는 2단계 내부 메커니즘</div>
-        <pre class="ascii-diagram">
-[ new Point(10, 20) 실행 흐름 ]
-1단계: operator new(sizeof(Point)) 호출  ---&gt; 힙에서 요구 크기(8바이트) 메모리 블록 확보
-2단계: 확보된 주소에서 Point::Point(10, 20) 생성자 실행 ---&gt; 멤버 변수 초기화 완료
-반환: 완벽히 초기화된 객체의 타입 안전한 주소 (Point*) 반환
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [C++ new와 delete의 2단계 라이프사이클 실행 시퀀스]
+        </div>
 
-[ delete ptr 실행 흐름 ]
-1단계: ptr이 가리키는 객체의 Point::~Point() 소멸자 실행 ---&gt; 내부 보유 자원 정리
-2단계: operator delete(ptr) 호출          ---&gt; 힙 관리자에게 메모리 블록 반환</pre>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: stretch; margin-top: 0.5rem;">
+          <div style="flex: 1; min-width: 270px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.85rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent); margin-bottom: 0.5rem;">
+              🚀 <code>new Point(10, 20)</code> 실행 시퀀스
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem;">
+              <div style="background: var(--surface-1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid var(--accent);">
+                <strong>1단계: 메모리 할당</strong><br />
+                <code>operator new(sizeof(Point))</code>를 호출하여 힙에서 8바이트 메모리 블록을 확보합니다.
+              </div>
+              <div style="background: var(--surface-1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid var(--accent);">
+                <strong>2단계: 생성자 호출</strong><br />
+                확보된 주소에서 <code>Point::Point(10, 20)</code>를 실행하여 객체 멤버를 초기화합니다.
+              </div>
+              <div style="color: #10b981; font-weight: 600; padding: 0.2rem 0;">
+                ➔ 완전 초기화된 객체의 타입 안전한 주소(<code>Point*</code>) 반환
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-width: 270px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.85rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: #ef4444; margin-bottom: 0.5rem;">
+              🛑 <code>delete ptr</code> 실행 시퀀스
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem;">
+              <div style="background: var(--surface-1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid #ef4444;">
+                <strong>1단계: 소멸자 호출</strong><br />
+                <code>ptr</code>이 가리키는 객체의 <code>Point::~Point()</code>를 호출하여 내부 리소스를 정리합니다.
+              </div>
+              <div style="background: var(--surface-1); padding: 0.5rem; border-radius: 4px; border-left: 3px solid #ef4444;">
+                <strong>2단계: 메모리 반환</strong><br />
+                <code>operator delete(ptr)</code>를 호출하여 힙 관리자에게 원본 메모리 블록을 회수 반환합니다.
+              </div>
+              <div style="color: #ef4444; font-weight: 600; padding: 0.2rem 0;">
+                ➔ 댕글링 포인터 방지를 위해 즉시 <code>ptr = nullptr;</code> 대입 필수
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <h4>C malloc/free vs C++ new/delete 결정적 차이</h4>
@@ -5879,29 +5996,61 @@ int main() &#123;
         여기서 가장 중요한 규칙은 <strong><code>new[]</code>로 할당한 메모리는 오직 <code>delete[]</code>로만 해제해야 하며, 단일 <code>delete</code>로 해제하면 즉각 치명적인 미정의 동작(UB)이 발생</strong>한다는 점입니다.
       </p>
 
-      <div class="diagram-box">
-        <div class="diagram-title">new[] 실행 시 생성되는 숨겨진 배열 쿠키(Cookie / Hidden Header) 메커니즘</div>
-        <pre class="ascii-diagram">
-코드: Node* arr = new Node[3];
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          [new[] 힙 할당 시 숨겨진 배열 쿠키(Cookie / Header) 메커니즘]
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-2); margin-top: 0.2rem;">
+          <code>Node* arr = new Node[3];</code> (원소 3개 + 숨겨진 크기 헤더)
+        </div>
 
-힙 할당 영역 (실제로는 3개 크기보다 약간 더 큼):
-+--------------------+------------------+------------------+------------------+
-| 쿠키 (Header)      | arr[0] (Node)    | arr[1] (Node)    | arr[2] (Node)    |
-| 원소 개수 = 3      |                  |                  |                  |
-+--------------------+------------------+------------------+------------------+
-^                    ^
-| 힙 할당 시작 주소  | 사용자에게 반환되는 포인터 주소 (arr)
-(malloc 원본 포인터)
+        <div style="margin-top: 0.7rem;">
+          <div class="memory-row" style="flex-wrap: nowrap; overflow-x: auto;">
+            <div class="mem-cell padding" style="flex: 1.2; min-width: 130px; font-style: normal; border: 2px dashed #f59e0b; background: color-mix(in srgb, #f59e0b 14%, var(--surface-2));">
+              <small style="color: #f59e0b; font-weight: 700;">숨겨진 쿠키 (Header)</small>
+              <code style="color: #f59e0b;">개수 = 3</code>
+              <small style="font-size: 0.65rem;">▲ 힙 할당 시작점</small>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 90px; border-left: 2px solid var(--accent);">
+              <small style="color: var(--accent); font-weight: 700;">arr[0] (Node)</small>
+              <code>인스턴스 #1</code>
+              <small style="color: var(--accent); font-size: 0.65rem;">▲ arr 반환 주소</small>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 90px;">
+              <small style="color: var(--accent); font-weight: 700;">arr[1] (Node)</small>
+              <code>인스턴스 #2</code>
+              <small style="opacity: 0.7; font-size: 0.65rem;">연속 메모리</small>
+            </div>
+            <div class="mem-cell data" style="flex: 1; min-width: 90px;">
+              <small style="color: var(--accent); font-weight: 700;">arr[2] (Node)</small>
+              <code>인스턴스 #3</code>
+              <small style="opacity: 0.7; font-size: 0.65rem;">연속 메모리</small>
+            </div>
+          </div>
+        </div>
 
-[ delete[] arr 실행 시 ]
-1. arr 포인터에서 뒤로 오프셋 이동하여 쿠키 위치를 찾음
-2. 쿠키에 기록된 원소 개수(3)를 읽음
-3. 3개의 Node 소멸자를 역순으로 각각 호출 (~Node() x 3회)
-4. 쿠키를 포함한 전체 메모리 블록을 힙에 반환
+        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.8rem;">
+          <div style="flex: 1; min-width: 250px; background: color-mix(in srgb, #10b981 10%, var(--surface-2)); border: 1px solid #10b981; border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #10b981; margin-bottom: 0.3rem;">
+              ✅ 올바른 해제: <code>delete[] arr;</code>
+            </div>
+            <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.76rem; color: var(--text-2); line-height: 1.5;">
+              <li><code>arr</code> 앞에서 쿠키를 읽어 원소 개수(3)를 인식합니다.</li>
+              <li>3개의 <code>Node</code> 소멸자(<code>~Node()</code>)를 역순으로 모두 호출합니다.</li>
+              <li>쿠키를 포함한 전체 힙 메모리 블록을 정상 반환합니다.</li>
+            </ul>
+          </div>
 
-[ 잘못하여 delete arr (단괄호 누락) 실행 시 치명적 참사 ]
-1. arr 주소를 단일 객체 주소로 착각하여 소멸자를 단 1회만 호출! (나머지 2개 누수)
-2. 힙 반환 시 할당 시작 주소(쿠키 앞)가 아닌 arr 주소를 넘겨 힙 메타데이터 오염 크래시!</pre>
+          <div style="flex: 1; min-width: 250px; background: color-mix(in srgb, #ef4444 10%, var(--surface-2)); border: 1px solid #ef4444; border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #ef4444; margin-bottom: 0.3rem;">
+              🚨 치명적 버그: <code>delete arr;</code> (괄호 누락)
+            </div>
+            <ul style="margin: 0; padding-left: 1.1rem; font-size: 0.76rem; color: var(--text-2); line-height: 1.5;">
+              <li>단일 객체로 오인하여 <code>~Node()</code> 소멸자를 단 1회만 호출(나머지 리소스 누수).</li>
+              <li>힙 관리자에게 쿠키 앞 시작점이 아닌 <code>arr</code> 주소를 전달하여 <strong>힙 메타데이터 오염 크래시(UB)</strong> 발생.</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       <div class="callout callout-warn">

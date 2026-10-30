@@ -64,7 +64,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
               <a href="#sec-2-3" class="sub-chip">2.3 UB & Modulo</a>
               <a href="#sec-2-4" class="sub-chip">2.4 sizeof & 정렬</a>
               <a href="#sec-2-5" class="sub-chip">2.5 초기화 문법</a>
-              <a href="#sec-2-6" class="sub-chip">2.6 C++26 `_`</a>
+              <a href="#sec-2-6" class="sub-chip">2.6 C++26 _ 변수</a>
               <a href="#sec-2-7" class="sub-chip">2.7 디버깅 실습</a>
             </div>
           </li>
@@ -325,7 +325,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">minimal.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>// 가장 기본적인 최소 실행 C++ 프로그램
 int main() &#123;
@@ -1101,7 +1101,7 @@ process(nullptr); // 타입이 std::nullptr_t이므로 완벽하게 process(char
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">signed_ub_danger.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>bool is_overflow_safe(int x) &#123;
     // 개발자의 의도: x + 10이 오버플로되어 음수로 뒤집히면 false를 반환하려 함
@@ -1151,7 +1151,7 @@ if (a &lt; b) &#123;
 &#125;</code></pre>
           </div>
           <div class="rule-tip">
-            <strong>C++ Core Guidelines 권장 (ES.100):</strong>
+            <strong>C++ Core Guidelines ES.100 (부호 혼합 연산 금지):</strong>
             단순히 "음수가 나오지 않는 양수 값"이라는 이유만으로 <code>unsigned</code>를 남용하지 마십시오.
             일반적인 산술 연산과 제어 흐름에는 <code>int</code>를 기본으로 사용하고, 비트마스크, 바이트 조작, 암호학 등 명시적인 모듈로 연산이 필요한 경우에만 <code>unsigned</code>를 사용하십시오.
           </div>
@@ -1179,8 +1179,8 @@ if (a &lt; b) &#123;
           <div class="style-column">
             <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>"ES.100 권장 원칙과 STL 관례의 모던 해법"</strong><br>
-              코어 가이드라인 또한 단순히 양수를 표현하기 위해 unsigned를 쓰지 말 것을 권장(ES.100)하면서도, STL 컨테이너의 <code>.size()</code>와 <code>sizeof</code>가 역사적으로 <code>std::size_t</code>를 반환하는 현실을 조화롭게 해결합니다.<br>
+              <strong>"Core Guidelines ES.100 (부호 혼합 금지) 원칙과 STL 관례의 모던 해법"</strong><br>
+              코어 가이드라인 또한 단순히 양수를 표현하기 위해 unsigned를 쓰지 말 것을 권장(Core Guidelines ES.100: 부호 혼합 금지)하면서도, STL 컨테이너의 <code>.size()</code>와 <code>sizeof</code>가 역사적으로 <code>std::size_t</code>를 반환하는 현실을 조화롭게 해결합니다.<br>
               이에 따라 최신 C++에서는 <strong><code>std::ssize()</code> (C++20, signed 크기 반환)</strong>와 <strong><code>std::cmp_less()</code> (헤더 &lt;utility&gt;)</strong>를 도입하여, 부호 불일치 경고 없이 안전하게 비교·순회하는 모던 표준 해법을 권장합니다.
             </p>
           </div>
@@ -1232,7 +1232,7 @@ std::size_t s = sizeof(x++);
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">alignment_demo.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>// 1. 비효율적인 멤버 배치: 12 바이트 소비!
 struct BadLayout &#123;
@@ -1375,7 +1375,7 @@ struct GoodLayout &#123;
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">narrowing_prevention.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>// 1. 기존 복사 초기화 (=)의 문제점:
 int old_val = 3.141592; // 컴파일 성공! 소수점(.141592)이 유실되어 3만 저장됨 (버그의 온상)
@@ -1437,7 +1437,7 @@ int old_val = 3.141592; // 컴파일 성공! 소수점(.141592)이 유실되어 
           <div class="style-column">
             <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>"ES.23: 벡터의 혼란에도 불구하고 왜 항상 중괄호(&#123;&#125;)를 기본으로 추구하는가?"</strong><br>
+              <strong>"Core Guidelines ES.23 (중괄호 초기화 우선): 벡터의 혼란에도 불구하고 왜 항상 중괄호(&#123;&#125;)를 기본으로 추구하는가?"</strong><br>
               비야네 스트롭스트룹과 헙 서터가 주도하는 코어 가이드라인은 <strong>축소 변환(Narrowing) 방지와 Most Vexing Parse 해결</strong>이라는 압도적인 안전성 이점을 위해 <code>int x&#123;0&#125;;</code>를 기본 표준으로 권장합니다.<br>
               <strong>[모던 C++의 벡터 혼란 해법: 명확한 의미적 분리]</strong><br>
               &bull; <strong><code>&#123;&#125;</code> (중괄호):</strong> 명시적인 <em>"원소들의 목록(List of Elements)"</em>을 담을 때 기본값으로 사용<br>
@@ -1635,7 +1635,7 @@ uint8_t(255) + 1 의 결과: 0
       </div>
 
       <h4>자주 겪는 컴파일 에러 & 경고 트러블슈팅 카드</h4>
-      <div class="trouble-list">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">컴파일 오류 (Compile Error)</span>
@@ -1828,7 +1828,7 @@ uint8_t(255) + 1 의 결과: 0
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">prefix_vs_postfix.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>int a = 10;
 int b = ++a; // a를 11로 만든 후, b에 11을 대입 (a == 11, b == 11)
@@ -1928,7 +1928,7 @@ int y = x++; // y에 현재 값 10을 먼저 대입한 후, x를 11로 증가 (x
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">short_circuit_guard.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>// ptr이 유효한 주소를 가리키고 있는지 확인한 후, 그 메모리의 값을 검사하는 함수
 bool is_valid_user(const User* ptr) &#123;
@@ -2018,7 +2018,7 @@ bool is_valid_user(const User* ptr) &#123;
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">bitmask_patterns.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;cstdint&gt;
 
@@ -2134,7 +2134,7 @@ if ((status &amp; MASK) == 0) &#123; ... &#125;</code></pre>
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">c++17_if_init.cpp</span>
-          <span class="code-lang">C++17/20/26</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>// 문법: if (초기화문; 조건식)
 if (int status_code = fetch_network_status(); status_code == 200) &#123;
@@ -2160,7 +2160,7 @@ if (int status_code = fetch_network_status(); status_code == 200) &#123;
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">switch_fallthrough.cpp</span>
-          <span class="code-lang">C++</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>switch (command_level) &#123;
     case 1:
@@ -2196,7 +2196,7 @@ if (int status_code = fetch_network_status(); status_code == 200) &#123;
           <div class="style-column">
             <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>"ES.6: 변수의 스코프는 가능한 한 가장 좁게 제한하라"</strong><br>
+              <strong>"Core Guidelines ES.6 (조건문 내부 변수 선언으로 스코프 최소화)"</strong><br>
               코어 가이드라인은 변수가 살아있는 범위를 극소화하기 위해 C++17 <code>if (init; condition)</code> 문법을 매우 적극적으로 사용할 것을 권장합니다.
               더불어 <code>switch</code> 문의 안전성을 위해 컴파일러 경고 옵션(<code>-Wimplicit-fallthrough</code>)을 켜고 모든 의도적 낙하에 표준 <code>[[fallthrough]];</code>를 사용할 것을 권장합니다.
             </p>
@@ -2322,7 +2322,7 @@ for (int num : numbers) &#123;
       <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">spaceship_operator.cpp</span>
-          <span class="code-lang">C++20/C++26</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;compare&gt;
 #include &lt;print&gt;
@@ -2462,7 +2462,7 @@ val++ 실행 후 현재값: 11
       </div>
 
       <h4>자주 겪는 컴파일 에러 &amp; 경고 트러블슈팅 카드</h4>
-      <div class="trouble-list">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">컴파일 경고 (Compiler Warning)</span>
@@ -2612,13 +2612,13 @@ val++ 실행 후 현재값: 11
               <td><strong>동일 TU 내 중복</strong></td>
               <td>동일한 시그니처라면 여러 번 반복 가능</td>
               <td><strong>정확히 단 1개만 허용</strong> (위반 시 컴파일 에러)</td>
-              <td>[basic.def.odr] p1</td>
+              <td>단일 정의 규칙 ([basic.def.odr] p1)</td>
             </tr>
             <tr>
               <td><strong>전체 프로그램 내 중복</strong></td>
               <td>각 TU마다 헤더 include로 중복 가능</td>
               <td>비인라인 함수는 <strong>단 1개만 허용</strong> (위반 시 링커 에러)</td>
-              <td>[basic.def.odr] p4</td>
+              <td>단일 정의 규칙 ([basic.def.odr] p4)</td>
             </tr>
           </tbody>
         </table>
@@ -2626,7 +2626,7 @@ val++ 실행 후 현재값: 11
 
       <h4>단일 정의 규칙 (One Definition Rule, ODR)</h4>
       <p>
-        ISO C++ 표준(ISO/IEC 14882 [basic.def.odr])의 가장 근본적인 규칙 중 하나입니다.
+        ISO C++ 표준의 <strong>단일 정의 규칙(ODR, [basic.def.odr])</strong>은 C++ 번역과 링크 모델의 가장 근본적인 규칙입니다.
       </p>
       <ul>
         <li><strong>단일 번역 단위(TU) 규칙:</strong> 하나의 <code>.cpp</code> 파일 내에서 동일한 이름과 시그니처를 가진 함수/변수의 정의는 정확히 하나만 존재해야 합니다. 2개 이상 정의하면 <code>error: redefinition of '...'</code> 컴파일 에러가 발생합니다.</li>
@@ -2635,7 +2635,7 @@ val++ 실행 후 현재값: 11
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">선언과 정의 분리 모범 구조 (헤더 vs 소스)</span>
+          <span class="file-name">math_ops.hpp / math_ops.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>// [math_ops.hpp] 인터페이스 선언 헤더
@@ -2729,7 +2729,7 @@ int main() &#123;
         </div>
       </div>
 
-      <h4>2. C++ 공식 저장 수명 주기 4종 (Storage Duration, [basic.stc])</h4>
+      <h4>2. C++ 공식 저장 수명 주기 4종 (ISO C++ 저장 수명 규약 [basic.stc])</h4>
       <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
@@ -2792,7 +2792,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">스코프, static 로컬 수명, 이름 가림 검증 예제</span>
+          <span class="file-name">scope_and_storage.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -2851,7 +2851,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">네임스페이스 선언과 C++17 중첩 문법</span>
+          <span class="file-name">nested_namespace.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>// C++17 이전 구식 중첩 방식
@@ -2917,7 +2917,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">익명 네임스페이스와 안전한 using 선언</span>
+          <span class="file-name">unnamed_namespace.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -2946,12 +2946,12 @@ void process_data() &#123;
         <div class="callout-title">💡 기술 심화: 익명 네임스페이스의 동작 메커니즘과 C 언어 static과의 관계</div>
         <p>
           <em>"익명 네임스페이스는 이름이 없는데 어떻게 그 블록 밖에서 함수를 호출할 수 있을까요?"</em><br>
-          C++ 표준 규약([namespace.unnamed])에 따르면 컴파일러는 <code>namespace &#123; ... &#125;</code>을 만났을 때 <strong>파일마다 고유한 유일한 가상 식별자(예: <code>__unique_id_xyz</code>)를 부여하고, 그 파일 전체에 암묵적인 <code>using namespace</code>를 자동 선언</strong>합니다.
+          ISO C++ 표준의 <strong>익명 네임스페이스 규약([namespace.unnamed])</strong>에 따르면 컴파일러는 <code>namespace &#123; ... &#125;</code>을 만났을 때 <strong>파일마다 고유한 유일한 가상 식별자(예: <code>__unique_id_xyz</code>)를 부여하고, 그 파일 전체에 암묵적인 <code>using namespace</code>를 자동 선언</strong>합니다.
         </p>
         <ul style="margin: 0.5rem 0 0.5rem 1.2rem; font-size: 0.9rem; color: var(--text-2);">
           <li><strong>동일 파일 내부 가시성:</strong> 같은 소스 파일(<code>.cpp</code>) 내부라면 네임스페이스 블록 밖이라도 접두사 없이 전역 변수/함수처럼 편하게 직접 호출할 수 있습니다.</li>
           <li><strong>다른 파일 차단 (내부 링크):</strong> 컴파일러는 이 심볼들이 오직 현재 번역 단위(TU)에서만 유효한 <strong>내부 링크(Internal Linkage)</strong>를 갖도록 강제하므로, 다른 <code>.cpp</code> 파일이나 링커 입장에서는 완전히 은닉되어 ODR 다중 정의 충돌을 원천 차단합니다.</li>
-          <li><strong>C 언어 <code>static</code> 대비 결정적 장점:</strong> C 언어에서는 전역 함수/변수 앞에 <code>static</code>을 붙여 파일 외부 노출을 막았지만, 구조체나 클래스, 열거형(타입 정의)은 <code>static</code>으로 묶을 수 없었습니다. C++의 익명 네임스페이스는 함수와 변수뿐만 아니라 <strong>사용자 정의 타입까지 한 번에 해당 파일 전용으로 깔끔하게 은닉</strong>할 수 있어 C++ 코어 가이드라인(SF.22)의 강력한 표준 권장안입니다.</li>
+          <li><strong>C 언어 <code>static</code> 대비 결정적 장점:</strong> C 언어에서는 전역 함수/변수 앞에 <code>static</code>을 붙여 파일 외부 노출을 막았지만, 구조체나 클래스, 열거형(타입 정의)은 <code>static</code>으로 묶을 수 없었습니다. C++의 익명 네임스페이스는 함수와 변수뿐만 아니라 <strong>사용자 정의 타입까지 한 번에 해당 파일 전용으로 깔끔하게 은닉</strong>할 수 있어 C++ Core Guidelines SF.22(파일 내부 전용 식별자는 익명 네임스페이스 사용)의 강력한 표준 권장안입니다.</li>
         </ul>
       </div>
     </section>
@@ -3056,7 +3056,7 @@ void process_data() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">인자 전달 방식별 동작 및 복사 비용 실증</span>
+          <span class="file-name">parameter_passing.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -3084,7 +3084,7 @@ void calibrate_model(HeavyModel&amp; model) &#123;
 &#125;
 
 int main() &#123;
-    HeavyModel original&#123;.name = "초기 모델"&#125;;
+    HeavyModel original&#123;.name = "초기 모델", .weights = &#123;&#125;&#125;;
 
     process_by_value(original);
     std::println("값 전달 후: &#123;&#125;", original.name); // 여전히 "초기 모델"
@@ -3170,7 +3170,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">모던 함수 기능 종합 예제</span>
+          <span class="file-name">modern_functions.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -3238,11 +3238,11 @@ int main() &#123;
           <div class="style-column">
             <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>1. F.16 (인자 전달 최적화):</strong><br>
+              <strong>1. Core Guidelines F.16 (인자 전달 비용 최적화):</strong><br>
               복사 비용이 저렴한 "작은" 타입(보통 2~3 워드, 16~24 바이트 이하)은 CPU 레지스터 전달이 빠른 값(<code>T</code>)으로 넘기고, 그 외 크거나 비싼 객체는 <code>const T&amp;</code>로 전달합니다.
             </p>
             <p style="margin-top: 0.6rem;">
-              <strong>2. F.17 &amp; F.20 (널 배제와 RVO 값 반환):</strong><br>
+              <strong>2. Core Guidelines F.17 &amp; F.20 (수정 인자 참조 전달 및 결과 값 반환):</strong><br>
               널 포인터 검증 오버헤드와 댕글링 메모리 위험 때문에 단순 출력 목적으로 포인터를 쓰는 관례를 강력히 지양합니다. 인플레이스 수정은 안전한 <code>T&amp;</code>를 사용하고, 연산 결과는 컴파일러의 RVO(복사 생략)가 보장되는 <strong>값 반환(Return value)</strong>을 원칙으로 합니다. 다중 반환값은 <code>std::tuple</code>이나 전용 <code>struct</code>를 반환하여 호출부에서 C++17 구조화된 바인딩(<code>auto [x, y] = f();</code>)으로 받습니다.
             </p>
             <p style="margin-top: 0.6rem;">
@@ -3258,13 +3258,13 @@ int main() &#123;
     <section id="sec-4-7" class="lesson-section">
       <h3>4.7 터미널 실습 및 컴파일러 오류 디버깅</h3>
       <p>
-        4단원에서 다룬 선언과 정의의 분리, 익명 네임스페이스 격리, `static` 수명 검증, 값 vs 참조 전달,
-        `[[nodiscard]]` 속성 및 C++26 `_` 플레이스홀더를 하나의 완성된 C++ 프로그램으로 실습합니다.
+        4단원에서 다룬 선언과 정의의 분리, 익명 네임스페이스 격리, <code>static</code> 수명 검증, 값 vs 참조 전달,
+        <code>[[nodiscard]]</code> 속성 및 C++26 <code>_</code> 플레이스홀더를 하나의 완성된 C++ 프로그램으로 실습합니다.
       </p>
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">ch04_functions.cpp (단원 4 종합 실습 코드)</span>
+          <span class="file-name">ch04_functions.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -3392,8 +3392,8 @@ void process_packet(int id, int _) &#123;
       <h4>실행 결과 (예상 표준 출력)</h4>
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">터미널 실행 결과</span>
-          <span class="code-lang">Output</span>
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
         </div>
         <pre><code>=== 1. 기본 함수 호출 & 선언/정의 검증 ===
 add_numbers(15, 27) = 42
@@ -3415,7 +3415,7 @@ add_numbers(15, 27) = 42
       </div>
 
       <h4>자주 겪는 컴파일 &amp; 링커 오류 트러블슈팅 카드</h4>
-      <div class="trouble-list">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">링커 오류 (Linker Error)</span>
@@ -3585,7 +3585,7 @@ add_numbers(15, 27) = 42
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">주소 추출, 역참조 수정 및 64비트 크기 실증</span>
+          <span class="file-name">address_and_deref.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -3634,10 +3634,11 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">구식 NULL이 유발하는 함수 오버로딩 결함 실증</span>
-          <span class="code-lang">C++</span>
+          <span class="file-name">null_vs_nullptr.cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
+#include &lt;cstddef&gt;
 
 void process(int value) &#123;
     std::println("정수 오버로드 호출: &#123;&#125;", value);
@@ -3649,9 +3650,9 @@ void process(char* ptr) &#123;
 
 int main() &#123;
     // 프로그래머의 의도는 포인터에 널을 넘기려 했으나...
-    // NULL이 정수 0으로 치환되어 process(int)가 호출되는 치명적 버그 발생!
-    process(0);    // process(int) 호출
-    process(NULL); // 컴파일 경고 또는 process(int) 호출!
+    // 0은 정수 리터럴이므로 엉뚱하게 process(int)가 호출됨!
+    process(0);       // process(int) 호출 (의도치 않은 동작)
+    // process(NULL); // 컴파일 에러(64비트 __null 모호성) 또는 process(int) 오작동!
     
     // 모던 C++의 해결책:
     process(nullptr); // 정확히 process(char*) 호출!
@@ -3755,7 +3756,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">포인터 산술 보폭 및 std::ptrdiff_t 거리 계산</span>
+          <span class="file-name">pointer_arithmetic.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -3863,7 +3864,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">명령행 인자 순회 (인덱스 순회 vs 포인터 전진 순회)</span>
+          <span class="file-name">cli_args_traversal.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -3882,7 +3883,7 @@ int main(int argc, char* argv[]) &#123;
     char** current = argv;
     int idx&#123;0&#125;;
     while (*current != nullptr) &#123;
-        std::println("  순회 인자: '&#123;&#125;'", *current);
+        std::println("  순회 인자 [&#123;&#125;]: '&#123;&#125;'", idx, *current);
         ++current; // 다음 char* 슬롯으로 8바이트 전진
         ++idx;
     &#125;
@@ -3942,10 +3943,10 @@ int main(int argc, char* argv[]) &#123;
       <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
-            <col style="width: 25%;" />
-            <col style="width: 25%;" />
-            <col style="width: 25%;" />
-            <col style="width: 25%;" />
+            <col style="width: 28%;" />
+            <col style="width: 24%;" />
+            <col style="width: 24%;" />
+            <col style="width: 24%;" />
           </colgroup>
           <thead>
             <tr>
@@ -3980,7 +3981,7 @@ int main(int argc, char* argv[]) &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">포인터와 const 불변성 검증 코드</span>
+          <span class="file-name">pointer_and_const.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4049,15 +4050,15 @@ int main() &#123;
           <div class="style-column">
             <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
             <p>
-              <strong>1. I.11 &amp; F.22 (소유권을 원시 포인터로 표현하지 말 것):</strong><br>
+              <strong>1. Core Guidelines I.11 &amp; F.22 (원시 포인터 소유권 부여 금지):</strong><br>
               원시 포인터(<code>T*</code>)는 메모리 누수의 주범이므로 단 1바이트의 자원도 소유해서는 안 됩니다. 소유권이 필요한 경우 <code>std::unique_ptr</code>를 쓰거나, 명시적으로 <code>gsl::owner&lt;T*&gt;</code>를 표기해야 합니다.
             </p>
             <p style="margin-top: 0.6rem;">
-              <strong>2. I.13 (단일 객체 vs 배열 분리):</strong><br>
+              <strong>2. Core Guidelines I.13 (단일 포인터로 배열 전달 금지):</strong><br>
               원시 포인터는 오직 '단일 객체'의 주소를 가리킬 때만 사용해야 합니다. 연속된 배열 메모리를 가리키거나 포인터 산술(<code>ptr + i</code>)로 순회하는 것을 엄격히 금지하며, 배열 범위는 반드시 <strong><code>std::span</code> (C++20)</strong>이나 <code>std::string_view</code>로 전달합니다.
             </p>
             <p style="margin-top: 0.6rem;">
-              <strong>3. F.60 (선택적 인자와 널 상태):</strong><br>
+              <strong>3. Core Guidelines F.60 (nullptr이 유효한 경우에만 포인터 인자 사용):</strong><br>
               참조자(<code>T&amp;</code>)는 항상 유효한 객체를 전제하므로, 인자가 전달되지 않을 수 있는 <code>nullptr</code> 상태가 유효한 비즈니스 로직에 한해서만 <code>const T*</code> 포인터를 허용합니다.
             </p>
           </div>
@@ -4069,13 +4070,13 @@ int main() &#123;
     <section id="sec-5-7" class="lesson-section">
       <h3>5.7 터미널 실습 및 컴파일러 오류 디버깅</h3>
       <p>
-        5단원에서 다룬 메모리 주소 추출, 역참조 수정, `nullptr` 검증, 포인터 산술 연산, `std::ptrdiff_t` 거리 계산,
-        그리고 명령행 인자(`argc`, `argv`) 순회를 하나의 통합 프로그램으로 실습합니다.
+        5단원에서 다룬 메모리 주소 추출, 역참조 수정, <code>nullptr</code> 검증, 포인터 산술 연산, <code>std::ptrdiff_t</code> 거리 계산,
+        그리고 명령행 인자(<code>argc</code>, <code>argv</code>) 순회를 하나의 통합 프로그램으로 실습합니다.
       </p>
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">ch05_pointers.cpp (단원 5 종합 실습 코드)</span>
+          <span class="file-name">ch05_pointers.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4174,8 +4175,8 @@ int main(int argc, char* argv[]) &#123;
       <h4>실행 결과 (예상 표준 출력)</h4>
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">터미널 실행 결과</span>
-          <span class="code-lang">Output</span>
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
         </div>
         <pre><code>=== 1. 주소 추출(&amp;)과 역참조(*) 변수 수정 ===
 수정 전 score: 88 (주소: 0x16fdff3c8)
@@ -4200,7 +4201,7 @@ start_ptr: 0x16fdff3e0, end_ptr: 0x16fdff3f8
       </div>
 
       <h4>자주 겪는 포인터 컴파일 &amp; 런타임 오류 트러블슈팅 카드</h4>
-      <div class="trouble-list">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">치명적 런타임 크래시 (Runtime Crash)</span>
@@ -4370,7 +4371,7 @@ start_ptr: 0x16fdff3e0, end_ptr: 0x16fdff3f8
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">참조자 별칭, 주소 동치성 및 재바인딩 불가 실증</span>
+          <span class="file-name">reference_alias.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4411,7 +4412,7 @@ int main() &#123;
 
       <div class="concept-breakdown">
         <div class="concept-item">
-          <h4>1. <code>const T&amp;</code>의 임시 객체 수명 연장 규칙 (ISO C++ [class.temporary])</h4>
+          <h4>1. <code>const T&amp;</code>의 임시 객체 수명 연장 규칙 (ISO C++ 임시 객체 수명 연장 규약 [class.temporary])</h4>
           <p>
             C++ 표준 규약은 <strong><code>const</code> lvalue 참조자(<code>const T&amp;</code>)가 rvalue(임시 객체나 리터럴)에 바인딩될 때, 
             컴파일러가 스택에 보이지 않는 임시 객체를 생성하고 그 임시 객체의 수명을 <code>const</code> 참조자의 스코프 끝까지 연장</strong>하도록 보장합니다.
@@ -4433,7 +4434,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">const 참조의 임시 객체 수명 연장 실증</span>
+          <span class="file-name">const_ref_lifetime.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4559,7 +4560,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">static_cast와 const_cast의 올바른 사용 및 UB 실증</span>
+          <span class="file-name">static_and_const_cast.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4585,6 +4586,7 @@ int main() &#123;
     // 3. const_cast의 치명적 함정 (미정의 동작 UB!)
     const int real_constant = 100; // 읽기 전용 메모리에 상주할 수 있는 진짜 상수
     int* dangerous_ptr = const_cast&lt;int*&gt;(&amp;real_constant);
+    (void)dangerous_ptr; // 역참조 쓰기 시도 자체가 UB이므로 포인터 획득만 확인
     // *dangerous_ptr = 200; // 미정의 동작(UB)! 컴파일러 최적화 왜곡 또는 런타임 크래시 유발
 
     return 0;
@@ -4621,7 +4623,7 @@ int main() &#123;
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">지역 변수 참조 반환의 UB 오류와 안전한 값 반환</span>
+          <span class="file-name">dangling_reference_trap.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4706,13 +4708,13 @@ int main() &#123;
     <section id="sec-6-7" class="lesson-section">
       <h3>6.7 터미널 실습 및 컴파일러 오류 디버깅</h3>
       <p>
-        6단원에서 학습한 참조자 별칭 바인딩, `const T&` 임시 객체 수명 연장, `static_cast` 명시적 타입 변환,
+        6단원에서 학습한 참조자 별칭 바인딩, <code>const T&amp;</code> 임시 객체 수명 연장, <code>static_cast</code> 명시적 타입 변환,
         그리고 안전한 값 반환을 하나의 완전한 프로그램으로 실습합니다.
       </p>
 
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">ch06_references.cpp (단원 6 종합 실습 코드)</span>
+          <span class="file-name">ch06_references.cpp</span>
           <span class="code-lang">C++26</span>
         </div>
         <pre><code>#include &lt;print&gt;
@@ -4800,8 +4802,8 @@ int main() &#123;
       <h4>실행 결과 (예상 표준 출력)</h4>
       <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">터미널 실행 결과</span>
-          <span class="code-lang">Output</span>
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
         </div>
         <pre><code>=== 1. 참조자 별칭과 원본 동기화 ===
 보너스 지급 후 점수: 95 (별칭 점수: 95)
@@ -4817,7 +4819,7 @@ int main() &#123;
       </div>
 
       <h4>자주 겪는 참조자 &amp; 캐스팅 컴파일 오류 트러블슈팅 카드</h4>
-      <div class="trouble-list">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">컴파일 오류 (Compile Error)</span>
@@ -4875,25 +4877,40 @@ int main() &#123;
     <!-- ================================================================= -->
     <!-- 단원 07: 연속 메모리와 뷰 (배열, std::span & std::string_view)     -->
     <!-- ================================================================= -->
-    <header class="lesson-header" id="ch-07">
-      <div class="lesson-badge-wrap">
-        <span class="lesson-badge">PHASE 02</span>
-        <span class="lesson-badge-sub">단원 07</span>
-      </div>
-      <h2 class="lesson-title">연속 메모리와 뷰 (배열, std::span &amp; std::string_view)</h2>
-      <p class="lesson-desc">
-        물리 메모리에 빈틈없이 나열되는 C 스타일 원시 배열([dcl.array])의 배치 원리와 포인터 퇴화(Decay) 메커니즘을 규명하고,
+    <div class="chapter-separator" id="ch-07"></div>
+
+    <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
+      <span class="lesson-badge">PHASE 02 // CHAPTER 07</span>
+      <span class="read-time">예상 학습 시간: 50분</span>
+    </div>
+
+    <header class="lesson-header">
+      <h2>단원 07: 연속 메모리와 뷰 (배열, std::span &amp; std::string_view)</h2>
+      <p class="lesson-intro">
+        물리 메모리에 빈틈없이 나열되는 C 스타일 원시 배열(ISO C++ 배열 선언 규약 [dcl.array])의 배치 원리와 포인터 퇴화(Decay) 메커니즘을 규명하고,
         버퍼 오버플로우와 경계 정보 유실을 원천 차단하는 C++20 <code>std::span</code> 및 C++17 <code>std::string_view</code>의 무복사(Zero-copy) 뷰 아키텍처를 학습합니다.
       </p>
     </header>
 
+    <div class="content-toc">
+      <div class="toc-title">7단원 목차</div>
+      <ul>
+        <li><a href="#sec-7-1">7.1 C 스타일 원시 배열의 물리적 메모리 연속성과 sizeof</a></li>
+        <li><a href="#sec-7-2">7.2 포인터 퇴화(Array-to-pointer Decay) 메커니즘과 경계 정보 유실</a></li>
+        <li><a href="#sec-7-3">7.3 다차원 배열의 메모리 연속성(행 우선, Row-major)과 캐시 지역성</a></li>
+        <li><a href="#sec-7-4">7.4 C++20 표준 뷰 std::span: 안전한 경계 제어와 서브스팬 슬라이싱</a></li>
+        <li><a href="#sec-7-5">7.5 문자열 메모리 모델: C 문자열, std::string, std::string_view 삼각 비교</a></li>
+        <li><a href="#sec-7-6">7.6 실무 스타일 가이드 비교: 원시 배열 금지와 모던 뷰/컨테이너 권장</a></li>
+        <li><a href="#sec-7-7">7.7 터미널 실습 및 디버깅: 원시 배열, std::span &amp; std::string_view 통합 검증</a></li>
+      </ul>
+    </div>
+
     <!-- 7.1절: C 스타일 원시 배열의 물리적 메모리 연속성과 sizeof -->
     <section class="lesson-section" id="sec-7-1">
-      <div class="section-badge">SECTION 7.1</div>
-      <h3 class="section-title">C 스타일 원시 배열([dcl.array])의 물리적 메모리 연속성과 sizeof</h3>
+      <h3>7.1 C 스타일 원시 배열의 물리적 메모리 연속성과 sizeof</h3>
 
       <p>
-        C++ 공식 표준 규약 ISO/IEC 14882([dcl.array])에서 <strong>배열(Array)</strong>은 동일한 타입 <code>T</code>의 객체들이
+        C++ 공식 표준 규약(ISO C++ 배열 선언 규약 [dcl.array])에서 <strong>배열(Array)</strong>은 동일한 타입 <code>T</code>의 객체들이
         물리적 메모리 공간상에 <strong>연속적(Contiguously)</strong>으로 빈틈없이 배치된 고정 크기 시퀀스로 정의됩니다.
         컴파일러는 배열 선언 시 지정된 원소 개수 <code>N</code>과 원소 타입의 크기 <code>sizeof(T)</code>를 곱한 만큼의 단일 메모리 블록을 스택 또는 데이터 영역에 확보합니다.
       </p>
@@ -4919,7 +4936,7 @@ int main() &#123;
         원시 배열은 선언 시점의 초기화 리스트 작성 방식에 따라 원소의 기본 초기화 여부가 엄격히 결정됩니다.
       </p>
 
-      <div class="table-wrap">
+      <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
             <col style="width: 26%" />
@@ -4965,12 +4982,12 @@ int main() &#123;
         또한 배열 전체 바이트 크기 <code>sizeof(arr)</code>를 개별 원소 크기 <code>sizeof(arr[0])</code>로 나누면 컴파일 타임에 원소 개수를 계산할 수 있습니다:
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">array_sizeof_count.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 #include &lt;cstddef&gt;
 
 int main() &#123;
@@ -4981,10 +4998,10 @@ int main() &#123;
     // 단일 원소 바이트 수 (4 바이트)
     std::size_t elem_bytes = sizeof(scores[0]);
     // 컴파일 시점 원소 개수 산출 (20 / 4 = 5)
-    std::size_t count = sizeof(scores) / sizeof(scores[0]);
+    std::size_t count = total_bytes / elem_bytes;
 
-    std::cout &lt;&lt; "총 메모리 크기: " &lt;&lt; total_bytes &lt;&lt; " 바이트\n";
-    std::cout &lt;&lt; "배열 원소 개수: " &lt;&lt; count &lt;&lt; " 개\n";
+    std::println("총 메모리 크기: &#123;&#125; 바이트 (원소당 &#123;&#125; 바이트)", total_bytes, elem_bytes);
+    std::println("배열 원소 개수: &#123;&#125; 개", count);
     return 0;
 &#125;</code></pre>
       </div>
@@ -4992,8 +5009,7 @@ int main() &#123;
 
     <!-- 7.2절: 포인터 퇴화(Decay) 메커니즘과 경계 정보 유실의 보안 취약점 -->
     <section class="lesson-section" id="sec-7-2">
-      <div class="section-badge">SECTION 7.2</div>
-      <h3 class="section-title">포인터 퇴화(Array-to-pointer Decay) 메커니즘과 경계 정보 유실</h3>
+      <h3>7.2 포인터 퇴화(Array-to-pointer Decay) 메커니즘과 경계 정보 유실</h3>
 
       <p>
         C/C++ 초심자가 겪는 가장 당혹스러운 언어적 함정 중 하나가 <strong>포인터 퇴화(Array-to-pointer Decay)</strong>입니다.
@@ -5015,7 +5031,7 @@ int numbers[5] = &#123;1, 2, 3, 4, 5&#125;;             void print_array(int arr
                                                +-----------------------------------+</pre>
       </div>
 
-      <div class="callout warning">
+      <div class="callout callout-warn">
         <div class="callout-title">함수 매개변수 선언문 int arr[10]의 허상</div>
         <p>
           C++ 함수 선언에서 <code>void foo(int arr[10])</code> 또는 <code>void foo(int arr[])</code>로 작성하더라도,
@@ -5031,22 +5047,22 @@ int numbers[5] = &#123;1, 2, 3, 4, 5&#125;;             void print_array(int arr
         컴파일 타임에 아무런 경고나 차단이 일어나지 않으며, 인접한 스택 변수를 덮어쓰거나 세그멘테이션 오류(Segmentation Fault)를 일으키는 <strong>심각한 보안 취약점(CWE-119: Memory Buffer Bounds Exceeded)</strong>을 유발합니다.
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">decay_trap.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 
-// 컴파일러는 아래 매개변수를 int* ptr로 번역함!
+// 컴파일러는 아래 매개변수를 const int* arr로 번역함!
 void print_decay_size(const int arr[100]) &#123;
-    // 경고! sizeof(arr)는 400 바이트가 아니라 8 바이트(포인터 크기)를 반환!
-    std::cout &lt;&lt; "함수 내부 sizeof(arr): " &lt;&lt; sizeof(arr) &lt;&lt; " 바이트\n";
+    // 주의! sizeof(arr)는 400 바이트가 아니라 8 바이트(포인터 크기)를 반환! (-Wsizeof-array-argument)
+    std::println("함수 내부 포인터 시작 주소: &#123;&#125; (원소 개수 정보 유실)", static_cast&lt;const void*&gt;(arr));
 &#125;
 
 int main() &#123;
     int real_array[100] = &#123;0&#125;;
-    std::cout &lt;&lt; "main 스코프 sizeof(real_array): " &lt;&lt; sizeof(real_array) &lt;&lt; " 바이트\n";
+    std::println("main 스코프 sizeof(real_array): &#123;&#125; 바이트", sizeof(real_array));
 
     print_decay_size(real_array);
     return 0;
@@ -5056,8 +5072,7 @@ int main() &#123;
 
     <!-- 7.3절: 다차원 배열의 메모리 연속성(행 우선, Row-major)과 2차원 인덱싱 -->
     <section class="lesson-section" id="sec-7-3">
-      <div class="section-badge">SECTION 7.3</div>
-      <h3 class="section-title">다차원 배열의 메모리 연속성(행 우선, Row-major)과 캐시 지역성</h3>
+      <h3>7.3 다차원 배열의 메모리 연속성(행 우선, Row-major)과 캐시 지역성</h3>
 
       <p>
         C++에는 진정한 의미의 "2차원 격자 메모리"가 존재하지 않습니다.
@@ -5068,11 +5083,11 @@ int main() &#123;
       <div class="diagram-box">
         <div class="diagram-title">행 우선(Row-major) 직렬화 메모리 레이아웃 및 2차원 주소 계산 공식</div>
         <pre class="ascii-diagram">
-선언: int grid[2][3] = &#123; &#123;1, 2, 3&#125;, &#123;4, 5, 6&#125; &#125;;
+선언: int grid[2][3] = &#123; &#123;10, 20, 30&#125;, &#123;40, 50, 60&#125; &#125;;
 
 논리적 형태: (2행 3열)
-  Row 0: [ 1,  2,  3 ]
-  Row 1: [ 4,  5,  6 ]
+  Row 0: [ 10, 20, 30 ]
+  Row 1: [ 40, 50, 60 ]
 
 물리적 연속 메모리 배치:
 +-------------------------------------------------------------------------------+
@@ -5093,12 +5108,12 @@ int main() &#123;
         반면 열(Column-wise) 방향으로 건너뛰며 순회하면 캐시 라인을 벗어나는 <strong>캐시 미스(Cache Miss)</strong>가 폭증하여 수 배에서 수십 배의 성능 저하가 발생합니다:
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">matrix_cache_locality.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 
 constexpr int ROWS = 2;
 constexpr int COLS = 3;
@@ -5110,17 +5125,17 @@ int main() &#123;
     &#125;;
 
     // 올바른 순회: 공간 지역성(Spatial Locality)을 활용한 행 우선 순회
-    std::cout &lt;&lt; "--- 행 우선 순회 (캐시 최적화) ---\n";
+    std::println("--- 행 우선 순회 (캐시 최적화) ---");
     for (int r = 0; r &lt; ROWS; ++r) &#123;
         for (int c = 0; c &lt; COLS; ++c) &#123;
-            std::cout &lt;&lt; matrix[r][c] &lt;&lt; " ";
+            std::print("&#123;&#125; ", matrix[r][c]);
         &#125;
-        std::cout &lt;&lt; "\n";
+        std::println("");
     &#125;
 
     // 2차원 배열의 퇴화 타입: int**가 아니라 int(*)[COLS] (배열 포인터)임!
     int (*row_ptr)[COLS] = matrix;
-    std::cout &lt;&lt; "포인터 산술을 통한 grid[1][2]: " &lt;&lt; *(*(row_ptr + 1) + 2) &lt;&lt; "\n";
+    std::println("포인터 산술을 통한 grid[1][2]: &#123;&#125;", *(*(row_ptr + 1) + 2));
     return 0;
 &#125;</code></pre>
       </div>
@@ -5128,8 +5143,7 @@ int main() &#123;
 
     <!-- 7.4절: C++20 표준 뷰 std::span -->
     <section class="lesson-section" id="sec-7-4">
-      <div class="section-badge">SECTION 7.4</div>
-      <h3 class="section-title">C++20 표준 뷰 std::span: 안전한 경계 제어와 서브스팬 슬라이싱</h3>
+      <h3>7.4 C++20 표준 뷰 std::span: 안전한 경계 제어와 서브스팬 슬라이싱</h3>
 
       <p>
         C++20에서 표준에 도입된 <code>std::span&lt;T&gt;</code>(헤더 <code>&lt;span&gt;</code>)는
@@ -5169,23 +5183,23 @@ std::span&lt;int&gt; sp (총 16바이트 경량 래퍼)
         <code>std::span</code>은 <code>subspan(offset, count)</code> 메서드를 통해 추가적인 메모리 할당 없이 즉시 새로운 뷰를 생성합니다:
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">span_modern_usage.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 #include &lt;span&gt;
 #include &lt;vector&gt;
 #include &lt;array&gt;
 
 // C 스타일 배열, std::vector, std::array 모두를 동일한 시그니처로 수용
 void print_buffer(std::span&lt;const int&gt; view) &#123;
-    std::cout &lt;&lt; "[크기 " &lt;&lt; view.size() &lt;&lt; "]: ";
+    std::print("[크기 &#123;&#125;]: ", view.size());
     for (int elem : view) &#123;
-        std::cout &lt;&lt; elem &lt;&lt; " ";
+        std::print("&#123;&#125; ", elem);
     &#125;
-    std::cout &lt;&lt; "\n";
+    std::println("");
 &#125;
 
 int main() &#123;
@@ -5201,7 +5215,7 @@ int main() &#123;
     // subspan을 활용한 무복사 슬라이싱 (인덱스 1부터 3개 추출)
     std::span&lt;const int&gt; full_view&#123;raw_arr&#125;;
     std::span&lt;const int&gt; sliced_view = full_view.subspan(1, 3); // 20, 30, 40
-    std::cout &lt;&lt; "슬라이스 결과: ";
+    std::print("슬라이스 결과: ");
     print_buffer(sliced_view);
 
     return 0;
@@ -5211,8 +5225,7 @@ int main() &#123;
 
     <!-- 7.5절: 문자열 메모리 모델 삼각 비교 -->
     <section class="lesson-section" id="sec-7-5">
-      <div class="section-badge">SECTION 7.5</div>
-      <h3 class="section-title">문자열 메모리 모델: C 문자열, std::string, std::string_view 삼각 비교</h3>
+      <h3>7.5 문자열 메모리 모델: C 문자열, std::string, std::string_view 삼각 비교</h3>
 
       <p>
         C++에는 텍스트 데이터를 다루는 3가지 서로 다른 메커니즘이 공존합니다:
@@ -5221,7 +5234,7 @@ int main() &#123;
         그리고 C++17에서 도입된 경량 읽기 전용 뷰인 <strong><code>std::string_view</code></strong>입니다.
       </p>
 
-      <div class="table-wrap">
+      <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
             <col style="width: 18%" />
@@ -5246,9 +5259,9 @@ int main() &#123;
             </tr>
             <tr>
               <td><strong>종료 규약</strong></td>
-              <td>반드시 <code>' '</code>(Null-terminated) 필수</td>
-              <td>내부 관리 (<code> </code> 자동 보장)</td>
-              <td><strong><code> </code> 필요 없음 (포인터 + 길이)</strong></td>
+              <td>반드시 널 문자 <code>'\0'</code>(Null-terminated) 필수</td>
+              <td>내부 관리 (<code>'\0'</code> 자동 보장)</td>
+              <td><strong><code>'\0'</code> 필요 없음 (포인터 + 길이)</strong></td>
             </tr>
             <tr>
               <td><strong>길이(Size) 복잡도</strong></td>
@@ -5278,12 +5291,12 @@ int main() &#123;
         표현식 평가 직후 소멸하면 소멸된 메모리를 가리키는 댕글링 뷰가 되어 즉시 미정의 동작(UB)을 유발합니다:
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">string_view_dangling_trap.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 #include &lt;string&gt;
 #include &lt;string_view&gt;
 
@@ -5293,15 +5306,13 @@ std::string get_temporary_string() &#123;
 
 int main() &#123;
     // [치명적 버그!]: get_temporary_string()이 반환한 임시 string은 이 라인이 끝나면 즉시 소멸함!
-    std::string_view dangling_view = get_temporary_string();
-
-    // 소멸된 힙/스택 메모리를 역참조하므로 가비지 값 출력 또는 크래시 발생! (UB)
-    // std::cout &lt;&lt; dangling_view &lt;&lt; "\n"; 
+    // std::string_view dangling_view = get_temporary_string();
+    // std::println("&#123;&#125;", dangling_view); // 소멸된 메모리 역참조로 즉시 UB 발생!
 
     // [올바른 패턴]: 영속적인 실체 객체를 유지한 채 관측 뷰를 생성해야 함
     std::string persistent = "Safe Hello World";
     std::string_view safe_view = persistent;
-    std::cout &lt;&lt; "안전한 뷰: " &lt;&lt; safe_view &lt;&lt; "\n";
+    std::println("안전한 뷰: &#123;&#125;", safe_view);
 
     return 0;
 &#125;</code></pre>
@@ -5310,30 +5321,46 @@ int main() &#123;
 
     <!-- 7.6절: 실무 스타일 가이드 비교 -->
     <section class="lesson-section" id="sec-7-6">
-      <div class="section-badge">SECTION 7.6</div>
-      <h3 class="section-title">실무 스타일 가이드 비교: 원시 배열 금지와 모던 뷰/컨테이너 권장</h3>
+      <h3>7.6 실무 스타일 가이드 비교: 원시 배열 금지와 모던 뷰/컨테이너 권장</h3>
 
       <div class="style-comparison-card">
-        <div class="style-header">
-          <span class="style-title">산업계 표준 가이드라인: 배열 및 뷰 인터페이스 원칙</span>
-          <span class="style-sub">Google C++ Style Guide vs C++ Core Guidelines</span>
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: 배열 및 뷰 인터페이스 원칙 (Google vs Core Guidelines)</span>
         </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          연속 메모리 버퍼와 문자열 슬라이스를 안전하게 다루기 위한 산업계 표준 가이드라인을 비교합니다:
+        </p>
         <div class="style-grid">
           <div class="style-column">
-            <h4 class="style-col-title">Google C++ Style Guide</h4>
-            <ul>
-              <li><strong>원시 C 배열 전면 퇴출:</strong> 고정 크기 스택 배열은 반드시 <code>std::array</code>를 사용하고, 가변 크기 배열은 <code>std::vector</code>를 기본으로 채택합니다.</li>
-              <li><strong>문자열 인자 전달:</strong> 읽기 전용 문자열 매개변수는 <code>const std::string&amp;</code>보다 <code>std::string_view</code>를 값(By-value)으로 전달하는 것을 표준으로 규정합니다.</li>
-              <li><strong>경계 슬라이스:</strong> 원시 포인터와 길이를 쌍으로 전달하는 함수 인터페이스를 금지하고 <code>std::span</code>(또는 <code>absl::Span</code>)을 사용합니다.</li>
-            </ul>
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p>
+              <strong>1. 원시 C 배열 전면 퇴출:</strong><br>
+              고정 크기 스택 배열은 반드시 <code>std::array</code>를 사용하고, 가변 크기 배열은 <code>std::vector</code>를 기본으로 채택합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>2. 문자열 인자 전달 (<code>std::string_view</code>):</strong><br>
+              읽기 전용 문자열 매개변수는 <code>const std::string&amp;</code>보다 <code>std::string_view</code>를 값(By-value)으로 전달하는 것을 표준으로 규정합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>3. 경계 슬라이스 (<code>std::span</code>):</strong><br>
+              원시 포인터와 길이를 쌍으로 전달하는 함수 인터페이스를 금지하고 <code>std::span</code>(또는 <code>absl::Span</code>)을 사용합니다.
+            </p>
           </div>
           <div class="style-column">
-            <h4 class="style-col-title">C++ Core Guidelines</h4>
-            <ul>
-              <li><strong>Bounds.1:</strong> 경계 검사가 불가능한 원시 포인터 산술과 인덱싱 연산을 금지하고 컨테이너 및 뷰를 사용할 것을 강제합니다.</li>
-              <li><strong>I.13:</strong> 단일 포인터로 배열을 전달하지 말라. 항상 배열의 범위와 길이를 보장하는 <code>std::span</code>을 사용하라.</li>
-              <li><strong>F.24:</strong> 연속 메모리 데이터를 읽기 전용으로 소비하는 함수의 매개변수는 <code>std::span&lt;const T&gt;</code>를 채택하라.</li>
-            </ul>
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
+            <p>
+              <strong>1. Core Guidelines Bounds.1 (포인터 산술 및 비검사 인덱싱 금지):</strong><br>
+              경계 검사가 불가능한 원시 포인터 산술과 인덱싱 연산을 금지하고 컨테이너 및 뷰를 사용할 것을 강제합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>2. Core Guidelines I.13 (단일 포인터로 배열 전달 금지):</strong><br>
+              단일 포인터(<code>T*</code>)로 배열을 전달하지 말아야 합니다. 항상 배열의 시작 주소와 길이를 함께 보장하는 <code>std::span</code>을 사용합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>3. Core Guidelines F.24 (연속 요소 범위는 <code>std::span</code> 사용):</strong><br>
+              연속 메모리 데이터를 읽기 전용으로 소비하는 함수의 매개변수는 컨테이너 종류에 종속되지 않는 <code>std::span&lt;const T&gt;</code>를 채택합니다.
+            </p>
           </div>
         </div>
       </div>
@@ -5341,47 +5368,46 @@ int main() &#123;
 
     <!-- 7.7절: 터미널 실습 및 디버깅 -->
     <section class="lesson-section" id="sec-7-7">
-      <div class="section-badge">SECTION 7.7</div>
-      <h3 class="section-title">터미널 실습 및 디버깅: 원시 배열, std::span &amp; std::string_view 통합 검증</h3>
+      <h3>7.7 터미널 실습 및 디버깅: 원시 배열, std::span &amp; std::string_view 통합 검증</h3>
 
       <p>
         본 실습에서는 원시 배열의 메모리 연속 주소 실측, <code>std::span</code>의 다형적 수용 및 슬라이싱,
-        <code>std::string_view</code>의 O(1) 부분 문자열 추출, 그리고 범위 기반 for 루프(Item 7 백로그 회수)의 참조자 순회 최적화를 단일 프로그램으로 검증합니다.
+        <code>std::string_view</code>의 O(1) 부분 문자열 추출, 그리고 범위 기반 for 루프의 참조자 순회 최적화를 단일 프로그램으로 검증합니다.
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">ch07_arrays_and_views.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 #include &lt;span&gt;
 #include &lt;string&gt;
 #include &lt;string_view&gt;
 #include &lt;vector&gt;
 #include &lt;array&gt;
 
-// [Item 18 회수]: std::span을 활용한 안전한 연속 메모리 뷰
+// std::span을 활용한 안전한 연속 메모리 뷰
 void inspect_span(std::span&lt;const int&gt; view, std::string_view label) &#123;
-    std::cout &lt;&lt; "[" &lt;&lt; label &lt;&lt; "] 원소수: " &lt;&lt; view.size() 
-              &lt;&lt; ", 바이트: " &lt;&lt; view.size_bytes() &lt;&lt; "\n  원소 목록: ";
+    std::print("[&#123;&#125;] 원소수: &#123;&#125;, 바이트: &#123;&#125;\n  원소 목록: ",
+               label, view.size(), view.size_bytes());
     
-    // [Item 7 회수]: 복사 오버헤드 없는 const auto&amp; 범위 기반 for 루프
+    // 복사 오버헤드 없는 const auto&amp; 범위 기반 for 루프
     for (const auto&amp; elem : view) &#123;
-        std::cout &lt;&lt; elem &lt;&lt; " ";
+        std::print("&#123;&#125; ", elem);
     &#125;
-    std::cout &lt;&lt; "\n";
+    std::println("");
 &#125;
 
 int main() &#123;
-    std::cout &lt;&lt; "=== [1] 물리 메모리 연속성 및 인덱스 실측 ===\n";
+    std::println("=== [1] 물리 메모리 연속성 및 인덱스 실측 ===");
     int raw[4] = &#123;100, 200, 300, 400&#125;;
     for (int i = 0; i &lt; 4; ++i) &#123;
-        std::cout &lt;&lt; "raw[" &lt;&lt; i &lt;&lt; "] 주소: " &lt;&lt; static_cast&lt;const void*&gt;(&amp;raw[i])
-                  &lt;&lt; " | 값: " &lt;&lt; raw[i] &lt;&lt; "\n";
+        std::println("raw[&#123;&#125;] 주소: &#123;&#125; | 값: &#123;&#125;",
+                     i, static_cast&lt;const void*&gt;(&amp;raw[i]), raw[i]);
     &#125;
 
-    std::cout &lt;&lt; "\n=== [2] std::span 단일 인터페이스 다형 수용 ===\n";
+    std::println("\n=== [2] std::span 단일 인터페이스 다형 수용 ===");
     std::vector&lt;int&gt; dynamic_vec = &#123;11, 22, 33, 44, 55&#125;;
     std::array&lt;int, 3&gt; modern_arr = &#123;7, 8, 9&#125;;
 
@@ -5389,30 +5415,30 @@ int main() &#123;
     inspect_span(dynamic_vec, "std::vector");
     inspect_span(modern_arr, "std::array");
 
-    std::cout &lt;&lt; "\n=== [3] subspan 무복사 슬라이싱 ===\n";
+    std::println("\n=== [3] subspan 무복사 슬라이싱 ===");
     std::span&lt;const int&gt; vec_span&#123;dynamic_vec&#125;;
     auto middle_slice = vec_span.subspan(1, 3); // 22, 33, 44
     inspect_span(middle_slice, "vector 슬라이스(1~3)");
 
-    std::cout &lt;&lt; "\n=== [4] std::string vs std::string_view 비교 (Item 10 회수) ===\n";
+    std::println("\n=== [4] std::string vs std::string_view 비교 ===");
     std::string origin = "Core C++ Standard Architecture 2026";
     // 힙 복사 없이 원본 문자열의 일부분(인덱스 5부터 12자: "C++ Standard") 관측
     std::string_view sub_view = std::string_view&#123;origin&#125;.substr(5, 12);
     
-    std::cout &lt;&lt; "원본 string: " &lt;&lt; origin &lt;&lt; "\n";
-    std::cout &lt;&lt; "무복사 string_view 슬라이스: " &lt;&lt; sub_view &lt;&lt; "\n";
-    std::cout &lt;&lt; "뷰 길이: " &lt;&lt; sub_view.size() &lt;&lt; " 글자, 포인터 주소: " 
-              &lt;&lt; static_cast&lt;const void*&gt;(sub_view.data()) &lt;&lt; "\n";
+    std::println("원본 string: &#123;&#125;", origin);
+    std::println("무복사 string_view 슬라이스: &#123;&#125;", sub_view);
+    std::println("뷰 길이: &#123;&#125; 글자, 포인터 주소: &#123;&#125;",
+                 sub_view.size(), static_cast&lt;const void*&gt;(sub_view.data()));
 
     return 0;
 &#125;</code></pre>
       </div>
 
       <h4>터미널 컴파일 및 실행 커맨드</h4>
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">Terminal Commands</span>
-          <span class="code-lang">bash</span>
+          <span class="file-name">Terminal (macOS zsh)</span>
+          <span class="code-lang">Shell</span>
         </div>
         <pre><code># Clang++ C++26 표준 및 모든 경고 플래그 활성화 빌드
 /opt/homebrew/opt/llvm/bin/clang++ -std=c++26 -Wall -Wextra -Wpedantic ch07_arrays_and_views.cpp -o ch07_arrays_and_views
@@ -5421,8 +5447,38 @@ int main() &#123;
 ./ch07_arrays_and_views</code></pre>
       </div>
 
+      <h4>실행 결과 출력</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
+        </div>
+        <pre><code>=== [1] 물리 메모리 연속성 및 인덱스 실측 ===
+raw[0] 주소: 0x16fdff1c0 | 값: 100
+raw[1] 주소: 0x16fdff1c4 | 값: 200
+raw[2] 주소: 0x16fdff1c8 | 값: 300
+raw[3] 주소: 0x16fdff1cc | 값: 400
+
+=== [2] std::span 단일 인터페이스 다형 수용 ===
+[C 스타일 원시 배열] 원소수: 4, 바이트: 16
+  원소 목록: 100 200 300 400 
+[std::vector] 원소수: 5, 바이트: 20
+  원소 목록: 11 22 33 44 55 
+[std::array] 원소수: 3, 바이트: 12
+  원소 목록: 7 8 9 
+
+=== [3] subspan 무복사 슬라이싱 ===
+[vector 슬라이스(1~3)] 원소수: 3, 바이트: 12
+  원소 목록: 22 33 44 
+
+=== [4] std::string vs std::string_view 비교 ===
+원본 string: Core C++ Standard Architecture 2026
+무복사 string_view 슬라이스: C++ Standard
+뷰 길이: 12 글자, 포인터 주소: 0x6000017bc045</code></pre>
+      </div>
+
       <h4>자주 발생하는 4대 컴파일/런타임 트러블슈팅</h4>
-      <div class="troubleshooting-grid">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">컴파일 경고 / 런타임 오류</span>
@@ -5466,7 +5522,7 @@ int main() &#123;
       <div class="summary-box">
         <h3>7단원 핵심 요약</h3>
         <ul>
-          <li><strong>메모리 연속성([dcl.array]):</strong> 원시 배열은 <code>sizeof(T) * N</code> 바이트의 단일 메모리 블록에 빈틈없이 배치되며, <code>arr[i]</code>는 정확히 <code>*(arr + i)</code>로 치환됩니다.</li>
+          <li><strong>메모리 연속성 (ISO C++ 배열 선언 규약 [dcl.array]):</strong> 원시 배열은 <code>sizeof(T) * N</code> 바이트의 단일 메모리 블록에 빈틈없이 배치되며, <code>arr[i]</code>는 정확히 <code>*(arr + i)</code>로 치환됩니다.</li>
           <li><strong>포인터 퇴화(Decay):</strong> 배열이 수식이나 함수 인자로 전달되면 크기 정보가 완전히 증발하고 첫 번째 원소의 주소(<code>&amp;arr[0]</code>)만 남는 포인터(<code>T*</code>)로 암시적 축소 변환됩니다.</li>
           <li><strong>다차원 배열의 행 우선(Row-major):</strong> 2차원 배열은 행 단위로 물리 메모리에 연속 직렬화되며, 하드웨어 캐시 라인 히트를 위해 반드시 가로(행 우선) 방향으로 순회해야 합니다.</li>
           <li><strong>std::span의 혁신:</strong> C++20 <code>std::span</code>은 소유권 없이 포인터와 크기(16바이트)를 래핑하여, C 배열·vector·array를 통일된 고속 무복사 인터페이스로 수용합니다.</li>
@@ -5479,22 +5535,37 @@ int main() &#123;
     <!-- ================================================================= -->
     <!-- 단원 08: 힙 메모리와 수동 자원 관리 (Free Store, new/delete)        -->
     <!-- ================================================================= -->
-    <header class="lesson-header" id="ch-08">
-      <div class="lesson-badge-wrap">
-        <span class="lesson-badge">PHASE 02</span>
-        <span class="lesson-badge-sub">단원 08</span>
-      </div>
-      <h2 class="lesson-title">힙 메모리와 수동 자원 관리 (Free Store, new/delete)</h2>
-      <p class="lesson-desc">
+    <div class="chapter-separator" id="ch-08"></div>
+
+    <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
+      <span class="lesson-badge">PHASE 02 // CHAPTER 08</span>
+      <span class="read-time">예상 학습 시간: 50분</span>
+    </div>
+
+    <header class="lesson-header">
+      <h2>단원 08: 힙 메모리와 수동 자원 관리 (Free Store, new/delete)</h2>
+      <p class="lesson-intro">
         컴퓨터 메모리의 4대 영역 구조를 재조명하고, 런타임 동적 수명을 관리하는 C++ 자유 저장소(Free Store)의 작동 원리를 파헤칩니다.
         <code>new</code>와 <code>delete</code>의 생성자·소멸자 호출 규약, 동적 배열의 쿠키(Cookie) 오버헤드, 수동 메모리 관리의 4대 악몽과 <code>std::bad_alloc</code> 예외 처리를 체계적으로 정복하여 Phase 02를 완성합니다.
       </p>
     </header>
 
+    <div class="content-toc">
+      <div class="toc-title">8단원 목차</div>
+      <ul>
+        <li><a href="#sec-8-1">8.1 컴퓨터 메모리 4대 영역 재조명: 스택(Stack) vs 힙(Free Store)</a></li>
+        <li><a href="#sec-8-2">8.2 단일 객체 동적 할당과 해제: new와 delete 메커니즘</a></li>
+        <li><a href="#sec-8-3">8.3 동적 배열 할당: new[]와 delete[]의 쿠키(Cookie) 오버헤드</a></li>
+        <li><a href="#sec-8-4">8.4 수동 메모리 관리의 4대 악몽: 누수, 댕글링, 이중 해제, 불일치 해제</a></li>
+        <li><a href="#sec-8-5">8.5 std::nothrow와 std::bad_alloc 메모리 고갈 예외 처리</a></li>
+        <li><a href="#sec-8-6">8.6 실무 스타일 가이드 비교: new/delete 직접 사용 금지와 RAII 원칙</a></li>
+        <li><a href="#sec-8-7">8.7 터미널 실습 및 디버깅: 힙 라이프사이클과 AddressSanitizer(ASan) 검증</a></li>
+      </ul>
+    </div>
+
     <!-- 8.1절: 컴퓨터 메모리 4대 영역 재조명: 스택 vs 힙 -->
     <section class="lesson-section" id="sec-8-1">
-      <div class="section-badge">SECTION 8.1</div>
-      <h3 class="section-title">컴퓨터 메모리 4대 영역 재조명: 스택(Stack) vs 힙(Free Store)</h3>
+      <h3>8.1 컴퓨터 메모리 4대 영역 재조명: 스택(Stack) vs 힙(Free Store)</h3>
 
       <p>
         프로그램이 운영체제(OS)로부터 가상 주소 공간(Virtual Address Space)을 할당받아 실행될 때,
@@ -5528,7 +5599,7 @@ int main() &#123;
 +---------------------------------------------------------------+ (낮은 주소: 0x0000_0000_0000)</pre>
       </div>
 
-      <div class="table-wrap">
+      <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
             <col style="width: 20%" />
@@ -5570,8 +5641,7 @@ int main() &#123;
 
     <!-- 8.2절: 단일 객체 동적 할당과 해제: new와 delete 메커니즘 -->
     <section class="lesson-section" id="sec-8-2">
-      <div class="section-badge">SECTION 8.2</div>
-      <h3 class="section-title">단일 객체 동적 할당과 해제: new와 delete 메커니즘</h3>
+      <h3>8.2 단일 객체 동적 할당과 해제: new와 delete 메커니즘</h3>
 
       <p>
         C++의 <code>new</code>와 <code>delete</code>는 단순한 함수 호출이 아닌 <strong>언어 코어 연산자(Keyword Operator)</strong>입니다.
@@ -5593,7 +5663,7 @@ int main() &#123;
       </div>
 
       <h4>C malloc/free vs C++ new/delete 결정적 차이</h4>
-      <div class="table-wrap">
+      <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
             <col style="width: 22%" />
@@ -5644,20 +5714,25 @@ int main() &#123;
         C++ 표준 규약은 <strong><code>delete nullptr;</code> 호출을 완벽하게 무동작(No-op)으로 안전하게 보장</strong>합니다:
       </p>
 
-      <div class="code-block">
+      <div class="rule-tip" style="margin-bottom: 1rem;">
+        <strong>💡 선행 개념 프리뷰 (Term Preview — 생성자와 소멸자):</strong>
+        아래 코드에 등장하는 <code>Node(int val)</code>은 객체가 메모리에 탄생할 때 자동으로 초기화를 수행하는 <strong>생성자(Constructor)</strong>이며, <code>~Node()</code>는 객체가 메모리에서 파괴될 때 뒷정리를 수행하는 <strong>소멸자(Destructor)</strong>입니다. 생성자 초기화 리스트와 소멸자 기반 RAII 설계의 문법적 원리는 바로 이어지는 <strong>Phase 03 (단원 09: 구조체와 클래스, 단원 10: 생성자·소멸자 및 RAII)</strong>에서 본격적으로 해부합니다.
+      </div>
+
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">new_delete_lifecycle.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 
 struct Node &#123;
     int id;
     Node(int val) : id(val) &#123;
-        std::cout &lt;&lt; "[생성자] Node(" &lt;&lt; id &lt;&lt; ") 힙 할당 완료\n";
+        std::println("[생성자] Node(&#123;&#125;) 힙 할당 완료", id);
     &#125;
     ~Node() &#123;
-        std::cout &lt;&lt; "[소멸자] Node(" &lt;&lt; id &lt;&lt; ") 소멸 및 자원 정리\n";
+        std::println("[소멸자] Node(&#123;&#125;) 소멸 및 자원 정리", id);
     &#125;
 &#125;;
 
@@ -5666,7 +5741,7 @@ int main() &#123;
     Node* pNode = new Node(42);
 
     // 2. 객체 사용
-    std::cout &lt;&lt; "pNode-&gt;id = " &lt;&lt; pNode-&gt;id &lt;&lt; "\n";
+    std::println("pNode-&gt;id = &#123;&#125;", pNode-&gt;id);
 
     // 3. 단일 객체 해제 (소멸자 호출 + 메모리 반환)
     delete pNode;
@@ -5682,8 +5757,7 @@ int main() &#123;
 
     <!-- 8.3절: 동적 배열 할당: new[]와 delete[] 쿠키 저장 원리 -->
     <section class="lesson-section" id="sec-8-3">
-      <div class="section-badge">SECTION 8.3</div>
-      <h3 class="section-title">동적 배열 할당: new[]와 delete[]의 쿠키(Cookie) 오버헤드</h3>
+      <h3>8.3 동적 배열 할당: new[]와 delete[]의 쿠키(Cookie) 오버헤드</h3>
 
       <p>
         복수 개의 객체를 연속된 힙 메모리에 동적으로 생성할 때는 <code>new T[N]</code>과 <code>delete[] ptr</code>을 사용합니다.
@@ -5715,7 +5789,7 @@ int main() &#123;
 2. 힙 반환 시 할당 시작 주소(쿠키 앞)가 아닌 arr 주소를 넘겨 힙 메타데이터 오염 크래시!</pre>
       </div>
 
-      <div class="callout warning">
+      <div class="callout callout-warn">
         <div class="callout-title">Itanium C++ ABI의 배열 할당 쿠키 규약</div>
         <p>
           소멸자가 정의된 클래스 타입의 경우, 컴파일러(Clang/GCC)는 <code>new[]</code> 호출 시 8바이트(64비트 기준) 크기의 숨겨진 접두사 헤더인
@@ -5724,24 +5798,24 @@ int main() &#123;
         </p>
       </div>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">dynamic_array_cookie.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 
 struct Item &#123;
-    Item() &#123; std::cout &lt;&lt; "  Item 생성\n"; &#125;
-    ~Item() &#123; std::cout &lt;&lt; "  Item 소멸\n"; &#125;
+    Item() &#123; std::println("  Item 생성"); &#125;
+    ~Item() &#123; std::println("  Item 소멸"); &#125;
 &#125;;
 
 int main() &#123;
-    std::cout &lt;&lt; "--- new Item[3] 호출 ---\n";
+    std::println("--- new Item[3] 호출 ---");
     // 3번의 생성자 연속 호출 + 힙 쿠키에 3 저장
     Item* items = new Item[3];
 
-    std::cout &lt;&lt; "\n--- delete[] items 호출 ---\n";
+    std::println("\n--- delete[] items 호출 ---");
     // 쿠키를 읽어 3번의 소멸자 순차 호출 후 일괄 해제
     delete[] items;
     items = nullptr;
@@ -5753,15 +5827,14 @@ int main() &#123;
 
     <!-- 8.4절: 수동 메모리 관리의 4대 악몽 -->
     <section class="lesson-section" id="sec-8-4">
-      <div class="section-badge">SECTION 8.4</div>
-      <h3 class="section-title">수동 메모리 관리의 4대 악몽: 누수, 댕글링, 이중 해제, 불일치 해제</h3>
+      <h3>8.4 수동 메모리 관리의 4대 악몽: 누수, 댕글링, 이중 해제, 불일치 해제</h3>
 
       <p>
         가비지 컬렉터(GC)가 없는 C++에서 프로그래머가 <code>new</code>와 <code>delete</code>를 수동으로 제어할 때
         발생하는 치명적 4대 메모리 오류를 이해하는 것은 모던 C++ 자원 관리 기법(RAII, 스마트 포인터)의 필요성을 절감하는 핵심 출발점입니다.
       </p>
 
-      <div class="table-wrap">
+      <div class="spec-table-wrap">
         <table class="spec-table">
           <colgroup>
             <col style="width: 22%" />
@@ -5803,8 +5876,7 @@ int main() &#123;
 
     <!-- 8.5절: std::nothrow와 std::bad_alloc 예외 처리 -->
     <section class="lesson-section" id="sec-8-5">
-      <div class="section-badge">SECTION 8.5</div>
-      <h3 class="section-title">std::nothrow와 std::bad_alloc 메모리 고갈 예외 처리</h3>
+      <h3>8.5 std::nothrow와 std::bad_alloc 메모리 고갈 예외 처리</h3>
 
       <p>
         C 언어에 익숙한 개발자가 C++에서 저지르는 가장 흔한 실수는 <code>int* p = new int; if (p == nullptr) &#123; ... &#125;</code>와 같이 널 포인터를 검사하는 것입니다.
@@ -5812,12 +5884,12 @@ int main() &#123;
         대신 C++ 표준 라이브러리의 <code>std::bad_alloc</code> 예외(헤더 <code>&lt;new&gt;</code>)를 던져 실행 흐름을 중단시킵니다.
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">bad_alloc_and_nothrow.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 #include &lt;new&gt; // std::bad_alloc, std::nothrow
 
 int main() &#123;
@@ -5825,19 +5897,19 @@ int main() &#123;
     try &#123;
         // 천문학적인 크기(1테라바이트 이상) 할당 시도
         std::size_t huge_size = 1024ULL * 1024ULL * 1024ULL * 1024ULL;
-        std::cout &lt;&lt; "초대형 메모리 동적 할당 시도...\n";
+        std::println("초대형 메모리 동적 할당 시도...");
         int* pHuge = new int[huge_size];
         
         // 메모리 성공 시 로직
         delete[] pHuge;
     &#125; catch (const std::bad_alloc&amp; e) &#123;
-        std::cout &lt;&lt; "[예외 포착]: 메모리 할당 실패 (" &lt;&lt; e.what() &lt;&lt; ")\n";
+        std::println("[예외 포착]: 메모리 할당 실패 (&#123;&#125;)", e.what());
     &#125;
 
     // 2. std::nothrow를 사용한 C 스타일 nullptr 반환 모드
     int* pSafe = new (std::nothrow) int[1024ULL * 1024ULL * 1024ULL * 1024ULL];
     if (pSafe == nullptr) &#123;
-        std::cout &lt;&lt; "[std::nothrow]: 예외 대신 nullptr 반환 확인 완료\n";
+        std::println("[std::nothrow]: 예외 대신 nullptr 반환 확인 완료");
     &#125; else &#123;
         delete[] pSafe;
     &#125;
@@ -5849,30 +5921,46 @@ int main() &#123;
 
     <!-- 8.6절: 실무 스타일 가이드 비교 -->
     <section class="lesson-section" id="sec-8-6">
-      <div class="section-badge">SECTION 8.6</div>
-      <h3 class="section-title">실무 스타일 가이드 비교: new/delete 직접 사용 금지와 RAII 원칙</h3>
+      <h3>8.6 실무 스타일 가이드 비교: new/delete 직접 사용 금지와 RAII 원칙</h3>
 
       <div class="style-comparison-card">
-        <div class="style-header">
-          <span class="style-title">산업계 표준 가이드라인: 힙 자원 관리 및 소유권 원칙</span>
-          <span class="style-sub">Google C++ Style Guide vs C++ Core Guidelines</span>
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: 힙 자원 관리 및 소유권 원칙 (Google vs Core Guidelines)</span>
         </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          수동 힙 메모리 할당의 위험성을 제거하고 자원 누수를 원천 차단하기 위한 양대 표준 가이드라인을 비교합니다:
+        </p>
         <div class="style-grid">
           <div class="style-column">
-            <h4 class="style-col-title">Google C++ Style Guide</h4>
-            <ul>
-              <li><strong>원시 new/delete 전면 금지:</strong> 어플리케이션 레벨 코드에서 원시 <code>new</code> 및 <code>delete</code>의 직접 호출을 엄격히 금지합니다.</li>
-              <li><strong>스마트 포인터 팩토리:</strong> 동적 객체 생성이 필요할 경우 반드시 <code>std::make_unique&lt;T&gt;()</code>를 기본으로 사용하고, 소유권 공유 시에만 <code>std::make_shared&lt;T&gt;()</code>를 채택합니다.</li>
-              <li><strong>동적 배열 대체:</strong> <code>new T[]</code> 대신 크기 변경이 자유롭고 자원을 자동 해제하는 <code>std::vector&lt;T&gt;</code>를 무조건 사용합니다.</li>
-            </ul>
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p>
+              <strong>1. 원시 <code>new</code> / <code>delete</code> 전면 금지:</strong><br>
+              애플리케이션 레벨 코드에서 원시 <code>new</code> 및 <code>delete</code>의 직접 호출을 엄격히 금지합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>2. 스마트 포인터 팩토리 표준화:</strong><br>
+              동적 객체 생성이 필요할 경우 반드시 독점 소유권 기반의 <code>std::make_unique&lt;T&gt;()</code>를 기본으로 사용하고, 소유권 공유가 불가피할 때만 <code>std::make_shared&lt;T&gt;()</code>를 채택합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>3. 동적 배열 대체 (<code>std::vector</code>):</strong><br>
+              <code>new T[]</code> 대신 크기 변경이 자유롭고 스코프 종료 시 자원을 자동 해제하는 <code>std::vector&lt;T&gt;</code>를 무조건 사용합니다.
+            </p>
           </div>
           <div class="style-column">
-            <h4 class="style-col-title">C++ Core Guidelines</h4>
-            <ul>
-              <li><strong>R.11:</strong> <code>new</code>와 <code>delete</code>를 명시적으로 호출하지 말라 (Avoid calling <code>new</code> and <code>delete</code> explicitly).</li>
-              <li><strong>R.1:</strong> 리소스(메모리, 파일, 소켓) 관리는 반드시 <strong>RAII 객체(생성자에서 획득, 소멸자에서 해제)</strong>에 캡슐화하라.</li>
-              <li><strong>ES.60:</strong> <code>new[]</code>와 <code>delete[]</code>를 절대 쓰지 말고 <code>std::vector</code>나 <code>std::string</code>에 위임하라.</li>
-            </ul>
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
+            <p>
+              <strong>1. Core Guidelines R.11 (명시적 <code>new</code>/<code>delete</code> 호출 금지):</strong><br>
+              <code>new</code>와 <code>delete</code>를 애플리케이션 코드에서 직접 호출하지 말아야 합니다 (Avoid calling <code>new</code> and <code>delete</code> explicitly).
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>2. Core Guidelines R.1 (RAII 객체를 통한 자원 자동 관리):</strong><br>
+              메모리·파일·소켓 등 모든 리소스 관리는 반드시 <strong>RAII 객체(생성자에서 획득하고 소멸자에서 자동 해제)</strong>에 캡슐화해야 합니다.
+            </p>
+            <p style="margin-top: 0.6rem;">
+              <strong>3. Core Guidelines ES.60 (동적 배열에 <code>new[]</code>/<code>delete[]</code> 사용 금지):</strong><br>
+              <code>new[]</code>와 <code>delete[]</code>를 절대 직접 쓰지 말고 표준 컨테이너인 <code>std::vector</code>나 <code>std::string</code>에 위임합니다.
+            </p>
           </div>
         </div>
       </div>
@@ -5880,20 +5968,19 @@ int main() &#123;
 
     <!-- 8.7절: 터미널 실습 및 디버깅 -->
     <section class="lesson-section" id="sec-8-7">
-      <div class="section-badge">SECTION 8.7</div>
-      <h3 class="section-title">터미널 실습 및 디버깅: 힙 라이프사이클과 AddressSanitizer(ASan) 검증</h3>
+      <h3>8.7 터미널 실습 및 디버깅: 힙 라이프사이클과 AddressSanitizer(ASan) 검증</h3>
 
       <p>
         본 실습에서는 단일 객체 및 동적 배열의 <code>new</code>/<code>delete</code> 생성자·소멸자 호출 순서를 눈으로 검증하고,
         LLVM Clang의 <strong>AddressSanitizer(<code>-fsanitize=address</code>)</strong>를 활용하여 런타임 메모리 누수와 댕글링 포인터를 정밀하게 탐지하는 실무 디버깅 기법을 실습합니다.
       </p>
 
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
           <span class="file-name">ch08_heap_memory.cpp</span>
-          <span class="code-lang">cpp</span>
+          <span class="code-lang">C++26</span>
         </div>
-        <pre><code>#include &lt;iostream&gt;
+        <pre><code>#include &lt;print&gt;
 #include &lt;new&gt;
 
 class ResourceTracker &#123;
@@ -5901,52 +5988,52 @@ private:
     int m_tag;
 public:
     ResourceTracker() : m_tag(0) &#123;
-        std::cout &lt;&lt; "  [Tracker " &lt;&lt; m_tag &lt;&lt; "] 기본 생성자 호출\n";
+        std::println("  [Tracker &#123;&#125;] 기본 생성자 호출", m_tag);
     &#125;
     ResourceTracker(int tag) : m_tag(tag) &#123;
-        std::cout &lt;&lt; "  [Tracker " &lt;&lt; m_tag &lt;&lt; "] 매개변수 생성자 호출 (주소: " 
-                  &lt;&lt; static_cast&lt;const void*&gt;(this) &lt;&lt; ")\n";
+        std::println("  [Tracker &#123;&#125;] 매개변수 생성자 호출 (주소: &#123;&#125;)",
+                     m_tag, static_cast&lt;const void*&gt;(this));
     &#125;
     ~ResourceTracker() &#123;
-        std::cout &lt;&lt; "  [Tracker " &lt;&lt; m_tag &lt;&lt; "] 소멸자 호출 (주소: " 
-                  &lt;&lt; static_cast&lt;const void*&gt;(this) &lt;&lt; ")\n";
+        std::println("  [Tracker &#123;&#125;] 소멸자 호출 (주소: &#123;&#125;)",
+                     m_tag, static_cast&lt;const void*&gt;(this));
     &#125;
     void do_work() const &#123;
-        std::cout &lt;&lt; "  [Tracker " &lt;&lt; m_tag &lt;&lt; "] 작업 수행 중...\n";
+        std::println("  [Tracker &#123;&#125;] 작업 수행 중...", m_tag);
     &#125;
 &#125;;
 
 int main() &#123;
-    std::cout &lt;&lt; "=== [1] 단일 객체 동적 할당 및 소멸 추적 ===\n";
+    std::println("=== [1] 단일 객체 동적 할당 및 소멸 추적 ===");
     ResourceTracker* pSingle = new ResourceTracker(101);
     pSingle-&gt;do_work();
     delete pSingle;
     pSingle = nullptr;
 
-    std::cout &lt;&lt; "\n=== [2] 동적 배열 할당과 쿠키 기반 소멸자 역순 호출 ===\n";
+    std::println("\n=== [2] 동적 배열 할당과 쿠키 기반 소멸자 역순 호출 ===");
     ResourceTracker* pArray = new ResourceTracker[2];
     delete[] pArray;
     pArray = nullptr;
 
-    std::cout &lt;&lt; "\n=== [3] std::nothrow 메모리 실패 방어 검증 ===\n";
+    std::println("\n=== [3] std::nothrow 메모리 실패 방어 검증 ===");
     // 시스템에서 허용 불가능한 거대 크기 요청
     int* pTest = new (std::nothrow) int[1024ULL * 1024ULL * 1024ULL * 500ULL];
     if (!pTest) &#123;
-        std::cout &lt;&lt; "  - 500GB 할당 요청 정상 방어: nullptr 반환 확인\n";
+        std::println("  - 500GB 할당 요청 정상 방어: nullptr 반환 확인");
     &#125; else &#123;
         delete[] pTest;
     &#125;
 
-    std::cout &lt;&lt; "\n=== Phase 02 모든 실습 정상 완료 ===\n";
+    std::println("\n=== Phase 02 모든 실습 정상 완료 ===");
     return 0;
 &#125;</code></pre>
       </div>
 
       <h4>터미널 컴파일 및 실행 커맨드</h4>
-      <div class="code-block">
+      <div class="code-block-wrap">
         <div class="code-header">
-          <span class="file-name">Terminal Commands</span>
-          <span class="code-lang">bash</span>
+          <span class="file-name">Terminal (macOS zsh)</span>
+          <span class="code-lang">Shell</span>
         </div>
         <pre><code># Clang++ C++26 엄격 모드 및 AddressSanitizer 활성화 컴파일
 /opt/homebrew/opt/llvm/bin/clang++ -std=c++26 -Wall -Wextra -fsanitize=address -g ch08_heap_memory.cpp -o ch08_heap_memory
@@ -5955,8 +6042,31 @@ int main() &#123;
 ./ch08_heap_memory</code></pre>
       </div>
 
+      <h4>실행 결과 출력</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
+        </div>
+        <pre><code>=== [1] 단일 객체 동적 할당 및 소멸 추적 ===
+  [Tracker 101] 매개변수 생성자 호출 (주소: 0x602000000010)
+  [Tracker 101] 작업 수행 중...
+  [Tracker 101] 소멸자 호출 (주소: 0x602000000010)
+
+=== [2] 동적 배열 할당과 쿠키 기반 소멸자 역순 호출 ===
+  [Tracker 0] 기본 생성자 호출
+  [Tracker 0] 기본 생성자 호출
+  [Tracker 0] 소멸자 호출 (주소: 0x60200000003c)
+  [Tracker 0] 소멸자 호출 (주소: 0x602000000038)
+
+=== [3] std::nothrow 메모리 실패 방어 검증 ===
+  - 500GB 할당 요청 정상 방어: nullptr 반환 확인
+
+=== Phase 02 모든 실습 정상 완료 ===</code></pre>
+      </div>
+
       <h4>자주 발생하는 4대 컴파일/런타임 트러블슈팅</h4>
-      <div class="troubleshooting-grid">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">AddressSanitizer 런타임 오류</span>
@@ -6222,8 +6332,10 @@ int main() &#123;
           </a>
         </nav>
 
+        <div class="floating-divider" style="margin: 0.6rem 0;"></div>
+
         <!-- CHAPTER 07 -->
-        <div class="floating-chapter-title">CHAPTER 07</div>
+        <div class="floating-toc-label">CHAPTER 07</div>
         <nav class="floating-toc-list" aria-label="7단원 목차">
           <a href="#sec-7-1" class="floating-toc-link" data-target="sec-7-1">
             <span class="toc-badge">7.1</span>
@@ -6255,8 +6367,10 @@ int main() &#123;
           </a>
         </nav>
 
+        <div class="floating-divider" style="margin: 0.6rem 0;"></div>
+
         <!-- CHAPTER 08 -->
-        <div class="floating-chapter-title">CHAPTER 08</div>
+        <div class="floating-toc-label">CHAPTER 08</div>
         <nav class="floating-toc-list" aria-label="8단원 목차">
           <a href="#sec-8-1" class="floating-toc-link" data-target="sec-8-1">
             <span class="toc-badge">8.1</span>
@@ -7420,6 +7534,34 @@ int main() &#123;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* ASCII Memory Layout Diagram Box */
+  .diagram-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 1.25rem 0 1.5rem;
+    overflow: hidden;
+  }
+  .diagram-title {
+    padding: 0.6rem 1rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .ascii-diagram {
+    margin: 0;
+    padding: 1rem 1.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-2);
+    overflow-x: auto;
+    background: #0d0d11;
   }
 
   /* Responsive Behavior */

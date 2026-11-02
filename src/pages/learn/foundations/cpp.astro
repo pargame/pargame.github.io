@@ -6330,7 +6330,7 @@ int main() &#123;
       </div>
 
       <h4>자주 발생하는 4대 컴파일/런타임 트러블슈팅</h4>
-      <div class="error-trouble-grid list-view" style="display: flex; flex-direction: column; gap: 1rem;">
+      <div class="error-trouble-grid">
         <div class="trouble-card">
           <div class="err-header">
             <span class="err-type">AddressSanitizer 런타임 오류</span>
@@ -7465,17 +7465,12 @@ int main() &#123;
     gap: 0.3rem;
   }
 
-  /* Error Grid */
+  /* Error Trouble Stack */
   .error-trouble-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.2rem;
-    margin: 1.5rem 0;
-  }
-  .error-trouble-grid.list-view {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    margin: 1.5rem 0;
   }
   .trouble-card {
     background: var(--surface-1);

@@ -1254,7 +1254,7 @@ struct GoodLayout &#123;
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [메모리 시각화: BadLayout (총 12바이트)]
+          메모리 시각화: BadLayout (총 12바이트)
         </div>
         <div class="memory-row">
           <div class="mem-cell data" style="flex: 1;"><code>a</code> (1B)</div>
@@ -1264,7 +1264,7 @@ struct GoodLayout &#123;
           <div class="mem-cell padding" style="flex: 3;">테일 패딩 (3B)</div>
         </div>
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent); margin-top: 0.8rem;">
-          [메모리 시각화: GoodLayout (총 8바이트)]
+          메모리 시각화: GoodLayout (총 8바이트)
         </div>
         <div class="memory-row">
           <div class="mem-cell data" style="flex: 4;"><code>b</code> (int 4B)</div>
@@ -4917,7 +4917,7 @@ int main() &#123;
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [스택 메모리 배치: int arr[4] = &#123;10, 20, 30, 40&#125;; (총 16 바이트 연속 블록)]
+          스택 메모리 배치: int arr[4] = &#123;10, 20, 30, 40&#125;; (총 16 바이트 연속 블록)
         </div>
         <div class="memory-row">
           <div class="mem-cell data" style="flex: 1;">
@@ -5038,7 +5038,7 @@ int main() &#123;
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [스택 프레임 전이: main() ➔ print_array(numbers) 호출 시 포인터 퇴화(Decay)]
+          스택 프레임 전이: main() ➔ print_array(numbers) 호출 시 포인터 퇴화(Decay)
         </div>
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: stretch; margin-top: 0.4rem;">
           <!-- 좌측: 호출자(main) 원본 배열 프레임 -->
@@ -5132,7 +5132,7 @@ int main() &#123;
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [2차원 배열 행 우선(Row-major) 직렬화 메모리 레이아웃]
+          2차원 배열 행 우선(Row-major) 직렬화 메모리 레이아웃
         </div>
         <div style="font-size: 0.8rem; color: var(--text-2); margin-top: 0.2rem;">
           <code>int grid[2][3] = &#123; &#123;10, 20, 30&#125;, &#123;40, 50, 60&#125; &#125;;</code> (총 24 바이트 연속 블록)
@@ -5269,7 +5269,7 @@ int main() &#123;
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [std::span&lt;int&gt; 내부 구조와 다형적 연속 메모리 참조 모델]
+          std::span&lt;int&gt; 내부 구조와 다형적 연속 메모리 참조 모델
         </div>
 
         <!-- 1. std::span 경량 래퍼 (16바이트) -->
@@ -5739,7 +5739,7 @@ raw[3] 주소: 0x16fdff1cc | 값: 400
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [프로세스 가상 주소 공간의 4대 메모리 세그먼트 아키텍처]
+          프로세스 가상 주소 공간의 4대 메모리 세그먼트 아키텍처
         </div>
         <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-2); margin-top: 0.2rem;">
           <span>높은 주소 (High Address: 0x7FFF_FFFF_FFFF)</span>
@@ -5850,7 +5850,7 @@ raw[3] 주소: 0x16fdff1cc | 값: 400
 
       <div class="memory-layout-box">
         <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
-          [C++ new와 delete의 2단계 라이프사이클 실행 시퀀스]
+          C++ new와 delete의 2단계 라이프사이클 실행 시퀀스
         </div>
 
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: stretch; margin-top: 0.5rem;">

@@ -189,7 +189,22 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         <h3>사용자 정의 타입과 객체 모델</h3>
         <p class="phase-desc">캡슐화, 생성자/소멸자, RAII 철학, 상속과 가상 함수(vtable)</p>
         <ul class="phase-list">
-          <li><span class="lesson-num">09</span> 구조체(struct)와 클래스(class)</li>
+          <li class="current-lesson-item">
+            <a href="#ch-09" class="phase-chapter-link">
+              <span class="lesson-num">09</span>
+              <span class="chapter-name">구조체(struct)와 클래스(class)</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="9단원 세부 소단원 이동">
+              <a href="#sec-9-1" class="sub-chip">9.1 struct vs class</a>
+              <a href="#sec-9-2" class="sub-chip">9.2 접근 제어·캡슐화</a>
+              <a href="#sec-9-3" class="sub-chip">9.3 멤버 함수 &amp; this</a>
+              <a href="#sec-9-4" class="sub-chip">9.4 const &amp; mutable</a>
+              <a href="#sec-9-5" class="sub-chip">9.5 집합체 &amp; 바인딩</a>
+              <a href="#sec-9-6" class="sub-chip">9.6 실무 스타일 비교</a>
+              <a href="#sec-9-7" class="sub-chip">9.7 실습·디버깅</a>
+            </div>
+          </li>
           <li><span class="lesson-num">10</span> 생성자, 소멸자 및 RAII 자원 관리</li>
           <li><span class="lesson-num">11</span> 연산자 오버로딩 & Rule of 0/3/5</li>
           <li><span class="lesson-num">12</span> 클래스 상속과 다형성(vtable)</li>
@@ -6383,6 +6398,738 @@ int main() &#123;
         </ul>
       </div>
     </footer>
+
+    <!-- ================================================================= -->
+    <!-- 단원 09: 구조체(struct)와 클래스(class) — 사용자 정의 타입과 캡슐화 -->
+    <!-- ================================================================= -->
+    <div class="chapter-separator" id="ch-09"></div>
+
+    <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
+      <span class="lesson-badge">PHASE 03 // CHAPTER 09</span>
+      <span class="read-time">예상 학습 시간: 55분</span>
+    </div>
+
+    <header class="lesson-header">
+      <h2>단원 09: 구조체(struct)와 클래스(class) — 사용자 정의 타입과 캡슐화</h2>
+      <p class="lesson-intro">
+        C++ 객체 지향 프로그래밍의 기초가 되는 사용자 정의 타입의 문법과 메모리 모델을 해부합니다.
+        C 스타일 레거시 구조체와의 결정적 차이, <code>struct</code>와 <code>class</code>의 유일한 언어적 차이(기본 접근 제어자),
+        캡슐화 원칙과 불변식(Invariant) 보호, 멤버 함수와 암시적 <code>this</code> 포인터(및 C++23/26 Deducing <code>this</code> 비교),
+        <code>const</code> 멤버 함수와 <code>mutable</code>, 집합체(Aggregate) 초기화와 C++17/C++26 구조화된 바인딩을 체계적으로 마스터합니다.
+      </p>
+    </header>
+
+    <div class="content-toc">
+      <div class="toc-title">9단원 목차</div>
+      <ul>
+        <li><a href="#sec-9-1">9.1 C++ 구조체와 클래스의 본질적 동등성과 유일한 차이</a></li>
+        <li><a href="#sec-9-2">9.2 3대 접근 제어자(public, private, protected)와 캡슐화 원칙</a></li>
+        <li><a href="#sec-9-3">9.3 멤버 변수, 멤버 함수와 암시적 this 포인터 메커니즘</a></li>
+        <li><a href="#sec-9-4">9.4 const 멤버 함수와 객체 불변성 보장 (const 정확성)</a></li>
+        <li><a href="#sec-9-5">9.5 집합체(Aggregate) 초기화와 C++17/C++26 구조화된 바인딩</a></li>
+        <li><a href="#sec-9-6">9.6 실무 스타일 가이드 비교: struct vs class 사용 기준</a></li>
+        <li><a href="#sec-9-7">9.7 터미널 실습 및 디버깅: 2D 기하 벡터 클래스 설계와 접근 위반 트러블슈팅</a></li>
+      </ul>
+    </div>
+
+    <!-- 9.1절: C++ 구조체와 클래스의 본질적 동등성과 유일한 차이 -->
+    <section class="lesson-section" id="sec-9-1">
+      <h3>9.1 C++ 구조체와 클래스의 본질적 동등성과 유일한 차이</h3>
+
+      <p>
+        C 언어에서 <strong>구조체(struct)</strong>는 단순히 연관된 서로 다른 타입의 데이터 멤버들을 단일 블록으로 묶는 데이터 레코드(POD, Plain Old Data)에 불과했습니다.
+        C 구조체는 멤버 함수를 가질 수 없었고, 접근 제어(정보 은닉) 기능이 없었으며, 선언 시 매번 <code>struct Point p;</code>처럼 <code>struct</code> 키워드를 명시하거나 <code>typedef</code>를 병행해야만 했습니다.
+      </p>
+
+      <p>
+        하지만 <strong>C++ 공식 표준 규약(ISO C++ 표준: '클래스 정의' 규약 [class])</strong>에서 <code>struct</code>는 완전히 새롭게 재정의되었습니다.
+        C++에서 구조체(<code>struct</code>)와 클래스(<code>class</code>)는 컴파일러 내부적으로 <strong>완벽히 동일한 클래스 타입(Class Type)</strong>으로 취급됩니다.
+        구조체 역시 멤버 함수, 생성자, 소멸자, 가상 함수, 연산자 오버로딩 등 클래스가 제공하는 모든 객체 지향 기능을 100% 동일하게 보유할 수 있습니다.
+      </p>
+
+      <h4>struct와 class의 유일한 언어적 차이</h4>
+      <p>
+        C++ 언어 규약상 <code>struct</code>와 <code>class</code> 사이에는 하드웨어적 또는 성능적 차이가 전혀 존재하지 않으며, 오직 <strong>접근 한정자가 명시되지 않았을 때의 기본값(Default Access) 2가지</strong>만 다릅니다:
+      </p>
+      <ol style="margin-left: 1.2rem; font-size: 0.95rem; line-height: 1.7; color: var(--text-2);">
+        <li><strong>기본 멤버 접근 한정자(Default Member Access Specifier):</strong>
+          <code>struct</code> 블록 내부의 멤버는 기본적으로 <code>public</code>으로 공개되지만,
+          <code>class</code> 블록 내부의 멤버는 기본적으로 <code>private</code>으로 은닉됩니다.
+        </li>
+        <li><strong>기본 상속 한정자(Default Base Class Access Specifier):</strong>
+          <code>struct Derived : Base</code>처럼 상속 한정자를 생략하면 기본 <code>public</code> 상속이 되지만,
+          <code>class Derived : Base</code>처럼 생략하면 기본 <code>private</code> 상속이 적용됩니다.
+        </li>
+      </ol>
+
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 22%" />
+            <col style="width: 24%" />
+            <col style="width: 27%" />
+            <col style="width: 27%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>비교 항목</th>
+              <th>C 언어 구조체 (C struct)</th>
+              <th>C++ 구조체 (C++ struct)</th>
+              <th>C++ 클래스 (C++ class)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>기본 멤버 접근 제어</td>
+              <td>항상 공개 (제어 기능 없음)</td>
+              <td><strong>public</strong> (명시적 private 가능)</td>
+              <td><strong>private</strong> (명시적 public 필요)</td>
+            </tr>
+            <tr>
+              <td>기본 상속 접근 제어</td>
+              <td>상속 개념 없음</td>
+              <td><strong>public 상속</strong> (기본값)</td>
+              <td><strong>private 상속</strong> (기본값)</td>
+            </tr>
+            <tr>
+              <td>멤버 함수 / 메서드</td>
+              <td>불가능 (함수 포인터 우회)</td>
+              <td><strong>완전 지원</strong></td>
+              <td><strong>완전 지원</strong></td>
+            </tr>
+            <tr>
+              <td>생성자 및 소멸자</td>
+              <td>미지원</td>
+              <td><strong>완전 지원</strong></td>
+              <td><strong>완전 지원</strong></td>
+            </tr>
+            <tr>
+              <td>타입 식별자 선언</td>
+              <td><code>struct Point pt;</code> 또는 typedef 필요</td>
+              <td><code>Point pt;</code> (일급 타입 인정)</td>
+              <td><code>Point pt;</code> (일급 타입 인정)</td>
+            </tr>
+            <tr>
+              <td>메모리 레이아웃 &amp; 성능</td>
+              <td>메모리 패딩 외 오버헤드 없음</td>
+              <td colspan="2" style="text-align: center; color: var(--accent); font-weight: 600;">둘 사이에 0바이트, 0사이클 차이 (100% 동일)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">struct_vs_class_diff.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+// struct: 기본 접근 제어가 public
+struct StructPoint &#123;
+    int x; // 기본 public
+    int y; // 기본 public
+&#125;;
+
+// class: 기본 접근 제어가 private
+class ClassPoint &#123;
+    int x; // 기본 private (외부 직접 접근 불가)
+    int y; // 기본 private
+public:
+    void set(int new_x, int new_y) &#123; x = new_x; y = new_y; &#125;
+    void print() const &#123; std::println("ClassPoint: (&#123;&#125;, &#123;&#125;)", x, y); &#125;
+&#125;;
+
+int main() &#123;
+    StructPoint sp&#123;10, 20&#125;;
+    sp.x = 30; // 컴파일 성공: struct 멤버는 기본 public
+
+    ClassPoint cp;
+    // cp.x = 30; // 컴파일 에러: 'x' is a private member of 'ClassPoint'
+    cp.set(30, 40); // 컴파일 성공: public 인터페이스 경유
+    cp.print();
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 9.2절: 3대 접근 제어자(public, private, protected)와 캡슐화 원칙 -->
+    <section class="lesson-section" id="sec-9-2">
+      <h3>9.2 3대 접근 제어자(public, private, protected)와 캡슐화 원칙</h3>
+
+      <p>
+        객체 지향 프로그래밍(OOP)의 첫 번째 핵심 기둥인 <strong>캡슐화(Encapsulation)</strong>는 데이터(상태)와 데이터를 조작하는 메서드(행위)를 단일 단위로 묶고,
+        외부의 잘못된 직접 조작으로부터 내부 상태를 보호하는 기법입니다.
+        이를 구현하기 위해 C++은 <strong>ISO C++ 표준 '접근 제어' 규약([class.access])</strong>에 따라 3대 접근 한정자를 제공합니다:
+      </p>
+
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <colgroup>
+            <col style="width: 20%" />
+            <col style="width: 32%" />
+            <col style="width: 48%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>접근 한정자</th>
+              <th>접근 가능 범위</th>
+              <th>설계 목적 및 실무 권장 용도</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>public</code></td>
+              <td>모든 외부 코드 (전역, 함수 등 무제한)</td>
+              <td>외부와 소통하는 객체의 <strong>공개 인터페이스(API)</strong> 선언</td>
+            </tr>
+            <tr>
+              <td><code>private</code></td>
+              <td>해당 클래스의 멤버 함수 및 <code>friend</code>만 허용</td>
+              <td>외부에 노출되지 않아야 하는 <strong>내부 상태 변수 및 도우미 함수</strong> 은닉</td>
+            </tr>
+            <tr>
+              <td><code>protected</code></td>
+              <td>해당 클래스 및 파생(자식) 상속 클래스에만 허용</td>
+              <td>상속 계층에서 자식 클래스에게만 구현 확장을 위해 허용하는 내부 상태</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rule-tip">
+        <strong>선행 용어 안내 (Term Preview):</strong> <code>protected</code> 한정자는 상속(Inheritance) 관계에서 자식 클래스의 접근을 허용하기 위해 사용됩니다. 상세한 상속 계층과 가상 함수(vtable) 다형성 모델은 단원 12: 클래스 상속과 다형성에서 본격적으로 다룹니다.
+      </div>
+
+      <h4>불변식(Class Invariants) 보호와 Getter/Setter의 올바른 철학</h4>
+      <p>
+        객체 지향 설계에서 <strong>불변식(Invariant)</strong>이란, 객체가 생성된 순간부터 소멸될 때까지 <strong>항상 유효하게 참(True)으로 유지되어야 하는 논리적 제약 조건</strong>을 의미합니다:
+      </p>
+      <ul style="margin-left: 1.2rem; font-size: 0.95rem; line-height: 1.7; color: var(--text-2);">
+        <li>은행 계좌의 잔액은 음수가 될 수 없다 (<code>balance &gt;= 0</code>).</li>
+        <li>분수(Fraction) 클래스의 분모는 0이 될 수 없다 (<code>denominator != 0</code>).</li>
+        <li>시간(Time) 클래스의 시(Hour)는 0~23, 분(Minute)은 0~59 범위를 벗어날 수 없다.</li>
+      </ul>
+
+      <p>
+        멤버 변수가 <code>public</code>으로 노출되면 외부 코드에서 <code>time.minute = 999;</code>처럼 언제든 불변식을 파괴할 수 있습니다.
+        멤버 변수를 <code>private</code>으로 격리하고 유효성 검사 로직을 갖춘 메서드를 제공하면 객체는 스스로 무결성을 온전히 방어할 수 있습니다.
+      </p>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠️ 무분별한 1:1 Getter/Setter 생성의 함정 (Tell, Don't Ask)</div>
+        <p>
+          모든 <code>private</code> 변수에 대해 기계적으로 <code>get_x()</code>, <code>set_x()</code>를 만들면,
+          외부 코드가 객체의 상태를 직접 물어보고(Ask) 외부에서 조작하게 되어 실질적으로 <code>public</code> 변수와 다를 바 없는 <strong>빈약한 도메인 모델(Anemic Domain Model)</strong>이 됩니다.
+          실무에서는 <em>"데이터를 꺼내오지 말고, 객체에게 일을 시켜라(Tell, Don't Ask)"</em> 원칙에 따라 의미 있는 행위 함수(예: <code>account.withdraw(5000)</code>)로 캡슐화해야 합니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 9.3절: 멤버 변수, 멤버 함수와 암시적 this 포인터 메커니즘 -->
+    <section class="lesson-section" id="sec-9-3">
+      <h3>9.3 멤버 변수, 멤버 함수와 암시적 this 포인터 메커니즘</h3>
+
+      <p>
+        객체를 생성할 때마다 멤버 함수(함수 코드)도 객체 크기만큼 메모리에 새로 복사될까요? 정답은 <strong>"전혀 복제되지 않는다"</strong>입니다.
+        컴파일러는 클래스의 비정적 멤버 함수 기계어를 단 한 번만 컴파일하여 <strong>코드 세그먼트(Text Segment)</strong>에 단 1벌만 상주시키며,
+        아무리 수천 개의 객체 인스턴스가 스택이나 힙에 생성되더라도 모든 인스턴스는 동일한 코드 세그먼트의 함수 주소를 공유합니다.
+      </p>
+
+      <div class="memory-layout-box">
+        <div style="font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--accent);">
+          멤버 함수의 메모리 공유 모델과 암시적 this 포인터 바인딩
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-2); margin-top: 0.2rem;">
+          객체가 1,000개 생성되어도 멤버 함수 코드는 텍스트 영역에 단 1개만 존재하며, 호출 시 암시적 <code>this</code>로 인스턴스를 구별합니다.
+        </div>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: stretch; margin-top: 0.6rem;">
+          <!-- 인스턴스 A -->
+          <div style="flex: 1; min-width: 200px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--accent); margin-bottom: 0.3rem;">
+              인스턴스 <code>v1</code> (주소: 0x1000)
+            </div>
+            <div class="memory-row">
+              <div class="mem-cell data" style="flex: 1;"><small>m_x (8B)</small><code>3.0</code></div>
+              <div class="mem-cell data" style="flex: 1;"><small>m_y (8B)</small><code>4.0</code></div>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-2); margin-top: 0.4rem;">
+              호출: <code>v1.set_x(10.0);</code> ➔ <code>this == 0x1000</code>
+            </div>
+          </div>
+
+          <!-- 인스턴스 B -->
+          <div style="flex: 1; min-width: 200px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.75rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; color: #60a5fa; margin-bottom: 0.3rem;">
+              인스턴스 <code>v2</code> (주소: 0x2000)
+            </div>
+            <div class="memory-row">
+              <div class="mem-cell data" style="flex: 1; background: color-mix(in srgb, #3b82f6 15%, var(--surface-2));"><small>m_x (8B)</small><code>5.0</code></div>
+              <div class="mem-cell data" style="flex: 1; background: color-mix(in srgb, #3b82f6 15%, var(--surface-2));"><small>m_y (8B)</small><code>12.0</code></div>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-2); margin-top: 0.4rem;">
+              호출: <code>v2.set_x(20.0);</code> ➔ <code>this == 0x2000</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- 공용 코드 영역 -->
+        <div style="margin-top: 0.6rem; background: var(--surface-2); border: 1px dashed var(--accent); border-radius: 6px; padding: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-1);">
+              단일 코드 세그먼트 (Text Segment): <code>Vector2D::set_x(Vector2D* const this, double new_x)</code>
+            </span>
+            <span style="font-size: 0.72rem; background: var(--surface-1); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-subtle);">모든 인스턴스가 단 1개의 함수 기계어 공유</span>
+          </div>
+        </div>
+      </div>
+
+      <h4>암시적 this 포인터 전달 규약과 메서드 체이닝</h4>
+      <p>
+        동일한 함수 코드를 공유하는데, 함수 내부에서는 자신이 <code>v1</code>을 조작 중인지 <code>v2</code>를 조작 중인지 어떻게 구별할까요?
+        <strong>ISO C++ 표준 'this 표현식' 규약([class.this])</strong>에 따라, 비정적 멤버 함수가 호출될 때 컴파일러는 함수 시그니처의 보이지 않는 첫 번째 매개변수로 현재 호출한 객체의 메모리 주소(<code>T* const this</code>)를 암시적으로 주입합니다:
+      </p>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">this_translation.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>// 우리가 작성하는 소스 코드
+v1.set_x(10.0);
+
+// 컴파일러가 저수준으로 번역(Rewrite)하는 실제 기계어 형태
+Vector2D::set_x(&amp;v1, 10.0);</code></pre>
+      </div>
+
+      <p>
+        멤버 함수 내부에서 <code>this</code>는 <em>"현재 나 자신 객체의 주소를 가리키는 상수 포인터"</em>입니다.
+        이를 활용하여 <code>return *this;</code>(자신 객체의 참조 <code>Vector2D&amp;</code>)를 반환하면, 여러 메서드를 한 줄로 연쇄 호출하는 <strong>메서드 체이닝(Method Chaining / Fluent API)</strong>을 구현할 수 있습니다.
+      </p>
+
+      <h4>모던 C++23/C++26 명시적 객체 매개변수 (Deducing this, P0847R7)</h4>
+      <p>
+        기존 C++의 암시적 <code>this</code> 포인터는 상수성(const)이나 값 범주(lvalue/rvalue)에 따라 멤버 함수를 중복 오버로딩해야 하는 오랜 한계를 지니고 있었습니다.
+        C++23 표준은 이를 혁신적으로 개선한 <strong>명시적 객체 매개변수(Explicit Object Parameter, 제안서 P0847R7)</strong>를 도입하였습니다.
+        첫 번째 매개변수 앞에 키워드 <code>this</code>를 명시하면 암시적 포인터 대신 자신이 원하는 참조 타입(<code>this const Self&amp; self</code> 등)으로 객체를 직접 전달받을 수 있습니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">deducing_this_preview.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+#include &lt;string_view&gt;
+
+struct Greeter &#123;
+    // C++23/C++26 Deducing this: 첫 번째 매개변수로 자기 자신(self)을 명시적 전달
+    void say_hello(this const Greeter&amp; self, std::string_view name) &#123;
+        std::println("안녕하세요, &#123;&#125;님!", name);
+    &#125;
+&#125;;
+
+int main() &#123;
+    Greeter g;
+    g.say_hello("철수"); // 호출 문법은 기존 멤버 함수와 동일
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 9.4절: const 멤버 함수와 객체 불변성 보장 (const 정확성) -->
+    <section class="lesson-section" id="sec-9-4">
+      <h3>9.4 const 멤버 함수와 객체 불변성 보장 (const 정확성)</h3>
+
+      <p>
+        단원 06에서 살펴본 상수성 원칙은 클래스 멤버 함수에서도 엄격하게 적용됩니다.
+        멤버 함수의 소괄호 뒤에 <code>const</code> 키워드를 붙이면(예: <code>double magnitude() const;</code>),
+        내부적으로 암시적 <code>this</code> 포인터의 타입이 <code>T* const</code>에서 <strong><code>const T* const</code></strong>로 바뀝니다.
+        즉, <em>"이 멤버 함수 내부에서는 객체의 어떠한 멤버 변수도 절대 수정하지 않겠다"</em>는 사실을 컴파일러에게 보장하는 계약입니다.
+      </p>
+
+      <div class="callout callout-info">
+        <div class="callout-title">📌 const 객체는 오직 const 멤버 함수만 호출 가능</div>
+        <p>
+          객체가 <code>const Vector2D c_vec&#123;3.0, 4.0&#125;;</code> 처럼 상수로 선언되었거나 <code>const Vector2D&amp; ref</code>로 전달된 경우,
+          컴파일러는 객체의 불변성을 보장하기 위해 <strong>오직 <code>const</code> 한정자가 붙은 멤버 함수 호출만 허용</strong>합니다.
+          객체 상태를 읽기만 하는 모든 조회 함수(Getter 등)에는 예외 없이 <code>const</code>를 붙이는 것이 <strong>C++의 const 정확성(const-correctness)</strong> 대원칙입니다.
+        </p>
+      </div>
+
+      <h4>물리적 상수성 vs 논리적 상수성과 mutable 키워드</h4>
+      <p>
+        C++ 표준 규약(ISO C++ 'mutable 지정자' 규약 [dcl.stc])은 <strong>물리적 상수성(Bitwise Constness)</strong>과 <strong>논리적 상수성(Logical Constness)</strong>을 명확히 구분합니다:
+      </p>
+      <ul style="margin-left: 1.2rem; font-size: 0.95rem; line-height: 1.7; color: var(--text-2);">
+        <li><strong>물리적 상수성(Bitwise Constness):</strong> 객체가 차지하는 메모리의 모든 비트가 한 톨도 변경되지 않는 상태.</li>
+        <li><strong>논리적 상수성(Logical Constness):</strong> 외부 사용자 관점에서는 객체의 핵심 비즈니스 상태가 변경되지 않았지만, 내부적인 성능 최적화(연산 결과 캐싱, 조회 횟수 카운터, 멀티스레드 뮤텍스 락)를 위해 일부 부가 상태를 변경하는 상태.</li>
+      </ul>
+
+      <p>
+        멤버 변수 선언 시 <code>mutable</code> 지정자를 붙이면, <strong><code>const</code> 멤버 함수 내부에서도 해당 변수를 자유롭게 수정</strong>할 수 있습니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">mutable_caching.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+#include &lt;cmath&gt;
+
+class HeavyCalculation &#123;
+private:
+    double m_input;
+    mutable double m_cached_result&#123;0.0&#125;;
+    mutable bool m_is_cached&#123;false&#125;;
+
+public:
+    explicit HeavyCalculation(double val) : m_input(val) &#123;&#125;
+
+    // const 함수이지만 내부 캐시 상태를 mutable로 갱신 (논리적 상수성 유지)
+    double get_result() const &#123;
+        if (!m_is_cached) &#123;
+            m_cached_result = std::sin(m_input) * std::cos(m_input); // 복잡한 연산 시뮬레이션
+            m_is_cached = true;
+            std::println("캐시 미스: 연산 수행 및 결과 저장");
+        &#125; else &#123;
+            std::println("캐시 히트: 보관된 결과 즉시 반환");
+        &#125;
+        return m_cached_result;
+    &#125;
+&#125;;
+
+int main() &#123;
+    const HeavyCalculation calc&#123;3.141592&#125;; // 상수 객체
+    calc.get_result(); // 1회차: 캐시 미스
+    calc.get_result(); // 2회차: 캐시 히트
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-title">⚠️ mutable의 남용 금지 가드레일</div>
+        <p>
+          모던 C++에서 <code>const</code> 멤버 함수는 <em>"스레드 안전(Thread-safe)한 읽기 연산"</em>이라는 암묵적 신뢰를 내포합니다.
+          만약 <code>mutable</code> 변수를 적절한 동기화 장치(스레드 뮤텍스 등) 없이 마구 수정하면 심각한 데이터 레이스(Data Race) 버그가 발생하므로,
+          오직 캐싱, 통계 카운터, 락(Mutex) 등 명확한 부가 목적에만 제한적으로 사용해야 합니다.
+        </p>
+      </div>
+    </section>
+
+    <!-- 9.5절: 집합체(Aggregate) 초기화와 C++17/C++26 구조화된 바인딩 -->
+    <section class="lesson-section" id="sec-9-5">
+      <h3>9.5 집합체(Aggregate) 초기화와 C++17/C++26 구조화된 바인딩</h3>
+
+      <p>
+        C++ 공식 표준(ISO C++ 집합체 초기화 규약 [dcl.init.aggr])에서 <strong>집합체(Aggregate)</strong>는 생성자나 복잡한 캡슐화 장치 없이 순수하게 데이터를 나열하는 특별한 클래스 타입을 의미합니다.
+        구조체가 다음 조건을 만족하면 집합체로 공인됩니다:
+      </p>
+      <ul style="margin-left: 1.2rem; font-size: 0.95rem; line-height: 1.7; color: var(--text-2);">
+        <li>사용자가 직접 작성한 사용자 정의 또는 명시적 생성자(User-declared/explicit constructor)가 없음.</li>
+        <li><code>private</code> 또는 <code>protected</code>로 선언된 비정적 멤버 변수가 없음 (모든 멤버가 <code>public</code>).</li>
+        <li>가상 함수(<code>virtual</code>)나 가상 기본 클래스를 보유하지 않음.</li>
+      </ul>
+
+      <p>
+        집합체는 중괄호 리스트 초기화(<code>Point&#123;10, 20&#125;</code>)를 완벽히 지원하며,
+        C++20부터는 가독성을 비약적으로 높이는 <strong>지정 초기화자(Designated Initializers)</strong>가 공식 표준으로 채택되었습니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">designated_init.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>struct Color &#123;
+    int r&#123;0&#125;;
+    int g&#123;0&#125;;
+    int b&#123;0&#125;;
+&#125;;
+
+// C++20 지정 초기화자: 필드 이름을 명시하여 직관성 확보
+Color red&#123;.r = 255, .g = 0, .b = 0&#125;;
+Color green&#123;.g = 255&#125;; // 명시하지 않은 필드는 기본값(0)으로 자동 초기화
+
+// 주의: C 언어와 달리 C++에서는 선언 순서를 어기면 컴파일 에러!
+// Color bad&#123;.b = 255, .r = 0&#125;; // 에러: field 'r' declared out of order</code></pre>
+      </div>
+
+      <h4>C++17 구조화된 바인딩(Structured Binding) 메커니즘 (선행 백로그 12 회수)</h4>
+      <p>
+        앞서 2.6절에서 예고했던 <strong>구조화된 바인딩(Structured Binding)</strong>은 집합체 구조체의 멤버 변수들을 단 한 줄의 문장으로 개별 식별자에 안전하게 분해 바인딩하는 C++17 핵심 기능입니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">structured_binding.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+struct Player &#123;
+    int id;
+    double score;
+&#125;;
+
+int main() &#123;
+    Player p&#123;.id = 42, .score = 99.5&#125;;
+
+    // 1. 값 복사 바인딩 (독립적인 복사본 생성)
+    auto [id_copy, score_copy] = p;
+
+    // 2. 참조 바인딩 (원본 객체 멤버 직접 수정 가능)
+    auto&amp; [id_ref, score_ref] = p;
+    score_ref = 100.0; // p.score가 실제로 100.0으로 수정됨
+
+    // 3. 상수 참조 바인딩 (복사 비용 없이 읽기 전용 뷰 제공)
+    const auto&amp; [cid, cscore] = p;
+    std::println("Player ID: &#123;&#125;, Score: &#123;&#125;", cid, cscore);
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>C++26 와일드카드 플레이스홀더(`_`) 결합 (P2169R4)</h4>
+      <p>
+        단원 02에서 다룬 C++26 단일 밑줄(<code>_</code>) 플레이스홀더 규약은 구조화된 바인딩에서 진가를 발휘합니다.
+        구조체에 수많은 멤버가 있더라도, 자신이 사용하지 않을 필드는 <code>_</code>로 간단히 무시할 수 있으며 동일 스코프에서 여러 번 중복 사용하여도 이름 충돌이 발생하지 않습니다:
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">cpp26_wildcard_binding.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+
+struct Transaction &#123;
+    int id;
+    double amount;
+    int timestamp;
+&#125;;
+
+int main() &#123;
+    Transaction tx&#123;.id = 777, .amount = 1500.0, .timestamp = 1714500000&#125;;
+
+    // C++26: id와 timestamp는 무시하고 amount만 깔끔하게 추출!
+    auto [_, amt, _] = tx;
+    std::println("결제 금액: &#123;&#125; 원", amt);
+    return 0;
+&#125;</code></pre>
+      </div>
+    </section>
+
+    <!-- 9.6절: 실무 스타일 가이드 비교: struct vs class 사용 기준 -->
+    <section class="lesson-section" id="sec-9-6">
+      <h3>9.6 실무 스타일 가이드 비교: struct vs class 사용 기준</h3>
+
+      <div class="style-comparison-card">
+        <div class="style-card-header">
+          <span class="style-badge">STYLE GUIDE DEBATE</span>
+          <span class="style-card-title">실무 표준 관례 비교: struct vs class 사용 기준 (Google vs Core Guidelines)</span>
+        </div>
+        <p style="font-size: 0.92rem; color: var(--text-2); margin-bottom: 0.8rem; line-height: 1.6;">
+          객체의 불변식(Invariant) 유무와 인터페이스 캡슐화 수준에 따른 실무 설계 철학 비교:
+        </p>
+        <div class="style-grid">
+          <div class="style-column">
+            <div class="style-col-title">🏢 구글 C++ 스타일 가이드 (Google)</div>
+            <p><strong>1. 수동적 데이터 홀더에만 struct 사용:</strong><br>오직 데이터 멤버만 단순히 나열하는 순수 데이터 컨테이너(POD 또는 단순 집합체)에만 <code>struct</code>를 사용하고, 모든 멤버 변수는 <code>public</code>으로 직접 노출합니다.</p>
+            <p style="margin-top: 0.6rem;"><strong>2. 로직과 불변식이 존재하면 반드시 class:</strong><br>멤버 변수 간의 일관성을 유지해야 하거나(불변식), 상태 변경 시 유효성 검사가 필요하거나, 비즈니스 로직 함수가 포함되는 순간 반드시 <code>class</code>를 사용하고 멤버 변수는 <code>private</code>으로 철저히 은닉합니다.</p>
+          </div>
+          <div class="style-column">
+            <div class="style-col-title">🌐 모던 C++ 코어 가이드라인 (Modern C++ Core Guidelines)</div>
+            <p><strong>1. Core Guidelines C.2 (독립적인 멤버는 struct):</strong><br>클래스 멤버들이 상호 독립적으로 어떤 유효한 값도 자유롭게 가질 수 있다면 <code>struct</code>를 사용하여 불필요한 Getter/Setter 보일러플레이트를 배제합니다.</p>
+            <p style="margin-top: 0.6rem;"><strong>2. Core Guidelines C.2 &amp; C.9 (불변식이 존재하면 class):</strong><br>멤버들 사이에 상호 의존적인 관계나 불변식(Invariants)이 유지되어야 한다면 반드시 <code>class</code>를 사용하고, 인터페이스(<code>public</code>)와 내부 상태(<code>private</code>)를 명확히 분리합니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9.7절: 터미널 실습 및 디버깅: 2D 기하 벡터 클래스 설계와 접근 위반 트러블슈팅 -->
+    <section class="lesson-section" id="sec-9-7">
+      <h3>9.7 터미널 실습 및 디버깅: 2D 기하 벡터 클래스 설계와 접근 위반 트러블슈팅</h3>
+
+      <p>
+        구조체 집합체, 캡슐화된 클래스, 메서드 체이닝, <code>const</code> 멤버 함수와 <code>mutable</code>,
+        그리고 C++17/C++26 구조화된 바인딩을 집대성한 실습 프로그램을 작성하고 터미널에서 검증합니다.
+      </p>
+
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">ch09_struct_class.cpp</span>
+          <span class="code-lang">C++26</span>
+        </div>
+        <pre><code>#include &lt;print&gt;
+#include &lt;cmath&gt;
+
+// 1. 집합체(Aggregate) 구조체: 순수 데이터 홀더
+struct Point2D &#123;
+    double x&#123;0.0&#125;;
+    double y&#123;0.0&#125;;
+&#125;;
+
+// 2. 캡슐화된 2D 기하 벡터 클래스
+class Vector2D &#123;
+private:
+    double m_x&#123;0.0&#125;;
+    double m_y&#123;0.0&#125;;
+    mutable unsigned int m_query_count&#123;0&#125;; // const 함수에서도 상태 갱신 허용
+
+public:
+    // 기본 생성자 및 초기화 생성자
+    Vector2D() = default;
+    Vector2D(double x, double y) : m_x(x), m_y(y) &#123;&#125;
+
+    // Getter 함수 (const 정확성 준수)
+    [[nodiscard]] double x() const noexcept &#123; return m_x; &#125;
+    [[nodiscard]] double y() const noexcept &#123; return m_y; &#125;
+    [[nodiscard]] unsigned int query_count() const noexcept &#123; return m_query_count; &#125;
+
+    // Setter 함수 (메서드 체이닝을 위한 *this 참조 반환)
+    Vector2D&amp; set_x(double new_x) noexcept &#123;
+        m_x = new_x;
+        return *this;
+    &#125;
+
+    Vector2D&amp; set_y(double new_y) noexcept &#123;
+        m_y = new_y;
+        return *this;
+    &#125;
+
+    // const 멤버 함수: 벡터 길이(크기) 계산
+    [[nodiscard]] double magnitude() const noexcept &#123;
+        ++m_query_count; // mutable 멤버 수정 (논리적 상수성 유지)
+        return std::sqrt(m_x * m_x + m_y * m_y);
+    &#125;
+
+    // C++23/C++26 명시적 객체 매개변수(Deducing this, P0847R7) 멤버 함수
+    void print_coords(this const Vector2D&amp; self) noexcept &#123;
+        std::println("Vector2D 좌표: (&#123;:.1f&#125;, &#123;:.1f&#125;)", self.m_x, self.m_y);
+    &#125;
+&#125;;
+
+int main() &#123;
+    std::println("=== [1] struct 집합체 초기화 및 C++17/26 구조화된 바인딩 ===");
+    // C++20 지정 초기화자 (선언 순서 엄수)
+    Point2D pt&#123;.x = 3.0, .y = 4.0&#125;;
+    std::println("Point2D 생성: (&#123;:.1f&#125;, &#123;:.1f&#125;)", pt.x, pt.y);
+
+    // C++17 구조화된 바인딩
+    auto [px, py] = pt;
+    std::println("구조화된 바인딩 분해: px = &#123;:.1f&#125;, py = &#123;:.1f&#125;", px, py);
+
+    // C++26 플레이스홀더 와일드카드(_) 활용: y 좌표는 무시
+    auto [only_x, _] = pt;
+    std::println("C++26 와일드카드 분해: only_x = &#123;:.1f&#125;", only_x);
+
+    std::println("\n=== [2] class 캡슐화 및 메서드 체이닝 (*this) ===");
+    Vector2D vec;
+    // 메서드 체이닝: set_x()와 set_y()를 연속 호출
+    vec.set_x(6.0).set_y(8.0);
+    vec.print_coords();
+
+    std::println("\n=== [3] const 멤버 함수와 mutable 캐시/카운터 ===");
+    const Vector2D const_vec(5.0, 12.0);
+    std::println("상수 벡터 크기 1회차: &#123;:.1f&#125;", const_vec.magnitude());
+    std::println("상수 벡터 크기 2회차: &#123;:.1f&#125;", const_vec.magnitude());
+    std::println("mutable 조회 횟수 카운터: &#123;&#125; 회", const_vec.query_count());
+
+    std::println("\n=== 9단원 모든 실습 정상 완료 ===");
+    return 0;
+&#125;</code></pre>
+      </div>
+
+      <h4>터미널 컴파일 및 실행 커맨드</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">Terminal (macOS zsh)</span>
+          <span class="code-lang">Shell</span>
+        </div>
+        <pre><code># Clang++ C++26 모드 및 엄격한 경고 활성화 컴파일
+/opt/homebrew/opt/llvm/bin/clang++ -std=c++26 -Wall -Wextra -pedantic ch09_struct_class.cpp -o ch09_struct_class
+
+# 실행 및 캡슐화·바인딩 결과 확인
+./ch09_struct_class</code></pre>
+      </div>
+
+      <h4>실행 결과 출력</h4>
+      <div class="code-block-wrap">
+        <div class="code-header">
+          <span class="file-name">Output</span>
+          <span class="code-lang">Text</span>
+        </div>
+        <pre><code>=== [1] struct 집합체 초기화 및 C++17/26 구조화된 바인딩 ===
+Point2D 생성: (3.0, 4.0)
+구조화된 바인딩 분해: px = 3.0, py = 4.0
+C++26 와일드카드 분해: only_x = 3.0
+
+=== [2] class 캡슐화 및 메서드 체이닝 (*this) ===
+Vector2D 좌표: (6.0, 8.0)
+
+=== [3] const 멤버 함수와 mutable 캐시/카운터 ===
+상수 벡터 크기 1회차: 13.0
+상수 벡터 크기 2회차: 13.0
+mutable 조회 횟수 카운터: 2 회
+
+=== 9단원 모든 실습 정상 완료 ===</code></pre>
+      </div>
+
+      <h4>자주 발생하는 4대 컴파일/런타임 트러블슈팅</h4>
+      <div class="error-trouble-grid">
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: 'm_x' is a private member of 'Vector2D'</code>
+          </div>
+          <p><strong>원인:</strong> <code>class</code> 내부에서 <code>private</code>으로 선언된 멤버 변수를 외부 함수나 <code>main()</code>에서 <code>vec.m_x = 10.0;</code>처럼 직접 접근하여 객체 캡슐화 경계를 침범했습니다.</p>
+          <p class="fix"><strong>해결:</strong> <code>public</code>으로 공개된 인터페이스 함수(Setter: <code>vec.set_x(10.0);</code>)를 통해 상태를 변경하거나, 불변식이 없는 단순 데이터 컨테이너라면 <code>struct</code>를 사용합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: 'this' argument has type 'const Vector2D', but method is not marked const</code>
+          </div>
+          <p><strong>원인:</strong> <code>const Vector2D c_vec;</code> 처럼 상수로 정의된 객체나 <code>const</code> 참조자에서 <code>const</code> 한정자가 붙지 않은 비const 멤버 함수(예: <code>c_vec.set_x(1.0);</code>)를 호출하여 불변성 보약 규약을 위반했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 객체의 상태를 수정하지 않는 순수 조회용 멤버 함수(Getter, 연산 등)에는 시그니처 뒤에 반드시 <code>const</code>(예: <code>double magnitude() const;</code>)를 명시하고, 상수 객체에서는 오직 <code>const</code> 함수만 호출합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: no matching constructor for initialization of 'Point' (aggregate initialization failed)</code>
+          </div>
+          <p><strong>원인:</strong> 구조체 내부에 사용자 정의 생성자(예: <code>Point(double, double)</code>)를 작성하여 ISO C++ 표준 집합체(Aggregate) 자격을 상실했음에도, 집합체 전용 중괄호 초기화나 지정 초기화자(<code>Point&#123;.x = 1.0&#125;</code>)를 사용했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 집합체 성격을 유지하려면 사용자 정의 생성자를 제거(또는 <code>= default</code> 선언)하거나, 생성자가 선언된 경우 생성자 매개변수 규격에 맞춰 일반 함수 호출 형태로 인자를 전달합니다.</p>
+        </div>
+
+        <div class="trouble-card">
+          <div class="err-header">
+            <span class="err-type">컴파일 오류 (Compile Error)</span>
+            <code>error: designated initializer field 'x' declared out of order</code>
+          </div>
+          <p><strong>원인:</strong> C 언어와 달리 ISO C++20 지정 초기화자 규약에서는 구조체에 멤버 변수가 선언된 순서와 동일한 순서로 초기화 필드를 나열해야 하는데, <code>x</code> 뒤에 <code>y</code>가 선언된 구조체에서 <code>Point&#123;.y = 4.0, .x = 3.0&#125;</code> 처럼 역순으로 작성했습니다.</p>
+          <p class="fix"><strong>해결:</strong> 구조체 정의의 멤버 선언 순서에 맞춰 초기화자 순서를 <code>Point&#123;.x = 3.0, .y = 4.0&#125;</code>로 재배열합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 단원 09 정리 (핵심 요약 상자) -->
+    <footer class="lesson-summary">
+      <div class="summary-box">
+        <h3>9단원 핵심 요약</h3>
+        <ul>
+          <li><strong>struct와 class의 본질적 동등성:</strong> C++에서 구조체와 클래스는 100% 동일한 클래스 타입이며, 오직 기본 접근 한정자(<code>public</code> vs <code>private</code>)와 기본 상속 한정자(<code>public</code> vs <code>private</code>)만 다릅니다. 메모리나 런타임 오버헤드는 0바이트, 0사이클 차이입니다.</li>
+          <li><strong>캡슐화와 객체 불변식(Class Invariants) 보호:</strong> 내부 상태 변수를 <code>private</code>으로 은닉하여 외부의 비정상적 값 주입으로부터 무결성을 보장하며, 단순 1:1 Getter/Setter 남발 대신 "Tell, Don't Ask" 원칙에 입각한 행위 메서드를 설계합니다.</li>
+          <li><strong>암시적 this 포인터와 메모리 모델:</strong> 아무리 많은 객체 인스턴스가 생성되어도 멤버 함수 코드는 코드 세그먼트(Text)에 단 1벌만 상주하며, 호출 시 암시적 첫 번째 인자로 현재 객체 주소(<code>T* const this</code>)가 전달됩니다. <code>return *this;</code>로 메서드 체이닝을 구현합니다.</li>
+          <li><strong>모던 C++23/C++26 명시적 객체 매개변수 (Deducing this):</strong> 첫 번째 매개변수에 <code>this const Self&amp; self</code>를 명시하여 암시적 <code>this</code>를 대체하고, 완벽 전달과 중복 오버로딩 제거를 실현합니다.</li>
+          <li><strong>const 멤버 함수와 mutable의 조화:</strong> 상수 객체는 오직 <code>const</code> 멤버 함수만 호출 가능하며(<code>this</code> 타입이 <code>const T* const</code>로 변환), 연산 캐싱이나 동기화 락 등 논리적 상수성을 유지하는 부가 상태는 <code>mutable</code>로 예외 변경할 수 있습니다.</li>
+          <li><strong>집합체와 C++17/C++26 구조화된 바인딩:</strong> 순수 데이터 집합체는 C++20 지정 초기화자(선언 순서 엄수)와 C++17 구조화된 바인딩(<code>auto [a, b] = obj;</code>)을 완벽 지원하며, C++26에서는 미사용 필드를 <code>_</code> 와일드카드로 우아하게 무시할 수 있습니다.</li>
+        </ul>
+      </div>
+    </footer>
   </article>
 
   <!-- 사이드 플로팅 네비게이션 UI -->
@@ -6663,6 +7410,41 @@ int main() &#123;
           <a href="#sec-8-7" class="floating-toc-link" data-target="sec-8-7">
             <span class="toc-badge">8.7</span>
             <span class="toc-name">터미널 실습 & 디버깅</span>
+          </a>
+        </nav>
+
+        <div class="floating-divider" style="margin: 0.6rem 0;"></div>
+
+        <!-- CHAPTER 09 -->
+        <div class="floating-toc-label">CHAPTER 09</div>
+        <nav class="floating-toc-list" aria-label="9단원 목차">
+          <a href="#sec-9-1" class="floating-toc-link" data-target="sec-9-1">
+            <span class="toc-badge">9.1</span>
+            <span class="toc-name">struct vs class 본질</span>
+          </a>
+          <a href="#sec-9-2" class="floating-toc-link" data-target="sec-9-2">
+            <span class="toc-badge">9.2</span>
+            <span class="toc-name">3대 접근 제어 &amp; 캡슐화</span>
+          </a>
+          <a href="#sec-9-3" class="floating-toc-link" data-target="sec-9-3">
+            <span class="toc-badge">9.3</span>
+            <span class="toc-name">멤버 함수 &amp; this 포인터</span>
+          </a>
+          <a href="#sec-9-4" class="floating-toc-link" data-target="sec-9-4">
+            <span class="toc-badge">9.4</span>
+            <span class="toc-name">const 멤버 &amp; mutable</span>
+          </a>
+          <a href="#sec-9-5" class="floating-toc-link" data-target="sec-9-5">
+            <span class="toc-badge">9.5</span>
+            <span class="toc-name">집합체 &amp; 구조화된 바인딩</span>
+          </a>
+          <a href="#sec-9-6" class="floating-toc-link" data-target="sec-9-6">
+            <span class="toc-badge">9.6</span>
+            <span class="toc-name">실무 스타일 가이드</span>
+          </a>
+          <a href="#sec-9-7" class="floating-toc-link" data-target="sec-9-7">
+            <span class="toc-badge">9.7</span>
+            <span class="toc-name">터미널 실습 &amp; 디버깅</span>
           </a>
         </nav>
       </div>

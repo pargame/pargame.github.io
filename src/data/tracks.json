@@ -36,11 +36,12 @@
     "id": "labs",
     "name": "Labs & Projects",
     "koreanName": "연구실 & 프로젝트",
-    "description": "자체 언어 nung_lang 및 소크라테스식 재귀 탐구 지식 트리 whynode",
+    "description": "자체 언어 nung_lang, 지식 탐구 트리 whynode 및 UE 5.9 실전 게임 개발 프로젝트",
     "accent": "#A98BFA",
     "topics": [
       { "id": "nung-lang", "name": "nung_lang", "summary": "자체 프로그래밍 언어 및 인터프리터 설계" },
-      { "id": "whynode", "name": "whynode", "summary": "소크라테스식 재귀적 지식 탐구 마인드맵" }
+      { "id": "whynode", "name": "whynode", "summary": "소크라테스식 재귀적 지식 탐구 마인드맵" },
+      { "id": "project", "name": "Project", "summary": "실전 프로젝트 개발 허브 — UE 5.9 「곰팡이 우주 정복 대작전」 아키텍처 & Devlog" }
     ]
   }
 ]

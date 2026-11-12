@@ -1,0 +1,2918 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { Code } from 'astro:components';
+
+const codeBuildCs = `// Source/UEStudy/UEStudy.Build.cs — Sandbox 격리를 위한 PublicIncludePaths
+PublicIncludePaths.AddRange(new string[] {
+	"UEStudy",
+	"UEStudy/Sandbox"
+});
+
+PublicDependencyModuleNames.AddRange(new string[] {
+	"Core",
+	"CoreUObject",
+	"Engine",
+	"InputCore",
+	"EnhancedInput",
+	"AIModule",
+	"StateTreeModule",
+	"GameplayStateTreeModule",
+	"UMG",
+	"Slate"
+});`;
+
+const codeGameMode = `// Source/UEStudy/Sandbox/MiniProject/SpaceDrifterGameMode.cpp
+ASpaceDrifterGameMode::ASpaceDrifterGameMode()
+{
+	DefaultPawnClass = ASpaceDrifterPawn::StaticClass();
+	PlayerControllerClass = ASpaceDrifterPlayerController::StaticClass();
+}`;
+
+const codePlayerController = `// Source/UEStudy/Sandbox/MiniProject/SpaceDrifterPlayerController.cpp
+void ASpaceDrifterPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (IsLocalPlayerController())
+	{
+		SetShowMouseCursor(false);
+		SetInputMode(FInputModeGameOnly());
+	}
+}
+
+void ASpaceDrifterPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if (IsLocalPlayerController())
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+		{
+			for (int32 Index = 0; Index < DefaultMappingContexts.Num(); ++Index)
+			{
+				if (UInputMappingContext* MappingContext = DefaultMappingContexts[Index])
+				{
+					Subsystem->AddMappingContext(MappingContext, Index);
+				}
+			}
+		}
+	}
+}`;
+
+const codeCameraOrbit = `// SpaceDrifterPawn.cpp — 쿼터니언 기반 360도 궤도 카메라 회전 & 보간
+void ASpaceDrifterPawn::DoLook(float Yaw, float Pitch)
+{
+	AController* PC = GetController();
+	if (!PC || PC->IsLookInputIgnored())
+	{
+		return;
+	}
+
+	const float ScaledYawRad = FMath::DegreesToRadians(Yaw * OrbitLookSensitivity);
+	const float ScaledPitchRad = FMath::DegreesToRadians(Pitch * OrbitLookSensitivity);
+
+	const FQuat YawDelta(FVector::UpVector, ScaledYawRad);
+	const FQuat PitchDelta(FVector::RightVector, ScaledPitchRad);
+	TargetCameraOrbitQuat = (TargetCameraOrbitQuat * YawDelta * PitchDelta).GetNormalized();
+
+	if (OrbitRotationLagSpeed <= 0.0f && CameraPivot)
+	{
+		SmoothedCameraOrbitQuat = TargetCameraOrbitQuat;
+		CameraPivot->SetRelativeRotation(SmoothedCameraOrbitQuat);
+	}
+}
+
+void ASpaceDrifterPawn::UpdateCameraOrbit(float DeltaTime)
+{
+	if (!CameraPivot) { return; }
+
+	if (OrbitRotationLagSpeed > 0.0f)
+	{
+		SmoothedCameraOrbitQuat = FMath::QInterpTo(
+			SmoothedCameraOrbitQuat, TargetCameraOrbitQuat, DeltaTime, OrbitRotationLagSpeed
+		).GetNormalized();
+	}
+	else
+	{
+		SmoothedCameraOrbitQuat = TargetCameraOrbitQuat;
+	}
+
+	CameraPivot->SetRelativeRotation(SmoothedCameraOrbitQuat);
+}`;
+
+const codeElasticity = `// SpaceDrifterPawn.cpp — 가속도 자동 감지 + 촉수 연동 + 2차 감쇠 스프링
+void ASpaceDrifterPawn::UpdateElasticity(float DeltaTime)
+{
+	const float SimDt = FMath::Min(DeltaTime, 0.05f);
+	if (SimDt <= KINDA_SMALL_NUMBER) { return; }
+
+	// 1) 프레임 간 액터 위치 변화로 월드 가속도 자동 감지
+	const FVector CurrentLocation = GetActorLocation();
+	const FVector CurrentVelocity = (CurrentLocation - PreviousActorLocation) / SimDt;
+	float TargetDeform = 0.0f;
+
+	if (bHasVelocityHistory)
+	{
+		const FVector Acceleration = (CurrentVelocity - PreviousWorldVelocity) / SimDt;
+		const float AccelMag = Acceleration.Size();
+		if (AccelMag > AccelerationDeadzone)
+		{
+			const FVector AccelDir = Acceleration / AccelMag;
+			const FVector AlignedDir = (FVector::DotProduct(DeformAxis, AccelDir) < 0.0f) ? -AccelDir : AccelDir;
+			DeformAxis = FMath::VInterpTo(DeformAxis, AlignedDir, SimDt, 12.0f).GetSafeNormal();
+			TargetDeform = FMath::Clamp((AccelMag - AccelerationDeadzone) * AccelerationDeformScale, 0.0f, MaxDeformAmount);
+		}
+	}
+
+	PreviousActorLocation = CurrentLocation;
+	PreviousWorldVelocity = CurrentVelocity;
+	bHasVelocityHistory = true;
+
+	// 2) 촉수 전개 중 조준 방향으로 본체 스트레치 연동
+	const float TendrilDeform = (TendrilExtendAlpha > KINDA_SMALL_NUMBER && bIsExtendingTendril)
+		? (TendrilBodyStretch * TendrilExtendAlpha)
+		: 0.0f;
+	if (TendrilDeform > TargetDeform)
+	{
+		const FVector AlignedDir = (FVector::DotProduct(DeformAxis, LastTendrilDir) < 0.0f) ? -LastTendrilDir : LastTendrilDir;
+		DeformAxis = FMath::VInterpTo(DeformAxis, AlignedDir, SimDt, 14.0f).GetSafeNormal();
+		TargetDeform = FMath::Clamp(TendrilDeform, 0.0f, MaxDeformAmount);
+	}
+
+	// 3) 2차 감쇠 스프링-댐퍼 적분 & 부호 있는 클램핑
+	const float SpringForce = SpringStiffness * (TargetDeform - DeformValue);
+	const float DampingForce = -SpringDamping * DeformVelocity;
+	DeformVelocity += (SpringForce + DampingForce) * SimDt;
+	DeformValue = FMath::Clamp(DeformValue + DeformVelocity * SimDt, -0.45f, MaxDeformAmount);
+}`;
+
+const codeTendrilParams = `// SpaceDrifterPawn.cpp — 긴 촉수(V1) 동적 곁가지 개수 계산 및 Niagara User.* 파라미터 푸시
+int32 ASpaceDrifterPawn::ComputeLongTendrilBranchCount() const
+{
+	if (LongTendrilBranchFrequency <= KINDA_SMALL_NUMBER)
+	{
+		return 0;
+	}
+	const float TrunkMeters = FMath::Max(LongTendrilMaxLength, 0.0f) / 100.0f;
+	return FMath::Clamp(FMath::RoundToInt(TrunkMeters * LongTendrilBranchFrequency), 0, 64);
+}
+
+void ASpaceDrifterPawn::PushLongTendrilUserParameters(UFXSystemComponent* TargetFX)
+{
+	if (!TargetFX) { return; }
+
+	const int32 DesiredBranchCount = ComputeLongTendrilBranchCount();
+	LastPushedSideBranchCount = DesiredBranchCount;
+
+	TargetFX->SetIntParameter(TEXT("User.SideBranchCount"), DesiredBranchCount);
+	TargetFX->SetFloatParameter(TEXT("User.TrunkWidth"), FMath::Max(LongTendrilTrunkWidth, 0.2f));
+	TargetFX->SetFloatParameter(TEXT("User.TipWidthRatio"), FMath::Clamp(LongTendrilTipWidthRatio, 0.0f, 3.0f));
+	TargetFX->SetFloatParameter(TEXT("User.SideBranchLength"), FMath::Max(LongTendrilBranchLength, 1.0f));
+	TargetFX->SetFloatParameter(TEXT("User.SideBranchWidth"), FMath::Max(LongTendrilBranchWidth, 0.1f));
+	TargetFX->SetFloatParameter(TEXT("User.BranchBaseToTipRatio"), FMath::Clamp(LongTendrilBaseToTipLengthRatio, 0.0f, 4.0f));
+	TargetFX->SetFloatParameter(TEXT("User.BranchStartRatio"), FMath::Clamp(LongTendrilBranchStartRatio, 0.02f, 0.90f));
+	TargetFX->SetFloatParameter(TEXT("User.BranchSpreadScale"), FMath::Max(LongTendrilBranchSpreadScale, 0.05f));
+}`;
+
+const codeHoldAndNet = `// SpaceDrifterPawn.cpp — V1(홀드+최대유지제한) vs V2(단발 최대 전개) 입력 및 타이머 분기
+void ASpaceDrifterPawn::OnExtendTendrilEnded(const FInputActionValue& Value)
+{
+	bIsExtendInputHeld = false;
+	// V2 (그물 촉수)는 단발 발사이므로 키를 떼도 최대 전개 및 유지 후 자동 수축을 끝까지 진행
+	if (TendrilVisualStyle == ETendrilVisualStyle::GossamerSpores)
+	{
+		return;
+	}
+	SetTendrilExtending(false);
+}
+
+float ASpaceDrifterPawn::GetActiveHoldDurationLimit() const
+{
+	if (TendrilVisualStyle == ETendrilVisualStyle::GossamerSpores)
+	{
+		return FMath::Max(NetTendrilHoldDuration, 0.0f);
+	}
+	return bLimitLongTendrilHoldDuration ? FMath::Max(LongTendrilMaxHoldDuration, 0.0f) : -1.0f;
+}
+
+// UpdateTendril() 내부: 최대 전개(1.0) 도달 후 허용 유지시간 차감 및 자동 회수
+if (bIsExtendingTendril && bHoldLimitArmed)
+{
+	if (TendrilExtendAlpha >= 1.0f - KINDA_SMALL_NUMBER)
+	{
+		TendrilExtendAlpha = 1.0f;
+		MaxExtendHoldTimeRemaining -= DeltaTime;
+		if (MaxExtendHoldTimeRemaining <= 0.0f)
+		{
+			SetTendrilExtending(false);
+		}
+	}
+}`;
+
+const codeTooltips = `// SpaceDrifterPawn.h — UHT 리플렉션 기반 한글 툴팁 예시
+/** 긴 촉수(V1) 본 가지와 곁가지 리본 자체의 뿌리 대비 끝단 굵기 테이퍼 비율입니다(1.0 = 균일).
+ *  0.0에 가까울수록 끝이 바늘처럼 급격히 얇아지고, 1.0보다 클수록(최대 3.0) 끝단이 더 굵게 부풉니다. */
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpaceDrifter|LongTendril",
+	meta = (ClampMin = "0.0", ClampMax = "3.0", UIMin = "0.0", UIMax = "3.0"))
+float LongTendrilTipWidthRatio = 0.08f;
+
+/** 긴 촉수(V1) 끝단 대비 뿌리쪽 곁가지 길이·굵기·퍼짐 비율입니다(1.0 = 균일).
+ *  작을수록(예: 0.05~0.35) 앞부분은 작고 끝단에만 크게 몰려 피어나며,
+ *  1.0보다 클수록(예: 2.0~4.0) 뿌리쪽이 크고 넓게 뻗고 끝으로 갈수록 작아집니다. */
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpaceDrifter|LongTendril",
+	meta = (ClampMin = "0.0", ClampMax = "4.0", UIMin = "0.0", UIMax = "4.0"))
+float LongTendrilBaseToTipLengthRatio = 0.35f;`;
+
+const codeToolchainZshrc = `# ~/.zshrc — 전역 xcode-select를 훼손하지 않는 UE 5.9 툴체인 격리 스위칭
+ue-on() {
+    local xcode_dev="/Applications/Xcode.app/Contents/Developer"
+    if [ ! -d "$xcode_dev" ]; then
+        local matches=(/Applications/Xcode*26.1.1*.app/Contents/Developer(N))
+        if (( \${#matches} > 0 )); then
+            xcode_dev="\${matches[1]}"
+        fi
+    fi
+    if [ ! -d "$xcode_dev" ]; then
+        echo "[UE] Xcode가 설치되지 않았습니다: $xcode_dev"
+        return 1
+    fi
+    export DEVELOPER_DIR="$xcode_dev"
+    launchctl setenv DEVELOPER_DIR "$xcode_dev"
+    echo "[UE] 언리얼 툴체인 활성화됨 → $(xcode-select -p)"
+}
+
+ue-off() {
+    unset DEVELOPER_DIR
+    launchctl unsetenv DEVELOPER_DIR
+    echo "[UE] 기본 툴체인 복귀됨 → $(xcode-select -p)"
+}
+
+ue-status() {
+    local launchd_dir
+    launchd_dir=$(launchctl getenv DEVELOPER_DIR)
+    if [ -n "$DEVELOPER_DIR" ] || [ -n "$launchd_dir" ]; then
+        echo "[UE] 현재 상태: 언리얼 모드 (DEVELOPER_DIR=\${DEVELOPER_DIR:-$launchd_dir})"
+    else
+        echo "[UE] 현재 상태: 기본 모드 ($(xcode-select -p))"
+    fi
+}`;
+
+const codeUprojectMcp = `// UEStudy.uproject — UE 5.9 공식 내장 ModelContextProtocol 41개 툴셋 활성화
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.9",
+	"Modules": [
+		{ "Name": "UEStudy", "Type": "Runtime", "LoadingPhase": "Default" }
+	],
+	"Plugins": [
+		{ "Name": "ModelingToolsEditorMode", "Enabled": true, "TargetAllowList": [ "Editor" ] },
+		{ "Name": "StateTree", "Enabled": true },
+		{ "Name": "GameplayStateTree", "Enabled": true },
+		{ "Name": "ControlRig", "Enabled": true },
+		{ "Name": "FullBodyIK", "Enabled": true },
+		{ "Name": "AllToolsets", "Enabled": true }
+	]
+}`;
+
+const codeLaunchLoop = `// Engine/Source/Runtime/Launch/Private/LaunchEngineLoop.cpp (L2012-2019)
+// .uproject 인자 없이 에디터 바이너리만 실행하면 FApp::HasProjectName()이 false가 되어
+// ProjectBinariesRootDirectory가 비워진 채 모듈 탐색이 진행됨 -> 모듈 누락 팝업 유발
+FString ProjectBinariesRootDirectory;
+if (FApp::HasProjectName())
+{
+	ProjectBinariesRootDirectory = FPlatformMisc::ProjectDir();
+#if !IS_MONOLITHIC
+#if !IS_PROGRAM
+	FPlatformMisc::GetEngineAndProjectAbsoluteDirsFromExecutable(
+		ProjectBinariesRootDirectory, EngineBinariesRootDirectory
+	);
+#endif`;
+
+const codeEngineIni = `; Config/DefaultEngine.ini — M4 MacBook Air (16GB 통합 메모리) 렌더 패스 경량화
+[/Script/Engine.Engine]
+bSmoothFrameRate=True
+SmoothedFrameRateRange=(LowerBound=(Type="Inclusive",Value=30.000000),UpperBound=(Type="Inclusive",Value=60.000000))
+
+[/Script/Engine.RendererSettings]
+r.DynamicGlobalIlluminationMethod=0
+r.ReflectionMethod=2
+r.GenerateMeshDistanceFields=False
+r.Lumen.TraceMeshSDFs=0
+r.Shadow.Virtual.Enable=0
+r.AllowStaticLighting=False
+r.SkinCache.CompileShaders=0
+r.RayTracing=False
+r.RayTracing.RayTracingProxies.ProjectEnabled=False
+r.Substrate=True
+r.Substrate.ProjectGBufferFormat=0
+r.DiscardUnusedQuality=True
+r.ScreenPercentage.Default.Desktop.Mode=0
+r.ScreenPercentage.Default=75.000000`;
+
+const codeScalabilityIni = `; Config/DefaultScalability.ini — @1 경량 확장성 프리셋 (텍스처 풀 & 렌더 타깃 제한)
+[ScalabilitySettings]
+PerfIndexThresholds_ResolutionQuality="GPU 18 42 115"
+
+[ViewDistanceQuality@1]
+r.ViewDistanceScale=0.8
+
+[ShadowQuality@1]
+r.ShadowQuality=2
+r.Shadow.CSM.MaxCascades=1
+r.Shadow.MaxResolution=1024
+r.Shadow.DistanceScale=0.7
+
+[PostProcessQuality@1]
+r.MotionBlurQuality=0
+r.AmbientOcclusionLevels=1
+r.BloomQuality=1
+r.RenderTargetPoolMin=200
+
+[TextureQuality@1]
+r.Streaming.MipBias=0.5
+r.MaxAnisotropy=2
+r.Streaming.PoolSize=400
+
+[EffectsQuality@1]
+r.TranslucencyLightingVolumeDim=32
+r.RefractionQuality=0
+
+[GlobalIlluminationQuality@1]
+r.Lumen.DiffuseIndirect.Allow=0
+r.Lumen.Reflections.Allow=0
+
+[ReflectionQuality@1]
+r.Lumen.Reflections.Allow=0`;
+---
+
+<BaseLayout
+  title="곰팡이 우주 정복 대작전 — UE 5.9 클라이언트 엔지니어링 포스트모텀"
+  description="Unreal Engine 5.9 기반 '곰팡이 우주 정복 대작전'의 클라이언트 설계 의도, 언리얼 엔진 제약 극복(APawn · 쿼터니언 6-DoF · 반응형 촉수 · Xcode 26.1.1 격리 · M4 Air 메모리 최적화) 기록"
+>
+  <div class="note-header">
+    <nav class="breadcrumb" aria-label="브레드크럼">
+      <a href="/learn">Study Notes</a>
+      <span>/</span>
+      <a href="/learn">Labs &amp; Projects</a>
+      <span>/</span>
+      <a href="/learn/labs/project">Project</a>
+      <span>/</span>
+      <span class="current">곰팡이 우주 정복 대작전</span>
+    </nav>
+
+    <div class="topic-tag">UE 5.9 CLIENT ENGINEERING // POSTMORTEM &amp; DEVLOG</div>
+    <h1>곰팡이 우주 정복 대작전: 설계 결정과 엔지니어링 기록</h1>
+    <p class="topic-desc">
+      Unreal Engine 5.9(macOS Apple Silicon) 환경에서 무중력 물풍선 부유체와 반응형 균사 촉수를 구현하며 마주친 <strong>언리얼 엔진 구조적 제약, 클라이언트 설계 판단, 그리고 macOS M4 16GB 최적화 실전기</strong>를 정리한 기록입니다.
+      핵심 설계 스토리와 스크린샷은 바로 읽히도록 배치하고, 상세 코드·설정 파일·파라미터 표는 접이식 서랍에 정리했습니다.
+    </p>
+
+    <div class="meta-bar">
+      <span class="meta-chip"><span class="chip-k">ENGINE</span> UE 5.9 (Xcode 26.1.1)</span>
+      <span class="meta-chip"><span class="chip-k">WORKFLOW</span> Director + AI Co-Dev</span>
+      <span class="meta-chip"><span class="chip-k">HARDWARE</span> M4 Air 16GB Unified</span>
+      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 Complete</span>
+    </div>
+  </div>
+
+  <!-- 마일스톤 로드맵 개요 -->
+  <section class="curriculum-overview">
+    <div class="section-title-wrap">
+      <span class="badge">PROJECT ROADMAP &amp; POSTMORTEM INDEX</span>
+      <h2>클라이언트 개발 마일스톤 (01 — 06)</h2>
+      <p>macOS 툴체인·엔진 환경 구축(01)에서 게임플레이 아키텍처(02~05), 그리고 M4 16GB 메모리 최적화 실전기(06)까지 순차적으로 탐색할 수 있습니다.</p>
+    </div>
+
+    <div class="roadmap-grid">
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 01</span>
+          <span class="phase-status active">환경 · 엔진</span>
+        </div>
+        <h3>Xcode 26.1.1 격리 &amp; 엔진 분석</h3>
+        <p class="phase-desc">ue-on/off 환경 격리, 공식 MCP 41툴셋, LaunchEngineLoop &amp; Live Coding 분석</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-01" class="phase-chapter-link">
+              <span class="lesson-num">01</span>
+              <span class="chapter-name">macOS 툴체인 &amp; 엔진</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 01 세부 섹션">
+              <a href="#sec-1-1" class="sub-chip">1.1 Xcode 격리·MCP</a>
+              <a href="#sec-1-2" class="sub-chip">1.2 엔진/LC 트러블슈팅</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 02</span>
+          <span class="phase-status active">기록 완료</span>
+        </div>
+        <h3>템플릿 격리 &amp; APawn 직조</h3>
+        <p class="phase-desc">Sandbox 격리, 6분류 에셋 재편, ACharacter를 버린 순수 APawn 설계</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-02" class="phase-chapter-link">
+              <span class="lesson-num">02</span>
+              <span class="chapter-name">아키텍처 &amp; 격리 설계</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 02 세부 섹션">
+              <a href="#sec-2-1" class="sub-chip">2.1 Sandbox·6분류</a>
+              <a href="#sec-2-2" class="sub-chip">2.2 APawn vs Char</a>
+              <a href="#sec-2-3" class="sub-chip">2.3 Input 분리</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 03</span>
+          <span class="phase-status active">기록 완료</span>
+        </div>
+        <h3>우주 환경 시각·인지 설계</h3>
+        <p class="phase-desc">2D UV 극점 왜곡 탈출, AutoExposure 톤 앵커링, 폰 추종 3D 먼지</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-03" class="phase-chapter-link">
+              <span class="lesson-num">03</span>
+              <span class="chapter-name">우주 환경 트러블슈팅</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 03 세부 섹션">
+              <a href="#sec-3-1" class="sub-chip">3.1 Lvl_Main 3단</a>
+              <a href="#sec-3-2" class="sub-chip">3.2 0-Sampler Sky</a>
+              <a href="#sec-3-3" class="sub-chip">3.3 노출 고정·조명</a>
+              <a href="#sec-3-4" class="sub-chip">3.4 폰 부착 먼지</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 04</span>
+          <span class="phase-status active">기록 완료</span>
+        </div>
+        <h3>쿼터니언 6-DoF &amp; 물풍선 탄성</h3>
+        <p class="phase-desc">FRotator 짐벌락 극복, 2차 감쇠 스프링, 아이코스피어 부피 보존 WPO</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-04" class="phase-chapter-link">
+              <span class="lesson-num">04</span>
+              <span class="chapter-name">무중력 폰 &amp; 카메라</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 04 세부 섹션">
+              <a href="#sec-4-1" class="sub-chip">4.1 쿼터니언 궤도</a>
+              <a href="#sec-4-2" class="sub-chip">4.2 스프링 탄성</a>
+              <a href="#sec-4-3" class="sub-chip">4.3 균일 아이코스피어</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 05</span>
+          <span class="phase-status active">기록 완료</span>
+        </div>
+        <h3>촉수 V1/V2 &amp; 체감 튜닝기</h3>
+        <p class="phase-desc">여의봉 현상(Aim Latch), 다중 리본, 비율·테이퍼 체감 개선, 한글 툴팁</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-05" class="phase-chapter-link">
+              <span class="lesson-num">05</span>
+              <span class="chapter-name">반응형 촉수 설계</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 05 세부 섹션">
+              <a href="#sec-5-1" class="sub-chip">5.1 조준 스냅샷</a>
+              <a href="#sec-5-2" class="sub-chip">5.2 V1 홀드·제한</a>
+              <a href="#sec-5-3" class="sub-chip">5.3 체감 튜닝 개선</a>
+              <a href="#sec-5-4" class="sub-chip">5.4 V2 단발·툴팁</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 06</span>
+          <span class="phase-status active">최적화</span>
+        </div>
+        <h3>M4 Air 16GB 메모리 최적화 실전기</h3>
+        <p class="phase-desc">GPU 60% 절감 오판 → 메모리 프로파일링으로 21.4GB → 7.93GB 달성 및 고품질 원복</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-06" class="phase-chapter-link">
+              <span class="lesson-num">06</span>
+              <span class="chapter-name">M4 Air 16GB 최적화</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 06 세부 섹션">
+              <a href="#sec-6-1" class="sub-chip">6.1 Critical 경고 발단</a>
+              <a href="#sec-6-2" class="sub-chip">6.2 오판과 원인 규명</a>
+              <a href="#sec-6-3" class="sub-chip">6.3 7.93GB &amp; 전량 원복</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 본문 + 스티키 플로팅 네비게이션 -->
+  <div class="study-layout">
+    <article class="lesson-article">
+
+      <div class="callout callout-info">
+        <div class="callout-title">🧭 협업 맥락 &amp; 읽는 방법 (Director + AI Co-Dev)</div>
+        <p>
+          이 프로젝트는 <strong>사용자가 클라이언트 설계 판단·아키텍처 디렉션·조작감/실루엣 피드백</strong>을 주도하고, AI가 <strong>C++·셰이더·Niagara 구현, 엔진 소스 추적, 공식 MCP(<code>unreal-mcp</code>) 라이브 검증</strong>을 수행하는 협업 흐름으로 진행했습니다.
+          본문은 설계 이유와 문제 해결 과정에 집중하며, 모든 C++ 코드·설정 파일·상세 파라미터 표는 아래 <strong>접이식 서랍(클릭 시 펼침)</strong>에 분리해 두었습니다.
+        </p>
+      </div>
+
+      <!-- ================= MILESTONE 01 ================= -->
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">MILESTONE 01 // MACOS TOOLCHAIN &amp; ENGINE INTERNALS</span>
+        <span class="read-time">Xcode 26.1.1 격리 · MCP · 모듈 누락 분석</span>
+      </div>
+
+      <header class="lesson-header" id="ch-01">
+        <h2>01. macOS 툴체인 격리 &amp; UE 5.9 엔진 내부 트러블슈팅</h2>
+        <p class="lesson-intro">
+          macOS Apple Silicon에서 UE 5.9 C++ 프로젝트를 다룰 때는 코드 로직뿐 아니라 <strong>Xcode 버전 충돌, GUI 런처 환경변수 단절, 에디터 바이너리 초기화 순서와 Live Coding 잔여물</strong>까지 이해해야 빌드가 멈추지 않습니다.
+        </p>
+      </header>
+
+      <section id="sec-1-1" class="lesson-section">
+        <h3>1.1 <code>Xcode 26.1.1</code> 환경변수 격리 스위칭 (<code>ue-on</code> / <code>ue-off</code>) &amp; 공식 MCP 연동</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">직면한 환경 충돌</span>
+            <div class="p-text">macOS <code>27.3</code> 기본 <code>CommandLineTools</code>(<code>/Library/Developer/CommandLineTools</code>)와 Homebrew <code>LLVM 23.1.0</code>(<code>/opt/homebrew/opt/llvm/bin</code>)이 전역 <code>PATH</code>에 잡혀 있는 반면, UE 5.9 UBT는 정확히 <strong><code>Xcode 26.1.1</code></strong>(<code>Apple clang 17.0.0</code>, <code>macOS SDK 26.1</code>, <code>Metal Toolchain 17B54</code>)만 허용했습니다. <code>sudo xcode-select -s</code>로 전역을 바꾸면 일반 개발/CLI 환경이 깨지는 문제가 있었습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">환경 격리 &amp; MCP 해법</span>
+            <div class="p-text">
+              <strong>1) 이중 환경변수 격리:</strong> <code>~/.zshrc</code>에 <code>ue-on</code> / <code>ue-off</code> / <code>ue-status</code> 함수를 두고, 현재 셸(<code>export DEVELOPER_DIR</code>)과 macOS GUI 앱 세션(<code>launchctl setenv DEVELOPER_DIR</code>)을 동시에 스위칭하도록 구성했습니다. (<code>ue-off</code> 시 즉시 두 변수 해제)<br />
+              <strong>2) 엔진 내장 .NET 활용:</strong> UE 5.9 번들 <code>.NET 10 SDK</code>(<code>Engine/Binaries/ThirdParty/DotNet/mac-arm64</code>)를 그대로 써 전역 .NET 충돌을 차단했습니다.<br />
+              <strong>3) 공식 MCP 연결:</strong> <code>UEStudy.uproject</code>에 <code>"AllToolsets"</code> 플러그인을 켜 UE 5.9 내장 <code>ModelContextProtocol</code> HTTP 서버(<code>http://127.0.0.1:8000/mcp</code>, 41개 툴셋)와 직접 통신했습니다.
+            </div>
+          </div>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">SHELL &amp; JSON</span>
+              <span>상세 보기: ~/.zshrc (ue-on / ue-off / ue-status) &amp; UEStudy.uproject AllToolsets</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">~/.zshrc // DEVELOPER_DIR 셸·GUI 세션 동시 격리 함수</span>
+                <div class="code-actions">
+                  <span class="code-lang">zsh // Toolchain</span>
+                  <button type="button" class="copy-btn" data-copy={codeToolchainZshrc}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeToolchainZshrc} lang="zsh" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">UEStudy.uproject // AllToolsets 공식 MCP 플러그인 활성화</span>
+                <div class="code-actions">
+                  <span class="code-lang">JSON // uproject</span>
+                  <button type="button" class="copy-btn" data-copy={codeUprojectMcp}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeUprojectMcp} lang="json" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-1-2" class="lesson-section">
+        <h3>1.2 UE 5.9 macOS 엔진 내부 트러블슈팅: 모듈 누락 팝업 &amp; Live Coding 잔존</h3>
+        <p>
+          개발 도중 에디터를 다시 켤 때마다 멀쩡히 빌드해 둔 게임 모듈이 "누락됨(Missing Modules)"으로 뜨거나 리빌드까지 실패하는 기이한 현상을 두 차례 겪고, 엔진 소스를 직접 추적해 원인을 찾아냈습니다.
+        </p>
+
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">사건 ① 단독 실행 모듈 누락</span>
+            <div class="p-text">디스크에 <code>BuildId</code>(<code>"60351404"</code>)와 <code>libUnrealEditor-UEStudy.dylib</code>가 정상 존재하는데도, <code>UnrealEditor</code>를 <code>.uproject</code> 인자 없이 실행 후 프로젝트를 고르면 모듈 누락 팝업이 뜨고 리빌드도 실패했습니다. <code>LaunchEngineLoop.cpp</code>(<code>L2012-L2019</code>) 초기화 순서상 <code>FApp::HasProjectName()</code>이 거짓일 때 <code>ProjectBinariesRootDirectory</code>가 비워지기 때문이었습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label issue">사건 ② Live Coding 패치 잔존</span>
+            <div class="p-text"><code>DefaultEngine.ini</code> 수정 후 에디터를 재시작할 때 이전 세션의 Live Coding 패치 바이너리(<code>libUnrealEditor-UEStudy-0008.dylib</code>)가 남아 모듈 버전 불일치를 일으켰습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">확립한 작업 수칙</span>
+            <div class="p-text"><strong>1)</strong> 에디터 실행 시 반드시 <code>.uproject</code> 경로를 인자로 직접 전달하고, <strong>2)</strong> Live Coding 후 재빌드가 꼬일 때는 UBT <code>Build.sh</code> 클린 링크로 단일 <code>libUnrealEditor-UEStudy.dylib</code>를 복구하는 워크플로우를 정착시켰습니다.</div>
+          </div>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">ENGINE SOURCE</span>
+              <span>코드 보기: LaunchEngineLoop.cpp#L2012-L2019 모듈 바이너리 경로 초기화 발췌</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">Engine/Source/Runtime/Launch/Private/LaunchEngineLoop.cpp</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // UE 5.9 Engine</span>
+                  <button type="button" class="copy-btn" data-copy={codeLaunchLoop}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeLaunchLoop} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="chapter-separator"></div>
+
+      <!-- ================= MILESTONE 02 ================= -->
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">MILESTONE 02 // ARCHITECTURE &amp; SANDBOX</span>
+        <span class="read-time">템플릿 격리 &amp; APawn 직조 설계</span>
+      </div>
+
+      <header class="lesson-header" id="ch-02">
+        <h2>02. 템플릿 격리와 순수 <code>APawn</code> 직조 설계</h2>
+        <p class="lesson-intro">
+          언리얼 학습용 통합 워크스페이스(<code>UEStudy</code>) 위에서 신규 게임을 만들 때 가장 먼저 고민한 것은 <strong>기존 템플릿과의 경계</strong>와 <strong>이동 컴포넌트의 선택</strong>이었습니다.
+        </p>
+      </header>
+
+      <section id="sec-2-1" class="lesson-section">
+        <h3>2.1 템플릿 오염 차단 (<code>Sandbox</code> 격리) &amp; 6-폴더 에셋 확장</h3>
+        <p>
+          기존 <code>/Game/ThirdPerson</code>이나 <code>Variant_*</code> 코드는 추후 엔진 기능 비교 레퍼런스로 유지해야 했습니다. 그래서 C++은 <code>Source/UEStudy/Sandbox/MiniProject/</code>에, 에셋은 <code>Content/Sandbox/MiniProject/</code>에 완전 격리하는 규칙(<code>GEMINI.md</code>)을 먼저 못 박았습니다.
+        </p>
+
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label intent">설계 의도</span>
+            <div class="p-text">실험용 미니 프로젝트가 커져도 템플릿 코드와 섞이지 않고 독립 컴파일·삭제가 가능해야 했습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label issue">직면한 난관</span>
+            <div class="p-text">초기 프로토타이핑 속도를 내다 보니 <code>/Game/Sandbox/MiniProject/</code> 루트에 16개 에셋(블루프린트·머티리얼·입력·Niagara·레벨)이 한데 섞여 참조 추적이 어려워졌습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">클라이언트 판단</span>
+            <div class="p-text"><code>UEStudy.Build.cs</code>의 <code>PublicIncludePaths</code>에 <code>"UEStudy/Sandbox"</code>를 열어 모듈 경계를 고정하고, 콘텐츠는 역할별 6개 디렉터리(<code>Blueprints</code>, <code>Input</code>, <code>Maps</code>, <code>Materials</code>, <code>Meshes</code>, <code>VFX</code>)로 재편 뒤 <code>FixUpRedirectors</code>로 잔여 리디렉터를 정리했습니다.</div>
+          </div>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">SPEC &amp; CODE</span>
+              <span>상세 보기: Sandbox 경로 구조, UEStudy.Build.cs &amp; 6분류 에셋 트리 (16개)</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">Source/UEStudy/UEStudy.Build.cs</span>
+                <div class="code-actions">
+                  <span class="code-lang">C# // Build.cs</span>
+                  <button type="button" class="copy-btn" data-copy={codeBuildCs}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeBuildCs} lang="csharp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 22%;" />
+                  <col style="width: 34%;" />
+                  <col style="width: 44%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>폴더 카테고리</th>
+                    <th>경로 (<code>/Game/Sandbox/MiniProject/</code>)</th>
+                    <th>포함 에셋 (총 16개)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Blueprints</strong></td>
+                    <td><code>.../Blueprints/</code></td>
+                    <td><code>BP_SpaceDrifterGameMode</code>, <code>BP_SpaceDrifterPawn</code>, <code>BP_SpaceDrifterPlayerController</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Input</strong></td>
+                    <td><code>.../Input/</code> &amp; <code>.../Actions/</code></td>
+                    <td><code>IMC_MiniProject</code>, <code>IA_ExtendTendril</code>, <code>IA_ToggleTendrilStyle</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Maps</strong></td>
+                    <td><code>.../Maps/</code></td>
+                    <td><code>Lvl_Main</code> (퍼시스턴트 우주 공간 레벨)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Materials</strong></td>
+                    <td><code>.../Materials/</code></td>
+                    <td><code>M_DustPuff</code>, <code>MI_DustPuff</code>, <code>M_MyceliumRibbon</code>, <code>M_SpaceMoteOrb</code>, <code>M_SpaceSky</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Meshes</strong></td>
+                    <td><code>.../Meshes/</code></td>
+                    <td><code>SM_DustPuffSphere</code> (균일 4단계 아이코스피어)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>VFX</strong></td>
+                    <td><code>.../VFX/</code></td>
+                    <td><code>NS_SpaceDust</code>, <code>NS_Tendril_MyceliumWeb</code>, <code>NS_Tendril_GossamerSpores</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-2-2" class="lesson-section">
+        <h3>2.2 왜 <code>ACharacter</code>를 버리고 순수 <code>APawn</code>으로 직조했는가</h3>
+        <p>
+          언리얼의 <code>ACharacter</code>는 빠른 개발을 돕지만, 내부의 <code>UCharacterMovementComponent</code>와 <code>UCapsuleComponent</code>는 <strong>중력 벡터, 바닥 경사각(Walkable Floor), 스켈레탈 메시 보행 상태 머신</strong>과 강하게 결합돼 있습니다.
+        </p>
+
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label intent">설계 의도</span>
+            <div class="p-text">본체는 위아래 구분 없는 구형 부유체이며, 외형은 스켈레탈 본이 아닌 WPO 물풍선 셰이더로 출렁이고, 카메라는 본체와 무관하게 360° 회전해야 합니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label issue">언리얼 설계의 제약</span>
+            <div class="p-text"><code>ACharacter</code>를 쓰면 사용하지도 않을 캡슐 기반 바닥 탐색, 네트워크 캐릭터 보정 오버헤드, 컨트롤러 Yaw 동기화 플래그를 매번 거슬러 싸워야 합니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">클라이언트 판단</span>
+            <div class="p-text">경량 <code>ASpaceDrifterPawn</code> 위에 중력이 꺼진 <code>CollisionSphere</code>(반경 <code>50 cm</code>), <code>DrifterMesh</code>, <code>CameraPivot</code> → <code>CameraBoom</code> → <code>FollowCamera</code> 계층을 직접 조립하고, <code>ASpaceDrifterGameMode</code> / <code>ASpaceDrifterPlayerController</code>와 느슨하게 연결했습니다.</div>
+          </div>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">CODE</span>
+              <span>코드 보기: SpaceDrifterGameMode &amp; SpaceDrifterPlayerController 코어 프레임워크</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterGameMode.cpp</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // UE 5.9</span>
+                  <button type="button" class="copy-btn" data-copy={codeGameMode}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeGameMode} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterPlayerController.cpp</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // Enhanced Input</span>
+                  <button type="button" class="copy-btn" data-copy={codePlayerController}>Copy</button>
+                </div>
+              </div>
+              <Code code={codePlayerController} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-2-3" class="lesson-section">
+        <h3>2.3 Enhanced Input 매핑과 제어 책임 분리</h3>
+        <p>
+          컨트롤러(<code>ASpaceDrifterPlayerController</code>)는 로컬 환경에서 커서를 숨기고 <code>IMC_MiniProject</code> 컨텍스트를 우선순위에 맞춰 주입하는 역할만 맡고, 실제 액션 의미 해석(<code>IA_ExtendTendril</code>, <code>IA_ToggleTendrilStyle</code>, 카메라 회전)은 폰이 소유합니다. 덕분에 추후 다른 입력 모드나 UI 포커스 전환 시 폰 코드를 건드리지 않고 매핑 컨텍스트만 교체할 수 있습니다.
+        </p>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag violet">SPEC</span>
+              <span>상세 보기: Enhanced Input 액션 · 트리거 · C++ 바인딩 표</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 24%;" />
+                  <col style="width: 24%;" />
+                  <col style="width: 20%;" />
+                  <col style="width: 32%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>C++ 프로퍼티</th>
+                    <th>연결 에셋 / 트리거</th>
+                    <th>키 / 입력 소스</th>
+                    <th>동작 설명</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>LookAction</code> / <code>MouseLookAction</code></td>
+                    <td><code>ETriggerEvent::Triggered</code></td>
+                    <td>Axis2D (마우스/스틱)</td>
+                    <td><code>DoLook(Yaw, Pitch)</code> 호출 → 쿼터니언 6-DoF 궤도 회전</td>
+                  </tr>
+                  <tr>
+                    <td><code>ExtendTendrilAction</code></td>
+                    <td><code>IA_ExtendTendril</code> (<code>Started</code> / <code>Completed</code> / <code>Canceled</code>)</td>
+                    <td><code>SpaceBar</code></td>
+                    <td>V1(긴 촉수): 홀드(최대 유지 제한 옵션) / V2(그물 촉수): 단발 탭 최대 전개</td>
+                  </tr>
+                  <tr>
+                    <td><code>ToggleTendrilStyleAction</code></td>
+                    <td><code>IA_ToggleTendrilStyle</code> (<code>Started</code>)</td>
+                    <td><code>Tab</code></td>
+                    <td><code>ToggleTendrilVisualStyle()</code> → V1 ↔ V2 실시간 전환</td>
+                  </tr>
+                  <tr>
+                    <td><code>TestBounceAction</code></td>
+                    <td><code>ETriggerEvent::Started</code></td>
+                    <td>테스트 바인딩 (선택)</td>
+                    <td><code>OnTestBounce()</code> → <code>-Z</code> 방향 <code>TestBounceImpulse</code>(<code>6.2f</code>) 충격</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="chapter-separator"></div>
+
+      <!-- ================= MILESTONE 03 ================= -->
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">MILESTONE 03 // SPACE ENVIRONMENT</span>
+        <span class="read-time">우주 환경 시각·인지 트러블슈팅</span>
+      </div>
+
+      <header class="lesson-header" id="ch-03">
+        <h2>03. 우주 환경(Space Environment): 시각·인지 트러블슈팅</h2>
+        <p class="lesson-intro">
+          단순한 검정 배경이 아니라, 끝없는 우주에서 카메라를 360° 돌려도 방향감과 속도감이 깨지지 않도록 <strong>3가지 전형적인 엔진 함정</strong>(UV 극점 왜곡, AutoExposure 회색화, 원점 고정 먼지 왜곡)을 하나씩 해결했습니다.
+        </p>
+      </header>
+
+      <section id="sec-3-1" class="lesson-section">
+        <h3>3.1 <code>Lvl_Main</code> 3단 레이어 아웃라이너 설계</h3>
+        <p>
+          추후 행성·소행성·우주 정거장을 서브레벨로 얹더라도 조명과 천구 관리가 엉키지 않도록, <code>Lvl_Main</code>의 환경을 <code>Environment/Space</code>(천구), <code>Environment/Lighting</code>(조명·노출), 그리고 <code>BP_SpaceDrifterPawn</code> 부착 부유 먼지 3계층으로 분리했습니다.
+        </p>
+
+        <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog-editor-space-overview.png"
+              alt="Lvl_Main 에디터 뷰포트에서 본 SM_SpaceSky 별자리 배경, 그리드, PlayerStart_Main 및 PostProcessVolume_Space 경계"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>에디터 뷰포트 (<code>Lvl_Main</code>)</strong> — 0-샘플러 천구 <code>SM_SpaceSky</code>와 중앙 <code>PlayerStart_Main</code>, 그리고 <code>PostProcessVolume_Space</code> 바운즈. (클릭해 확대)
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog-pie-idle.png"
+              alt="PIE 실행 중 무중력 우주 공간에서 부유하는 보라색 먼지공 BP_SpaceDrifterPawn과 주변 NS_SpaceDust 입자"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>실시간 PIE 대기 프레이밍</strong> — <code>PostProcessVolume_Space</code> 노출 고정과 폰 추종 <code>NS_SpaceDust</code> 입자가 만드는 심우주 깊이감.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="sec-3-2" class="lesson-section">
+        <h3>3.2 2D UV 극점 왜곡 탈출: 0-샘플러 프로시저럴 천구 (<code>M_SpaceSky</code>)</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">직면한 문제</span>
+            <div class="p-text">초기에는 엔진 기본 <code>T_Sky_Stars</code> 2D 텍스처를 구형 스카이 스피어에 타일링했으나, 6-DoF 카메라로 천정·천저를 바라볼 때마다 <strong>별이 격자로 반복되고 극점(Pole)에서 소용돌이처럼 찌그러지는 문제</strong>가 도드라졌습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">해결 선택</span>
+            <div class="p-text">UV 좌표를 버리고 <code>CameraVectorWS</code> 방향 벡터 기반의 <strong>0-샘플러 3D Voronoi/Cellnoise 프로시저럴 셰이더(<code>M_SpaceSky</code>)</strong>를 작성했습니다. 텍스처 메모리 점유 없이(0 samplers) 어느 각도로 회전해도 왜곡 없는 무한 별자리와 은은한 성운 농담을 얻었습니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-3-3" class="lesson-section">
+        <h3>3.3 자동 노출 함정과 비대칭 쿨 라이팅 (<code>PostProcessVolume_Space</code>)</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">언리얼 기본 동작의 함정</span>
+            <div class="p-text">언리얼 에디터의 기본 히스토그램 자동 노출(<code>AutoExposure</code>)은 화면 대부분이 어두우면 이를 "어두운 실내"로 오인해 노출을 강제로 끌어올립니다. 그 결과 깊은 심우주가 칙칙한 <strong>회색빛 노이즈 배경</strong>으로 들떠 버렸습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">해결 선택</span>
+            <div class="p-text"><code>bUnbound = true</code>로 둔 <code>PostProcessVolume_Space</code>에서 <code>AutoExposureMin/MaxBrightness = 0.0</code>, <code>Bias = 0.0</code>으로 톤을 못 박고(EV100=0), 대기 산란을 끈 사선 항성광(<code>DirectionalLight_Starlight</code>)과 낮은 청색 보조광(<code>SkyLight_SpaceAmbient</code>)으로 먼지공 표면 요철만 또렷이 살렸습니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-3-4" class="lesson-section">
+        <h3>3.4 원점 고정 2D 먼지의 왜곡 → 폰 부착 3D 메시 파티클 (<code>NS_SpaceDust</code>)</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">시각·인지 트러블슈팅</span>
+            <div class="p-text">월드에 고정된 2D 스프라이트 먼지는 폰이 조금만 이동해도 빈 공간으로 벗어나고, 6-DoF 회전 시 빌보드 평면 회전 아티팩트가 어색하게 드러났습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">해결 선택</span>
+            <div class="p-text"><code>NS_SpaceDust</code>를 <code>BP_SpaceDrifterPawn</code> 내부 컴포넌트(<code>SpaceDustComponent_GEN_VARIABLE</code>)로 부착해 플레이어를 항상 <code>1400 × 1400 × 1000 cm</code> 볼륨이 감싸게 했고, 입자도 스프라이트 대신 0-샘플러 발광 셰이더(<code>M_SpaceMoteOrb</code>)를 입힌 저비용 3D 구체 메시로 교체했습니다.</div>
+          </div>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag violet">SPEC</span>
+              <span>상세 보기: Lvl_Main 우주 환경 · 셰이더 · 조명 · NS_SpaceDust 검증 수치 일람</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 26%;" />
+                  <col style="width: 40%;" />
+                  <col style="width: 34%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>구성 요소 / 액터</th>
+                    <th>UE 5.9 검증 수치 (<code>unreal-mcp</code> 기준)</th>
+                    <th>비고</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong><code>SM_SpaceSky</code> + <code>M_SpaceSky</code></strong></td>
+                    <td><code>SM_SkySphere</code> (<code>Scale 100</code>, <code>castShadow=false</code>) · <code>MSM_Unlit</code> / <code>BLEND_Opaque</code> / <code>56</code> expressions / <code>852</code> PS, <code>158</code> VS / <strong><code>0</code> samplers</strong></td>
+                    <td><code>StarBrightness = 2.4</code>, <code>StarDensity = 58.0</code>, <code>Bottom/Top = (0.001..0.003, 0.0015..0.006, 0.004..0.015)</code>, <code>StarTint = (0.85, 0.92, 1.0)</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong><code>PostProcessVolume_Space</code></strong></td>
+                    <td><code>bUnbound = true</code>, <code>AEM_Histogram</code>, <code>Min/MaxBrightness = 0.0</code>, <code>Bias = 0.0</code>, <code>BloomIntensity = 0.45</code>, <code>BloomThreshold = 0.90</code>, <code>Vignette = 0.25</code></td>
+                    <td>자동 노출 보정 차단(EV100=0) 및 절제된 발광</td>
+                  </tr>
+                  <tr>
+                    <td><strong><code>DirectionalLight_Starlight</code></strong></td>
+                    <td><code>Intensity = 2.5</code>, <code>Color = (0.90196, 0.94902, 1.0)</code>, <code>Rot = (-25, -45, 0)</code>, <code>Stationary</code>, <code>bAtmosphereSunLight = false</code></td>
+                    <td>비대칭 쿨 항성광</td>
+                  </tr>
+                  <tr>
+                    <td><strong><code>SkyLight_SpaceAmbient</code></strong></td>
+                    <td><code>Intensity = 0.25</code>, <code>Color = (0.65098, 0.78039, 1.0)</code>, <code>SLS_CapturedScene</code>, <code>bLowerHemisphereIsBlack = false</code>, <code>skyDistanceThreshold = 150000</code></td>
+                    <td>완전 암흑(Crush) 방지 보조 환경광</td>
+                  </tr>
+                  <tr>
+                    <td><strong><code>NS_SpaceDust</code> + <code>M_SpaceMoteOrb</code></strong></td>
+                    <td><code>1400×1400×1000 cm</code> Box, <code>95.0/sec</code>, <code>6~12s</code>, Curl Noise(<code>Scale=110</code>, <code>Freq=0.7</code>, <code>Wind=(30,18,10)</code>) · <code>Sphere (0.04~0.09)</code> · <code>BLEND_Additive</code>, <code>15</code> expr, <code>180</code> PS / <code>276</code> VS, <code>0</code> samplers</td>
+                    <td><code>BP_SpaceDrifterPawn</code> 부착(<code>bAutoActivate=true</code>)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="chapter-separator"></div>
+
+      <!-- ================= MILESTONE 04 ================= -->
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">MILESTONE 04 // ZERO-G PAWN &amp; ELASTICITY</span>
+        <span class="read-time">쿼터니언 6-DoF &amp; 물풍선 WPO</span>
+      </div>
+
+      <header class="lesson-header" id="ch-04">
+        <h2>04. 쿼터니언 6-DoF 궤도 카메라 &amp; 물풍선 탄성 메커니즘</h2>
+        <p class="lesson-intro">
+          상하 방향이 없는 우주에서는 언리얼 기본 오일러 회전 체계가 곧바로 한계에 부딪힙니다. 6-DoF 카메라 회전을 쿼터니언으로 재구축하고, 본체는 2차 스프링과 부피 보존 WPO로 말랑한 물풍선 질감을 부여했습니다.
+        </p>
+      </header>
+
+      <section id="sec-4-1" class="lesson-section">
+        <h3>4.1 <code>ControlRotation</code> / <code>FRotator</code> 짐벌락 한계 → 쿼터니언 6-DoF 오빗</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label intent">설계 의도</span>
+            <div class="p-text">플레이어가 우주 어느 방향으로든(머리 위 90°를 넘어 360° 연속 공전) 끊김 없이 궤도를 돌며 사방을 조준할 수 있어야 했습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label issue">언리얼 설계의 제약</span>
+            <div class="p-text">언리얼 기본 <code>APlayerController::ControlRotation</code>은 내부적으로 오일러 각(<code>FRotator</code>) 기반의 Pitch ±89° 클램핑과 짐벌락 회피 로직이 박혀 있어, 수직 위아래를 연속으로 넘어가면 카메라가 급반전되거나 막혀 버립니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">클라이언트 판단</span>
+            <div class="p-text"><code>bUseControllerRotationPitch/Yaw/Roll = false</code>로 컨트롤러 회전과 본체를 끊고, <code>CameraPivot</code> 씬 컴포넌트에 매 입력마다 화면 로컬 축 기준 <code>FQuat</code> 델타를 곱해 정규화한 뒤 <code>FMath::QInterpTo</code>로 보간했습니다. <code>CameraBoom</code>에는 <code>SocketOffset = (0, 0, 78)</code>을 주어 본체 너머 전방 촉수 궤적이 가리지 않게 프레이밍했습니다.</div>
+          </div>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">CODE</span>
+              <span>코드 보기: SpaceDrifterPawn — 쿼터니언 6-DoF 오빗 (DoLook &amp; UpdateCameraOrbit)</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterPawn.cpp // DoLook &amp; UpdateCameraOrbit</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // Quaternion Orbit</span>
+                  <button type="button" class="copy-btn" data-copy={codeCameraOrbit}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeCameraOrbit} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-4-2" class="lesson-section">
+        <h3>4.2 Zero-G 부유·호흡 &amp; 2차 감쇠 스프링 탄성 통합</h3>
+        <p>
+          본 애니메이션 리깅(Skeleton) 없이도 살아 있는 젤리·물풍선 느낌을 주기 위해, 물리 콜리전(<code>CollisionSphere</code>)은 단순 구형으로 놔두고 시각 메시(<code>DrifterMesh</code>)에만 무중력 부유/느린 자전, 정지 상태 호흡(Breathing), 그리고 <strong>가속도 자동 감지 + 촉수 사출/회수 반동</strong>을 2차 감쇠 스프링-댐퍼로 통합했습니다.
+          키프레임 애니메이션이 아니라 가속/반동 힘에 물리적으로 반응하므로 어떤 방향으로 튕겨도 자연스럽게 출렁입니다.
+        </p>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">CODE &amp; SPEC</span>
+              <span>상세 보기: UpdateElasticity 스프링 코드 · Zero-G 부유/탄성 UPROPERTY 표</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterPawn.cpp // UpdateElasticity</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // Spring-Damper</span>
+                  <button type="button" class="copy-btn" data-copy={codeElasticity}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeElasticity} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 30%;" />
+                  <col style="width: 18%;" />
+                  <col style="width: 18%;" />
+                  <col style="width: 34%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>UPROPERTY</th>
+                    <th>기본값</th>
+                    <th>제약 / 단위</th>
+                    <th>동작 설명</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>bEnableZeroGFloat</code> / <code>FloatAmplitude</code> / <code>FloatFrequency</code></td>
+                    <td><code>true</code> / <code>10.0f</code> / <code>0.25f</code></td>
+                    <td>cm / Hz</td>
+                    <td>시각 메시 <code>DrifterMesh</code> 상하 무중력 부유 진동 (4초 주기)</td>
+                  </tr>
+                  <tr>
+                    <td><code>IdleTumbleRate</code></td>
+                    <td><code>(3.0, 6.0, 2.0)</code></td>
+                    <td>deg/s</td>
+                    <td>우주 공간에서 천천히 도는 각속도 (P/Y/R)</td>
+                  </tr>
+                  <tr>
+                    <td><code>BreathAmplitude</code> / <code>BreathFrequency</code></td>
+                    <td><code>0.035f</code> / <code>0.40f</code></td>
+                    <td><code>0.0~0.25</code> / Hz</td>
+                    <td>정지 상태에서도 숨 쉬듯 미세 수축/이완하는 호흡 펄스</td>
+                  </tr>
+                  <tr>
+                    <td><code>SpringStiffness</code> / <code>SpringDamping</code></td>
+                    <td><code>135.0f</code> / <code>4.8f</code></td>
+                    <td><code>≥ 1.0</code> / <code>≥ 0.1</code></td>
+                    <td>복원 탄성 강성과 출렁임 감쇠 계수</td>
+                  </tr>
+                  <tr>
+                    <td><code>AccelerationDeformScale</code> / <code>Deadzone</code></td>
+                    <td><code>0.0016f</code> / <code>15.0f</code></td>
+                    <td>cm/s² 기준</td>
+                    <td>액터 월드 가속도 자동 감지 → 목표 신축량 변환</td>
+                  </tr>
+                  <tr>
+                    <td><code>MaxDeformAmount</code> / <code>TendrilBodyStretch</code> / <code>RetractImpulse</code></td>
+                    <td><code>0.55f</code> / <code>0.34f</code> / <code>7.2f</code></td>
+                    <td><code>0.05~0.85</code> (하한 <code>-0.45f</code>)</td>
+                    <td>촉수 발사 중 본체 스트레치 및 회수 시 반동 스퀴시 세기</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-4-3" class="lesson-section">
+        <h3>4.3 UV 극점 뭉개짐 방지(<code>SM_DustPuffSphere</code>) &amp; 부피 보존 WPO</h3>
+        <p>
+          일반적인 UV 구체에 WPO 노이즈를 주면 버텍스가 쏠린 양극점이 뾰족하게 뭉개집니다. 반경 <code>50 cm</code>의 균일 4단계 세분화 아이코스피어(<code>SM_DustPuffSphere</code>, 2,666 버텍스, Nanite 비활성)를 임포트해 털공 노이즈가 어느 면에서나 고르게 피어나게 했고, 셰이더에서 축 스케일 <code>s</code>와 수직 스케일 <code>s^(-0.5)</code>를 연동해 눌리거나 늘어나도 전체 부피가 <code>1</code>로 보존되게 했습니다.
+        </p>
+
+        <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/02-squash-preview.png"
+              alt="물풍선 스쿼시 변형 상태에서 부피 보존으로 옆으로 납작하게 퍼진 먼지공"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Squash (압축)</strong> — 음의 <code>DeformAmount</code>가 걸릴 때 변형 축으로는 눌리고 수직 평면으로 부피가 팽창합니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/03-stretch-preview.png"
+              alt="물풍선 스트레치 변형 상태에서 축 방향으로 길쭉하게 늘어난 먼지공"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>Stretch (신장)</strong> — 촉수를 뻗거나 급가속할 때 양의 <code>DeformAmount</code>로 축 방향이 길쭉하게 늘어납니다.
+            </figcaption>
+          </figure>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag violet">SHADER</span>
+              <span>상세 보기: SM_DustPuffSphere &amp; MI_DustPuff WPO 머티리얼 파라미터</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 28%;" />
+                  <col style="width: 34%;" />
+                  <col style="width: 38%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>항목 / 파라미터</th>
+                    <th>적용 수치</th>
+                    <th>역할</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong><code>SM_DustPuffSphere</code></strong></td>
+                    <td>반경 <code>50 cm</code>, <code>2,666</code> 버텍스 / <code>5,120</code> 트라이앵글, <code>Nanite = false</code></td>
+                    <td>극점 버텍스 밀집 없이 균일 WPO 변형 및 털 노이즈 표현</td>
+                  </tr>
+                  <tr>
+                    <td><strong>털공 WPO &amp; 노멀 (<code>MI_DustPuff</code>)</strong></td>
+                    <td><code>FluffScale = 0.048</code>, <code>FluffStrength = 6.5</code>, <code>Roughness = 0.92</code>, <code>FuzzBumpScale = 0.28</code>, <code>FuzzNormalStrength = 0.28</code></td>
+                    <td><code>LocalPosition</code> 기반 3D <code>GradientALU</code> 솜털 실루엣과 표면 요철</td>
+                  </tr>
+                  <tr>
+                    <td><strong>차콜-라벤더 톤 &amp; 림 라이트</strong></td>
+                    <td><code>BaseColorDark = (0.055, 0.042, 0.095)</code>, <code>BaseColorLight = (0.175, 0.138, 0.27)</code>, <code>RimColor = (0.52, 0.64, 1.0)</code>, <code>RimIntensity = 0.6</code></td>
+                    <td>심우주 배경 대비가 또렷한 파스텔 블루 <code>Fresnel</code> 윤곽 강조</td>
+                  </tr>
+                  <tr>
+                    <td><strong>부피 보존 변형 수식</strong></td>
+                    <td><code>s = clamp(1 + DeformAmount, 0.45, 1.85)</code> · 수직 축 <code>s^(-0.5)</code></td>
+                    <td>C++ <code>DrifterMID</code> 파라미터(<code>DeformAxis</code>, <code>DeformAmount</code>) 실시간 구동</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="chapter-separator"></div>
+
+      <!-- ================= MILESTONE 05 ================= -->
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">MILESTONE 05 // TENDRIL V1 &amp; V2</span>
+        <span class="read-time">여의봉 방지 · 동적 리본 · 체감 튜닝</span>
+      </div>
+
+      <header class="lesson-header" id="ch-05">
+        <h2>05. 촉수 시스템 (V1 / V2) &amp; "체감되는 튜닝" 설계기</h2>
+        <p class="lesson-intro">
+          두 촉수의 모든 조형과 분지는 셰이더(<code>M_MyceliumRibbon</code>은 발광 리본 렌더링 전담)가 아니라 <strong>Niagara 동적 리본 시스템과 C++ <code>User.*</code> 제어</strong>로 만듭니다. 구현 중 마주한 "여의봉 현상"과 "수치 변경 미체감" 문제를 어떻게 풀었는지 기록합니다.
+        </p>
+      </header>
+
+      <section id="sec-5-1" class="lesson-section">
+        <h3>5.1 발사 중 카메라를 따라 도는 "여의봉 현상" 해결: 조준 스냅샷 (Aim Latch)</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">직면한 문제</span>
+            <div class="p-text">초기에는 매 틱 카메라 전방 벡터로 촉수 끝점을 계산했더니, 촉수가 18m 길이로 뻗은 상태에서 마우스를 조금만 돌려도 긴 촉수가 허공을 휘젓는 <strong>여의봉처럼 따라 돌아가는 부자연스러움</strong>이 발생했습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">클라이언트 판단</span>
+            <div class="p-text">카메라 탐색과 투사 궤적을 디커플링했습니다. 발사 시점(<code>LatchTendrilAim</code>)에 <code>ECC_Visibility</code> 레이캐스트로 목표를 찾고 직교 기저(<code>LockedAimDir</code>, <code>LockedAimRight</code>, <code>LockedAimUp</code>)를 스냅샷으로 잠근 뒤, 촉수 전개/수축은 오직 <code>TendrilExtendAlpha</code> 비선형 이징만 따르도록 분리했습니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-5-2" class="lesson-section">
+        <h3>5.2 긴 촉수(V1, <code>MyceliumWeb</code>): 고정 이미터 통합 &amp; 유지시간 제한</h3>
+        <p>
+          초기 V1은 7개의 고정 곁가지 이미터(<code>Branch_LeftLow</code> ~ <code>Twig_TipL</code>)가 따로 놀아 사거리를 바꾸면 곁가지 배치가 망가졌습니다. 이를 <strong>본 가지(<code>CoreTrunk</code>) + <code>Particles.RibbonID</code> 기반 동적 다중 리본 이미터(<code>Branch_RightLow</code>, 0~64개)</strong>로 통합해 길이에 비례해 곁가지 개수가 자동 계산되게 만들었습니다. 또한 홀드형 조작의 긴장감을 위해 최대 길이 도달 후 일정 시간이 지나면 자동 회수되는 <code>bLimitLongTendrilHoldDuration</code> 타이머를 분리했습니다.
+        </p>
+
+        <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog-pie-v1-player-cam.png"
+              alt="우주 환경 PIE 플레이어 카메라 시점의 긴 촉수(V1) 전개"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>플레이어 카메라 시점 (PIE)</strong> — 우주 배경 속에서 전방 조준점을 향해 뻗는 V1(<code>MyceliumWeb</code>).
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog-offscreen-v1-side.png"
+              alt="긴 촉수(V1) 측면 구도 — 본 가지와 동적 곁가지 분지 및 폰 스트레치"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>측면 오프스크린 뷰</strong> — <code>CoreTrunk</code>를 따라 <code>Branch_RightLow</code> 곁가지가 분지하며, <code>TendrilBodyStretch</code>로 본체도 길어집니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/14-v1-hold-limit-active.png"
+              alt="긴 촉수(V1) 유지시간 제한 이내 전개 활성 상태"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>유지시간 제한 내 활성 (t = 0.70s)</strong> — <code>bLimitLongTendrilHoldDuration = true</code> 상태에서 최대 길이까지 뻗은 상태.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/15-v1-hold-limit-retracted.png"
+              alt="스페이스바를 계속 누른 상태에서 1.5초 경과 후 자동 수축 완료된 상태"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>홀드 중 자동 회수 (t = 2.40s)</strong> — 키를 떼지 않아도 <code>LongTendrilMaxHoldDuration</code>(<code>1.5s</code>) 만료 시 자동 수축합니다.
+            </figcaption>
+          </figure>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">CODE &amp; SPEC</span>
+              <span>상세 보기: V1 동적 곁가지 PushLongTendrilUserParameters 코드 &amp; 프로퍼티/셰이더 스펙</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterPawn.cpp // ComputeLongTendrilBranchCount &amp; PushLongTendrilUserParameters</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // Niagara User.*</span>
+                  <button type="button" class="copy-btn" data-copy={codeTendrilParams}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeTendrilParams} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 28%;" />
+                  <col style="width: 14%;" />
+                  <col style="width: 18%;" />
+                  <col style="width: 18%;" />
+                  <col style="width: 22%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>C++ 프로퍼티</th>
+                    <th>기본값</th>
+                    <th>허용 범위</th>
+                    <th>Niagara / 제어 대상</th>
+                    <th>역할</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>LongTendrilMaxLength</code></td>
+                    <td><code>1800.0f</code></td>
+                    <td><code>120 ~ 50000</code> cm</td>
+                    <td><code>User.TendrilEnd</code></td>
+                    <td>본 가지 최대 사거리</td>
+                  </tr>
+                  <tr>
+                    <td><code>LongTendrilTrunkWidth</code></td>
+                    <td><code>11.5f</code></td>
+                    <td><code>0.2 ~ 100.0</code> cm</td>
+                    <td><code>User.TrunkWidth</code></td>
+                    <td>본 가지 뿌리 굵기</td>
+                  </tr>
+                  <tr>
+                    <td><code>LongTendrilTipWidthRatio</code></td>
+                    <td><code>0.08f</code></td>
+                    <td><code>0.0 ~ 3.0</code></td>
+                    <td><code>User.TipWidthRatio</code></td>
+                    <td>리본 끝단 테이퍼/곤봉 비율</td>
+                  </tr>
+                  <tr>
+                    <td><code>LongTendrilBranchFrequency</code></td>
+                    <td><code>0.70f</code></td>
+                    <td><code>0.0 ~ 25.0</code> 개/m</td>
+                    <td><code>User.SideBranchCount</code> (0~64)</td>
+                    <td>1m당 곁가지 빈도 (기본 약 13개)</td>
+                  </tr>
+                  <tr>
+                    <td><code>LongTendrilBranchLength</code> / <code>Width</code></td>
+                    <td><code>180.0f</code> / <code>4.8f</code></td>
+                    <td><code>1~5000</code> / <code>0.1~50</code> cm</td>
+                    <td><code>User.SideBranchLength</code> / <code>Width</code></td>
+                    <td>곁가지 기준 길이·굵기</td>
+                  </tr>
+                  <tr>
+                    <td><code>LongTendrilBaseToTipLengthRatio</code></td>
+                    <td><code>0.35f</code></td>
+                    <td><code>0.0 ~ 4.0</code></td>
+                    <td><code>User.BranchBaseToTipRatio</code></td>
+                    <td>뿌리쪽 곁가지 길이·굵기·퍼짐각 연동 비율</td>
+                  </tr>
+                  <tr>
+                    <td><code>LongTendrilBranchStartRatio</code> / <code>SpreadScale</code></td>
+                    <td><code>0.22f</code> / <code>1.0f</code></td>
+                    <td><code>0.02~0.90</code> / <code>0.05~4.0</code></td>
+                    <td><code>User.BranchStartRatio</code> / <code>SpreadScale</code></td>
+                    <td>첫 분지 위치 및 퍼짐 배율</td>
+                  </tr>
+                  <tr>
+                    <td><code>bLimitLongTendrilHoldDuration</code> / <code>MaxHoldDuration</code></td>
+                    <td><code>true</code> / <code>1.5f</code></td>
+                    <td><code>bool</code> / <code>0~60</code> s</td>
+                    <td>C++ 유지 타이머</td>
+                    <td>최대 길이 도달 후 자동 회수 제한</td>
+                  </tr>
+                  <tr>
+                    <td><code>M_MyceliumRibbon</code> (공통 리본 셰이더)</td>
+                    <td><code>Core=(0.11,0.085,0.185)</code>, <code>Rim=(0.52,0.64,1.0)</code></td>
+                    <td><code>72</code> expr · <code>0</code> samplers</td>
+                    <td><code>181</code> PS / <code>350</code> VS</td>
+                    <td>V1/V2 반투명 발광 리본 렌더링</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-5-3" class="lesson-section">
+        <h3>5.3 트러블슈팅: "수치를 바꿔도 플레이어 시점에서 체감이 안 돼요"</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label collab">협업 피드백 발단</span>
+            <div class="p-text">초기 <code>LongTendrilBaseToTipLengthRatio</code>를 에디터에서 <code>0.35 → 0.1</code>로 낮추고 플레이테스트해 보니, <strong>"변수를 바꿨는데도 정면 카메라에서 실루엣 차이가 거의 안 느껴진다"</strong>는 피드백이 나왔습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label issue">원인 진단</span>
+            <div class="p-text">1) 기존 <code>User.BranchBaseToTipRatio</code>가 <code>0.05~2.0</code>으로 좁고 곁가지 <strong>길이 하나만</strong> 완만하게 보간됐으며, 뿌리쪽 퍼짐각(Spread)이 작아 1인칭에 가까운 정면 원근에서 본 가지에 가려졌습니다.<br />2) 리본 자체의 끝단 굵기 테이퍼가 모듈 내부에 하드코딩돼 끝 모양을 바꿀 수 없었습니다.</div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">구조 개선 &amp; 결과</span>
+            <div class="p-text"><strong>1)</strong> 비율 범위를 <code>0.0 ~ 4.0</code>으로 넓히고 Niagara 내부에서 <strong>길이 + 굵기 + 퍼짐각 3요소가 함께 곱해지도록</strong> 재설계했습니다.<br /><strong>2)</strong> <code>LongTendrilTipWidthRatio</code>(<code>0.0 ~ 3.0</code>)를 신설해 바늘 끝(<code>0.0</code>)부터 곤봉형(<code>2.5</code>)까지 조절할 수 있게 했고, <code>PostEditChangeProperty</code>에서 <code>DeactivateImmediate()</code> 후 재활성화해 Details 변경이 뷰포트에 즉각 반영되도록 했습니다.</div>
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/05-v1-basetip-0-1.png"
+              alt="LongTendrilBaseToTipLengthRatio 0.1 측면 실루엣"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>BaseToTipRatio = 0.1 (측면)</strong> — 뿌리쪽 곁가지는 억제되고 끝단 부근에만 몰려 피어납니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/06-v1-basetip-3-0.png"
+              alt="LongTendrilBaseToTipLengthRatio 3.0 측면 실루엣"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>BaseToTipRatio = 3.0 (측면)</strong> — 길이·굵기·퍼짐각 연동으로 뿌리쪽 곁가지가 넓게 갈라집니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/09-v1-pcam-0-1.png"
+              alt="플레이어 카메라 시점 BaseToTipRatio 0.1"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>BaseToTipRatio = 0.1 (플레이어 시점)</strong> — 정면 원근에서도 끝단 개화 실루엣이 분명히 구별됩니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/10-v1-pcam-3-0.png"
+              alt="플레이어 카메라 시점 BaseToTipRatio 3.0"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>BaseToTipRatio = 3.0 (플레이어 시점)</strong> — 뿌리 직후부터 큰 곁가지가 사방으로 뻗어 체감 차이가 극대화됩니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/07-v1-tipwidth-0-0.png"
+              alt="LongTendrilTipWidthRatio 0.0 바늘 끝 테이퍼"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>TipWidthRatio = 0.0</strong> — 본 가지와 곁가지 모두 끝단이 바늘처럼 뾰족하게 수렴합니다.
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/08-v1-tipwidth-2-5.png"
+              alt="LongTendrilTipWidthRatio 2.5 끝단 부풀림"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>TipWidthRatio = 2.5</strong> — 끝단 리본 폭이 뿌리 대비 2.5배로 부풀어 오르는 곤봉형 테이퍼.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="sec-5-4" class="lesson-section">
+        <h3>5.4 V2 그물 촉수 단발 전개 &amp; UHT 리플렉션 한글 툴팁화</h3>
+        <p>
+          V2(<code>NS_Tendril_GossamerSpores</code>)는 원거리 조준 유지형 V1과 역할이 겹치지 않도록, <strong>한 번 짧게 탭해도 끝까지 펼쳐졌다가 <code>NetTendrilHoldDuration</code>(<code>0.55s</code>) 후 반동과 함께 자동 회수되는 단발식(One-Shot) 메커니즘</strong>으로 동작을 분화했습니다.
+          또한 파라미터가 늘어나면서 협업 시 단위(cm/s)와 증감 방향을 직관적으로 읽을 수 있도록, 별도 에디터 커스터마이징(<code>DetailCustomization</code>) 없이 언리얼 UHT가 자동 추출하는 <code>/** ... */</code> 문서 주석을 통일된 한글 툴팁으로 정비했습니다.
+        </p>
+
+        <div class="compare-grid three-col">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog-offscreen-v2-side.png"
+              alt="그물 촉수(V2) 우주 공간 측면 최대 전개"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption><strong>측면 전개</strong> — 초반엔 묶여 뻗다가 후반에 다단 링이 깔때기처럼 열립니다.</figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/12-v2-net-oblique.png"
+              alt="그물 촉수(V2) 대각선 7갈래 스포크와 5단 거미줄 링"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption><strong>대각선 실루엣</strong> — 7갈래 <code>SpokeA..G</code>와 5단 <code>WebRingA..E</code> 구조.</figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog-pie-v2-player-cam.png"
+              alt="그물 촉수(V2) PIE 플레이어 카메라 시점 단발 최대 전개"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption><strong>플레이어 시점 (PIE)</strong> — 단발 탭만으로 최대 전개 후 <code>0.55s</code> 뒤 자동 회수.</figcaption>
+          </figure>
+        </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">CODE &amp; TOOLTIP</span>
+              <span>상세 보기: V1/V2 분기 코드 · V2 파라미터 스펙 · UHT 한글 Details 툴팁 규약</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterPawn.cpp // V1 홀드 vs V2 단발 최대 전개 &amp; 유지 타이머</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // State Machine</span>
+                  <button type="button" class="copy-btn" data-copy={codeHoldAndNet}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeHoldAndNet} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 26%;" />
+                  <col style="width: 14%;" />
+                  <col style="width: 20%;" />
+                  <col style="width: 40%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>속성 / 파라미터</th>
+                    <th>기본값</th>
+                    <th>범위 / 대상</th>
+                    <th>동작 설명</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>NetTendrilMaxReach</code></td>
+                    <td><code>920.0f</code></td>
+                    <td><code>120.0 ~ 50000.0</code> cm</td>
+                    <td>단발 발사 시 그물 촉수 최대 전개 거리 (근·중거리 포획용)</td>
+                  </tr>
+                  <tr>
+                    <td><code>NetTendrilHoldDuration</code></td>
+                    <td><code>0.55f</code></td>
+                    <td><code>0.0 ~ 10.0</code> s</td>
+                    <td>최대 전개 도달 후 유지시간. 만료 시 반동과 함께 자동 회수</td>
+                  </tr>
+                  <tr>
+                    <td><code>User.SporeSpawnRate</code></td>
+                    <td>최대 <code>44.0f</code></td>
+                    <td><code>GossamerSpores</code></td>
+                    <td><code>LateBloom = SmoothStep(0.35, 0.90, EasedReach)</code> 연동 포자 분출</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceDrifterPawn.h // UHT 리플렉션 한글 툴팁 규약</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // UPROPERTY Meta</span>
+                  <button type="button" class="copy-btn" data-copy={codeTooltips}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeTooltips} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <div class="chapter-separator"></div>
+
+      <!-- ================= MILESTONE 06 ================= -->
+      <div class="lesson-nav-bar">
+        <span class="lesson-badge">MILESTONE 06 // M4 MACBOOK AIR OPTIMIZATION</span>
+        <span class="read-time">16GB 통합 메모리 프로파일링 &amp; 원복 실전기</span>
+      </div>
+
+      <header class="lesson-header" id="ch-06">
+        <h2>06. M4 MacBook Air (16GB) 메모리 최적화 &amp; 경고 해결 실전기</h2>
+        <p class="lesson-intro">
+          가장 큰 클라이언트 엔지니어링 배움이 있었던 파트입니다. <strong>"눈에 보이는 씬 부하를 줄여 GPU 시간을 60%나 깎았는데도 경고가 안 사라지던 이유"</strong>를 메모리 프로파일링으로 추적해 13.6GB를 덜어내고, 깎았던 비주얼은 100% 되살린 과정을 기록합니다.
+        </p>
+      </header>
+
+      <section id="sec-6-1" class="lesson-section">
+        <h3>6.1 발단: 상태바 <code>진단(EditorPerformance)</code> Critical 메모리 경고</h3>
+        <p>
+          무팬 패시브 쿨링 기반의 M4 MacBook Air(16GB 통합 메모리)에서 <code>Lvl_Main</code>을 편집할 때, 씬에는 구체 1개와 별하늘·파티클 몇 개뿐인데도 에디터 상태바 <code>진단(EditorPerformance)</code> 위젯에 <strong><code>Icons.Alert.Solid</code> (Critical 메모리 압력 경고)</strong>가 계속 점등됐습니다.
+        </p>
+
+        <div class="benchmark-strip">
+          <div class="bench-item warn-state">
+            <span class="bench-label">INITIAL (경고 점등)</span>
+            <span class="bench-val">21.40 GB</span>
+            <span class="bench-sub">RHI 2,362 MB · Alert 1건</span>
+          </div>
+          <div class="bench-item">
+            <span class="bench-label">AFTER INI TUNING</span>
+            <span class="bench-val">7.75 GB</span>
+            <span class="bench-sub">RHI 1,215 MB · Alert 0건</span>
+          </div>
+          <div class="bench-item good-state">
+            <span class="bench-label">REVERTED FULL QUALITY</span>
+            <span class="bench-val">7.93 GB</span>
+            <span class="bench-sub">RHI 1,657 MB · Scene 8.75ms · Alert 0건</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-6-2" class="lesson-section">
+        <h3>6.2 오판과 반전: GPU 시간을 60% 깎고도 실패한 1차 시도</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label issue">1차 가설 (오판)</span>
+            <div class="p-text">"Retina 2배 해상도(<code>2084×1496</code>)와 천구/털공 프로시저럴 노이즈, 우주 먼지 스폰율(<code>95/sec</code>)이 무거워서일 것"이라 보고 씬 요소 6가지를 대폭 낮췄습니다. 실제로 GPU Scene 시간은 <strong><code>13.57 ms → 5.20~5.39 ms</code>(약 60% 감소)</strong>까지 떨어졌지만, 정작 <strong>상태바 <code>진단</code> Critical 경고는 꿈쩍도 하지 않았습니다.</strong></div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">프로파일링 원인 규명</span>
+            <div class="p-text"><code>STATGROUP_MemoryPlatform</code>, <code>rhi.DumpMemory</code>, <code>UEStudy.log</code>, 그리고 <code>EditorPerformanceModule.cpp</code>를 교차 추적하자 진짜 범인이 드러났습니다. 병목은 셰이더 ALU가 아니라, 언리얼 기본 템플릿에 켜져 있던 <strong>고비용 전역 렌더 패스(Lumen GI/Reflections, Virtual Shadow Maps, Mesh Distance Fields, RayTracing)</strong>가 16GB 통합 메모리 위에서 <strong><code>STAT_UsedPhysical = 21.40 GB</code> (<code>19.93 GiB</code>) + RHI <code>2,362.43 MB</code></strong>를 점유하며 OS 메모리 압박을 유발하던 것이었습니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sec-6-3" class="lesson-section">
+        <h3>6.3 전역 렌더 패스 경량화 → 불필요한 시각 단순화 6건 100% 원복</h3>
+        <p>
+          원인을 확인한 뒤 <code>Config/DefaultEngine.ini</code>와 <code>Config/DefaultScalability.ini</code>(<code>@1</code> 프리셋)에서 Lumen·VSM·MeshDistanceFields·RayTracing을 끄고 텍스처 스트리밍 풀(<code>400 MB</code>)과 스크린 퍼센트(<code>75%</code>)를 정리하자, <code>STAT_UsedPhysical</code>이 <strong><code>21.40 GB → 7.75 GB</code>(약 13.6GB 절감)</strong>로, <code>rhi.DumpMemory</code>는 <strong><code>2,362.43 MB → 1,215.13 MB</code></strong>로 급감하며 <code>진단</code> 경고가 즉시 사라졌습니다.
+          더 중요한 성과는 그다음이었습니다. 진짜 원인이 아님이 증명된 <strong>1차 시각 단순화 6건</strong>(<code>M_SpaceSky</code> Quality 2 / PS 852, <code>M_DustPuff</code> Levels 3, <code>NS_SpaceDust</code> 95/sec, 리본 <code>Tessellation 3</code>, <code>PostProcessVolume_Space</code>, Retina <code>HighDPI 2001×1496</code>)을 <strong>전부 최고 품질로 원복</strong>하고도 <code>STAT_UsedPhysical = 7.93 GB</code>(<code>7.39 GiB</code>), GPU <code>11.00 ms</code>(<code>Scene 8.746 ms</code>), <code>진단</code> 경고 <strong>0건</strong>을 유지했습니다.
+        </p>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag violet">BENCHMARK &amp; CONFIG</span>
+              <span>상세 보기: 단계별 메모리/GPU 실측 비교표 · DefaultEngine.ini · DefaultScalability.ini</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <colgroup>
+                  <col style="width: 28%;" />
+                  <col style="width: 24%;" />
+                  <col style="width: 24%;" />
+                  <col style="width: 24%;" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>측정 지표</th>
+                    <th>초기 상태 (경고 점등)</th>
+                    <th>INI 경량화 직후</th>
+                    <th>비주얼 6건 전량 원복 후</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong><code>STAT_UsedPhysical</code></strong></td>
+                    <td><code>21.40 GB</code> (<code>19.93 GiB</code>)</td>
+                    <td><code>7.75 GB</code> (<code>~13.6 GB</code> 절감)</td>
+                    <td><strong><code>7.93 GB</code></strong> (<code>7.39 GiB</code>)</td>
+                  </tr>
+                  <tr>
+                    <td><strong><code>STAT_AvailablePhysical</code></strong></td>
+                    <td><code>2.91 GB</code></td>
+                    <td><code>4.86 GB</code></td>
+                    <td>여유 구간 유지</td>
+                  </tr>
+                  <tr>
+                    <td><strong><code>rhi.DumpMemory</code> 합계</strong></td>
+                    <td><code>2,362.43 MB</code></td>
+                    <td><code>1,215.13 MB</code></td>
+                    <td><code>1,656.77 MB</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>주요 RHI 세부 버퍼 변화</strong></td>
+                    <td><code>ByteAddr 895.5</code> / <code>RT2D 732.2</code> / <code>UAV 307.0 MB</code></td>
+                    <td><code>ByteAddr 578.7</code> / <code>RT2D 325.5</code> / <code>UAV 58.2 MB</code></td>
+                    <td><code>HighDPI</code> Retina <code>2001×1496</code> 복구 포함</td>
+                  </tr>
+                  <tr>
+                    <td><strong>GPU 프레임 / 씬 시간</strong></td>
+                    <td>Scene <code>13.57 ms</code> (1차 단순화 후 <code>5.20~5.39 ms</code>)</td>
+                    <td>경량 렌더 패스 안착</td>
+                    <td>Total <strong><code>11.00 ms</code></strong> / Scene <strong><code>8.746 ms</code></strong></td>
+                  </tr>
+                  <tr>
+                    <td><strong>상태바 <code>진단</code> 경고</strong></td>
+                    <td><code>Icons.Alert.Solid</code> (Critical)</td>
+                    <td><code>0</code>건 (해소)</td>
+                    <td><strong><code>0</code>건 유지</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">Config/DefaultEngine.ini // M4 16GB 통합 메모리 최적화 설정</span>
+                <div class="code-actions">
+                  <span class="code-lang">INI // RendererSettings</span>
+                  <button type="button" class="copy-btn" data-copy={codeEngineIni}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeEngineIni} lang="ini" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">Config/DefaultScalability.ini // @1 확장성 프리셋</span>
+                <div class="code-actions">
+                  <span class="code-lang">INI // Scalability</span>
+                  <button type="button" class="copy-btn" data-copy={codeScalabilityIni}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeScalabilityIni} lang="ini" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+
+        <div class="callout callout-tip">
+          <div class="callout-title">✅ Phase 1 Summary &amp; Next Milestone</div>
+          <p>
+            Phase 1에서는 macOS 툴체인 격리·엔진 분석부터 템플릿 격리·순수 <code>APawn</code> 직조·3단 우주 환경·쿼터니언 6-DoF·물풍선 탄성·반응형 촉수(V1/V2)·M4 16GB 메모리 최적화까지 견고한 클라이언트 기반을 세웠습니다. 다음 마일스톤에서는 부유 오브젝트 포획/끌어당김 상호작용과 촉수 반동 기반 무중력 추진 이동을 이어서 개발·기록할 예정입니다.
+          </p>
+        </div>
+      </section>
+    </article>
+
+    <!-- 우측 스티키 플로팅 목차 (cpp.astro 동일 UX 패턴) -->
+    <aside class="floating-nav" aria-label="문서 빠른 목차">
+      <div class="floating-nav-card">
+        <button type="button" class="nav-jump-btn" id="scrollTopBtn" title="맨 위로 이동">
+          <span class="jump-icon">▲</span>
+          <span class="jump-text">TOP</span>
+        </button>
+
+        <div class="floating-divider"></div>
+
+        <div class="floating-toc-wrap">
+          <div class="floating-toc-label">01 // TOOLCHAIN</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 01 목차">
+            <a href="#sec-1-1" class="floating-toc-link" data-target="sec-1-1">
+              <span class="toc-badge">1.1</span>
+              <span class="toc-name">Xcode 격리·MCP</span>
+            </a>
+            <a href="#sec-1-2" class="floating-toc-link" data-target="sec-1-2">
+              <span class="toc-badge">1.2</span>
+              <span class="toc-name">엔진/LC 분석</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">02 // ARCHITECTURE</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 02 목차">
+            <a href="#sec-2-1" class="floating-toc-link" data-target="sec-2-1">
+              <span class="toc-badge">2.1</span>
+              <span class="toc-name">Sandbox·6분류</span>
+            </a>
+            <a href="#sec-2-2" class="floating-toc-link" data-target="sec-2-2">
+              <span class="toc-badge">2.2</span>
+              <span class="toc-name">APawn vs Char</span>
+            </a>
+            <a href="#sec-2-3" class="floating-toc-link" data-target="sec-2-3">
+              <span class="toc-badge">2.3</span>
+              <span class="toc-name">Enhanced Input</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">03 // SPACE ENV</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 03 목차">
+            <a href="#sec-3-1" class="floating-toc-link" data-target="sec-3-1">
+              <span class="toc-badge">3.1</span>
+              <span class="toc-name">Lvl_Main 3단</span>
+            </a>
+            <a href="#sec-3-2" class="floating-toc-link" data-target="sec-3-2">
+              <span class="toc-badge">3.2</span>
+              <span class="toc-name">0-Sampler Sky</span>
+            </a>
+            <a href="#sec-3-3" class="floating-toc-link" data-target="sec-3-3">
+              <span class="toc-badge">3.3</span>
+              <span class="toc-name">노출 고정·조명</span>
+            </a>
+            <a href="#sec-3-4" class="floating-toc-link" data-target="sec-3-4">
+              <span class="toc-badge">3.4</span>
+              <span class="toc-name">폰 부착 먼지</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">04 // ZERO-G PAWN</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 04 목차">
+            <a href="#sec-4-1" class="floating-toc-link" data-target="sec-4-1">
+              <span class="toc-badge">4.1</span>
+              <span class="toc-name">쿼터니언 6-DoF</span>
+            </a>
+            <a href="#sec-4-2" class="floating-toc-link" data-target="sec-4-2">
+              <span class="toc-badge">4.2</span>
+              <span class="toc-name">스프링 탄성</span>
+            </a>
+            <a href="#sec-4-3" class="floating-toc-link" data-target="sec-4-3">
+              <span class="toc-badge">4.3</span>
+              <span class="toc-name">균일 아이코스피어</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">05 // TENDRILS</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 05 목차">
+            <a href="#sec-5-1" class="floating-toc-link" data-target="sec-5-1">
+              <span class="toc-badge">5.1</span>
+              <span class="toc-name">여의봉·조준래치</span>
+            </a>
+            <a href="#sec-5-2" class="floating-toc-link" data-target="sec-5-2">
+              <span class="toc-badge">5.2</span>
+              <span class="toc-name">V1 동적 리본</span>
+            </a>
+            <a href="#sec-5-3" class="floating-toc-link" data-target="sec-5-3">
+              <span class="toc-badge">5.3</span>
+              <span class="toc-name">체감 튜닝 개선</span>
+            </a>
+            <a href="#sec-5-4" class="floating-toc-link" data-target="sec-5-4">
+              <span class="toc-badge">5.4</span>
+              <span class="toc-name">V2 단발·툴팁</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">06 // M4 MEMORY</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 06 목차">
+            <a href="#sec-6-1" class="floating-toc-link" data-target="sec-6-1">
+              <span class="toc-badge">6.1</span>
+              <span class="toc-name">Critical 경고 발단</span>
+            </a>
+            <a href="#sec-6-2" class="floating-toc-link" data-target="sec-6-2">
+              <span class="toc-badge">6.2</span>
+              <span class="toc-name">오판·원인 규명</span>
+            </a>
+            <a href="#sec-6-3" class="floating-toc-link" data-target="sec-6-3">
+              <span class="toc-badge">6.3</span>
+              <span class="toc-name">7.93GB &amp; 원복</span>
+            </a>
+          </nav>
+        </div>
+
+        <div class="floating-divider"></div>
+
+        <button type="button" class="nav-jump-btn" id="scrollBottomBtn" title="맨 아래로 이동">
+          <span class="jump-icon">▼</span>
+          <span class="jump-text">BOTTOM</span>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 이미지 클릭 확대 라이트박스 -->
+  <dialog id="imgLightbox" class="img-lightbox" aria-label="스크린샷 확대 보기">
+    <div class="lightbox-frame">
+      <button type="button" id="closeLightboxBtn" class="lightbox-close" aria-label="닫기">✕</button>
+      <img id="lightboxImg" src="" alt="" />
+      <p id="lightboxCaption" class="lightbox-caption"></p>
+    </div>
+  </dialog>
+
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1) 코드 복사 버튼
+      document.querySelectorAll('.copy-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const text = btn.getAttribute('data-copy') || '';
+          try {
+            await navigator.clipboard.writeText(text);
+            const prev = btn.textContent;
+            btn.textContent = 'Copied ✓';
+            btn.setAttribute('data-copied', 'true');
+            setTimeout(() => {
+              btn.textContent = prev || 'Copy';
+              btn.removeAttribute('data-copied');
+            }, 1600);
+          } catch (_) {
+            btn.textContent = 'Failed';
+          }
+        });
+      });
+
+      // 2) 이미지 라이트박스
+      const dialog = document.getElementById('imgLightbox');
+      const dialogImg = document.getElementById('lightboxImg');
+      const dialogCap = document.getElementById('lightboxCaption');
+      const closeBtn = document.getElementById('closeLightboxBtn');
+
+      document.querySelectorAll('.zoomable-img').forEach((img) => {
+        img.addEventListener('click', () => {
+          if (!dialog || !dialogImg || !dialogCap) return;
+          dialogImg.src = img.getAttribute('src') || '';
+          dialogImg.alt = img.getAttribute('alt') || '';
+          const figcap = img.closest('figure')?.querySelector('figcaption')?.textContent || img.alt || '';
+          dialogCap.textContent = figcap;
+          dialog.showModal();
+        });
+      });
+
+      closeBtn?.addEventListener('click', () => dialog?.close());
+      dialog?.addEventListener('click', (e) => {
+        if (e.target === dialog) dialog.close();
+      });
+
+      // 3) 플로팅 TOC ScrollSpy (cpp.astro 동일 UX)
+      const topBtn = document.getElementById('scrollTopBtn');
+      const bottomBtn = document.getElementById('scrollBottomBtn');
+      const navCard = document.querySelector('.floating-nav-card');
+      const tocLinks = document.querySelectorAll('.floating-toc-link');
+      const sections = Array.from(document.querySelectorAll('.lesson-section'));
+
+      let currentActiveId = null;
+      let isNavHovered = false;
+      let isManualClick = false;
+      let clickTimeout = null;
+
+      if (navCard) {
+        navCard.addEventListener('mouseenter', () => { isNavHovered = true; });
+        navCard.addEventListener('mouseleave', () => { isNavHovered = false; });
+      }
+
+      function scrollNavCardToActive(linkEl, force = false) {
+        if (!navCard || !linkEl) return;
+        if (window.innerWidth <= 1180) return;
+        if (isNavHovered && !force) return;
+
+        const cardRect = navCard.getBoundingClientRect();
+        const linkRect = linkEl.getBoundingClientRect();
+        const isPartiallyHidden = linkRect.top < cardRect.top + 45 || linkRect.bottom > cardRect.bottom - 45;
+        if (isPartiallyHidden || force) {
+          const relativeTop = linkRect.top - cardRect.top;
+          const targetScrollTop = navCard.scrollTop + relativeTop - (navCard.clientHeight / 2) + (linkRect.height / 2);
+          navCard.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+        }
+      }
+
+      function setActiveLink(targetId, forceScroll = false) {
+        if (!targetId) return;
+        if (targetId === currentActiveId && !forceScroll) return;
+        currentActiveId = targetId;
+
+        let activeLinkEl = null;
+        tocLinks.forEach((link) => {
+          if (link.getAttribute('data-target') === targetId) {
+            link.classList.add('active');
+            activeLinkEl = link;
+          } else {
+            link.classList.remove('active');
+          }
+        });
+
+        if (activeLinkEl) {
+          scrollNavCardToActive(activeLinkEl, forceScroll);
+        }
+      }
+
+      topBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+      bottomBtn?.addEventListener('click', () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }));
+
+      tocLinks.forEach((link) => {
+        link.addEventListener('click', () => {
+          const targetId = link.getAttribute('data-target');
+          isManualClick = true;
+          clearTimeout(clickTimeout);
+          setActiveLink(targetId, true);
+          clickTimeout = setTimeout(() => { isManualClick = false; }, 1000);
+        });
+      });
+
+      function onScroll() {
+        if (isManualClick) return;
+        const scrollY = window.scrollY;
+        const offset = window.innerHeight * 0.35;
+        let currentSectionId = null;
+
+        for (let i = sections.length - 1; i >= 0; i--) {
+          const sec = sections[i];
+          const top = sec.getBoundingClientRect().top + scrollY;
+          if (scrollY + offset >= top) {
+            currentSectionId = sec.getAttribute('id');
+            break;
+          }
+        }
+
+        if (currentSectionId) {
+          setActiveLink(currentSectionId);
+        } else if (sections.length > 0 && scrollY < 250) {
+          setActiveLink(sections[0].getAttribute('id'));
+        }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .note-header {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 2.5rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-3);
+    margin-bottom: 1rem;
+  }
+  .breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb .current {
+    color: var(--accent-2);
+  }
+  .topic-tag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+  .note-header h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.8rem, 1.5rem + 1.5vw, 2.55rem);
+  }
+  .topic-desc {
+    font-size: 1.04rem;
+    color: var(--text-2);
+    line-height: 1.75;
+    max-width: 860px;
+    margin-bottom: 1.2rem;
+  }
+  .meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+  .meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-2);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .chip-k {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Roadmap Overview */
+  .curriculum-overview {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 3.5rem;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .section-title-wrap {
+    margin-bottom: 1.6rem;
+  }
+  .section-title-wrap .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin-bottom: 0.3rem;
+  }
+  .section-title-wrap h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.45rem;
+  }
+  .section-title-wrap p {
+    color: var(--text-3);
+    margin: 0;
+    font-size: 0.94rem;
+  }
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+    gap: 1.15rem;
+  }
+  .phase-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: calc(var(--radius) - 2px);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .active-phase {
+    border-color: color-mix(in srgb, var(--accent-2) 55%, var(--border));
+  }
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.7rem;
+  }
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .phase-status {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .phase-status.active {
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    font-weight: 700;
+  }
+  .phase-card h3 {
+    margin: 0 0 0.45rem;
+    font-size: 1.05rem;
+  }
+  .phase-desc {
+    font-size: 0.84rem;
+    color: var(--text-3);
+    line-height: 1.5;
+    margin: 0 0 0.9rem;
+  }
+  .phase-list {
+    list-style: none;
+    padding: 0.75rem 0 0;
+    margin: auto 0 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .current-lesson-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .phase-chapter-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.86rem;
+  }
+  .lesson-num {
+    font-family: var(--font-mono);
+    color: var(--text-3);
+    font-size: 0.74rem;
+  }
+  .goto-icon {
+    font-size: 0.72rem;
+    opacity: 0.75;
+  }
+  .sub-lesson-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .sub-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.45rem;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--text-2);
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .sub-chip:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* Study Layout (strictly overflow-safe at all widths) */
+  .study-layout {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    align-items: flex-start;
+    padding-bottom: 5rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .lesson-article {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 880px;
+    min-width: 0;
+  }
+  .lesson-article :global(:not(pre) > code) {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .lesson-nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+  .lesson-badge {
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .read-time {
+    color: var(--text-3);
+  }
+  .lesson-header {
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 1.4rem;
+    margin-bottom: 2rem;
+    scroll-margin-top: 5rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .lesson-header h2 {
+    margin: 0 0 0.7rem;
+    font-size: clamp(1.5rem, 1.3rem + 1vw, 2.1rem);
+  }
+  .lesson-intro {
+    font-size: 1.02rem;
+    color: var(--text-2);
+    line-height: 1.75;
+    margin: 0;
+  }
+
+  .lesson-section {
+    margin-bottom: 3.1rem;
+    scroll-margin-top: 5rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .lesson-section h3 {
+    font-size: 1.32rem;
+    margin: 0 0 0.95rem;
+    color: var(--text-1);
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .lesson-section p {
+    color: var(--text-2);
+    line-height: 1.8;
+    margin: 0 0 1.05rem;
+  }
+
+  /* Client Programmer Perspective Cards */
+  .perspective-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 1.15rem 0 1.4rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .perspective-row {
+    display: grid;
+    grid-template-columns: 145px minmax(0, 1fr);
+    gap: 0.75rem 1.1rem;
+    padding: 0.9rem 1.15rem;
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: start;
+  }
+  .perspective-row:last-child {
+    border-bottom: none;
+  }
+  .p-label {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding-top: 0.2rem;
+  }
+  .p-label.intent { color: var(--accent); }
+  .p-label.issue { color: var(--warn); }
+  .p-label.decision { color: var(--success); }
+  .p-label.collab { color: var(--accent-2); }
+  .p-text {
+    font-size: 0.93rem;
+    line-height: 1.72;
+    color: var(--text-2);
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .p-text strong {
+    color: var(--text-1);
+  }
+
+  /* Benchmark Strip (Milestone 06) */
+  .benchmark-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin: 1.2rem 0 1.5rem;
+    width: 100%;
+    max-width: 100%;
+  }
+  .bench-item {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.95rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  .bench-item.warn-state {
+    border-color: color-mix(in srgb, var(--warn) 45%, var(--border));
+    background: color-mix(in srgb, var(--warn) 6%, var(--surface-1));
+  }
+  .bench-item.good-state {
+    border-color: color-mix(in srgb, var(--success) 50%, var(--border));
+    background: color-mix(in srgb, var(--success) 7%, var(--surface-1));
+  }
+  .bench-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-3);
+    letter-spacing: 0.04em;
+  }
+  .bench-val {
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-1);
+  }
+  .bench-item.warn-state .bench-val { color: var(--warn); }
+  .bench-item.good-state .bench-val { color: var(--success); }
+  .bench-sub {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-2);
+    overflow-wrap: anywhere;
+  }
+
+  /* Collapsible Engineering Drawers (closed by default) */
+  .tech-drawer {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 1.2rem 0 1.6rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color var(--dur-fast);
+  }
+  .tech-drawer[open] {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+  .drawer-summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--surface-2);
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.89rem;
+    font-weight: 600;
+    color: var(--text-1);
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .drawer-summary::-webkit-details-marker {
+    display: none;
+  }
+  .drawer-summary:hover {
+    background: var(--surface-3);
+    color: var(--accent);
+  }
+  .drawer-title-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    min-width: 0;
+  }
+  .drawer-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.16rem 0.5rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    flex-shrink: 0;
+  }
+  .drawer-tag.violet {
+    background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+    color: var(--accent-2);
+    border-color: color-mix(in srgb, var(--accent-2) 30%, transparent);
+  }
+  .drawer-chevron {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-3);
+    transition: transform var(--dur-fast), color var(--dur-fast);
+    flex-shrink: 0;
+  }
+  .tech-drawer[open] .drawer-chevron {
+    transform: rotate(90deg);
+    color: var(--accent);
+  }
+  .drawer-body {
+    padding: 1.05rem 1.15rem;
+    border-top: 1px solid var(--border-subtle);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+  .drawer-body > :first-child {
+    margin-top: 0;
+  }
+  .drawer-body > :last-child {
+    margin-bottom: 0;
+  }
+
+  /* Code Blocks with Shiki Dual Themes (strictly internal scroll) */
+  .code-block-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 1rem 0 1.25rem;
+    box-shadow: var(--shadow-1);
+  }
+  .code-header {
+    background: var(--surface-2);
+    padding: 0.5rem 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-3);
+  }
+  .file-name {
+    color: var(--text-2);
+    font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .code-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+  .code-lang {
+    color: var(--accent);
+    font-size: 0.72rem;
+  }
+  .copy-btn {
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all var(--dur-fast);
+  }
+  .copy-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .copy-btn[data-copied="true"] {
+    color: var(--success);
+    border-color: var(--success);
+  }
+  .code-block-wrap :global(pre.astro-code) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    margin: 0 !important;
+    padding: 1.05rem 1.2rem !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    line-height: 1.62;
+  }
+  :global([data-theme="dark"]) .code-block-wrap :global(.astro-code),
+  :global([data-theme="dark"]) .code-block-wrap :global(.astro-code span) {
+    color: var(--shiki-dark) !important;
+  }
+
+  /* Spec Table */
+  .spec-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    margin: 1rem 0 1.25rem;
+  }
+  .spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    text-align: left;
+  }
+  .spec-table th,
+  .spec-table td {
+    padding: 0.72rem 0.88rem;
+    border: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+  .spec-table th {
+    background: var(--surface-2);
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+  .spec-table td {
+    background: var(--surface-1);
+    color: var(--text-2);
+    line-height: 1.58;
+  }
+  .spec-table code {
+    color: var(--accent);
+    word-break: break-word;
+  }
+
+  /* Callouts */
+  .callout {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: var(--radius);
+    padding: 1.1rem 1.3rem;
+    margin: 1.35rem 0;
+    line-height: 1.68;
+  }
+  .callout-info {
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  .callout-tip {
+    background: color-mix(in srgb, var(--success) 8%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 0.38rem;
+    font-size: 0.92rem;
+  }
+  .callout-info .callout-title { color: var(--accent); }
+  .callout-tip .callout-title { color: var(--success); }
+  .callout p {
+    margin: 0;
+    font-size: 0.91rem;
+    color: var(--text-2);
+    overflow-wrap: break-word;
+  }
+
+  /* Media & Comparison Galleries */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.05rem;
+    margin: 1.35rem 0 1.65rem;
+    width: 100%;
+    max-width: 100%;
+  }
+  .compare-grid.three-col {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .media-card {
+    margin: 0;
+    min-width: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .media-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: zoom-in;
+    transition: transform var(--dur);
+  }
+  .media-card img:hover {
+    transform: scale(1.015);
+  }
+  .media-card figcaption {
+    padding: 0.72rem 0.9rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.83rem;
+    color: var(--text-2);
+    line-height: 1.52;
+  }
+  .media-card figcaption strong {
+    color: var(--text-1);
+  }
+
+  .chapter-separator {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border), var(--accent-2), var(--border), transparent);
+    margin: 3.6rem 0 1.8rem;
+  }
+
+  /* Floating Nav (cpp.astro pattern) */
+  .floating-nav {
+    position: sticky;
+    top: 5.5rem;
+    height: fit-content;
+    align-self: flex-start;
+    z-index: 40;
+    flex-shrink: 0;
+  }
+  .floating-nav-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.85rem;
+    width: 220px;
+    max-height: calc(100vh - 7rem);
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    box-shadow: var(--shadow-1);
+    display: flex;
+    flex-direction: column;
+  }
+  .nav-jump-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    padding: 0.45rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all var(--dur-fast);
+  }
+  .nav-jump-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .floating-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 0.7rem 0;
+  }
+  .floating-toc-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .floating-toc-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--text-3);
+    margin-bottom: 0.4rem;
+    padding-left: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+  .floating-toc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.16rem;
+  }
+  .floating-toc-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--text-3);
+    font-size: 0.78rem;
+    transition: all var(--dur-fast);
+    border-left: 2px solid transparent;
+  }
+  .floating-toc-link:hover {
+    color: var(--text-1);
+    background: var(--surface-2);
+  }
+  .floating-toc-link.active {
+    color: var(--accent);
+    font-weight: 700;
+    background: var(--accent-muted);
+    border-left-color: var(--accent);
+  }
+  .toc-badge {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .toc-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Lightbox */
+  .img-lightbox {
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+    color: var(--text-1);
+    max-width: min(94vw, 1280px);
+    max-height: 92vh;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
+  }
+  .img-lightbox::backdrop {
+    background: rgba(5, 7, 14, 0.82);
+    backdrop-filter: blur(6px);
+  }
+  .lightbox-frame {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 0.7rem;
+    right: 0.7rem;
+    z-index: 2;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    color: var(--text-1);
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .lightbox-close:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .lightbox-frame img {
+    display: block;
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    background: #05070e;
+  }
+  .lightbox-caption {
+    margin: 0;
+    padding: 0.8rem 1.1rem;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  @media (max-width: 1180px) {
+    .study-layout {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .lesson-article {
+      max-width: 100%;
+      width: 100%;
+    }
+    .floating-nav {
+      position: fixed;
+      top: auto;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 100;
+    }
+    .floating-nav-card {
+      flex-direction: row;
+      gap: 0.5rem;
+      padding: 0.4rem;
+      width: auto;
+    }
+    .floating-toc-wrap,
+    .floating-divider {
+      display: none;
+    }
+    .nav-jump-btn {
+      width: auto;
+      padding: 0.5rem 0.8rem;
+    }
+  }
+  @media (max-width: 820px) {
+    .compare-grid,
+    .compare-grid.three-col,
+    .benchmark-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 680px) {
+    .curriculum-overview {
+      padding: 1.25rem;
+    }
+    .perspective-row {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
+  }
+</style>

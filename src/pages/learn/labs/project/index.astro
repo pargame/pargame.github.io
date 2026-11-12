@@ -1,0 +1,494 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Project: 실전 개발 프로젝트 허브"
+  description="Study Notes > Labs & Projects > Project — 언리얼 엔진 5.9 곰팡이 우주 정복 대작전 프로젝트 허브 및 개발 아카이브"
+>
+  <div class="note-header">
+    <nav class="breadcrumb" aria-label="브레드크럼">
+      <a href="/learn">Study Notes</a>
+      <span>/</span>
+      <a href="/learn">Labs &amp; Projects</a>
+      <span>/</span>
+      <span class="current">Project</span>
+    </nav>
+
+    <div class="topic-tag">LABS &amp; PROJECTS // PROJECT HUB</div>
+    <h1>Project: 실전 프로젝트 개발 기록 허브</h1>
+    <p class="topic-desc">
+      이론 스터디에서 검증한 C++ 메모리·수명주기 모델, 게임 엔진 아키텍처, 셰이더 및 VFX 파이프라인을 실제 작동하는 프로토타입과 게임으로 구현하며 남기는 엔지니어링 허브입니다.
+    </p>
+  </div>
+
+  <section class="projects-section">
+    <div class="section-title-wrap">
+      <span class="badge">ACTIVE SHOWCASE</span>
+      <h2>진행 중인 프로젝트</h2>
+      <p>구현 코드와 에셋 구조, 파라미터 설계 근거, PIE/에디터 검증 결과를 마일스톤별로 점진 기록합니다.</p>
+    </div>
+
+    <article class="project-showcase">
+      <div class="showcase-top">
+        <div class="showcase-badges">
+          <span class="status-pill active">
+            <span class="pulse-dot"></span>
+            ACTIVE DEV · PHASE 1
+          </span>
+          <span class="engine-pill">UNREAL ENGINE 5.9 · macOS</span>
+          <span class="path-pill">UEStudy / Sandbox / MiniProject</span>
+        </div>
+        <span class="updated-meta">Updated 2026. 11. 12</span>
+      </div>
+
+      <div class="showcase-body">
+        <div class="showcase-copy">
+          <h2>
+            <a href="/learn/labs/project/fungal-space-conquest">
+              곰팡이 우주 정복 대작전
+            </a>
+          </h2>
+          <p class="project-subtitle">
+            무중력 공간에 떠 있는 보송보송한 먼지공·곰팡이 부유체가 물풍선처럼 출렁이며, 조준 방향으로 <strong>긴 촉수(V1)</strong>와 <strong>그물 촉수(V2)</strong>를 뻗어 우주를 탐색·정복해 나가는 UE 5.9 C++ 미니 프로젝트.
+          </p>
+
+          <div class="metrics-strip">
+            <div class="metric-item">
+              <span class="metric-label">CORE C++</span>
+              <span class="metric-value">3 Classes</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">CONTENT ASSETS</span>
+              <span class="metric-value">16 Assets / 6 Folders</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">TENDRIL STYLES</span>
+              <span class="metric-value">V1 Hold · V2 One-Shot</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">TARGET LEVEL</span>
+              <span class="metric-value">Lvl_Main (3-Layer Space)</span>
+            </div>
+          </div>
+
+          <div class="stack-tags">
+            <span class="stack-tag">#UE5_9</span>
+            <span class="stack-tag">#APawnDesign</span>
+            <span class="stack-tag">#Quaternion6DoF</span>
+            <span class="stack-tag">#WPO_Elasticity</span>
+            <span class="stack-tag">#NiagaraRibbon</span>
+            <span class="stack-tag">#Xcode26_1_1_Isolation</span>
+            <span class="stack-tag">#M4_16GB_Optimization</span>
+          </div>
+        </div>
+
+        <a
+          href="/learn/labs/project/fungal-space-conquest"
+          class="showcase-preview"
+          aria-label="곰팡이 우주 정복 대작전 프로젝트 허브 열기"
+        >
+          <img
+            src="/images/projects/fungal-space-conquest/blog-pie-idle.png"
+            alt="UE 5.9 Lvl_Main 우주 공간에서 부유 중인 곰팡이 우주 정복 대작전 BP_SpaceDrifterPawn PIE 뷰포트"
+            loading="eager"
+          />
+          <span class="preview-caption">PIE Capture (1920×1378) · Lvl_Main + BP_SpaceDrifterPawn</span>
+        </a>
+      </div>
+
+      <div class="milestone-strip">
+        <a href="/learn/labs/project/fungal-space-conquest#ch-01" class="milestone-card">
+          <div class="m-top">
+            <span class="m-num">MILESTONE 01</span>
+            <span class="m-arrow">➔</span>
+          </div>
+          <h3>Xcode 26.1.1 격리 &amp; 엔진 분석</h3>
+          <p><code>ue-on/off</code> 환경 격리, 공식 MCP 41툴셋, <code>LaunchEngineLoop.cpp</code> &amp; Live Coding 분석</p>
+        </a>
+
+        <a href="/learn/labs/project/fungal-space-conquest#ch-02" class="milestone-card">
+          <div class="m-top">
+            <span class="m-num">MILESTONE 02</span>
+            <span class="m-arrow">➔</span>
+          </div>
+          <h3>템플릿 격리 &amp; APawn 직조</h3>
+          <p><code>Sandbox/MiniProject</code> 6분류 에셋 분리, <code>ACharacter</code>를 버린 순수 <code>APawn</code> 아키텍처</p>
+        </a>
+
+        <a href="/learn/labs/project/fungal-space-conquest#ch-03" class="milestone-card">
+          <div class="m-top">
+            <span class="m-num">MILESTONE 03</span>
+            <span class="m-arrow">➔</span>
+          </div>
+          <h3>우주 환경 시각·인지 설계</h3>
+          <p>2D UV 극점 왜곡 → 0-샘플러 <code>M_SpaceSky</code>, <code>AutoExposure</code> 잠금, 폰 부착 3D 먼지</p>
+        </a>
+
+        <a href="/learn/labs/project/fungal-space-conquest#ch-04" class="milestone-card">
+          <div class="m-top">
+            <span class="m-num">MILESTONE 04</span>
+            <span class="m-arrow">➔</span>
+          </div>
+          <h3>쿼터니언 6-DoF &amp; 물풍선 탄성</h3>
+          <p><code>FRotator</code> 짐벌락 극복 궤도 카메라, 2차 감쇠 스프링, 균일 아이코스피어 WPO</p>
+        </a>
+
+        <a href="/learn/labs/project/fungal-space-conquest#ch-05" class="milestone-card">
+          <div class="m-top">
+            <span class="m-num">MILESTONE 05</span>
+            <span class="m-arrow">➔</span>
+          </div>
+          <h3>촉수 V1/V2 &amp; 체감 튜닝기</h3>
+          <p>여의봉 방지 조준 래치, 비율·테이퍼 연동 개선, V2 단발형 &amp; UHT 한글 Details 툴팁</p>
+        </a>
+
+        <a href="/learn/labs/project/fungal-space-conquest#ch-06" class="milestone-card">
+          <div class="m-top">
+            <span class="m-num">MILESTONE 06</span>
+            <span class="m-arrow">➔</span>
+          </div>
+          <h3>M4 Air 16GB 메모리 최적화</h3>
+          <p>GPU 60% 절감 오판 → 렌더 패스 경량화로 <code>21.4GB → 7.93GB</code> 달성 및 고품질 전량 원복</p>
+        </a>
+      </div>
+
+      <div class="showcase-footer">
+        <div class="footer-note">
+          클라이언트 설계 판단, C++ 소스(<code>SpaceDrifterPawn</code> 등), 엔진/환경 설정(<code>.ini</code>/<code>.zshrc</code>) 및 MCP 실측치를 바탕으로 작성했습니다. 상세 코드와 표는 접기 서랍에 수록되어 있습니다.
+        </div>
+        <a href="/learn/labs/project/fungal-space-conquest" class="cta-btn">
+          프로젝트 허브 &amp; 개발 기록 읽기 →
+        </a>
+      </div>
+    </article>
+  </section>
+</BaseLayout>
+
+<style>
+  .note-header {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 3rem;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text-3);
+    margin-bottom: 1rem;
+  }
+  .breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb .current {
+    color: var(--accent-2);
+  }
+  .topic-tag {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+  .note-header h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.8rem, 1.5rem + 1.5vw, 2.6rem);
+  }
+  .topic-desc {
+    font-size: 1.05rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    max-width: 820px;
+  }
+
+  .projects-section {
+    margin-bottom: 4rem;
+  }
+  .section-title-wrap {
+    margin-bottom: 1.8rem;
+  }
+  .section-title-wrap .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin-bottom: 0.4rem;
+  }
+  .section-title-wrap h2 {
+    margin: 0 0 0.4rem;
+  }
+  .section-title-wrap p {
+    color: var(--text-3);
+    margin: 0;
+  }
+
+  .project-showcase {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-1);
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+  }
+  .showcase-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .showcase-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    align-items: center;
+  }
+  .status-pill,
+  .engine-pill,
+  .path-pill {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+  }
+  .status-pill.active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  }
+  .pulse-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+  .engine-pill {
+    color: var(--accent);
+    background: var(--accent-muted);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .path-pill {
+    color: var(--text-2);
+    background: var(--surface-2);
+  }
+  .updated-meta {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+
+  .showcase-body {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 2rem;
+    align-items: center;
+  }
+  .showcase-copy h2 {
+    margin: 0 0 0.8rem;
+    font-size: clamp(1.5rem, 1.3rem + 0.8vw, 2rem);
+  }
+  .showcase-copy h2 a {
+    color: var(--text-1);
+    text-decoration: none;
+  }
+  .showcase-copy h2 a:hover {
+    color: var(--accent);
+  }
+  .project-subtitle {
+    color: var(--text-2);
+    line-height: 1.75;
+    margin-bottom: 1.4rem;
+  }
+  .project-subtitle strong {
+    color: var(--text-1);
+  }
+
+  .metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.3rem;
+  }
+  .metric-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .metric-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-3);
+    letter-spacing: 0.05em;
+  }
+  .metric-value {
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .stack-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .stack-tag {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    color: var(--accent-2);
+  }
+
+  .showcase-preview {
+    display: block;
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+    text-decoration: none;
+    transition: transform var(--dur), border-color var(--dur), box-shadow var(--dur);
+  }
+  .showcase-preview:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .showcase-preview img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+  .preview-caption {
+    display: block;
+    padding: 0.55rem 0.9rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-3);
+  }
+
+  .milestone-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .milestone-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    transition: all var(--dur-fast);
+  }
+  .milestone-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .m-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .m-arrow {
+    color: var(--text-3);
+    transition: transform var(--dur-fast), color var(--dur-fast);
+  }
+  .milestone-card:hover .m-arrow {
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+  .milestone-card h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-1);
+  }
+  .milestone-card p {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+
+  .showcase-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .footer-note {
+    font-size: 0.86rem;
+    color: var(--text-3);
+  }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.7rem 1.35rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--text-inverse);
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .cta-btn:hover {
+    background: var(--accent-strong);
+    color: var(--text-inverse);
+    box-shadow: var(--glow);
+  }
+
+  @media (max-width: 900px) {
+    .showcase-body {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .project-showcase {
+      padding: 1.3rem;
+    }
+    .metrics-strip {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

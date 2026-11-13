@@ -344,6 +344,392 @@ r.Lumen.Reflections.Allow=0
 
 [ReflectionQuality@1]
 r.Lumen.Reflections.Allow=0`;
+
+const codeDistantStar = `// Source/UEStudy/Sandbox/MiniProject/DistantStarSyncComponent.cpp
+void UDistantStarSyncComponent::SyncStarParameters()
+{
+	const AActor* Owner = GetOwner();
+	UWorld* World = GetWorld();
+	UMaterialParameterCollection* MPC = TargetMPC.LoadSynchronous();
+	if (!Owner || !World || !MPC)
+	{
+		return;
+	}
+
+	if (bSyncDirectionFromLight)
+	{
+		// DirectionalLight의 빛 진행 방향(+Forward)의 반대(-Forward)가 항성이 떠 있는 방향
+		const FVector TowardStarDir = (-Owner->GetActorForwardVector()).GetSafeNormal();
+		if (!TowardStarDir.IsNearlyZero() && !TowardStarDir.Equals(LastSyncedStarDir, 1e-4f))
+		{
+			UKismetMaterialLibrary::SetVectorParameterValue(
+				World,
+				MPC,
+				ParamStarDirection,
+				FLinearColor(TowardStarDir.X, TowardStarDir.Y, TowardStarDir.Z, 0.0f)
+			);
+			LastSyncedStarDir = TowardStarDir;
+		}
+	}
+
+	if (bSyncColorFromLight)
+	{
+		if (const UDirectionalLightComponent* LightComp = Owner->FindComponentByClass<UDirectionalLightComponent>())
+		{
+			FLinearColor LightLinear = LightComp->GetLightColor();
+			if (LightComp->bUseTemperature)
+			{
+				LightLinear *= LightComp->GetColorTemperature();
+			}
+			if (!LightLinear.Equals(LastSyncedLightColor, 1e-4f))
+			{
+				const float MaxChan = FMath::Max3(LightLinear.R, LightLinear.G, LightLinear.B);
+				const FLinearColor NormLight = (MaxChan > KINDA_SMALL_NUMBER) ? (LightLinear / MaxChan) : FLinearColor::White;
+
+				// 중심 광구는 백열감(화이트-코어), 코로나는 항성 고유 색감을 더 진하게 유지
+				const FLinearColor CoreColor(
+					FMath::Lerp(1.0f, NormLight.R, 0.35f),
+					FMath::Lerp(1.0f, NormLight.G, 0.35f),
+					FMath::Lerp(1.0f, NormLight.B, 0.35f),
+					1.0f
+				);
+				const FLinearColor CoronaColor(
+					NormLight.R * 1.0f,
+					NormLight.G * 0.76f,
+					NormLight.B * 0.48f,
+					1.0f
+				);
+
+				UKismetMaterialLibrary::SetVectorParameterValue(World, MPC, ParamStarCoreColor, CoreColor);
+				UKismetMaterialLibrary::SetVectorParameterValue(World, MPC, ParamStarCoronaColor, CoronaColor);
+				LastSyncedLightColor = LightLinear;
+			}
+		}
+	}
+
+	if (bSyncVisualParamsToMPC && bVisualParamsDirty)
+	{
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarAngularRadius, StarAngularRadius);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarCoreIntensity, StarCoreIntensity);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarCoronaIntensity, StarCoronaIntensity);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarCoronaScale, StarCoronaScale);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarGlareIntensity, StarGlareIntensity);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarGlareRayLength, StarGlareRayLength);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarGlareRaySharpness, StarGlareRaySharpness);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarDiagonalGlareWeight, StarDiagonalGlareWeight);
+		UKismetMaterialLibrary::SetScalarParameterValue(World, MPC, ParamStarAmbientGlowIntensity, StarAmbientGlowIntensity);
+		bVisualParamsDirty = false;
+	}
+}`;
+
+const codeAsteroidLookAhead = `// Source/UEStudy/Sandbox/MiniProject/AsteroidFieldManager.cpp — 전방 예측 스트리밍 중심 + 우선순위 정렬
+const FVector CamForward = bHasCam ? CamRot.Vector().GetSafeNormal() : PlayerPawn->GetActorForwardVector();
+OutForwardDir = (Velocity.SizeSquared() > FMath::Square(80.0f)) ? Velocity.GetSafeNormal() : CamForward;
+if (OutForwardDir.IsNearlyZero())
+{
+	OutForwardDir = FVector::ForwardVector;
+}
+
+// 2번(속도 예측 전방 시프트): 이동 속도 벡터 + 시선 방향으로 스트리밍 구 중심을 앞쪽에 선제 배치
+FVector LookAheadOffset = Velocity * VelocityLookAheadSeconds + CamForward * CameraLookAheadOffsetCm;
+const float MaxShift = FMath::Min(MaxLookAheadOffsetCm, ActivateRadiusCm * 0.60f);
+LookAheadOffset = LookAheadOffset.GetClampedToMaxSize(MaxShift);
+
+OutStreamCenter = OutPlayerLocation + LookAheadOffset;
+
+// Pass 2: 전방 내적 가중치(ForwardDot * 0.35)로 비행 앞쪽 Dormant 슬롯부터 즉시 복원
+const double ForwardDot = FVector::DotProduct(AstLoc - PlayerLocation, ForwardDir);
+const double EffectiveDist = FMath::Max(FMath::Sqrt(DistSq) - ForwardDot * 0.35, 0.0);
+WakeCandidates.Add({ Idx, EffectiveDist });
+
+WakeCandidates.Sort([](const FDormantWakeCandidate& A, const FDormantWakeCandidate& B)
+{
+	return A.PriorityScore < B.PriorityScore;
+});`;
+
+const codePrebakePool = `// AsteroidFieldManager.cpp + SpaceAsteroid.cpp — 0ms 아키타입 사전 베이킹 & 휴면 Tick 정지
+if (bUsePrebakedSwitchPool)
+{
+	// 1번(완제품 프리베이크 스위치 ON): 풀 슬롯마다 고유 아키타입 시드로 메시·콜리전·재질을 1회 미리 구워 대기
+	const uint32 ArchetypeHash = (static_cast<uint32>(WorldSeed) * 2654435761u) ^ (static_cast<uint32>(SlotIdx + 1) * 2246822519u);
+	const int32 ArchetypeSeed = FMath::Max(static_cast<int32>(ArchetypeHash & 0x7FFFFFFFu), 1);
+	PooledActor->BakePooledArchetype(ArchetypeSeed);
+	++TotalBuildsCount;
+}
+
+void ASpaceAsteroid::EnterDormantPool()
+{
+	if (bManagedDormant)
+	{
+		return;
+	}
+
+	bManagedDormant = true;
+	if (AsteroidMesh && AsteroidMesh->IsSimulatingPhysics())
+	{
+		SavedDormantLinearVelocity = AsteroidMesh->GetPhysicsLinearVelocity();
+		SavedDormantAngularVelocityDeg = AsteroidMesh->GetPhysicsAngularVelocityInDegrees();
+	}
+	else
+	{
+		SavedDormantLinearVelocity = FVector::ZeroVector;
+		SavedDormantAngularVelocityDeg = FVector::ZeroVector;
+	}
+
+	if (AsteroidMesh)
+	{
+		AsteroidMesh->SetSimulatePhysics(false);
+		AsteroidMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	SetActorHiddenInGame(true);
+	SetActorTickEnabled(false);
+}`;
+
+const codeNetFunnelAndCooldown = `// Source/UEStudy/Sandbox/MiniProject/SpaceDrifterPawn.h & .cpp — 쿨다운 가드 & 그물 깔때기 C++ 1:1 수식
+bool CanFireTendril() const { return !bIsExtendingTendril && TendrilExtendAlpha <= KINDA_SMALL_NUMBER && !bHasLockedTendrilAim; }
+
+void ASpaceDrifterPawn::SetTendrilExtendingInternal(bool bExtend, bool bAllowRetractImpulse)
+{
+	if (bExtend)
+	{
+		// 긴 촉수(회수 시작 후) 및 그물 촉수(단발 발사 후) 모두 완전히 회수(Alpha == 0)될 때까지 재입력 무시
+		if (!CanFireTendril())
+		{
+			return;
+		}
+	}
+	// ...
+}
+
+float ASpaceDrifterPawn::EvaluateNetFunnelRadiusCm(float NormalizedT, float CurrentReachAlpha) const
+{
+	// NS_Tendril_GossamerSpores 의 Spoke/WebRing HLSL 반경 식과 1:1 일치
+	const float ClampedT = FMath::Clamp(NormalizedT, 0.0f, 1.0f);
+	const float U = FMath::Clamp((ClampedT - 0.36f) / 0.64f, 0.0f, 1.0f);
+	const float Bloom = FMath::Lerp(0.18f, 1.0f, FMath::Clamp((CurrentReachAlpha - 0.54f) / 0.46f, 0.0f, 1.0f));
+	return 11.0f * FMath::Sin(ClampedT * UE_PI) + 250.0f * (U * U * (0.25f + 0.75f * U)) * Bloom;
+}
+
+void ASpaceDrifterPawn::SweepAndCaptureMinerals(
+	const FVector& StartPos,
+	float MaxNetLenCm,
+	float CurrentReachAlpha,
+	float TimeSec)
+{
+	// AlongCm 범위([35.0f, ReachTipCm + PaddingCm])와 단면 반경(NetRadiusAtT + PaddingCm) 모두 통과 시 포획
+	const float NetRadiusAtT = EvaluateNetFunnelRadiusCm(ClampedT, CurrentReachAlpha);
+	if (RadialDist > NetRadiusAtT + PaddingCm)
+	{
+		continue;
+	}
+	if (Mineral->BeginNetCapture(this, ClampedT, RadialDir2D, RadialFrac))
+	{
+		CaughtNetMinerals.AddUnique(Mineral);
+	}
+}`;
+
+const codeMineralSync = `// Source/UEStudy/Sandbox/MiniProject/SpaceMineral.cpp & SpaceDrifterPawn.cpp — 0프레임 오차 동기화 & 흡수
+bool ASpaceMineral::BeginNetCapture(
+	ASpaceDrifterPawn* CapturerPawn,
+	float InNetAnchorT,
+	const FVector2D& InRadialDir2D,
+	float InRadialFraction)
+{
+	if (!CapturerPawn || !IsAvailableForCapture())
+	{
+		return false;
+	}
+
+	const FVector OutwardUp = GetActorUpVector();
+	DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HostAsteroidPtr.Reset();
+
+	if (AAsteroidFieldManager* Mgr = OwnerManager.Get())
+	{
+		Mgr->MarkMineralConsumed(ActiveMineralHash);
+	}
+
+	CapturerPtr = CapturerPawn;
+	MineralState = ESpaceMineralState::BeingAbsorbed;
+	CaptureStartWorldPos = GetActorLocation() + OutwardUp * 12.0f;
+	NetAnchorT = FMath::Clamp(InNetAnchorT, 0.08f, 0.99f);
+	NetRadialDir2D = InRadialDir2D.IsNearlyZero() ? FVector2D(1.0f, 0.0f) : InRadialDir2D.GetSafeNormal();
+	NetRadialFraction = FMath::Clamp(InRadialFraction, 0.0f, 0.88f);
+	NetBindBlendAlpha = 0.0f;
+	AbsorbElapsed = 0.0f;
+	bFallbackDirectPull = false;
+
+	// 위치 갱신은 ASpaceDrifterPawn의 그물 촉수 틱에서 0프레임 오차로 직접 동기화
+	PrimaryActorTick.SetTickFunctionEnable(false);
+	return true;
+}
+
+bool ASpaceMineral::SyncToNetPosition(
+	float DeltaTime,
+	const FVector& NetWorldPos,
+	const FVector& PawnBodyPos,
+	float AbsorbContactRadius,
+	bool bIsRetracting,
+	float NetEasedReach)
+{
+	AbsorbElapsed += DeltaTime;
+	NetBindBlendAlpha = FMath::Min(1.0f, NetBindBlendAlpha + DeltaTime * 14.0f);
+	const float SmoothBind = FMath::SmoothStep(0.0f, 1.0f, NetBindBlendAlpha);
+	const FVector SyncedLoc = FMath::Lerp(CaptureStartWorldPos, NetWorldPos, SmoothBind);
+
+	SetActorLocation(SyncedLoc, false, nullptr, ETeleportType::TeleportPhysics);
+	AddActorLocalRotation(FRotator(150.0f * DeltaTime, 220.0f * DeltaTime, 110.0f * DeltaTime));
+
+	const float DistToPawn = FVector::Distance(SyncedLoc, PawnBodyPos);
+	const float ShrinkAlpha = FMath::Clamp(DistToPawn / 220.0f, 0.25f, 1.0f);
+	SetActorScale3D(BaseScale3D * ShrinkAlpha);
+
+	if (DistToPawn <= AbsorbContactRadius || (bIsRetracting && NetEasedReach <= 0.06f) || AbsorbElapsed >= 5.0f)
+	{
+		FinishAbsorption();
+		return true;
+	}
+
+	return false;
+}`;
+
+const codeChunkSpatialConfig = `// Source/UEStudy/Sandbox/MiniProject/AsteroidFieldManager.h — 청크 단위 공간 분할 & 전방 예측 구형 파라미터
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float ChunkSizeCm = 2000.0f; // 20m 정육면체 청크(Chunk) 공간 단위
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float ActivateRadiusCm = 4600.0f; // 전방 예측 스트리밍 구 활성 반경
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float DeactivateRadiusCm = 5600.0f; // 히스테리시스 이탈 언로드 반경
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float MinSafeSpawnRadiusCm = 520.0f; // 플레이어 즉사 충돌 방지 안전 반경
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float VelocityLookAheadSeconds = 0.85f; // 비행 속도 전방 예측 시간
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float CameraLookAheadOffsetCm = 420.0f; // 시선 전방 기본 전진 오프셋
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float MaxLookAheadOffsetCm = 2200.0f; // 예측 오프셋 최대 제한 거리
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+float ChunkScanMoveThresholdCm = 250.0f; // 정지·미세 이동 시 스캔 스킵 거리
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|Spatial")
+bool bEnableRearChunkSwap = true; // 풀 상한 도달 시 등 뒤 청크 통째 퇴거`;
+
+const codeChunkScan = `// Source/UEStudy/Sandbox/MiniProject/AsteroidFieldManager.cpp — RunFieldScan 청크 그룹 로드/언로드 & 우선순위 큐
+void AAsteroidFieldManager::RunFieldScan(int32 ChunkLoadBudget, bool bForceFullScan)
+{
+	// 1. 정지 스캔 스킵: 큐가 비어 있고 청크 경계 내 250cm 미만 이동 시 전체 3D 격자 스캔 생략
+	if (!bForceFullScan && bHasEvaluatedChunkScan && PendingChunkQueue.Num() == 0
+		&& CenterChunk == LastScannedChunkCoord && ChunkScanMoveThresholdCm > 0.0f
+		&& FVector::DistSquared(StreamCenter, LastScannedStreamCenter) < FMath::Square(ChunkScanMoveThresholdCm))
+	{
+		SyncStatsCounters();
+		return;
+	}
+
+	// 2. Pass 1: 이탈 반경(DeactivateRadiusCm) 밖 청크들을 통째로 언로드 (락온/근접 유예 제외)
+	TArray<FIntVector> ChunksToUnload;
+	for (const TPair<FIntVector, FActiveChunkRecord>& Pair : ActiveChunks)
+	{
+		if (IsChunkOutsideUnloadRange(Pair.Key, StreamCenter, DeactivateRadiusSq)
+			&& !ShouldDeferChunkUnload(Pair.Value, PlayerLocation, LatchedTarget, ProtectedNearPlayerSq))
+		{
+			ChunksToUnload.Add(Pair.Key);
+		}
+	}
+	for (const FIntVector& UnloadCoord : ChunksToUnload)
+	{
+		UnloadChunk(UnloadCoord, NowTime);
+	}
+
+	// 3. Pass 2: 활성 구(ActivateRadiusCm) 내 미로드 청크 수집 및 전방 우선순위 정렬
+	const int32 RangeInChunks = FMath::CeilToInt((ActivateRadiusCm + ChunkSizeCm * 0.5f) / ChunkSizeCm);
+	TArray<FPendingChunkCandidate> Candidates;
+	// ... (반경 내 미로드 청크 수집)
+	Candidates.Sort([](const FPendingChunkCandidate& A, const FPendingChunkCandidate& B) {
+		return A.PriorityScore < B.PriorityScore;
+	});
+
+	// 4. 프레임당 분산 로드 (MaxChunksPerScan = 4)
+	for (const FPendingChunkCandidate& Cand : Candidates)
+	{
+		if (ActiveAsteroidCount >= MaxActiveAsteroids)
+		{
+			if (!TryEvictRearChunkForCapacity(StreamCenter, ForwardDir, PlayerLocation, LatchedTarget,
+				ProtectedNearPlayerSq, Cand.PriorityScore, NowTime, ActiveAsteroidCount))
+			{
+				break;
+			}
+		}
+		LoadChunk(Cand.ChunkCoord, StreamCenter, PlayerLocation, LatchedTarget, NowTime,
+			ActiveLocations, ExternalLocations, ActiveAsteroidCount);
+	}
+}`;
+
+const codeChunkProtectionAndEviction = `// Source/UEStudy/Sandbox/MiniProject/AsteroidFieldManager.cpp — 언로드 유예 보호망 & 후방 청크 원자적 퇴거
+bool AAsteroidFieldManager::ShouldDeferChunkUnload(
+	const FActiveChunkRecord& ChunkRecord,
+	const FVector& PlayerLocation,
+	const AActor* LatchedTarget,
+	double ProtectedNearPlayerSq) const
+{
+	for (int32 PoolIdx : ChunkRecord.AsteroidPoolIndices)
+	{
+		if (!PoolEntries.IsValidIndex(PoolIdx)) continue;
+		const FAsteroidPoolEntry& Entry = PoolEntries[PoolIdx];
+		if (Entry.State != EAsteroidPoolState::Active || !IsValid(Entry.Asteroid)) continue;
+
+		// 촉수가 꽂혀 있는 락온 대상 소행성이 포함되어 있다면 언로드 유예
+		if (LatchedTarget && Entry.Asteroid.Get() == LatchedTarget) return true;
+
+		// 물리 충돌 반동으로 플레이어 근처(ActivateRadius * 0.8)로 날아온 바위가 눈앞에서 증발하지 않도록 보호
+		if (FVector::DistSquared(Entry.Asteroid->GetActorLocation(), PlayerLocation) < ProtectedNearPlayerSq) return true;
+	}
+	return false;
+}
+
+bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
+	const FVector& StreamCenter, const FVector& ForwardDir,
+	const FVector& PlayerLocation, const AActor* LatchedTarget,
+	double ProtectedNearPlayerSq, double CandidatePriorityScore,
+	double NowTime, int32& InOutCurrentActiveCount)
+{
+	if (!bEnableRearChunkSwap) return false;
+
+	bool bFoundVictimChunk = false;
+	FIntVector VictimCoord = FIntVector::ZeroValue;
+	double WorstRearScore = CandidatePriorityScore + 150.0;
+
+	for (const TPair<FIntVector, FActiveChunkRecord>& Pair : ActiveChunks)
+	{
+		if (Pair.Value.AsteroidPoolIndices.Num() == 0) continue;
+		if (ShouldDeferChunkUnload(Pair.Value, PlayerLocation, LatchedTarget, ProtectedNearPlayerSq)) continue;
+
+		const double Score = ComputeChunkPriorityScore(Pair.Key, StreamCenter, ForwardDir);
+		if (Score > WorstRearScore)
+		{
+			WorstRearScore = Score;
+			VictimCoord = Pair.Key;
+			bFoundVictimChunk = true;
+		}
+	}
+
+	if (!bFoundVictimChunk) return false;
+
+	const int32 FreedCount = ActiveChunks.FindRef(VictimCoord).AsteroidPoolIndices.Num();
+	if (UnloadChunk(VictimCoord, NowTime))
+	{
+		InOutCurrentActiveCount = FMath::Max(0, InOutCurrentActiveCount - FreedCount);
+		return true; // 전방 청크 로드를 위한 슬롯 즉시 확보
+	}
+	return false;
+}`;
 ---
 
 <BaseLayout
@@ -372,7 +758,7 @@ r.Lumen.Reflections.Allow=0`;
       <span class="meta-chip"><span class="chip-k">ENGINE</span> UE 5.9 (Xcode 26.1.1)</span>
       <span class="meta-chip"><span class="chip-k">WORKFLOW</span> Director + AI Co-Dev</span>
       <span class="meta-chip"><span class="chip-k">HARDWARE</span> M4 Air 16GB Unified</span>
-      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 Complete</span>
+      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 → 2 (Milestones 01–10)</span>
     </div>
   </div>
 
@@ -380,8 +766,8 @@ r.Lumen.Reflections.Allow=0`;
   <section class="curriculum-overview">
     <div class="section-title-wrap">
       <span class="badge">PROJECT ROADMAP &amp; POSTMORTEM INDEX</span>
-      <h2>클라이언트 개발 마일스톤 (01 — 06)</h2>
-      <p>macOS 툴체인·엔진 환경 구축(01)에서 게임플레이 아키텍처(02~05), 그리고 M4 16GB 메모리 최적화 실전기(06)까지 순차적으로 탐색할 수 있습니다.</p>
+      <h2>클라이언트 개발 마일스톤 (01 — 10)</h2>
+      <p>macOS 툴체인·엔진 환경 구축(01)에서 게임플레이·M4 최적화(02~06), 무한 항성·소행성·미네랄 그물 포획(07~09), 그리고 정육면체 청크 그룹 스트리밍(10)까지 순차적으로 탐색할 수 있습니다.</p>
     </div>
 
     <div class="roadmap-grid">
@@ -519,6 +905,97 @@ r.Lumen.Reflections.Allow=0`;
               <a href="#sec-6-1" class="sub-chip">6.1 Critical 경고 발단</a>
               <a href="#sec-6-2" class="sub-chip">6.2 오판과 원인 규명</a>
               <a href="#sec-6-3" class="sub-chip">6.3 7.93GB &amp; 전량 원복</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 07</span>
+          <span class="phase-status active">항성 · 조명</span>
+        </div>
+        <h3>무한 원거리 항성 &amp; 조명 동기화</h3>
+        <p class="phase-desc">천구 셰이더 항성(코어·코로나·회절 글레어), MPC 파라미터 노출, 라이트 자동 동기화</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-07" class="phase-chapter-link">
+              <span class="lesson-num">07</span>
+              <span class="chapter-name">원거리 항성 &amp; MPC</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 07 세부 섹션">
+              <a href="#sec-7-1" class="sub-chip">7.1 무한 거리 항성</a>
+              <a href="#sec-7-2" class="sub-chip">7.2 라이트 ↔ MPC 동기</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 08</span>
+          <span class="phase-status active">절차적 월드</span>
+        </div>
+        <h3>무한 소행성 스트리밍 &amp; 0ms 풀링</h3>
+        <p class="phase-desc">3D 해시 그리드 벨트, 전방 예측 StreamCenter, 사전 베이킹 아키타입 풀 &amp; 휴면 Tick 정지</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-08" class="phase-chapter-link">
+              <span class="lesson-num">08</span>
+              <span class="chapter-name">소행성 벨트 · 0ms 풀</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 08 세부 섹션">
+              <a href="#sec-8-1" class="sub-chip">8.1 3D 해시 그리드</a>
+              <a href="#sec-8-2" class="sub-chip">8.2 전방 공백 해법</a>
+              <a href="#sec-8-3" class="sub-chip">8.3 0ms 프리베이크 풀</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 09</span>
+          <span class="phase-status active">미네랄 · 포획</span>
+        </div>
+        <h3>이중 스폰 미네랄 &amp; 그물 포획·쿨다운</h3>
+        <p class="phase-desc">표면/부유 112풀, Niagara HLSL 깔때기 C++ 1:1 이식, 0프레임 바인딩 &amp; 쿨다운 가드</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-09" class="phase-chapter-link">
+              <span class="lesson-num">09</span>
+              <span class="chapter-name">미네랄 &amp; 그물 포획</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 09 세부 섹션">
+              <a href="#sec-9-1" class="sub-chip">9.1 이중 스폰 112풀</a>
+              <a href="#sec-9-2" class="sub-chip">9.2 깔때기·0프레임 동기</a>
+              <a href="#sec-9-3" class="sub-chip">9.3 촉수 쿨다운 가드</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 10</span>
+          <span class="phase-status active">청크 스트리밍</span>
+        </div>
+        <h3>정육면체 청크 &amp; 구형 히스테리시스</h3>
+        <p class="phase-desc">2000cm 청크 그룹 로드/언로드, N×N×N 모서리 왜곡 극복 구형 판정, 6600cm 횡단 0ms 벤치</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-10" class="phase-chapter-link">
+              <span class="lesson-num">10</span>
+              <span class="chapter-name">청크 스트리밍</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 10 세부 섹션">
+              <a href="#sec-10-1" class="sub-chip">10.1 구형 히스테리시스</a>
+              <a href="#sec-10-2" class="sub-chip">10.2 언로드 유예 보호망</a>
+              <a href="#sec-10-3" class="sub-chip">10.3 0ms 실측 벤치마크</a>
             </div>
           </li>
         </ul>
@@ -1778,15 +2255,743 @@ r.Lumen.Reflections.Allow=0`;
             </div>
           </div>
         </details>
-
-        <div class="callout callout-tip">
-          <div class="callout-title">✅ Phase 1 Summary &amp; Next Milestone</div>
-          <p>
-            Phase 1에서는 macOS 툴체인 격리·엔진 분석부터 템플릿 격리·순수 <code>APawn</code> 직조·3단 우주 환경·쿼터니언 6-DoF·물풍선 탄성·반응형 촉수(V1/V2)·M4 16GB 메모리 최적화까지 견고한 클라이언트 기반을 세웠습니다. 다음 마일스톤에서는 부유 오브젝트 포획/끌어당김 상호작용과 촉수 반동 기반 무중력 추진 이동을 이어서 개발·기록할 예정입니다.
-          </p>
-        </div>
       </section>
-    </article>
+
+        <!-- ================= MILESTONE 07 ================= -->
+        <div class="lesson-nav-bar" style="margin-top: 3rem;">
+          <span class="lesson-badge">MILESTONE 07 // DISTANT STAR &amp; MPC SYNC</span>
+          <span class="read-time">무한 원거리 항성 · 회절 글레어 · 라이트 자동 동기화</span>
+        </div>
+
+        <header class="lesson-header" id="ch-07">
+          <h2>07. 닿을 수 없는 무한 거리의 항성 &amp; 실시간 조명·MPC 동기화</h2>
+          <p class="lesson-intro">
+            플레이어가 무한 우주 공간을 아무리 멀리 표류해도 <strong>절대 가까워지거나 클리핑되지 않는 항성</strong>을 만들기 위해, 3D 액터 대신 <code>M_SpaceSky</code> 천구 셰이더 위에 수학적으로 항성을 그리고 <code>UDistantStarSyncComponent</code>가 <code>DirectionalLight</code>와 <code>MPC_SpaceEnvironment</code>를 실시간으로 동기화하도록 설계했습니다.
+          </p>
+        </header>
+
+        <figure class="media-card" style="margin: 1.25rem 0;">
+          <img
+            src="/images/projects/fungal-space-conquest/blog2-01-star-asteroid-minerals.png"
+            alt="천구 셰이더 위 무한 원거리 항성(백열 코어, 코로나, 십자 회절 글레어)과 절차적 소행성 벨트, 시안 미네랄 광맥 PIE 전경"
+            class="zoomable-img"
+            loading="lazy"
+          />
+          <figcaption>
+            <strong>무한 원거리 항성 + 소행성 벨트 + 이중 스폰 미네랄 (PIE)</strong> — <code>M_SpaceSky</code>의 백열 코어·코로나·회절 글레어 스파이크가 <code>DirectionalLight</code>의 회전 및 색온도와 동기화되어 소행성과 미네랄을 실시간으로 비춥니다. (클릭해 확대)
+          </figcaption>
+        </figure>
+
+        <section id="sec-7-1" class="lesson-section">
+          <h3>7.1 메시 태양이 아닌 <code>M_SpaceSky</code> 무한 원거리 항성 셰이더 설계</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label intent">클라이언트 설계 의도</span>
+              <div class="p-text">우주 어딘가에 거대한 구체 메시로 태양을 배치하면 플레이어가 장거리 비행할수록 시차(Parallax)가 어긋나거나 Far Clip에 잘리고, 결국 항성에 부딪히거나 스쳐 지나가는 이질감이 생깁니다. 진짜 우주처럼 <strong>"방향은 존재하지만 거리는 무한대여서 절대 도달할 수 없는 항성"</strong>을 구현해야 했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">클라이언트 판단 · 다층 프로시저럴 항성</span>
+              <div class="p-text">기존 0-샘플러 <code>M_SpaceSky</code>의 <code>CameraVectorWS</code>와 <code>MPC_SpaceEnvironment</code>의 <code>StarDirection</code> 내적만으로 각도 기반 원반(Core Disc), 방사형 코로나 헤일로(Corona Halo), 십자·대각선 회절 글레어 스파이크(Diffraction Glare), 그리고 수평 산란광을 직접 계산했습니다. <code>SM_SpaceSky</code>는 <code>bKeepSkyDomeCenteredOnCamera = true</code> 옵션으로 매 틱 활성 카메라 위치를 따라다니므로 스카이 돔 가장자리에 닿을 일도 없습니다.</div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag amber">MPC SPEC</span>
+                <span>상세 보기: UDistantStarSyncComponent &amp; MPC_SpaceEnvironment 항성 파라미터 표</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 30%;" />
+                    <col style="width: 22%;" />
+                    <col style="width: 48%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>UPROPERTY 심볼</th>
+                      <th>기본값 / 범위</th>
+                      <th>셰이더·라이트 역할</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>StarAngularRadius</code></td>
+                      <td><code>0.012f</code> (<code>0.002~0.15</code>)</td>
+                      <td>항성 중심 광구(Core Disc)의 겉보기 시지름 각반경</td>
+                    </tr>
+                    <tr>
+                      <td><code>StarCoreIntensity</code></td>
+                      <td><code>65.0f</code> (<code>1.0~300.0</code>)</td>
+                      <td>HDR 블룸을 끌어올리는 중심 백열 광구 밝기</td>
+                    </tr>
+                    <tr>
+                      <td><code>StarCoronaIntensity</code> / <code>Scale</code></td>
+                      <td><code>3.6f</code> / <code>2.4f</code></td>
+                      <td>광구 주변을 감싸는 따뜻한 코로나 헤일로 강도 및 퍼짐 반경</td>
+                    </tr>
+                    <tr>
+                      <td><code>StarGlareIntensity</code> / <code>RayLength</code></td>
+                      <td><code>1.65f</code> / <code>6.5f</code></td>
+                      <td>렌즈 회절로 뻗는 십자 글레어 광선 강도 및 최대 길이</td>
+                    </tr>
+                    <tr>
+                      <td><code>StarGlareRaySharpness</code> / <code>DiagonalWeight</code></td>
+                      <td><code>56.0f</code> / <code>0.25f</code></td>
+                      <td>광선 날카로움(폭) 및 45도 대각선 보조 광선 가중치</td>
+                    </tr>
+                    <tr>
+                      <td><code>StarAmbientGlowIntensity</code></td>
+                      <td><code>0.016f</code> (<code>0.0~0.5</code>)</td>
+                      <td>항성 반대편 암흑과 대비되는 광역 은은한 성운 대기광</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="sec-7-2" class="lesson-section">
+          <h3>7.2 <code>DirectionalLight</code> ↔ <code>MPC</code> 실시간 자동 동기화 (<code>UDistantStarSyncComponent</code>)</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">라이팅과 하늘의 이원화 문제</span>
+              <div class="p-text">항성의 셰이더 방향·색상과 레벨의 <code>DirectionalLight</code> 회전·색온도가 따로 놀면, 소행성 그림자 방향과 하늘에 떠 있는 태양이 어긋나는 치명적인 위화감이 발생합니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">클라이언트 판단 · 컴포넌트 기반 단방향 진실 공급원</span>
+              <div class="p-text"><code>UActorComponent</code> 기반 <code>UDistantStarSyncComponent</code>를 <code>DirectionalLight</code>에 부착해 <strong>빛 진행 방향(<code>+Forward</code>)의 정반대(<code>-Forward</code>)</strong>를 자동으로 <code>MPC_SpaceEnvironment</code>의 <code>StarDirection</code>으로 공급합니다. 광원의 색온도·컬러 변화도 감지해 중심 광구(<code>CoreColor</code>: 백열 <code>Lerp(1.0, NormLight, 0.35)</code>)와 코로나(<code>CoronaColor</code>: 주황·금빛 강조)를 함께 갱신하며, <code>PostEditChangeProperty</code> 및 한글 Details 코멘트를 노출해 에디터 뷰포트에서 라이트를 돌리기만 해도 항성 위치와 색이 실시간으로 따라옵니다.</div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE</span>
+                <span>코드 보기: UDistantStarSyncComponent — 라이트 방향·색온도 ↔ MPC_SpaceEnvironment 동기화</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">DistantStarSyncComponent.cpp // 항성 방향·색상·시각 파라미터 동기화</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeDistantStar}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeDistantStar} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- ================= MILESTONE 08 ================= -->
+        <div class="lesson-nav-bar" style="margin-top: 3rem;">
+          <span class="lesson-badge">MILESTONE 08 // PROCEDURAL ASTEROID STREAMING</span>
+          <span class="read-time">3D 해시 그리드 · 전방 예측 StreamCenter · 0ms 사전 베이킹 풀</span>
+        </div>
+
+        <header class="lesson-header" id="ch-08">
+          <h2>08. 무한 절차적 소행성 벨트 스트리밍 &amp; 0ms 스위치형 풀링</h2>
+          <p class="lesson-intro">
+            레벨 아웃라이너에 수동으로 놓았던 단일 테스트 소행성을 제거하고, <code>AAsteroidFieldManager</code>와 <code>ASpaceAsteroid</code>가 <strong>3D 해시 그리드 셀을 순회하며 플레이어 전방을 선제 스트리밍하고 288개 사전 베이킹 풀을 0ms로 깨우는 무한 소행성 벨트</strong>를 구축했습니다.
+          </p>
+        </header>
+
+        <figure class="media-card" style="margin: 1.25rem 0;">
+          <img
+            src="/images/projects/fungal-space-conquest/blog2-02-long-tendril-starlight.png"
+            alt="절차적 소행성 벨트의 암석 표면과 시안 미네랄을 향해 항성 역광 아래 V1 긴 촉수를 뻗는 BP_SpaceDrifterPawn PIE 화면"
+            class="zoomable-img"
+            loading="lazy"
+          />
+          <figcaption>
+            <strong>절차적 소행성 벨트 × V1 긴 촉수 상호작용 (PIE)</strong> — 3가지 표면 아키타입(Basalt·Silicate·Chondrite)으로 구워진 소행성 표면에 시안 미네랄이 돋아나 있고, 항성 역광 아래 긴 촉수가 조준 목표로 뻗어나갑니다. (클릭해 확대)
+          </figcaption>
+        </figure>
+
+        <section id="sec-8-1" class="lesson-section">
+          <h3>8.1 수동 배치 제거 → 3D 해시 그리드 기반 결정론적 무한 우주</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label intent">클라이언트 설계 의도</span>
+              <div class="p-text">테스트용 소행성 1개만 떠 있는 공간을 넘어, 어느 방향으로 계속 비행하든 끊기지 않는 우주 소행성 벨트가 필요했습니다. 모든 좌표를 메모리에 들고 있지 않으면서도 같은 구역으로 되돌아왔을 때 일관된 분포를 유지해야 했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">클라이언트 판단 · 좌표 해시 기반 섹터 레이아웃</span>
+              <div class="p-text">우주 전체를 <code>CellSizeCm = 1800.0f</code> 단위의 3D 정수 셀(<code>FIntVector</code>)로 분할하고, <code>WorldSeed(202605)</code>와 셀 좌표를 결합한 결정론적 시드로 각 셀의 소행성 슬롯(<code>FCachedCellLayout</code>)을 즉석 산출합니다. 플레이어 주변 반경 밖으로 벗어나면 액터 자체는 회수되지만 셀 설계는 좌표 함수로 영속됩니다.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-8-2" class="lesson-section">
+          <h3>8.2 고속 이동 시 전방 공백 트러블슈팅 → 3단 스트리밍 해법</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">고속 비행 중 앞이 텅 비던 현상</span>
+              <div class="p-text">플레이어가 촉수 반동이나 추력으로 한 방향으로 빠르게 가속하자, 스트리밍 스캔이 이동 속도를 따라가지 못해 <strong>전방 시야에 소행성이 뒤늦게 팝인(Pop-in)되거나 순간적으로 텅 빈 공백</strong>이 드러났습니다. 단순 반경만 키우면 활성 풀(<code>MaxActiveAsteroids = 192</code>)이 플레이어 뒤쪽 이미 지나친 돌에 묶여 앞쪽 할당을 가로막는 역효과가 났습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">3단 해결 아키텍처 (히스테리시스 · 전방 편향 · 우선순위 큐)</span>
+              <div class="p-text">
+                1) <strong>반경 확대 + 히스테리시스</strong>: 활성 반경(<code>ActivateRadiusCm = 4800.0f</code>)과 해제 반경(<code>DeactivateRadiusCm = 5600.0f</code>) 사이에 8m 완충대를 두어 경계 진동을 제거하고 <code>MinSafeSpawnRadiusCm = 520.0f</code>로 몸체 즉사 충돌을 차단했습니다.<br />
+                2) <strong>속도+시선 전방 편향 중심 (<code>StreamCenter</code>)</strong>: <code>Velocity * 0.85s + CamForward * 420.0f</code>만큼 스트리밍 구 중심을 진행 방향 앞쪽으로 선제 이동(최대 <code>min(2200cm, 0.6 * ActivateRadius)</code>)시켜 후방 자원을 조기 반납하고 전방을 먼저 채웁니다.<br />
+                3) <strong>전방 가중치 정렬 &amp; 프레임 예산 분산</strong>: 휴면 복원/신규 할당 후보를 <code>Dist - ForwardDot * 0.35</code>로 정렬해 시선·비행 앞쪽부터 세우고, <code>ScanIntervalSeconds = 0.04s</code> 주기마다 최대 <code>MaxBuildsPerScan = 36</code> 이내로 분산 처리합니다.
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE</span>
+                <span>코드 보기: AAsteroidFieldManager — 전방 예측 StreamCenter &amp; 우선순위 정렬</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.cpp // 전방 예측 중심(StreamCenter) + Pass 2 우선순위 복원</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeAsteroidLookAhead}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeAsteroidLookAhead} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="sec-8-3" class="lesson-section">
+          <h3>8.3 런타임 메시 생성 스터터 제거: 0ms 사전 베이킹 아키타입 풀 &amp; 휴면 Tick 차단</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">UProceduralMeshComponent + Chaos 충돌체 실시간 빌드의 비용</span>
+              <div class="p-text">비행 중 새로운 소행성 슬롯에 진입할 때마다 3D 노이즈·크레이터 버텍스를 계산하고 Chaos 물리 충돌체까지 즉석 쿠킹하면, M4 MacBook Air에서 프레임 히치(Stutter)가 발생했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">클라이언트 판단 · Prewarm 288 슬롯 + 스위치 ON 전환</span>
+              <div class="p-text">게임 시작 시 <code>PrewarmPoolCount = 288</code>개(<code>MaxPooledAsteroids = 288</code>) 슬롯마다 고유 시드(3종 암석 아키타입: <code>Carbonaceous Basalt</code>, <code>Stony Silicate</code>, <code>Cosmic Chondrite</code>)로 메시와 Chaos 충돌체를 <strong>단 1회 사전 베이킹(<code>BakePooledArchetype</code>)</strong>한 뒤 즉시 휴면(<code>EnterDormantPool</code>)시킵니다. 휴면 중에는 가시성·물리·콜리전은 물론 <strong><code>SetActorTickEnabled(false)</code>로 CPU 틱 부하를 0</strong>으로 유지하고, 스트리밍 반경에 재진입하면 <code>WakeFromDormantPool</code>이 물리/가시성 스위치만 <strong>0ms</strong>로 켭니다(기존 선/각속도도 복원).</div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag violet">CODE &amp; POOL SPEC</span>
+                <span>상세 보기: PrewarmPool · EnterDormantPool C++ &amp; 스트리밍 수치 표</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 34%;" />
+                    <col style="width: 24%;" />
+                    <col style="width: 42%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>매니저 파라미터</th>
+                      <th>기본값</th>
+                      <th>스트리밍 · 풀링 동작</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>CellSizeCm</code> / <code>WorldSeed</code></td>
+                      <td><code>1800.0f</code> / <code>202605</code></td>
+                      <td>18m 3D 해시 그리드 및 결정론적 우주 시드</td>
+                    </tr>
+                    <tr>
+                      <td><code>ActivateRadiusCm</code> / <code>DeactivateRadiusCm</code></td>
+                      <td><code>4800.0f</code> / <code>5600.0f</code></td>
+                      <td>48m 활성 · 56m 해제 히스테리시스 구역 (안전거리 <code>520cm</code>)</td>
+                    </tr>
+                    <tr>
+                      <td><code>VelocityLookAheadSeconds</code> / <code>CamOffset</code></td>
+                      <td><code>0.85s</code> / <code>420.0f</code></td>
+                      <td>속도+카메라 전방 선제 이동량 (상한 <code>2200.0f</code>)</td>
+                    </tr>
+                    <tr>
+                      <td><code>MaxActiveAsteroids</code> / <code>PrewarmPoolCount</code></td>
+                      <td><code>192</code> / <code>288</code></td>
+                      <td>동시 활성 192기, 사전 베이킹 아키타입 풀 288슬롯</td>
+                    </tr>
+                    <tr>
+                      <td><code>ScanIntervalSeconds</code> / <code>MaxBuildsPerScan</code></td>
+                      <td><code>0.04s</code> / <code>36</code></td>
+                      <td>25Hz 스트리밍 스캔 · 프레임 스파이크 방지 분산 예산</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.cpp + SpaceAsteroid.cpp // 프리베이크 풀 &amp; 휴면 Tick 정지</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codePrebakePool}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codePrebakePool} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- ================= MILESTONE 09 ================= -->
+        <div class="lesson-nav-bar" style="margin-top: 3rem;">
+          <span class="lesson-badge">MILESTONE 09 // MINERALS &amp; NET CAPTURE</span>
+          <span class="read-time">이중 스폰 112풀 · HLSL 깔때기 C++ 1:1 이식 · 0프레임 바인딩 · 쿨다운</span>
+        </div>
+
+        <header class="lesson-header" id="ch-09">
+          <h2>09. 이중 스폰 미네랄, 그물 포획 정밀화 &amp; 촉수 쿨다운 가드</h2>
+          <p class="lesson-intro">
+            플레이어가 우주를 정복하며 <strong>미네랄 광석을 수집하는 첫 핵심 게임플레이 루프</strong>를 완성했습니다. 초기 넓은 콘(56°) 오포획과 그물 이탈 버그를 잡기 위해 Niagara 파티클의 HLSL 깔때기 수식을 C++로 1:1 이식하고 0프레임 동기화·흡수 스퀴시 피드백·재입력 쿨다운까지 결합했습니다.
+          </p>
+        </header>
+
+        <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog2-03-net-hold-capture.png"
+              alt="GossamerSpores 그물 촉수 깔때기 중앙에 시안 미네랄 광석이 정확히 걸려 포획된 순간 PIE 화면"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>그물 포획 순간 (<code>BeginNetCapture</code>)</strong> — Niagara HLSL 깔때기 반경 수식과 C++ 판정이 1:1로 일치해 <code>GossamerSpores</code> 거미줄 중심에 시안 광석이 이격 없이 걸렸습니다. (클릭해 확대)
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog2-04-net-reeling-in.png"
+              alt="회수되는 그물 촉수에 묶인 채 0프레임 오차로 폰 본체까지 당겨져 흡수 직전에 놓인 미네랄 광석 PIE 화면"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>회수 &amp; 흡수 직전 (<code>SyncToNetPosition</code>)</strong> — 그물이 오므라들수록 미네랄이 거미줄 좌표를 0프레임 오차로 따라와 본체 접촉 시 <code>MineralAbsorbSquishImpulse</code>(<code>5.4</code>) 스퀴시를 일으키며 흡수됩니다. (클릭해 확대)
+            </figcaption>
+          </figure>
+        </div>
+
+        <section id="sec-9-1" class="lesson-section">
+          <h3>9.1 이중 스폰 미네랄 생태계 (<code>ASpaceMineral</code>) &amp; 112-슬롯 풀</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label intent">클라이언트 설계 의도</span>
+              <div class="p-text">미네랄이 허공에만 떠 있거나 암석에만 붙어 있으면 탐색 재미가 단조롭습니다. <strong>소행성 껍질에서 자라난 광맥</strong>과 <strong>우주를 자유롭게 떠다니는 부유 광석</strong>을 한 풀(<code>MaxPooledMinerals = 112</code>)에서 함께 관리하되, 한 번 채집한 광맥이 스트리밍 재방문 시 다시 살아나지 않도록 해야 했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">표면 법선 샘플링 부착 + 해시 소비 영구 기록</span>
+              <div class="p-text">
+                <strong>표면 부착형(<code>AttachedToAsteroid</code>)</strong>은 <code>MinAsteroidRadiusForSurfaceMineralCm = 55.0f</code> 이상인 소행성(<code>SurfaceMineralChance = 0.40f</code>)에서 <code>ASpaceAsteroid::SampleSurfaceAnchor</code>로 프로시저럴 버텍스 위치·법선을 뽑아 <code>-3.0cm</code> 깊이만큼 암석에 자연스럽게 박아 넣고 자체 <code>Tick</code>을 끕니다. <strong>자유 부유형(<code>FreeFloating</code>)</strong>은 셀당 <code>45%</code> 확률(<code>FloatingMineralChancePerCell = 0.45f</code>)로 배치되어 천천히 자전하며, 채집이 시작되는 즉시 <code>ConsumedMineralHashes</code>에 기록해 해당 시드 광석의 중복 재스폰을 차단합니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-9-2" class="lesson-section">
+          <h3>9.2 그물 오포획 트러블슈팅: Niagara HLSL 깔때기 수식 C++ 1:1 이식 &amp; 0프레임 바인딩</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">시각과 판정의 괴리 (56° 콘 오포획 &amp; 뒤처지는 끌림)</span>
+              <div class="p-text">초기에는 조준 방향 기준 <code>56°</code> 원뿔 + <code>240cm</code> 고정 반경으로 포획을 검사해 <strong>눈으로는 그물 바깥 허공인데도 광석이 잡히는 오포획</strong>이 발생했습니다. 게다가 포획된 미네랄이 자기 <code>Tick</code>에서 따로 폰을 쫓아오다 보니 회수되는 거미줄 그래픽과 미네랄 위치가 분리되어 붕 떠 보이는 문제가 드러났습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">HLSL ↔ C++ 1:1 수식 일치 &amp; Tick 위임 제거</span>
+              <div class="p-text">
+                1) <strong>Niagara 깔때기 수학 C++ 이식</strong>: <code>NS_Tendril_GossamerSpores</code>의 <code>Spoke/WebRing</code> HLSL 식과 동일한 <code>EvaluateNetFunnelCenter</code> 및 <code>EvaluateNetFunnelRadiusCm</code>(<code>11*sin(t*π) + 250*(U²(0.25+0.75U))*Bloom</code>)을 C++에 구현하고 <code>NetCapturePaddingCm = 24.0f</code>만 허용해 시각적 그물망에 닿은 광석만 포획합니다.<br />
+                2) <strong>0프레임 오차 그물 바인딩</strong>: <code>BeginNetCapture</code> 시점에 <code>ASpaceMineral</code>의 자체 <code>Tick</code>을 끄고(<code>PrimaryActorTick.SetTickFunctionEnable(false)</code>), 포획 당시의 정규화 진행도(<code>NetAnchorT</code>)와 방사 오프셋(<code>NetRadialDir2D</code>, <code>NetRadialFraction</code>)을 저장한 뒤 <code>ASpaceDrifterPawn::UpdateCaughtNetMinerals</code>가 매 프레임 그물 회수(<code>NetTendrilRetractSpeed = 2.6f</code>)와 <strong>0프레임 오차</strong>로 좌표를 직접 갱신(<code>SyncToNetPosition</code>)합니다. 본체에 닿으면 <code>NotifyMineralAbsorbed</code>가 <code>MineralAbsorbSquishImpulse = 5.4f</code> 찌그러짐을 주고 <code>ConsumedMineralCount</code>와 <code>OnMineralConsumed</code> 델리게이트를 발행합니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-9-3" class="lesson-section">
+          <h3>9.3 V1/V2 공통 촉수 재입력 쿨다운 가드 (<code>CanFireTendril</code>)</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">회수 중 연타로 인한 리트랙트 끊김</span>
+              <div class="p-text">촉수가 완전히 회수되기 전에 발사 입력을 다시 누르면 회수 반동이나 그물 인양 상태가 중간에 끊기며 시각적 <code>TendrilExtendAlpha</code>와 판정이 어긋나는 엣지 케이스가 있었습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">단일 상태 게이트 <code>CanFireTendril()</code></span>
+              <div class="p-text">V1(<code>MyceliumWeb</code>)과 V2(<code>GossamerSpores</code>) 모두 <code>SetTendrilExtendingInternal(true)</code> 진입 직전에 <code>CanFireTendril()</code>(<code>!bIsExtendingTendril &amp;&amp; TendrilExtendAlpha &lt;= KINDA_SMALL_NUMBER &amp;&amp; !bHasLockedTendrilAim</code>)을 검사해 완전히 몸으로 돌아온 뒤에만 다음 촉수를 쏠 수 있도록 잠갔습니다.</div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE</span>
+                <span>코드 보기: CanFireTendril · EvaluateNetFunnelRadiusCm · SyncToNetPosition</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 34%;" />
+                    <col style="width: 20%;" />
+                    <col style="width: 46%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>그물 · 미네랄 심볼</th>
+                      <th>기본값</th>
+                      <th>게임플레이 · 풀링 역할</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>MaxPooledMinerals</code></td>
+                      <td><code>112</code></td>
+                      <td>소행성 부착 + 자유 부유 미네랄 공용 사전 풀 상한</td>
+                    </tr>
+                    <tr>
+                      <td><code>SurfaceMineralChance</code> / <code>Floating</code></td>
+                      <td><code>0.40f</code> / <code>0.45f</code></td>
+                      <td>소행성(<code>&gt;=55cm</code>) 표면 부착 확률 · 셀당 부유 스폰 확률</td>
+                    </tr>
+                    <tr>
+                      <td><code>NetTendrilMaxReach</code> / <code>HoldDuration</code></td>
+                      <td><code>920.0f</code> / <code>0.55s</code></td>
+                      <td>V2 그물 촉수 유효 사거리(9.2m) 및 단발 전개 유지시간</td>
+                    </tr>
+                    <tr>
+                      <td><code>NetTendrilRetractSpeed</code> / <code>PaddingCm</code></td>
+                      <td><code>2.6f</code> / <code>24.0f</code></td>
+                      <td>그물 회수 속도 및 HLSL 깔때기 반경 포획 허용 패딩</td>
+                    </tr>
+                    <tr>
+                      <td><code>MineralAbsorbSquishImpulse</code></td>
+                      <td><code>5.4f</code></td>
+                      <td>미네랄 본체 흡수 완료 시 물풍선 탄성 스퀴시 충격량</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">SpaceDrifterPawn.h/.cpp // CanFireTendril + Niagara 깔때기 수식 C++ 이식</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeNetFunnelAndCooldown}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeNetFunnelAndCooldown} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">SpaceMineral.cpp // BeginNetCapture · SyncToNetPosition 0프레임 바인딩</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeMineralSync}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeMineralSync} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+
+          <div class="callout callout-tip">
+            <div class="callout-title">✅ Milestones 01–09 Summary</div>
+            <p>
+              macOS 툴체인 격리·<code>APawn</code> 직조·0-샘플러 우주·쿼터니언 6-DoF·물풍선 탄성·M4 16GB 최적화(01~06) 위에, 무한 원거리 항성 &amp; 라이트 MPC 동기화(07), 초기 소행성 벨트(08), 그리고 이중 스폰 미네랄·HLSL 1:1 깔때기 그물 포획·흡수 스퀴시·촉수 쿨다운(09)까지 핵심 상호작용 기반을 완성했습니다.
+            </p>
+          </div>
+        </section>
+
+        <!-- ================= MILESTONE 10 ================= -->
+        <div class="lesson-nav-bar" style="margin-top: 3rem;">
+          <span class="lesson-badge">MILESTONE 10 // CUBIC CHUNK GROUP STREAMING</span>
+          <span class="read-time">2000cm 청크 그룹 스트리밍 · 전방 예측 구형 히스테리시스 · 0ms 스위치 풀 360</span>
+        </div>
+
+        <header class="lesson-header" id="ch-10">
+          <h2>10. 정육면체 청크(FIntVector) 단위 그룹 스트리밍 &amp; 전방 예측 구형 히스테리시스</h2>
+          <p class="lesson-intro">
+            개별 소행성 슬롯 단위 스폰/슬립 방식의 관리 복잡도를 해결하기 위해, 우주 공간을 <strong>정육면체 청크(<code>ChunkSizeCm = 2000.0f</code>, 20m) 단위로 묶어 레벨 스트리밍처럼 그룹 로드/언로드(<code>LoadChunk</code> / <code>UnloadChunk</code>)</strong>하는 구조로 전면 리팩토링했습니다. 특히 <code>N×N×N</code> 격자 판정의 모서리 왜곡 한계를 극복하고 <strong>전방 예측 구형 히스테리시스</strong>를 고정 채택해 6600cm 이상 연속 비행에서도 런타임 메시 재빌드 0회(0ms)를 달성했습니다.
+          </p>
+        </header>
+
+        <figure class="media-card" style="margin: 1.25rem 0;">
+          <img
+            src="/images/projects/fungal-space-conquest/blog3-01-chunk-debug-pie.png"
+            alt="정육면체 청크 경계 와이어박스와 전방 예측 활성 구, 히스테리시스 이탈 구 실시간 시각화 PIE 화면"
+            class="zoomable-img"
+            loading="lazy"
+          />
+          <figcaption>
+            <strong>청크 경계 와이어박스 &amp; 전방 예측 구형 히스테리시스 시각화 (PIE)</strong> — <code>ChunkSizeCm = 2000</code> 정육면체 청크 경계(에메랄드 와이어 박스), 비행 진행 방향으로 편향된 전방 예측 활성 구(<code>ActivateRadiusCm = 4600</code>, 시안), 히스테리시스 이탈 구(<code>DeactivateRadiusCm = 5600</code>, 오렌지), 외곽 <code>Dormant</code> 포인트(오렌지 점)가 실시간으로 조화롭게 작동합니다. (클릭해 확대)
+          </figcaption>
+        </figure>
+
+        <section id="sec-10-1" class="lesson-section">
+          <h3>10.1 왜 <code>N×N×N</code> 정육면체 격자 판정 대신 전방 예측 구형 히스테리시스를 고정했는가</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label intent">클라이언트 설계 의도</span>
+              <div class="p-text">우주 공간을 <code>FIntVector</code> 정육면체 청크 단위로 분할하면서, 로드 영역 판정 역시 마인크래프트처럼 플레이어 중심 <code>N×N×N</code> 정육면체 박스(예: 반경 2청크 = <code>5×5×5 = 125</code> 청크)로 검사하는 구조를 1차로 시도했습니다. 직관적이고 좌표 연산이 단순할 것이라 기대했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label issue">N×N×N 격자 판정의 수학적 함정 (대각선 왜곡 &amp; 풀 고갈)</span>
+              <div class="p-text">
+                실제 PIE에서 <code>5×5×5</code> 청크 범위를 적용하자 두 가지 치명적 문제가 드러났습니다.<br />
+                1) <strong>대각선 거리 왜곡</strong>: 3D 정육면체 모서리 꼭짓점까지의 거리는 면 중심보다 <strong>$\sqrt&#123;3&#125; \approx 1.732$배</strong>나 멉니다. 플레이어 시야는 구형인데, 화면 밖 보이지도 않는 먼 대각선 꼭짓점 청크들까지 로드하느라 소행성 요구량이 폭증했습니다.<br />
+                2) <strong>활성 풀 조기 포화 &amp; 대기 큐 적체</strong>: 125개 청크가 동시에 슬롯을 요구하면서 <code>MaxActiveAsteroids = 256</code> 상한선에 즉시 걸렸고, 무려 <strong>48개 청크가 대기 큐(Pending)에 갇히는 병목</strong>이 발생해 정작 비행 전방 청크가 제때 로드되지 못했습니다.
+              </div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">클라이언트 판단 · 저장(정육면체)과 판정(구형)의 명확한 분리</span>
+              <div class="p-text">
+                공간 분할·저장·그룹 생명주기는 <strong>정육면체 청크(<code>2000 cm</code>)</strong>로 묶되, 로드/언로드 영역 판정은 <strong>전방 속도·시선 예측 구형 히스테리시스(<code>ActivateRadiusCm = 4600</code>, <code>DeactivateRadiusCm = 5600</code>)</strong>로 일원화 고정했습니다. 모든 방향에서 등방적(Isotropic) 시야 거리를 보장하면서도 활성 청크 수를 최적 안정선(48~58청크)으로 유지하고, 에디터 UI에서도 불필요한 분기 열거형 없이 설정이 깔끔해졌습니다.
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag amber">ARCHITECTURE SPEC</span>
+                <span>상세 비교표: 정육면체 N×N×N 격자 vs 전방 예측 구형 히스테리시스 &amp; Spatial 설정</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 25%;" />
+                    <col style="width: 37%;" />
+                    <col style="width: 38%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>비교 항목</th>
+                      <th>정육면체 N×N×N 박스 판정 (폐기)</th>
+                      <th>전방 예측 구형 히스테리시스 (최종 채택)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>거리 등방성</strong></td>
+                      <td>모서리가 면보다 <code>1.732배</code>(√3) 멀어 시야 불균형</td>
+                      <td><strong>모든 방향에서 동일한 가시 거리(Isotropic)</strong> 보장</td>
+                    </tr>
+                    <tr>
+                      <td><strong>청크 요구량</strong></td>
+                      <td>5×5×5 = <code>125 청크</code> (대각선 낭비 심각)</td>
+                      <td><strong>48 ~ 58 청크</strong> (가시권 내 완벽 수렴)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>풀 상한 안정성</strong></td>
+                      <td><code>256</code> 상한 즉시 포화, <code>48</code>청크 Pending 적체</td>
+                      <td><strong>Active 154~194개</strong>로 안정적 마진 유지 (Pending 0)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>경계 깜빡임</strong></td>
+                      <td>경계선 왕복 시 단일 박스 떨림(Fluttering) 발생</td>
+                      <td><strong><code>1000cm</code>(46m ↔ 56m) 완충 히스테리시스</strong>로 원천 차단</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.h // 청크 공간 분할 &amp; 구형 히스테리시스 UPROPERTY</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeChunkSpatialConfig}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeChunkSpatialConfig} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <figure class="media-card" style="margin: 1.25rem 0;">
+          <img
+            src="/images/projects/fungal-space-conquest/blog3-02-chunk-overview-hysteresis.png"
+            alt="광각 풀백 시점에서 2000cm 청크 큐브들이 구형 히스테리시스 반경 내에 층층이 로드되어 소행성과 미네랄을 그룹으로 관리하는 PIE 뷰포트"
+            class="zoomable-img"
+            loading="lazy"
+          />
+          <figcaption>
+            <strong>청크 오버뷰 &amp; 성단·미네랄 일원화 배치 (PIE 광각 풀백)</strong> — 곰팡이 폰 주변으로 2000cm 청크 큐브들이 층층이 활성화되어 소행성 클러스터(3~4개 성단)와 부유 미네랄을 그룹 단위로 유지하고 있는 전체 구조. (클릭해 확대)
+          </figcaption>
+        </figure>
+
+        <section id="sec-10-2" class="lesson-section">
+          <h3>10.2 원자적 청크 레이아웃, 정지 스캔 스킵 &amp; 언로드 유예 보호망</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label intent">클라이언트 설계 의도</span>
+              <div class="p-text">청크 단위로 로드/언로드할 때, 소행성 성단과 부유 미네랄이 각각 따로 놀거나 플레이어가 촉수로 붙잡고 있는 소행성이 거리 이탈로 눈앞에서 갑자기 언로드되어 사라지면 몰입감이 완전히 파괴됩니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">원자적 청크 관리 4대 보호 메커니즘</span>
+              <div class="p-text">
+                1) <strong>성단 &amp; 부유 미네랄 원자적 일원화 (<code>GetOrBuildChunkLayout</code>)</strong>: <code>EmptyChunkProbability = 0.25</code>(우주 개방감 확보)를 통과한 청크는 소행성 성단(<code>ClustersPerChunkRange = (1, 2)</code>, <code>AsteroidsPerClusterRange = (3, 4)</code>)과 청크 부유 미네랄(<code>FloatingMineralChancePerChunk = 0.45</code>)을 한 청크 레이아웃 안에서 결정론적으로 함께 빌드합니다. 표면 미네랄도 호스트 소행성과 함께 원자적으로 활성/휴면되며 이미 채집된 해시(<code>ConsumedMineralHashes</code>)는 재스폰에서 안전하게 제외됩니다.<br />
+                2) <strong>정지 스캔 스킵 (<code>ChunkScanMoveThresholdCm = 250.0</code>)</strong>: 대기 청크 큐가 비어 있고 청크 좌표 변화 및 250cm 이상 이동이 없으면 무거운 3D 격자 스캔 루프를 아예 건너뛰어 CPU 틱 부하를 0으로 낮춥니다.<br />
+                3) <strong>촉수 락온 &amp; 근접 표류 언로드 유예 (<code>ShouldDeferChunkUnload</code>)</strong>: 이탈 반경 밖으로 나간 청크라도 플레이어 촉수가 꽂혀 있는 대상(<code>LatchedTarget</code>)이거나, 물리 충돌 반동으로 플레이어 근처(<code>ActivateRadiusCm * 0.80 = 3680cm</code>)로 튕겨 날아온 소행성이 포함되어 있다면 언로드를 즉시 유예해 눈앞에서 증발하는 버그를 차단합니다.<br />
+                4) <strong>전방 우선 분산 로드 &amp; 후방 청크 통째 퇴거 (<code>TryEvictRearChunkForCapacity</code>)</strong>: <code>ComputeChunkPriorityScore</code>(거리 - 전방 내적 가중치)로 앞쪽 청크부터 틱당 <code>MaxChunksPerScan = 4</code>개씩 로드하되, 풀 상한 도달 시 등 뒤 최원거리 청크를 통째로 언로드해 전방 청크 슬롯을 즉시 확보합니다.
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE</span>
+                <span>코드 보기: ShouldDeferChunkUnload · TryEvictRearChunkForCapacity · RunFieldScan</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.cpp // RunFieldScan 청크 그룹 로드/언로드 &amp; 우선순위 큐</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeChunkScan}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeChunkScan} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.cpp // 언로드 유예 보호망 &amp; 후방 청크 원자적 퇴거</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeChunkProtectionAndEviction}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeChunkProtectionAndEviction} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="sec-10-3" class="lesson-section">
+          <h3>10.3 에디터 프로퍼티 노출 &amp; 6600cm 연속 비행 0ms 실측 벤치마크</h3>
+          <p>
+            <code>Lvl_Main</code> 아웃라이너에는 수동 배치된 단일 소행성 액터가 하나도 없으며, 단 1개의 <strong><code>BP_AsteroidFieldManager</code></strong>만이 씬 전체를 관장합니다.
+            모든 청크·클러스터·풀·미네랄·디버그 파라미터가 <code>UPROPERTY(EditAnywhere, BlueprintReadWrite)</code>로 정리되어 <code>#if WITH_EDITOR PostEditChangeProperty</code> 및 <code>SanitizeRuntimeSettings</code>를 통해 에디터 뷰포트에서 값을 바꾸면 즉시 필드가 재구성됩니다.
+          </p>
+
+          <figure class="media-card" style="margin: 1.25rem 0;">
+            <img
+              src="/images/projects/fungal-space-conquest/blog3-03-chunk-editor-details.png"
+              alt="언리얼 에디터 Lvl_Main 아웃라이너의 BP_AsteroidFieldManager와 Details 패널 AsteroidField Spatial 카테고리 프로퍼티 뷰"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>언리얼 에디터 Details 패널 &amp; Lvl_Main 아웃라이너</strong> — 아웃라이너에 단 1개의 <code>BP_AsteroidFieldManager</code>만 배치되어 있으며, 디테일 패널 <code>Asteroid Field -> Spatial</code>에서 청크 크기(2000)·활성 반경(4600)·예측 오프셋을 실시간 편집할 수 있습니다. (클릭해 확대)
+            </figcaption>
+          </figure>
+
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label success">PIE 실측 벤치마크 결과 (360 풀 · 0ms 스위치)</span>
+              <div class="p-text">
+                - <strong>초기 로드 직후 (BeginPlay <code>InitialChunkLoadBudget = 72</code>)</strong>: 활성 청크 <code>LoadedChunkCount = 48</code>, 대기 큐 <code>PendingChunkLoadCount = 0</code>, 활성 소행성 <code>ActiveAsteroidCount = 154</code>, 활성 미네랄 <code>ActiveMineralCount = 77</code>, 사전 베이킹 <code>TotalBuildsCount = 360</code> (풀 100% 프리베이크 완료).<br />
+                - <strong>+6600 cm 연속 비행 후 (3청크 이상 고속 횡단)</strong>: 활성 청크 <code>LoadedChunkCount = 58</code>, 활성 소행성 <code>ActiveAsteroidCount = 194</code>, 휴면 풀 <code>DormantAsteroidCount = 137</code>, 활성 미네랄 <code>ActiveMineralCount = 103</code>, 누적 청크 로드 <code>TotalChunkLoadsCount = 102</code>, 누적 청크 언로드 <code>TotalChunkUnloadsCount = 44</code>.<br />
+                - <strong>런타임 절차적 메시 재빌드: <span style="color: var(--accent-2); font-weight: 700;">0회 유지 (TotalBuildsCount = 360)</span></strong> — 3청크 이상을 고속으로 가로지르며 수십 개의 청크가 로드/언로드되는 동안에도, 런타임에 지형 버텍스를 새로 굽거나 Chaos 충돌체를 재쿠킹하지 않고 오직 <strong>가시성·콜리전·Tick 스위치만 0ms로 켜고 끄며 완벽한 무히치(Stutter-free) 비행</strong>을 달성했습니다.
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag violet">BENCHMARK SPEC</span>
+                <span>상세 보기: 6600cm 비행 전후 PIE 실측 지표 비교표 &amp; 풀 파라미터</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 32%;" />
+                    <col style="width: 26%;" />
+                    <col style="width: 42%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>스트리밍 지표</th>
+                      <th>초기 로드 직후</th>
+                      <th>+6600cm 비행 후 (3청크 횡단)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>로드된 청크 수 (<code>LoadedChunkCount</code>)</strong></td>
+                      <td><code>48</code> 청크 (Pending <code>0</code>)</td>
+                      <td><code>58</code> 청크 (Pending <code>0</code>)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>활성 소행성 수 (<code>ActiveAsteroidCount</code>)</strong></td>
+                      <td><code>154</code> / 상한 <code>256</code></td>
+                      <td><code>194</code> / 상한 <code>256</code> (안정선)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>휴면 풀 소행성 (<code>DormantAsteroidCount</code>)</strong></td>
+                      <td><code>206</code> 개</td>
+                      <td><code>137</code> 개 (Free <code>29</code>개 여유)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>활성 미네랄 수 (<code>ActiveMineralCount</code>)</strong></td>
+                      <td><code>77</code> / 풀 <code>128</code></td>
+                      <td><code>103</code> / 풀 <code>128</code></td>
+                    </tr>
+                    <tr>
+                      <td><strong>누적 청크 로드 / 언로드</strong></td>
+                      <td>Loads <code>48</code> / Unloads <code>0</code></td>
+                      <td>Loads <strong><code>102</code></strong> / Unloads <strong><code>44</code></strong></td>
+                    </tr>
+                    <tr>
+                      <td><strong>총 메시 지형 쿠킹 (<code>TotalBuildsCount</code>)</strong></td>
+                      <td><code>360</code> (Prewarm 완료)</td>
+                      <td><strong><code>360</code> 유지 (런타임 추가 빌드 0회)</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+
+          <div class="callout callout-tip">
+            <div class="callout-title">✅ Milestones 01–10 Summary &amp; Next Milestone</div>
+            <p>
+              macOS 툴체인 격리·<code>APawn</code> 아키텍처·0-샘플러 우주·쿼터니언 6-DoF·물풍선 탄성·M4 16GB 최적화(01~06), 무한 항성·소행성 벨트·미네랄 그물 포획(07~09)에 이어, 이번 마일스톤 10에서는 <strong>2000cm 정육면체 청크 그룹 스트리밍, N×N×N 대각선 왜곡을 극복한 전방 예측 구형 히스테리시스, 언로드 유예 보호망, 그리고 6600cm 비행 중 런타임 재빌드 0회(0ms)</strong>를 완성했습니다. 다음 단계에서는 수집한 미네랄 기반 균사 성장 시스템, 화면 HUD 위젯 연동, 그리고 촉수 반동 기반 뉴턴 무중력 추진을 한층 더 고도화할 예정입니다.
+            </p>
+          </div>
+        </section>
+      </article>
 
     <!-- 우측 스티키 플로팅 목차 (cpp.astro 동일 UX 패턴) -->
     <aside class="floating-nav" aria-label="문서 빠른 목차">
@@ -1896,6 +3101,66 @@ r.Lumen.Reflections.Allow=0`;
             <a href="#sec-6-3" class="floating-toc-link" data-target="sec-6-3">
               <span class="toc-badge">6.3</span>
               <span class="toc-name">7.93GB &amp; 원복</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">07 // DISTANT STAR</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 07 목차">
+            <a href="#sec-7-1" class="floating-toc-link" data-target="sec-7-1">
+              <span class="toc-badge">7.1</span>
+              <span class="toc-name">무한 거리 항성</span>
+            </a>
+            <a href="#sec-7-2" class="floating-toc-link" data-target="sec-7-2">
+              <span class="toc-badge">7.2</span>
+              <span class="toc-name">라이트·MPC 동기</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">08 // ASTEROID BELT</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 08 목차">
+            <a href="#sec-8-1" class="floating-toc-link" data-target="sec-8-1">
+              <span class="toc-badge">8.1</span>
+              <span class="toc-name">3D 해시 그리드</span>
+            </a>
+            <a href="#sec-8-2" class="floating-toc-link" data-target="sec-8-2">
+              <span class="toc-badge">8.2</span>
+              <span class="toc-name">전방 공백 해법</span>
+            </a>
+            <a href="#sec-8-3" class="floating-toc-link" data-target="sec-8-3">
+              <span class="toc-badge">8.3</span>
+              <span class="toc-name">0ms 프리베이크 풀</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">09 // MINERALS &amp; NET</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 09 목차">
+            <a href="#sec-9-1" class="floating-toc-link" data-target="sec-9-1">
+              <span class="toc-badge">9.1</span>
+              <span class="toc-name">이중 스폰 112풀</span>
+            </a>
+            <a href="#sec-9-2" class="floating-toc-link" data-target="sec-9-2">
+              <span class="toc-badge">9.2</span>
+              <span class="toc-name">깔때기·0프레임</span>
+            </a>
+            <a href="#sec-9-3" class="floating-toc-link" data-target="sec-9-3">
+              <span class="toc-badge">9.3</span>
+              <span class="toc-name">촉수 쿨다운 가드</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">10 // CHUNK STREAMING</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 10 목차">
+            <a href="#sec-10-1" class="floating-toc-link" data-target="sec-10-1">
+              <span class="toc-badge">10.1</span>
+              <span class="toc-name">구형 히스테리시스</span>
+            </a>
+            <a href="#sec-10-2" class="floating-toc-link" data-target="sec-10-2">
+              <span class="toc-badge">10.2</span>
+              <span class="toc-name">언로드 유예 보호망</span>
+            </a>
+            <a href="#sec-10-3" class="floating-toc-link" data-target="sec-10-3">
+              <span class="toc-badge">10.3</span>
+              <span class="toc-name">0ms 실측 벤치</span>
             </a>
           </nav>
         </div>

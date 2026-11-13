@@ -730,6 +730,101 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
 	}
 	return false;
 }`;
+
+const codeForwardExpansionSpawn = `// Source/UEStudy/Sandbox/MiniProject/AsteroidFieldManager.h & .cpp — 전방 타원형 확장 및 코사인 가중 편향 스폰
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|ForwardExpansion")
+float ForwardBaseExtensionCm = 1800.0f; // 기본 전방 확장 거리 (18m)
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|ForwardExpansion")
+float ForwardVelocityMaxExtensionCm = 6500.0f; // 고속 이동 시 전방 최대 확장 (65m)
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|ForwardExpansion")
+float VelocityReferenceSpeedCmPerSec = 1600.0f; // 최대 확장에 도달하는 기준 속력 (16m/s)
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|ForwardExpansion")
+float ForwardInnerExtensionFraction = 0.85f; // 내부 금지선 A도 전방으로 밀어낼 비율
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AsteroidField|ForwardExpansion")
+float ForwardSpawnBiasWeight = 0.85f; // 전방 반구 집중 샘플링 가중치 (코사인 가중치 0.58제곱)
+
+void AAsteroidFieldManager::ComputeDirectionalRadii(
+	const FVector& OffsetFromPlayer,
+	const FVector& ForwardDir,
+	float ForwardExtensionCm,
+	float& OutMinSpawnRadiusCm,
+	float& OutMaxDespawnRadiusCm) const
+{
+	const float Dist = OffsetFromPlayer.Size();
+	const float ForwardAlign = (Dist > KINDA_SMALL_NUMBER)
+		? FVector::DotProduct(OffsetFromPlayer / Dist, ForwardDir)
+		: 0.0f;
+
+	// 전방 반구(-0.20 ~ +0.85) 구간에 걸쳐 A와 B를 진행 방향으로 확장 (후방은 기본 A/B 고정)
+	const float ForwardLobe = FMath::SmoothStep(-0.20f, 0.85f, ForwardAlign);
+	const float OuterExt = FMath::Max(ForwardExtensionCm, 0.0f) * ForwardLobe;
+	const float InnerExt = OuterExt * FMath::Clamp(ForwardInnerExtensionFraction, 0.0f, 1.0f);
+
+	OutMinSpawnRadiusCm = InnerNoSpawnRadiusCm + InnerExt;
+	OutMaxDespawnRadiusCm = FMath::Max(OuterDespawnRadiusCm + OuterExt, OutMinSpawnRadiusCm + 1200.0f);
+}
+
+FVector AAsteroidFieldManager::SampleDirectionInShell(
+	const FVector& ForwardDir,
+	bool bUseForwardBias,
+	FRandomStream& Stream) const
+{
+	if (!bUseForwardBias || ForwardSpawnBiasWeight <= KINDA_SMALL_NUMBER || Stream.GetFraction() > ForwardSpawnBiasWeight)
+	{
+		FVector UnitDir = Stream.VRand();
+		return UnitDir.IsNearlyZero() ? FVector::ForwardVector : UnitDir.GetSafeNormal();
+	}
+
+	// 코사인 가중 원뿔(전방 중심 밀집)로 샘플링하여 88.4% 이상을 플레이어 전방 반구에 집중 배치
+	const FVector SafeFwd = ForwardDir.IsNearlyZero() ? FVector::ForwardVector : ForwardDir.GetSafeNormal();
+	const FVector UpRef = (FMath::Abs(SafeFwd.Z) < 0.92f) ? FVector::UpVector : FVector::RightVector;
+	const FVector BasisRight = FVector::CrossProduct(UpRef, SafeFwd).GetSafeNormal();
+	const FVector BasisUp = FVector::CrossProduct(SafeFwd, BasisRight).GetSafeNormal();
+
+	const float U = Stream.GetFraction();
+	const float CosTheta = FMath::Lerp(-0.08f, 1.0f, FMath::Pow(U, 0.58f));
+	const float SinTheta = FMath::Sqrt(FMath::Max(0.0f, 1.0f - CosTheta * CosTheta));
+	const float Phi = Stream.FRandRange(0.0f, UE_TWO_PI);
+
+	const FVector Dir = SafeFwd * CosTheta + (BasisRight * FMath::Cos(Phi) + BasisUp * FMath::Sin(Phi)) * SinTheta;
+	return Dir.IsNearlyZero() ? SafeFwd : Dir.GetSafeNormal();
+}`;
+
+const codeTendrilBranchAndRetract = `// Source/UEStudy/Sandbox/MiniProject/SpaceDrifterPawn.h & .cpp — 근거리 가지 억제 & 형태 고정 체내 수축
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpaceDrifter|LongTendril")
+float LongTendrilBranchMinTrunkCm = 420.0f; // 4.2m 이하 근거리 발사 시 곁가지 0개 보장
+
+int32 ASpaceDrifterPawn::ComputeLongTendrilBranchCountForLength(float TargetTrunkLenCm) const
+{
+	if (LongTendrilBranchFrequency <= KINDA_SMALL_NUMBER || TargetTrunkLenCm <= LongTendrilBranchMinTrunkCm)
+	{
+		return 0; // 근거리 착탄 시 빗자루 뭉침 방지
+	}
+	const float FullMaxLen = FMath::Max(LongTendrilMaxLength, LongTendrilBranchMinTrunkCm + 100.0f);
+	const int32 FullCount = FMath::Clamp(FMath::RoundToInt((FullMaxLen / 100.0f) * LongTendrilBranchFrequency), 0, 64);
+	const float LenRatio = FMath::Clamp(
+		(TargetTrunkLenCm - LongTendrilBranchMinTrunkCm) / FMath::Max(FullMaxLen - LongTendrilBranchMinTrunkCm, 100.0f),
+		0.0f, 1.0f);
+	return FMath::Clamp(FMath::RoundToInt(static_cast<float>(FullCount) * FMath::Pow(LenRatio, 1.35f)), 0, 64);
+}
+
+// 회수 및 인양(Reeling In) 시 줄기 길이 단축에 따라 가지가 깜빡이지 않고 체내로 슬라이딩 흡수
+if (!bIsExtendingTendril || (bHasLatchedTarget && TendrilExtendAlpha >= TendrilPullActivationAlpha && CurrentLiveLenCm < PeakTrunkLengthCm - 1.0f))
+{
+	bIsTendrilReelingIn = true; // 형태 고정 플래그 ON
+}
+const float DeployedRefLenCm = bHasLockedTendrilAim
+	? FMath::Max(bIsTendrilReelingIn ? PeakTrunkLengthCm : LockedInitialTargetLenCm, 50.0f)
+	: FMath::Max(LongTendrilMaxLength, 50.0f);
+
+// Niagara FX로 전달: 조형 고정 + 몸체 안쪽 진입 오프셋만 전달
+TargetFX->SetIntParameter(TEXT("User.SideBranchCount"), DesiredBranchCount);
+TargetFX->SetFloatParameter(TEXT("User.DeployedRefLengthCm"), DeployedRefLenCm);
+TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffsetCm);`;
 ---
 
 <BaseLayout
@@ -758,7 +853,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
       <span class="meta-chip"><span class="chip-k">ENGINE</span> UE 5.9 (Xcode 26.1.1)</span>
       <span class="meta-chip"><span class="chip-k">WORKFLOW</span> Director + AI Co-Dev</span>
       <span class="meta-chip"><span class="chip-k">HARDWARE</span> M4 Air 16GB Unified</span>
-      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 → 2 (Milestones 01–10)</span>
+      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 → 2 (Milestones 01–12)</span>
     </div>
   </div>
 
@@ -766,8 +861,8 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
   <section class="curriculum-overview">
     <div class="section-title-wrap">
       <span class="badge">PROJECT ROADMAP &amp; POSTMORTEM INDEX</span>
-      <h2>클라이언트 개발 마일스톤 (01 — 10)</h2>
-      <p>macOS 툴체인·엔진 환경 구축(01)에서 게임플레이·M4 최적화(02~06), 무한 항성·소행성·미네랄 그물 포획(07~09), 그리고 정육면체 청크 그룹 스트리밍(10)까지 순차적으로 탐색할 수 있습니다.</p>
+      <h2>클라이언트 개발 마일스톤 (01 — 12)</h2>
+      <p>macOS 툴체인(01)에서 게임플레이·M4 최적화(02~06), 무한 항성·소행성·미네랄 그물(07~10), 그리고 소행성 전방 타원 자연 스폰(11)과 긴 촉수 체내 수축 완성(12)까지 순차적으로 탐색할 수 있습니다.</p>
     </div>
 
     <div class="roadmap-grid">
@@ -1000,6 +1095,52 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
           </li>
         </ul>
       </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 11</span>
+          <span class="phase-status active">자연 스폰</span>
+        </div>
+        <h3>소행성 스폰의 자연화 &amp; 전방 타원 껍질</h3>
+        <p class="phase-desc">인위적 WPO 팽창 제거, 전방 타원구 확장(ComputeDirectionalRadii), 코사인 가중 편향 88.4%</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-11" class="phase-chapter-link">
+              <span class="lesson-num">11</span>
+              <span class="chapter-name">소행성 자연 스폰</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 11 세부 섹션">
+              <a href="#sec-11-1" class="sub-chip">11.1 WPO 팽창 제거</a>
+              <a href="#sec-11-2" class="sub-chip">11.2 전방 타원구 확장</a>
+              <a href="#sec-11-3" class="sub-chip">11.3 코사인 편향 검증</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 12</span>
+          <span class="phase-status active">촉수 물리</span>
+        </div>
+        <h3>긴 촉수 유기적 수축 &amp; 가지 제어</h3>
+        <p class="phase-desc">근거리 420cm 곁가지 억제, 인양·수축 시 형태 고정 체내 흡수(bIsTendrilReelingIn, TrunkRetractOffsetCm)</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-12" class="phase-chapter-link">
+              <span class="lesson-num">12</span>
+              <span class="chapter-name">촉수 체내 수축</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 12 세부 섹션">
+              <a href="#sec-12-1" class="sub-chip">12.1 근거리 가지 억제</a>
+              <a href="#sec-12-2" class="sub-chip">12.2 형태 고정 수축</a>
+              <a href="#sec-12-3" class="sub-chip">12.3 HLSL &amp; 견인 검증</a>
+            </div>
+          </li>
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -1134,7 +1275,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
       <header class="lesson-header" id="ch-02">
         <h2>02. 템플릿 격리와 순수 <code>APawn</code> 직조 설계</h2>
         <p class="lesson-intro">
-          언리얼 학습용 통합 워크스페이스(<code>UEStudy</code>) 위에서 신규 게임을 만들 때 가장 먼저 고민한 것은 <strong>기존 템플릿과의 경계</strong>와 <strong>이동 컴포넌트의 선택</strong>이었습니다.
+          01단원에서 Xcode 환경 격리와 UBT 빌드 파이프라인을 다져 C++ 컴파일 기반을 확보했습니다. 이제 본격적으로 게임플레이 코드를 작성하기에 앞서, <strong>기존 템플릿과의 철저한 격리</strong>와 중력 없는 우주 유영을 위한 <strong>순수 <code>APawn</code> 직조</strong>라는 두 가지 핵심 아키텍처 결정을 내렸습니다.
         </p>
       </header>
 
@@ -1360,7 +1501,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
       <header class="lesson-header" id="ch-03">
         <h2>03. 우주 환경(Space Environment): 시각·인지 트러블슈팅</h2>
         <p class="lesson-intro">
-          단순한 검정 배경이 아니라, 끝없는 우주에서 카메라를 360° 돌려도 방향감과 속도감이 깨지지 않도록 <strong>3가지 전형적인 엔진 함정</strong>(UV 극점 왜곡, AutoExposure 회색화, 원점 고정 먼지 왜곡)을 하나씩 해결했습니다.
+          02단원에서 물리와 입력을 받는 폰의 뼈대를 세웠지만, 화면에 폰만 덩그러니 띄워서는 무중력의 광활함도 이동의 속도감도 전달되지 않았습니다. 시각적 기준점이 되어줄 우주 배경에서 카메라를 360° 돌려도 방향감과 속도감이 깨지지 않도록 <strong>3가지 전형적인 엔진 함정</strong>(UV 극점 왜곡, AutoExposure 회색화, 원점 고정 먼지 왜곡)을 하나씩 해결했습니다.
         </p>
       </header>
 
@@ -1504,7 +1645,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
       <header class="lesson-header" id="ch-04">
         <h2>04. 쿼터니언 6-DoF 궤도 카메라 &amp; 물풍선 탄성 메커니즘</h2>
         <p class="lesson-intro">
-          상하 방향이 없는 우주에서는 언리얼 기본 오일러 회전 체계가 곧바로 한계에 부딪힙니다. 6-DoF 카메라 회전을 쿼터니언으로 재구축하고, 본체는 2차 스프링과 부피 보존 WPO로 말랑한 물풍선 질감을 부여했습니다.
+          03단원에서 3단 우주 환경과 기준 먼지를 구성하여 배경이 갖춰졌습니다. 하지만 카메라를 360° 회전시키자 오일러 각의 한계로 화면이 뒤집히는 짐벌락이 발생했고, 폰 본체도 딱딱한 돌덩이처럼 움직였습니다. 상하 방향이 없는 우주에 맞춰 6-DoF(6자유도: 3축 이동 + 3축 회전) 카메라 회전을 쿼터니언으로 재구축하고, 본체는 2차 스프링과 부피 보존 WPO(World Position Offset: 정점 셰이더 실시간 형태 변형)로 말랑한 물풍선 질감을 부여했습니다.
         </p>
       </header>
 
@@ -1728,7 +1869,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
       <header class="lesson-header" id="ch-05">
         <h2>05. 촉수 시스템 (V1 / V2) &amp; "체감되는 튜닝" 설계기</h2>
         <p class="lesson-intro">
-          두 촉수의 모든 조형과 분지는 셰이더(<code>M_MyceliumRibbon</code>은 발광 리본 렌더링 전담)가 아니라 <strong>Niagara 동적 리본 시스템과 C++ <code>User.*</code> 제어</strong>로 만듭니다. 구현 중 마주한 "여의봉 현상"과 "수치 변경 미체감" 문제를 어떻게 풀었는지 기록합니다.
+          04단원에서 6-DoF 궤도 조작과 물풍선 탄성 본체를 완성했습니다. 이제 이 부유체가 무중력 우주를 탐색하고 상호작용할 '손' 역할을 할 촉수 시스템이 필요했습니다. 두 촉수의 모든 조형과 분지는 셰이더가 아니라 <strong>Niagara 동적 리본 시스템과 C++ <code>User.*</code> 제어</strong>로 구현하며, 조준 시 발생하는 "여의봉 현상"과 "수치 변경 미체감" 문제를 단계별로 풀었습니다.
         </p>
       </header>
 
@@ -2116,7 +2257,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
       <header class="lesson-header" id="ch-06">
         <h2>06. M4 MacBook Air (16GB) 메모리 최적화 &amp; 경고 해결 실전기</h2>
         <p class="lesson-intro">
-          가장 큰 클라이언트 엔지니어링 배움이 있었던 파트입니다. <strong>"눈에 보이는 씬 부하를 줄여 GPU 시간을 60%나 깎았는데도 경고가 안 사라지던 이유"</strong>를 메모리 프로파일링으로 추적해 13.6GB를 덜어내고, 깎았던 비주얼은 100% 되살린 과정을 기록합니다.
+          05단원까지 촉수와 본체 비주얼을 한껏 끌어올렸지만, M4 MacBook Air(16GB 통합 메모리)에서 예상치 못한 성능 경고가 켜졌습니다. <strong>"눈에 보이는 씬 부하를 줄여 GPU 시간을 60%나 깎았는데도 경고가 안 사라지던 이유"</strong>를 메모리 프로파일링으로 추적해 13.6GB를 덜어내고, 깎았던 비주얼은 100% 되살린 과정을 기록합니다.
         </p>
       </header>
 
@@ -2266,7 +2407,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
         <header class="lesson-header" id="ch-07">
           <h2>07. 닿을 수 없는 무한 거리의 항성 &amp; 실시간 조명·MPC 동기화</h2>
           <p class="lesson-intro">
-            플레이어가 무한 우주 공간을 아무리 멀리 표류해도 <strong>절대 가까워지거나 클리핑되지 않는 항성</strong>을 만들기 위해, 3D 액터 대신 <code>M_SpaceSky</code> 천구 셰이더 위에 수학적으로 항성을 그리고 <code>UDistantStarSyncComponent</code>가 <code>DirectionalLight</code>와 <code>MPC_SpaceEnvironment</code>를 실시간으로 동기화하도록 설계했습니다.
+            06단원에서 메모리 병목을 해소해 16GB 통합 메모리 위에서 안정적인 프레임과 품질을 확보했습니다. 이제 시각 환경을 한 단계 끌어올리기 위해, 우주 어디서나 든든한 광원이자 방향 기준점이 되어줄 항성을 배치하기로 했습니다. 플레이어가 무한 우주 공간을 아무리 멀리 표류해도 <strong>절대 가까워지거나 클리핑되지 않는 항성</strong>을 만들기 위해 천구 셰이더 위에 수학적으로 항성을 그리고 <code>UDistantStarSyncComponent</code>로 실시간 동기화했습니다.
           </p>
         </header>
 
@@ -2401,7 +2542,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
         <header class="lesson-header" id="ch-08">
           <h2>08. 무한 절차적 소행성 벨트 스트리밍 &amp; 0ms 스위치형 풀링</h2>
           <p class="lesson-intro">
-            레벨 아웃라이너에 수동으로 놓았던 단일 테스트 소행성을 제거하고, <code>AAsteroidFieldManager</code>와 <code>ASpaceAsteroid</code>가 <strong>3D 해시 그리드 셀을 순회하며 플레이어 전방을 선제 스트리밍하고 288개 사전 베이킹 풀을 0ms로 깨우는 무한 소행성 벨트</strong>를 구축했습니다.
+            07단원에서 원거리 항성과 조명 동기화를 마쳤지만, 우주 공간에는 플레이어 외에 상호작용할 대상이 레벨에 수동 배치된 단일 테스트 소행성뿐이었습니다. 레벨 아웃라이너의 정적 배치를 걷어내고, <code>AAsteroidFieldManager</code>와 <code>ASpaceAsteroid</code>가 <strong>3D 해시 그리드 셀을 순회하며 플레이어 전방을 선제 스트리밍하고 288개 사전 베이킹 풀을 0ms로 깨우는 무한 소행성 벨트</strong>를 구축했습니다.
           </p>
         </header>
 
@@ -2560,7 +2701,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
         <header class="lesson-header" id="ch-09">
           <h2>09. 이중 스폰 미네랄, 그물 포획 정밀화 &amp; 촉수 쿨다운 가드</h2>
           <p class="lesson-intro">
-            플레이어가 우주를 정복하며 <strong>미네랄 광석을 수집하는 첫 핵심 게임플레이 루프</strong>를 완성했습니다. 초기 넓은 콘(56°) 오포획과 그물 이탈 버그를 잡기 위해 Niagara 파티클의 HLSL 깔때기 수식을 C++로 1:1 이식하고 0프레임 동기화·흡수 스퀴시 피드백·재입력 쿨다운까지 결합했습니다.
+            08단원에서 절차적 소행성 벨트를 깔아 탐색할 공간을 열었습니다. 이제 소행성에 접근해 실제로 자원을 획득하고 성장할 수 있는 첫 핵심 게임플레이 루프가 필요했습니다. 초기 넓은 콘(56°) 오포획과 그물 이탈 버그를 잡기 위해 Niagara 파티클의 HLSL 깔때기 수식을 C++로 1:1 이식하고 0프레임 동기화·흡수 스퀴시 피드백·재입력 쿨다운까지 결합했습니다.
           </p>
         </header>
 
@@ -2729,7 +2870,7 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
         <header class="lesson-header" id="ch-10">
           <h2>10. 정육면체 청크(FIntVector) 단위 그룹 스트리밍 &amp; 전방 예측 구형 히스테리시스</h2>
           <p class="lesson-intro">
-            개별 소행성 슬롯 단위 스폰/슬립 방식의 관리 복잡도를 해결하기 위해, 우주 공간을 <strong>정육면체 청크(<code>ChunkSizeCm = 2000.0f</code>, 20m) 단위로 묶어 레벨 스트리밍처럼 그룹 로드/언로드(<code>LoadChunk</code> / <code>UnloadChunk</code>)</strong>하는 구조로 전면 리팩토링했습니다. 특히 <code>N×N×N</code> 격자 판정의 모서리 왜곡 한계를 극복하고 <strong>전방 예측 구형 히스테리시스</strong>를 고정 채택해 6600cm 이상 연속 비행에서도 런타임 메시 재빌드 0회(0ms)를 달성했습니다.
+            09단원에서 미네랄을 그물로 낚아채 흡수하는 루프를 검증했지만, 소행성과 미네랄을 개별 액터 슬롯 단위로 관리하다 보니 고속 이동 시 전방 배치와 생명주기 관리가 점차 복잡해졌습니다. 개별 슬롯 스폰/슬립 방식의 한계를 넘어, 우주 공간을 <strong>정육면체 청크(<code>ChunkSizeCm = 2000.0f</code>, 20m) 단위로 묶어 레벨 스트리밍처럼 그룹 로드/언로드(<code>LoadChunk</code> / <code>UnloadChunk</code>)</strong>하는 구조로 전면 리팩토링했습니다. 특히 <code>N×N×N</code> 격자 판정의 모서리 왜곡 한계를 극복하고 <strong>전방 예측 구형 히스테리시스</strong>를 고정 채택해 6600cm 이상 연속 비행에서도 런타임 메시 재빌드 0회(0ms)를 달성했습니다.
           </p>
         </header>
 
@@ -2985,9 +3126,310 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
           </details>
 
           <div class="callout callout-tip">
-            <div class="callout-title">✅ Milestones 01–10 Summary &amp; Next Milestone</div>
+            <div class="callout-title">✅ Milestones 01–10 Summary</div>
             <p>
-              macOS 툴체인 격리·<code>APawn</code> 아키텍처·0-샘플러 우주·쿼터니언 6-DoF·물풍선 탄성·M4 16GB 최적화(01~06), 무한 항성·소행성 벨트·미네랄 그물 포획(07~09)에 이어, 이번 마일스톤 10에서는 <strong>2000cm 정육면체 청크 그룹 스트리밍, N×N×N 대각선 왜곡을 극복한 전방 예측 구형 히스테리시스, 언로드 유예 보호망, 그리고 6600cm 비행 중 런타임 재빌드 0회(0ms)</strong>를 완성했습니다. 다음 단계에서는 수집한 미네랄 기반 균사 성장 시스템, 화면 HUD 위젯 연동, 그리고 촉수 반동 기반 뉴턴 무중력 추진을 한층 더 고도화할 예정입니다.
+              macOS 툴체인 격리·<code>APawn</code> 아키텍처·0-샘플러 우주·쿼터니언 6-DoF·물풍선 탄성·M4 16GB 최적화(01~06), 무한 항성·소행성 벨트·미네랄 그물 포획(07~09)에 이어, 마일스톤 10에서는 2000cm 정육면체 청크 그룹 스트리밍, N×N×N 대각선 왜곡을 극복한 전방 예측 구형 히스테리시스, 언로드 유예 보호망으로 6600cm 비행 중 런타임 재빌드 0회(0ms)를 달성했습니다.
+            </p>
+          </div>
+        </section>
+
+        <!-- ================= MILESTONE 11 ================= -->
+        <div class="lesson-nav-bar" style="margin-top: 3rem;">
+          <span class="lesson-badge">MILESTONE 11 // NATURAL SPAWN &amp; FORWARD EXPANSION</span>
+          <span class="read-time">머티리얼 WPO 팽창 제거 · 전방 타원형 구형 껍질 · 코사인 가중 편향 88.4%</span>
+        </div>
+
+        <header class="lesson-header" id="ch-11">
+          <h2>11. 소행성 스폰의 자연화: 인위적 WPO 팽창 제거 &amp; 전방 타원구 껍질 스폰</h2>
+          <p class="lesson-intro">
+            10단원에서 청크 단위 그룹 스트리밍과 히스테리시스를 구축했지만, 소행성이 시야에 나타날 때 팝인을 가리기 위해 넣었던 <strong>'크기가 점점 커지며 등장하는 머티리얼 WPO 연출'</strong>이 오히려 풍선처럼 부풀어 오르는 인위적인 어색함을 낳았습니다. 시각 연출 트릭을 과감히 제거하고, <strong>수학적 공간 확장(<code>ComputeDirectionalRadii</code> 전방 타원형 스트레칭 + 코사인 가중 편향 88.4%)</strong>을 통해 소행성이 처음부터 100% 온전한 크기로 자연스럽게 다가오도록 완성했습니다.
+          </p>
+        </header>
+
+        <figure class="media-card" style="margin: 1.25rem 0;">
+          <img
+            src="/images/projects/fungal-space-conquest/blog4-01-natural-spawn-v4.png"
+            alt="인위적 WPO 크기 팽창 없이 원거리 우주 공간에서 100% 완전한 크기로 자연스럽게 출현하는 소행성 벨트 PIE 화면"
+            class="zoomable-img"
+            loading="lazy"
+          />
+          <figcaption>
+            <strong>자연스러운 소행성 출현 (WPO 인위적 팽창 완전 제거, PIE)</strong> — <code>M_SpaceAsteroid</code> 및 <code>M_SpaceMineral</code>에서 정점 스케일링 WPO를 걷어내어, 소행성과 미네랄이 부풀어 오르는 풍선 현상 없이 원거리 전방에서 온전한 100% 실물 크기로 자연스럽게 시야에 진입합니다. (클릭해 확대)
+          </figcaption>
+        </figure>
+
+        <section id="sec-11-1" class="lesson-section">
+          <h3>11.1 시각 트릭의 역효과: WPO 크기 팽창 제거 &amp; 미네랄 이미시브 직결</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">초기 WPO 팽창 연출의 시각적 결함</span>
+              <div class="p-text">초기에는 소행성과 미네랄이 갑자기 화면에 팝인되는 것을 숨기고자, 머티리얼의 <code>MP_WORLD_POSITION_OFFSET</code>에 거리 기반 페이드 노드를 연결해 스폰 시 크기 0%에서 100%로 커지는 연출을 넣었습니다. 하지만 플레이어 속도가 빠르거나 비스듬히 접근할 때 <strong>"우주 바위가 눈앞에서 물풍선처럼 부풀어 오르는" 극도로 인위적인 위화감</strong>이 발생했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">클라이언트 판단 · 셰이더 트릭 대신 시야 밖 스폰 원칙</span>
+              <div class="p-text">
+                1) <code>M_SpaceAsteroid</code>와 <code>M_SpaceMineral</code>의 <code>MP_WORLD_POSITION_OFFSET</code> 연결을 완전히 제거했습니다. 소행성은 출현하는 첫 프레임부터 100% 완전한 지형과 충돌체를 가지고 생성됩니다.<br />
+                2) <code>M_SpaceMineral</code>의 <code>MP_EMISSIVE_COLOR</code> 역시 부자연스럽게 밝기가 깜빡이던 <code>DistFade</code> 함수를 우회하여 <code>MaterialExpressionMultiply_4</code>에 직접 연결함으로써, 원거리에서도 보석 같은 청록색 발광이 안정적으로 빛나도록 정리했습니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-11-2" class="lesson-section">
+          <h3>11.2 속도·시선 편향 전방 타원구 확장 (<code>ComputeDirectionalRadii</code>)</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label intent">클라이언트 설계 의도</span>
+              <div class="p-text">WPO 팽창 트릭을 뺐다면, 팝인을 막을 유일한 방법은 <strong>"소행성이 플레이어 시야각 바깥 혹은 극원거리 어둠 속에서 미리 태어나 다가오게 만드는 것"</strong>뿐입니다. 하지만 구형 껍질을 모든 방향으로 무작정 넓히면 불필요한 후방·측면 소행성까지 늘어나 풀 한도를 초과합니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">비대칭 타원형 껍질 스트레칭</span>
+              <div class="p-text">
+                <code>AAsteroidFieldManager::ComputeDirectionalRadii</code>를 구현하여, 플레이어의 이동 속도 벡터와 카메라 시선 방향으로 스폰 껍질 $[A, B]$의 반경을 앞쪽으로만 타원구 형태로 길게 늘렸습니다.<br />
+                - <strong>기본 확장 (<code>ForwardBaseExtensionCm = 1800.0f</code>)</strong>: 정지 상태에서도 시선 전방을 18m 더 멀리 밀어내 기본 시야 거리를 확보합니다.<br />
+                - <strong>속도 연동 확장 (<code>ForwardVelocityMaxExtensionCm = 6500.0f</code>)</strong>: 기준 속력 <code>1600 cm/s</code>(16 m/s) 도달 시 최대 65m까지 전방 반경을 추가 확장합니다.<br />
+                - <strong>내부 금지선 전진 (<code>ForwardInnerExtensionFraction = 0.85f</code>)</strong>: 바깥쪽 반경 $B$만 늘리면 가까운 곳에 소행성이 나타날 수 있으므로, 내부 금지 경계 $A$도 함께 85% 앞으로 밀어내 전방 스폰이 오직 <code>120m ~ 190m</code> 이상의 극원거리에서만 발생하도록 강제했습니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-11-3" class="lesson-section">
+          <h3>11.3 코사인 가중 전방 반구 샘플링 (<code>SampleDirectionInShell</code>) &amp; 실측 검증</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label success">PIE 실측 검증 (88.4% 전방 집중 &amp; 0건 위반)</span>
+              <div class="p-text">
+                단순 360° 균등 각도 샘플링 대신 <code>SampleDirectionInShell</code>에서 <code>ForwardSpawnBiasWeight = 0.85f</code>와 <code>cos(θ) ~ U^0.58</code> 곡선 가중치를 적용해 전방 중심 밀집 샘플링을 수행했습니다.<br />
+                - <strong>전방 반구 스폰 비율</strong>: 실측 <strong><code>88.4%</code></strong> (소행성 대다수가 비행 방향 전방 시야에 집중 투입)<br />
+                - <strong>전방 스폰 실측 거리</strong>: <strong><code>12,419 cm ~ 19,258 cm</code></strong> (124m ~ 192m 극원거리 스폰)<br />
+                - <strong>안전 경계 위반</strong>: <code>MinSafeSpawnRadiusCm(550cm)</code> 및 내부 금지선 침범 <strong><code>0건</code></strong> (완벽 준수)<br />
+                - <strong>활성 소행성 수</strong>: <code>TargetActiveAsteroids = 260</code>개 안정 유지
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE</span>
+                <span>코드 보기: ComputeDirectionalRadii · SampleDirectionInShell &amp; 전방 확장 파라미터</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 32%;" />
+                    <col style="width: 22%;" />
+                    <col style="width: 46%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>파라미터 심볼</th>
+                      <th>기본값</th>
+                      <th>역할 및 동작 설명</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>ForwardBaseExtensionCm</code></td>
+                      <td><code>1800.0f</code></td>
+                      <td>정지·저속 시에도 시선 전방을 기본 18m 확장</td>
+                    </tr>
+                    <tr>
+                      <td><code>ForwardVelocityMaxExtensionCm</code></td>
+                      <td><code>6500.0f</code></td>
+                      <td>고속 비행 시 전방 스폰 구역 최대 65m 추가 스트레칭</td>
+                    </tr>
+                    <tr>
+                      <td><code>VelocityReferenceSpeedCmPerSec</code></td>
+                      <td><code>1600.0f</code></td>
+                      <td>최대 전방 확장에 도달하는 기준 이동 속력 (16 m/s)</td>
+                    </tr>
+                    <tr>
+                      <td><code>ForwardInnerExtensionFraction</code></td>
+                      <td><code>0.85f</code></td>
+                      <td>내부 스폰 금지선 A도 전방으로 85% 밀어내 눈앞 스폰 차단</td>
+                    </tr>
+                    <tr>
+                      <td><code>ForwardSpawnBiasWeight</code></td>
+                      <td><code>0.85f</code></td>
+                      <td>전방 반구에 85% 확률로 소행성을 우선 배분 (실측 88.4%)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.cpp // 전방 타원형 확장 및 코사인 가중 편향 스폰</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeForwardExpansionSpawn}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeForwardExpansionSpawn} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- ================= MILESTONE 12 ================= -->
+        <div class="lesson-nav-bar" style="margin-top: 3rem;">
+          <span class="lesson-badge">MILESTONE 12 // ORGANIC TENDRIL RETRACTION &amp; PRUNING</span>
+          <span class="read-time">근거리 가지 억제(420cm) · 형태 고정 체내 수축 · 견인 물리 304cm 검증</span>
+        </div>
+
+        <header class="lesson-header" id="ch-12">
+          <h2>12. 긴 촉수의 유기적 물리 완성: 근거리 가지 억제 &amp; 형태 고정 체내 수축</h2>
+          <p class="lesson-intro">
+            11단원에서 소행성이 우주 저편에서 자연스럽게 다가오도록 정돈한 뒤, 실제로 긴 촉수를 꽂아 소행성을 끌어당기며 이동하는 플레이를 검증했습니다. 하지만 여기서 촉수의 조형과 물리 표현에 <strong>두 가지 시각적 어색함</strong>(근거리 착탄 시 빗자루 뭉침, 인양 중 곁가지가 깜빡이며 사라지는 현상)이 드러났습니다. <strong>최소 줄기 길이 문턱(<code>LongTendrilBranchMinTrunkCm = 420.0f</code>)</strong>과 <strong>형태 고정 체내 수축(<code>bIsTendrilReelingIn</code> + <code>TrunkRetractOffsetCm</code>)</strong> 아키텍처로 살아 숨 쉬는 유기체 균사체를 완성했습니다.
+          </p>
+        </header>
+
+        <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog4-02-short-tendril-no-branch.png"
+              alt="근거리 소행성 타격 시 잔가지 없이 깔끔한 단일 줄기만 뻗어나간 PIE 화면"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>근거리 착탄 곁가지 억제 (<code>LongTendrilBranchMinTrunkCm = 420</code>)</strong> — 4.2m 이하 근거리 발사 시 잔가지 생성을 0개로 억제하여 빗자루처럼 시야를 가리지 않고 단정한 메인 줄기만 적중합니다. (클릭해 확대)
+            </figcaption>
+          </figure>
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/blog4-03-tendril-reeling-fixed-shape.png"
+              alt="원거리 소행성 견인 인양 중 곁가지 형태가 고정된 채 폰 몸체 안쪽으로 슬라이딩 흡수되는 PIE 화면"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>인양 중 형태 고정 체내 수축 (<code>bIsTendrilReelingIn</code>)</strong> — 소행성을 당길 때 줄기가 짧아져도 가지가 사라지지 않고, 발사 시 확정된 조형을 고정한 채 몸 안쪽으로 흡수되며 304.75cm 견인을 완수합니다. (클릭해 확대)
+            </figcaption>
+          </figure>
+        </div>
+
+        <section id="sec-12-1" class="lesson-section">
+          <h3>12.1 근거리 발사 시 빗자루 뭉침 방지: 최소 줄기 길이 문턱 (<code>420cm</code>)</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">초기 단순 비례식의 한계</span>
+              <div class="p-text">기존에는 <code>(길이 / 100) * BranchFrequency</code>라는 단순 선형식으로 곁가지 수를 계산했습니다. 이 때문에 <code>3m</code> 남짓 바로 앞 소행성에 촉수를 쏠 때도 8~10개의 곁가지가 빽빽하게 생성되어, 화면 전체를 헝클어진 빗자루처럼 가리는 조형적 어색함이 있었습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">지수 곡선 &amp; 데드존 도입 (<code>ComputeLongTendrilBranchCountForLength</code>)</span>
+              <div class="p-text">
+                <code>LongTendrilBranchMinTrunkCm = 420.0f</code>(4.2m) 문턱을 도입했습니다. 목표 거리가 420cm 이하일 때는 <strong>곁가지를 무조건 0개</strong>로 억제해 깔끔한 직사 줄기만 나가도록 하고, 420cm를 넘어서는 순간부터 <code>Pow(LenRatio, 1.35f)</code> 지수 곡선(<code>(L - 420) / (L_max - 420)</code>)을 타며 완만하게 곁가지가 돋아나 원거리(36m)에서 최대 25개에 도달하도록 정밀 튜닝했습니다.<br />
+                - <strong>실측 검증</strong>: 근거리(~340cm) 착탄 시 <code>branch_count: 0</code> 확인.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-12-2" class="lesson-section">
+          <h3>12.2 소행성 견인 및 회수 시 형태 고정 체내 수축 (<code>TrunkRetractOffsetCm</code>)</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">거리 단축에 따른 가지 소멸 버그</span>
+              <div class="p-text">원거리 소행성에 촉수가 꽂힌 뒤 뉴턴 인력으로 서로를 끌어당길 때(인양), 폰과 소행성 사이 거리가 줄어들면서 <code>CurrentLiveLenCm</code>이 감소했습니다. 실시간 줄기 길이에 따라 가지 수를 재계산하다 보니, <strong>당겨지는 도중에 가지들이 하나씩 툭툭 꺼지며 사라지는</strong> 매우 부자연스러운 현상이 발생했습니다.</div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">발사 조형 동결 &amp; 슬라이딩 체내 흡수 메커니즘</span>
+              <div class="p-text">
+                인양이나 회수가 시작되는 순간(<code>CurrentLiveLenCm &lt; PeakTrunkLengthCm</code>), <strong><code>bIsTendrilReelingIn = true</code></strong> 플래그를 켜서 발사 최대 전개 시 확정되었던 곁가지 개수(<code>ActiveShotBranchCount</code>)와 스케일(<code>ActiveShotBranchLenScale</code>), 최대 길이(<code>PeakTrunkLengthCm</code>)를 <strong>완전히 동결(Freeze)</strong>합니다.<br />
+                대신 줄기가 짧아지는 만큼 <strong><code>TrunkRetractOffsetCm</code></strong> 오프셋을 증가시켜, Niagara 파티클 공간에서 촉수의 조형 전체가 <strong>플레이어 폰의 몸체 안쪽으로 미끄러져 들어가며 흡수</strong>되도록 설계했습니다. 가지가 허공에서 사라지는 대신 살아 있는 촉수가 몸속으로 빨려 들어가는 시각적 개연성을 얻었습니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-12-3" class="lesson-section">
+          <h3>12.3 Niagara HLSL 연동 &amp; 소행성 견인 304cm 실측 검증</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label success">Niagara 연동 &amp; 견인 물리 실측 결과</span>
+              <div class="p-text">
+                1) <code>NS_Tendril_MyceliumWeb</code>에 <code>User.DeployedRefLengthCm</code>와 <code>User.TrunkRetractOffsetCm</code> 파라미터를 추가하고, <code>CoreTrunk</code> 및 <code>Branch_RightLow</code> 이미터의 HLSL 샘플링 좌표를 오프셋 기반으로 보정했습니다.<br />
+                2) <strong>원거리(~1600cm) 소행성 견인 실측 검증</strong>: 인양 전개 중 <code>branch_count: 6 → 6</code>으로 완벽히 고정되었으며, 소행성이 폰 쪽으로 <strong><code>304.75 cm</code> 당겨진 뒤</strong> 자연스럽게 촉수가 회수되고 <code>can_fire_tendril: true</code>로 안전 복귀함을 확인했습니다.
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE</span>
+                <span>코드 보기: ComputeLongTendrilBranchCountForLength · bIsTendrilReelingIn 체내 수축 C++</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 32%;" />
+                    <col style="width: 22%;" />
+                    <col style="width: 46%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>상태 변수 / 파라미터</th>
+                      <th>기본값</th>
+                      <th>촉수 조형 · 물리 역할</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>LongTendrilBranchMinTrunkCm</code></td>
+                      <td><code>420.0f</code></td>
+                      <td>4.2m 이하 근거리 발사 시 곁가지 0개 강제 문턱</td>
+                    </tr>
+                    <tr>
+                      <td><code>bIsTendrilReelingIn</code></td>
+                      <td><code>false</code></td>
+                      <td>소행성 견인 및 회수 시 촉수 조형 형태 고정 플래그</td>
+                    </tr>
+                    <tr>
+                      <td><code>ActiveShotBranchCount</code></td>
+                      <td>발사 시 확정</td>
+                      <td>인양 중 가지 소멸을 막기 위해 고정된 곁가지 수</td>
+                    </tr>
+                    <tr>
+                      <td><code>TrunkRetractOffsetCm</code></td>
+                      <td><code>0.0f ~ Peak</code></td>
+                      <td>줄기가 단축될 때 촉수 전체가 몸체 안으로 진입하는 오프셋</td>
+                    </tr>
+                    <tr>
+                      <td><code>User.DeployedRefLengthCm</code></td>
+                      <td>Niagara 연동</td>
+                      <td>가지 간격과 테이퍼 비율을 유지하는 기준 최대 전개 길이</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">SpaceDrifterPawn.cpp // 근거리 가지 억제 &amp; 형태 고정 체내 수축</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codeTendrilBranchAndRetract}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codeTendrilBranchAndRetract} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+
+          <div class="callout callout-tip">
+            <div class="callout-title">✅ Milestones 01–12 Summary &amp; Next Stage</div>
+            <p>
+              macOS 툴체인 격리(01)·<code>APawn</code> 아키텍처(02)·3단 우주 환경(03)·쿼터니언 6-DoF 및 물풍선 탄성(04)·반응형 촉수(05)·M4 16GB 메모리 최적화(06)의 탄탄한 기반 위에, 닿을 수 없는 무한 항성(07)·무한 소행성 벨트(08)·미네랄 그물 포획(09)·청크 그룹 스트리밍(10)·소행성 전방 타원 자연 스폰(11)·긴 촉수 형태 고정 체내 수축(12)까지 <strong>언리얼 엔진 5.9 기반의 무중력 유기체 탐색 액션 핵심 시스템</strong>을 완성도 높게 매듭지었습니다. 다음 마일스톤에서는 수집한 미네랄 기반 곰팡이 성장 트리와 위젯 HUD, 심우주 탐험 레벨 시퀀스로 게임플레이를 확장해 나갈 예정입니다.
             </p>
           </div>
         </section>
@@ -3161,6 +3603,38 @@ bool AAsteroidFieldManager::TryEvictRearChunkForCapacity(
             <a href="#sec-10-3" class="floating-toc-link" data-target="sec-10-3">
               <span class="toc-badge">10.3</span>
               <span class="toc-name">0ms 실측 벤치</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">11 // NATURAL SPAWN</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 11 목차">
+            <a href="#sec-11-1" class="floating-toc-link" data-target="sec-11-1">
+              <span class="toc-badge">11.1</span>
+              <span class="toc-name">WPO 팽창 제거</span>
+            </a>
+            <a href="#sec-11-2" class="floating-toc-link" data-target="sec-11-2">
+              <span class="toc-badge">11.2</span>
+              <span class="toc-name">전방 타원구 확장</span>
+            </a>
+            <a href="#sec-11-3" class="floating-toc-link" data-target="sec-11-3">
+              <span class="toc-badge">11.3</span>
+              <span class="toc-name">코사인 편향 검증</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">12 // TENDRIL REELING</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 12 목차">
+            <a href="#sec-12-1" class="floating-toc-link" data-target="sec-12-1">
+              <span class="toc-badge">12.1</span>
+              <span class="toc-name">근거리 가지 억제</span>
+            </a>
+            <a href="#sec-12-2" class="floating-toc-link" data-target="sec-12-2">
+              <span class="toc-badge">12.2</span>
+              <span class="toc-name">형태 고정 수축</span>
+            </a>
+            <a href="#sec-12-3" class="floating-toc-link" data-target="sec-12-3">
+              <span class="toc-badge">12.3</span>
+              <span class="toc-name">HLSL &amp; 견인 검증</span>
             </a>
           </nav>
         </div>

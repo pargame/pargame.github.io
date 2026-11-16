@@ -1101,9 +1101,10 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
               <span class="goto-icon">➔</span>
             </a>
             <div class="sub-lesson-chips" aria-label="모듈 03 세부 섹션">
-              <a href="#sec-3-1" class="sub-chip">3.1 Ability OOP·TG_PostPhysics</a>
-              <a href="#sec-3-2" class="sub-chip">3.2 V1 조준래치·뉴턴인력·수축</a>
-              <a href="#sec-3-3" class="sub-chip">3.3 V2 단발그물·V3 내장 LocalSpace</a>
+              <a href="#sec-3-1" class="sub-chip">3.1 Ability OOP·동기화</a>
+              <a href="#sec-3-2" class="sub-chip">3.2 V1 긴 촉수</a>
+              <a href="#sec-3-3" class="sub-chip">3.3 V2 그물 촉수</a>
+              <a href="#sec-3-4" class="sub-chip">3.4 V3 분사 촉수</a>
             </div>
           </li>
         </ul>
@@ -1760,24 +1761,35 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
       </section>
 
       <section id="sec-3-3" class="lesson-section">
-        <h3>3.3 V2 단발 그물 촉수(<code>UNetTendrilAbility</code>) &amp; V3 분사 촉수(<code>UJetTendrilAbility</code>): 엔진 내장 기능 위임</h3>
+        <h3>3.3 V2 그물 촉수(<code>UNetTendrilAbility</code>): 단발(One-Shot) 포자 그물 &amp; <code>FTimerManager</code> 자동 회수</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              1번 촉수(소행성 견인)와 2번 촉수(광석 채집 그물)에 발사 반동을 넣으면 조준과 이동이 뒤섞여 조작이 불편해졌습니다. 따라서 1·2번은 조준·채집에만 집중시키고, 허공에서 스스로 추진할 수 있는 <strong>3번 이동 전용 분사 촉수(<code>SporeJet</code>)</strong>를 분리하되 내 몸의 일부가 뿜어져 나가는 일체감을 구현해야 했습니다.
+              2번 촉수는 소행성에 꽂아 당기는 1번 촉수와 달리 주변 우주 공간의 미네랄을 넓게 쓸어 담는 수확 전용 능력입니다. 입력을 길게 누르고 있지 않아도 한 번의 발사만으로 그물이 끝까지 펼쳐져 포획을 완료해야 하며, 발사 반동이 조준을 흔들지 않도록 무반동으로 동작해야 합니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: V2 단발 타이머 자동 전개 &amp; V3 나이아가라 내장 <code>bLocalSpace</code> + <code>Mesh Renderer</code></span>
+            <span class="p-label decision">설계 결정: 단발(One-Shot) 전개 · <code>FTimerManager</code> 유지 타이머 · <code>bForceRestartFX</code> 재사용 초기화</span>
             <div class="p-text">
-              1) <strong>V2 단발(One-Shot) 그물 전개</strong>: 2번 그물 촉수는 키를 떼더라도 내장 <code>FTimerManager</code> 유지 시간까지 끝까지 펼쳐진 뒤 자동 회수되도록 설계해, 다수의 방사형 스포크(<code>SpokeA~G</code>)와 동심원 고리(<code>WebRingA~E</code>)로 주변 미네랄을 안정적으로 쓸어 담습니다.<br />
-              2) <strong>V3 나이아가라 내장 <code>bLocalSpace</code> + <code>Mesh Renderer</code> 위임</strong>: C++에서 발사체 메시 컴포넌트를 수동으로 풀링하지 않고, <code>NS_Tendril_SporeJet</code> 이미터의 내장 <strong><code>bLocalSpace = true</code></strong>와 <strong><code>NiagaraMeshRendererProperties</code>(본체와 동일한 <code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code> 장착)</strong>를 사용해 고속 비행 중에도 본체와 100% 일체화된 분사 연출과 역추진 가속(<code>-LockedAimDir</code>)을 구현했습니다.
+              1) <strong>입력 분리 및 <code>FTimerManager</code> 자동 회수</strong>: <code>IsHoldToMaintainAbility() == false</code>를 반환해 키를 떼더라도 전개를 유지하며, 최대 전개 도달 시 언리얼 내장 <code>FTimerManager</code> 원샷 타이머가 만료되면 자동으로 <code>BeginRetract()</code>를 호출해 미네랄을 본체로 회수합니다.<br />
+              2) <strong>반복 발사 안정화 및 매니저 풀 직접 조회</strong>: 방사형 스포크(<code>SpokeA~G</code>)와 동심원 링(<code>WebRingA~E</code>)을 깔때기 형태로 펼치며 <code>AAsteroidFieldManager::GatherAvailableMinerals()</code> 활성 배열만 스캔합니다. 또한 재발사 시 기존 이미터 잔여 상태로 인해 파티클이 누락되지 않도록 발사 직전 <code>bForceRestartFX</code> 리셋을 보장했습니다.
             </div>
           </div>
         </div>
 
         <div class="compare-grid">
+          <figure class="media-card">
+            <img
+              src="/images/projects/fungal-space-conquest/12-v2-net-oblique.png"
+              alt="V2 그물 촉수 방사형 스포크 및 동심원 링 전개"
+              class="zoomable-img"
+              loading="lazy"
+            />
+            <figcaption>
+              <strong>방사형 스포크 + 동심원 링 구조</strong> — 7개 방사형 줄기와 5개 동심원 링이 깔때기 형태로 펼쳐지며 포자 입자를 방출합니다.
+            </figcaption>
+          </figure>
           <figure class="media-card">
             <img
               src="/images/projects/fungal-space-conquest/blog-pie-v2-player-cam.png"
@@ -1786,21 +1798,72 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
               loading="lazy"
             />
             <figcaption>
-              <strong>V2 그물 촉수(GossamerSpores) 단발 전개</strong> — 짧은 클릭 한 번으로 방사형 스포크와 동심원 링이 최대 사거리까지 펼쳐진 후 타이머 만료 시 자동 회수됩니다.
-            </figcaption>
-          </figure>
-          <figure class="media-card">
-            <img
-              src="/images/projects/fungal-space-conquest/v3-spore-jet-pie.png"
-              alt="V3 분사 촉수(SporeJet) — 나이아가라 bLocalSpace와 MeshRenderer 기반 본체 분사"
-              class="zoomable-img"
-              loading="lazy"
-            />
-            <figcaption>
-              <strong>V3 분사 촉수(SporeJet) 내장 나이아가라 분사</strong> — <code>bLocalSpace = true</code>와 <code>NiagaraMeshRendererProperties</code>(<code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>)를 통해 본체 일부가 전방으로 뿜어져 나가며 역추진 가속을 생성합니다.
+              <strong>플레이어 시점 단발(One-Shot) 전개</strong> — 짧은 클릭 한 번으로 최대 사거리까지 전개된 후 타이머 만료 시 자동 회수됩니다.
             </figcaption>
           </figure>
         </div>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">TRIAL &amp; ERROR + CODE</span>
+              <span>설계 우여곡절 &amp; 코드 보기: 2번 촉수 재사용 시 파티클 소실 버그 해결 &amp; 단발 타이머 분기</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label issue">설계 우여곡절: 첫 발사 후 재사용 시 파티클이 사라지던 이미터 수명 문제</span>
+                <div class="p-text">
+                  초기 구현에서는 그물이 회수될 때 <code>DeactivateImmediate()</code>로 시스템을 강제 정지해 포자 드리프트 잔상이 뚝 끊겼고, 반대로 비활성화만 유예했을 때는 재발사 시 이미터가 완료 상태에 머물러 새 파티클이 나오지 않는 현상이 발생했습니다. 이를 해결하기 위해 회수 시에는 스폰율(<code>User.SporeSpawnRate</code>)만 0으로 내려 잔상 파티클이 자연 소멸하게 두고, 다음 발사 직전에 <code>bForceRestartFX</code>로 깨끗하게 재기동하도록 분리했습니다.
+                </div>
+              </div>
+            </div>
+
+            <div class="code-block-wrap">
+              <div class="code-header">
+                <span class="file-name">SpaceTendrilAbility.cpp // V1(홀드) vs V2(단발 FTimerManager) 입력 분기</span>
+                <div class="code-actions">
+                  <span class="code-lang">C++ // V2 Net Tendril</span>
+                  <button type="button" class="copy-btn" data-copy={codeHoldAndNet}>Copy</button>
+                </div>
+              </div>
+              <Code code={codeHoldAndNet} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section id="sec-3-4" class="lesson-section">
+        <h3>3.4 V3 분사 촉수(<code>UJetTendrilAbility</code>): 내장 나이아가라 <code>bLocalSpace</code> + <code>MeshRenderer</code> 기반 역추진</h3>
+        <div class="perspective-card">
+          <div class="perspective-row">
+            <span class="p-label intent">설계 배경</span>
+            <div class="p-text">
+              1번(견인)·2번(채집) 촉수에서 발사 반동을 제거해 조준 안정성을 확보한 뒤, 주변에 잡을 소행성이 없는 허공에서도 스스로 기동할 수 있는 <strong>이동 전용 3번 촉수(<code>SporeJet</code>)</strong>가 필요했습니다. 이때 단순 먼지나 리본이 아니라 내 몸체의 일부가 떨어져 나가며 반작용으로 밀어주는 일체감이 핵심이었습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label decision">설계 결정: 엔진 내장 <code>bLocalSpace</code> + <code>MeshRenderer</code> 위임 &amp; 자원 확장 훅 격리</span>
+            <div class="p-text">
+              1) <strong>나이아가라 내장 <code>bLocalSpace</code> + <code>MeshRenderer</code> 일체화</strong>: <code>NS_Tendril_SporeJet</code> 이미터에 <code>bLocalSpace = true</code>와 <code>NiagaraMeshRendererProperties</code>(본체와 동일한 <code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>)를 적용해, 고속 비행 중에도 C++ 수동 보간 없이 본체와 100% 붙어 전방 원뿔로 분사되며 정반대 방향(<code>-LockedAimDir</code>)의 추진 임펄스를 생성합니다.<br />
+              2) <strong>가상 함수 기반 자원·쿨타임 확장 훅</strong>: 추후 무한 분사를 제한하는 스태미나/미네랄 소모 또는 과열 규칙은 <code>CanConsumeJetResource()</code>와 <code>ConsumeJetResource(float DeltaTime)</code> 두 가상 함수만 오버라이드하면 호스트 폰 수정 없이 즉시 결합됩니다.
+            </div>
+          </div>
+        </div>
+
+        <figure class="media-card" style="margin: 1.35rem 0 1.65rem;">
+          <img
+            src="/images/projects/fungal-space-conquest/v3-spore-jet-pie.png"
+            alt="V3 분사 촉수(SporeJet) — 나이아가라 bLocalSpace와 MeshRenderer 기반 본체 분사"
+            class="zoomable-img"
+            loading="lazy"
+          />
+          <figcaption>
+            <strong>V3 분사 촉수(SporeJet) 내장 나이아가라 분사</strong> — <code>bLocalSpace = true</code>와 <code>NiagaraMeshRendererProperties</code>(<code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>)를 통해 본체 일부가 전방으로 뿜어져 나가며 역추진 가속을 생성합니다.
+          </figcaption>
+        </figure>
 
         <details class="tech-drawer">
           <summary class="drawer-summary">
@@ -1829,7 +1892,6 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
                 </div>
               </div>
               <Code code={codeBuiltInFirstMilestone14} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
-              <Code code={codeHoldAndNet} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
             </div>
           </div>
         </details>
@@ -2362,11 +2424,15 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
             </a>
             <a href="#sec-3-2" class="floating-toc-link" data-target="sec-3-2">
               <span class="toc-badge">3.2</span>
-              <span class="toc-name">V1 긴 촉수·뉴턴 인력</span>
+              <span class="toc-name">V1 긴 촉수</span>
             </a>
             <a href="#sec-3-3" class="floating-toc-link" data-target="sec-3-3">
               <span class="toc-badge">3.3</span>
-              <span class="toc-name">V2 그물·V3 LocalSpace</span>
+              <span class="toc-name">V2 그물 촉수</span>
+            </a>
+            <a href="#sec-3-4" class="floating-toc-link" data-target="sec-3-4">
+              <span class="toc-badge">3.4</span>
+              <span class="toc-name">V3 분사 촉수</span>
             </a>
           </nav>
 

@@ -26,7 +26,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     <div class="section-title-wrap">
       <span class="badge">ACTIVE SHOWCASE</span>
       <h2>진행 중인 프로젝트</h2>
-      <p>구현 코드와 에셋 구조, 파라미터 설계 근거, PIE/에디터 검증 결과를 마일스톤별로 점진 기록합니다.</p>
+      <p>구현 코드와 객체 모델링, 언리얼 내장 기능 우선 설계 근거, PIE/에디터 검증 결과를 기능 모듈 단위로 정리합니다.</p>
     </div>
 
     <article class="project-showcase">
@@ -34,7 +34,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <div class="showcase-badges">
           <span class="status-pill active">
             <span class="pulse-dot"></span>
-            ACTIVE DEV · MILESTONES 01–12
+            ACTIVE DEV · 6 FEATURE MODULES
           </span>
           <span class="engine-pill">UNREAL ENGINE 5.9 · macOS</span>
           <span class="path-pill">UEStudy / Sandbox / MiniProject</span>
@@ -50,25 +50,25 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             </a>
           </h2>
           <p class="project-subtitle">
-            무중력 공간에 떠 있는 보송보송한 먼지공·곰팡이 부유체가 물풍선처럼 출렁이며, 무한 원거리 항성 아래 <strong>전방 타원 껍질 소행성 벨트</strong>를 유영하고 <strong>긴 촉수(V1)</strong>·<strong>그물 촉수(V2)</strong>로 미네랄을 수확·정복해 나가는 UE 5.9 C++ 프로젝트.
+            무중력 공간에 떠 있는 보송보송한 먼지공·곰팡이 부유체가 물풍선처럼 출렁이며, <strong>2-Tier Chaos 물리 &amp; 구형 껍질 C=[A,B] 소행성 벨트</strong>를 유영하고 <strong>V1(긴 촉수)·V2(그물 촉수)·V3(내장 나이아가라 분사 촉수)</strong>로 우주를 탐험·수확하는 UE 5.9 C++ 프로젝트.
           </p>
 
           <div class="metrics-strip">
             <div class="metric-item">
-              <span class="metric-label">CORE C++</span>
-              <span class="metric-value">7 Classes</span>
+              <span class="metric-label">CORE OOP</span>
+              <span class="metric-value">UInterface · 0-Tick Ability</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">PREBAKED POOLS</span>
-              <span class="metric-value">360 Asteroids · 128 Minerals</span>
+              <span class="metric-label">2-TIER FIELD POOL</span>
+              <span class="metric-value">820 Asteroids · 128 Minerals</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">TENDRIL STYLES</span>
-              <span class="metric-value">V1 Reeling · V2 Net Funnel</span>
+              <span class="metric-label">TENDRIL ABILITIES</span>
+              <span class="metric-value">V1 Tether · V2 Net · V3 Jet</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">TARGET LEVEL</span>
-              <span class="metric-value">Lvl_Main (Natural Shell)</span>
+              <span class="metric-label">M4 MEMORY</span>
+              <span class="metric-value">21.4GB → 7.93GB Unified</span>
             </div>
           </div>
 
@@ -76,11 +76,11 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="stack-tag">#UE5_9</span>
             <span class="stack-tag">#APawnDesign</span>
             <span class="stack-tag">#Quaternion6DoF</span>
-            <span class="stack-tag">#WPO_Elasticity</span>
-            <span class="stack-tag">#NiagaraRibbon</span>
-            <span class="stack-tag">#ForwardEllipticalShell</span>
-            <span class="stack-tag">#OrganicTendrilReeling</span>
-            <span class="stack-tag">#PrebakedPool0ms</span>
+            <span class="stack-tag">#ZeroTickAbilityOOP</span>
+            <span class="stack-tag">#NiagaraLocalSpace</span>
+            <span class="stack-tag">#RuntimeFloatCurve</span>
+            <span class="stack-tag">#TwoTierChaosPhysics</span>
+            <span class="stack-tag">#SphericalShell_C_AB</span>
             <span class="stack-tag">#DistantStarMPC</span>
             <span class="stack-tag">#M4_16GB_Optimization</span>
           </div>
@@ -96,117 +96,63 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             alt="UE 5.9 Lvl_Main 우주 공간에서 부유 중인 곰팡이 우주 정복 대작전 BP_SpaceDrifterPawn PIE 뷰포트"
             loading="eager"
           />
-          <span class="preview-caption">PIE Capture (1920×1378) · Lvl_Main + BP_SpaceDrifterPawn</span>
+          <span class="preview-caption">PIE Capture (1920×1080) · Lvl_Main + BP_SpaceDrifterPawn</span>
         </a>
       </div>
 
       <div class="milestone-strip">
         <a href="/learn/labs/project/fungal-space-conquest#ch-01" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MILESTONE 01</span>
+            <span class="m-num">MODULE 01</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>Xcode 26.1.1 격리 &amp; 엔진 분석</h3>
-          <p><code>ue-on/off</code> 환경 격리, 공식 MCP 41툴셋, <code>LaunchEngineLoop.cpp</code> &amp; Live Coding 분석</p>
+          <h3>개발 환경 · 데이터 주도 · 가드레일</h3>
+          <p><code>ue-on/off</code> Xcode 격리, 공식 MCP, <code>Sandbox</code> 격리 &amp; <code>ARCHITECTURE.md</code> 멀티 에이전트 규약</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-02" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MILESTONE 02</span>
+            <span class="m-num">MODULE 02</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>템플릿 격리 &amp; APawn 직조</h3>
-          <p><code>Sandbox/MiniProject</code> 6분류 에셋 분리, <code>ACharacter</code>를 버린 순수 <code>APawn</code> 아키텍처</p>
+          <h3>무중력 본체 (<code>ASpaceDrifterPawn</code>)</h3>
+          <p><code>ACharacter</code>를 버린 순수 <code>APawn</code>, <code>FQuat</code> 6-DoF 유동 카메라, 2차 스프링·아이코스피어 탄성</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-03" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MILESTONE 03</span>
+            <span class="m-num">MODULE 03</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>우주 환경 시각·인지 설계</h3>
-          <p>2D UV 극점 왜곡 → 0-샘플러 <code>M_SpaceSky</code>, <code>AutoExposure</code> 잠금, 폰 부착 3D 먼지</p>
+          <h3>다형성 촉수 능력 (V1 · V2 · V3)</h3>
+          <p><code>UInterface</code> · <code>EditInlineNew</code> 0-Tick · <code>TG_PostPhysics</code> 동기화, V1·V2·V3(<code>bLocalSpace</code>) 역할 분리</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-04" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MILESTONE 04</span>
+            <span class="m-num">MODULE 04</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>쿼터니언 6-DoF &amp; 물풍선 탄성</h3>
-          <p><code>FRotator</code> 짐벌락 극복 궤도 카메라, 2차 감쇠 스프링, 균일 아이코스피어 WPO</p>
+          <h3>결정론적 소행성 &amp; 구형 껍질 C=[A,B]</h3>
+          <p>시드 부피 정규화·<code>FRuntimeFloatCurve</code> 분포, 0ms 프리베이크 풀, 2-Tier 물리 &amp; 전방 타원 스트리밍</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-05" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MILESTONE 05</span>
+            <span class="m-num">MODULE 05</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>촉수 V1/V2 &amp; 체감 튜닝기</h3>
-          <p>여의봉 방지 조준 래치, 비율·테이퍼 연동 개선, V2 단발형 &amp; UHT 한글 Details 툴팁</p>
+          <h3>이중 미네랄 &amp; 0프레임 그물 포획</h3>
+          <p>표면·부유 이중 스폰, 흡착→흡수 상태 분리, HLSL-C++ 깔때기 1:1 일치 &amp; 촉수 주도 동기화</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-06" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MILESTONE 06</span>
+            <span class="m-num">MODULE 06</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>M4 Air 16GB 메모리 최적화</h3>
-          <p>GPU 60% 절감 오판 → 렌더 패스 경량화로 <code>21.4GB → 7.93GB</code> 달성 및 고품질 전량 원복</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-07" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MILESTONE 07</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>무한 원거리 항성 &amp; MPC</h3>
-          <p><code>M_SpaceSky</code> 코어·코로나·회절 글레어 셰이더, <code>UDistantStarSyncComponent</code> 라이트 자동 동기화</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-08" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MILESTONE 08</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>시드 질량·뉴턴 인력 &amp; 0ms 풀링</h3>
-          <p>단일 시드 질량·부피 1:1 물리, 그래픽 촉수+질량 비 상호 인력(Chaos 위임), <code>360</code> 슬롯 사전 베이킹 풀</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-09" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MILESTONE 09</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>이중 미네랄, 흡착→흡수 &amp; 쿨다운</h3>
-          <p><code>128</code>풀 표면/부유 광석, 흡착→흡수 의미 분리 &amp; 프레넬 폐기, 그물 0프레임 바인딩·쿨다운</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-10" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MILESTONE 10</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>정육면체 청크, 오버랩 검토 &amp; 한계</h3>
-          <p>20m 청크 그룹 스트리밍, N×N×N 왜곡 극복, Chaos 오버랩 vs 20Hz 스캔 비교 및 이동 소행성 한계 발견</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-11" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MILESTONE 11</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>구형 껍질 C=[A,B] 6규칙 &amp; 자연 스폰</h3>
-          <p>구형 껍질·삭제 큐 6규칙, 인위적 WPO 팽창 제거, 전방 타원 스트레칭 &amp; 코사인 편향 88.4% 출현</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-12" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MILESTONE 12</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>긴 촉수 체내 수축 &amp; 가지 제어</h3>
-          <p>근거리 4.2m 곁가지 억제, 인양·수축 시 형태 고정 체내 흡수, 견인 304cm 검증</p>
+          <h3>우주 환경 &amp; M4 16GB 메모리 최적화</h3>
+          <p>3D 구면 천구 · 천구 내장 무한 항성 <code>MPC</code>, 불필요 렌더 패스 제거(<code>21.4GB → 7.93GB</code>)</p>
         </a>
       </div>
 

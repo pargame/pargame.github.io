@@ -842,11 +842,11 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <span class="current">곰팡이 우주 정복 대작전</span>
     </nav>
 
-    <div class="topic-tag">UE 5.9 CLIENT ENGINEERING // POSTMORTEM &amp; DEVLOG</div>
-    <h1>곰팡이 우주 정복 대작전: 설계 결정과 엔지니어링 기록</h1>
+    <div class="topic-tag">UE 5.9 CLIENT ENGINEERING // DESIGN &amp; ARCHITECTURE LOG</div>
+    <h1>곰팡이 우주 정복 대작전: 설계 결정과 최적화의 기록</h1>
     <p class="topic-desc">
-      Unreal Engine 5.9(macOS Apple Silicon) 환경에서 무중력 물풍선 부유체와 반응형 균사 촉수를 구현하며 마주친 <strong>언리얼 엔진 구조적 제약, 클라이언트 설계 판단, 그리고 macOS M4 16GB 최적화 실전기</strong>를 정리한 기록입니다.
-      핵심 설계 스토리와 스크린샷은 바로 읽히도록 배치하고, 상세 코드·설정 파일·파라미터 표는 접이식 서랍에 정리했습니다.
+      Unreal Engine 5.9(macOS Apple Silicon) 환경에서 무중력 물풍선 부유체와 반응형 균사 촉수 시스템을 만들며, <strong>AI에게 구현을 위임하고 직접 설계·검증·최적화를 주도한 아키텍처 기록</strong>입니다.
+      각 마일스톤에서는 어떤 문제를 발견했고 왜 그런 설계 판단을 내렸는지에 집중해 서술했으며, 구체적인 C++ 코드·파라미터·실측 데이터는 접이식 서랍에 모아두었습니다.
     </p>
 
     <div class="meta-bar">
@@ -1174,14 +1174,12 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label issue">직면한 환경 충돌</span>
-            <div class="p-text">macOS <code>27.3</code> 기본 <code>CommandLineTools</code>(<code>/Library/Developer/CommandLineTools</code>)와 Homebrew <code>LLVM 23.1.0</code>(<code>/opt/homebrew/opt/llvm/bin</code>)이 전역 <code>PATH</code>에 잡혀 있는 반면, UE 5.9 UBT는 정확히 <strong><code>Xcode 26.1.1</code></strong>(<code>Apple clang 17.0.0</code>, <code>macOS SDK 26.1</code>, <code>Metal Toolchain 17B54</code>)만 허용했습니다. <code>sudo xcode-select -s</code>로 전역을 바꾸면 일반 개발/CLI 환경이 깨지는 문제가 있었습니다.</div>
+            <div class="p-text">macOS 시스템의 기본 CommandLineTools와 Homebrew LLVM이 전역 PATH를 점유하고 있었지만, UE 5.9 빌드 도구(UBT)는 정확히 지정된 버전의 Xcode와 Apple clang만 허용했습니다. 전역을 강제로 바꾸면 일반 개발·CLI 환경이 함께 깨지는 양날의 검 상황이었습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">환경 격리 &amp; MCP 해법</span>
+            <span class="p-label decision">설계 판단: 셸 세션·GUI 앱 세션 이중 격리</span>
             <div class="p-text">
-              <strong>1) 이중 환경변수 격리:</strong> <code>~/.zshrc</code>에 <code>ue-on</code> / <code>ue-off</code> / <code>ue-status</code> 함수를 두고, 현재 셸(<code>export DEVELOPER_DIR</code>)과 macOS GUI 앱 세션(<code>launchctl setenv DEVELOPER_DIR</code>)을 동시에 스위칭하도록 구성했습니다. (<code>ue-off</code> 시 즉시 두 변수 해제)<br />
-              <strong>2) 엔진 내장 .NET 활용:</strong> UE 5.9 번들 <code>.NET 10 SDK</code>(<code>Engine/Binaries/ThirdParty/DotNet/mac-arm64</code>)를 그대로 써 전역 .NET 충돌을 차단했습니다.<br />
-              <strong>3) 공식 MCP 연결:</strong> <code>UEStudy.uproject</code>에 <code>"AllToolsets"</code> 플러그인을 켜 UE 5.9 내장 <code>ModelContextProtocol</code> HTTP 서버(<code>http://127.0.0.1:8000/mcp</code>, 41개 툴셋)와 직접 통신했습니다.
+              전역 환경을 건드리지 않고 UE 전용 Xcode 경로를 셸 세션과 macOS GUI 앱 세션 양쪽에 동시에 주입·해제할 수 있는 <strong>토글 함수 쌍(<code>ue-on</code> / <code>ue-off</code>)</strong>을 직접 설계했습니다. UE를 켜고 끄는 것이 셸 한 줄 명령으로 완결되어, 이후 모든 C++ 빌드와 Live Coding이 충돌 없이 동작하는 환경이 갖춰졌습니다. 엔진 내장 .NET SDK를 그대로 사용해 외부 의존성 충돌도 차단했으며, 엔진 공식 MCP 서버와 직접 연결해 에디터 조작을 AI로 자동화하는 기반도 함께 확보했습니다.
             </div>
           </div>
         </div>
@@ -1223,21 +1221,21 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <section id="sec-1-2" class="lesson-section">
         <h3>1.2 UE 5.9 macOS 엔진 내부 트러블슈팅: 모듈 누락 팝업 &amp; Live Coding 잔존</h3>
         <p>
-          개발 도중 에디터를 다시 켤 때마다 멀쩡히 빌드해 둔 게임 모듈이 "누락됨(Missing Modules)"으로 뜨거나 리빌드까지 실패하는 기이한 현상을 두 차례 겪고, 엔진 소스를 직접 추적해 원인을 찾아냈습니다.
+          개발 도중 에디터를 다시 켤 때마다 멀쩡히 빌드해 둔 게임 모듈이 "누락됨(Missing Modules)"으로 뜨거나 리빌드까지 실패하는 현상을 두 차례 겪었습니다. AI와 함께 엔진 초기화 소스를 추적해 원인을 찾아내고 재발 방지 수칙을 확립했습니다.
         </p>
 
         <div class="perspective-card">
           <div class="perspective-row">
-            <span class="p-label issue">사건 ① 단독 실행 모듈 누락</span>
-            <div class="p-text">디스크에 <code>BuildId</code>(<code>"60351404"</code>)와 <code>libUnrealEditor-UEStudy.dylib</code>가 정상 존재하는데도, <code>UnrealEditor</code>를 <code>.uproject</code> 인자 없이 실행 후 프로젝트를 고르면 모듈 누락 팝업이 뜨고 리빌드도 실패했습니다. <code>LaunchEngineLoop.cpp</code>(<code>L2012-L2019</code>) 초기화 순서상 <code>FApp::HasProjectName()</code>이 거짓일 때 <code>ProjectBinariesRootDirectory</code>가 비워지기 때문이었습니다.</div>
+            <span class="p-label issue">사건 ① 단독 실행 시 모듈 경로 누락</span>
+            <div class="p-text">디스크에 빌드된 바이너리가 정상 존재하는데도, 에디터를 프로젝트 인자 없이 실행한 뒤 프로젝트를 선택하면 모듈 누락 팝업이 뜨고 리빌드도 실패했습니다. 엔진 초기화 순서상 실행 시점에 프로젝트 이름이 지정되지 않으면 바이너리 루트 경로가 비워지기 때문이었습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label issue">사건 ② Live Coding 패치 잔존</span>
-            <div class="p-text"><code>DefaultEngine.ini</code> 수정 후 에디터를 재시작할 때 이전 세션의 Live Coding 패치 바이너리(<code>libUnrealEditor-UEStudy-0008.dylib</code>)가 남아 모듈 버전 불일치를 일으켰습니다.</div>
+            <span class="p-label issue">사건 ② Live Coding 패치 파일 잔존</span>
+            <div class="p-text">엔진 설정을 바꾼 뒤 에디터를 재시작할 때, 이전 세션에서 생성된 Live Coding 패치 바이너리가 디스크에 남아 모듈 버전 불일치를 일으켰습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">확립한 작업 수칙</span>
-            <div class="p-text"><strong>1)</strong> 에디터 실행 시 반드시 <code>.uproject</code> 경로를 인자로 직접 전달하고, <strong>2)</strong> Live Coding 후 재빌드가 꼬일 때는 UBT <code>Build.sh</code> 클린 링크로 단일 <code>libUnrealEditor-UEStudy.dylib</code>를 복구하는 워크플로우를 정착시켰습니다.</div>
+            <span class="p-label decision">설계 판단: 실행·빌드 작업 수칙 표준화</span>
+            <div class="p-text"><strong>1)</strong> 에디터 실행 시 반드시 프로젝트 파일 경로를 직접 인자로 전달하도록 고정하고, <strong>2)</strong> Live Coding 이후 재빌드가 꼬일 때는 클린 빌드 스크립트로 단일 바이너리를 복구하는 워크플로우를 정착시켜 빌드 안정성을 확보했습니다.</div>
           </div>
         </div>
 
@@ -1280,23 +1278,23 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </header>
 
       <section id="sec-2-1" class="lesson-section">
-        <h3>2.1 템플릿 오염 차단 (<code>Sandbox</code> 격리) &amp; 6-폴더 에셋 확장</h3>
+        <h3>2.1 템플릿 오염 차단 (<code>Sandbox</code> 격리) &amp; 역할별 에셋 재편</h3>
         <p>
-          기존 <code>/Game/ThirdPerson</code>이나 <code>Variant_*</code> 코드는 추후 엔진 기능 비교 레퍼런스로 유지해야 했습니다. 그래서 C++은 <code>Source/UEStudy/Sandbox/MiniProject/</code>에, 에셋은 <code>Content/Sandbox/MiniProject/</code>에 완전 격리하는 규칙(<code>GEMINI.md</code>)을 먼저 못 박았습니다.
+          기존 프로젝트에 포함된 템플릿 코드는 추후 엔진 기능 비교 레퍼런스로 유지해야 했습니다. AI와 협업할 때 기존 자산이 의도치 않게 수정되는 것을 원천 차단하기 위해, 신규 C++ 소스와 콘텐츠 에셋을 모두 독립된 <code>Sandbox</code> 영역에 격리하는 프로젝트 규칙을 가장 먼저 세웠습니다.
         </p>
 
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 의도</span>
-            <div class="p-text">실험용 미니 프로젝트가 커져도 템플릿 코드와 섞이지 않고 독립 컴파일·삭제가 가능해야 했습니다.</div>
+            <div class="p-text">실험용 미니 프로젝트가 커져도 템플릿 코드와 섞이지 않고 독립적으로 빌드·유지보수할 수 있어야 했습니다.</div>
           </div>
           <div class="perspective-row">
             <span class="p-label issue">직면한 난관</span>
-            <div class="p-text">초기 프로토타이핑 속도를 내다 보니 <code>/Game/Sandbox/MiniProject/</code> 루트에 16개 에셋(블루프린트·머티리얼·입력·Niagara·레벨)이 한데 섞여 참조 추적이 어려워졌습니다.</div>
+            <div class="p-text">초기 프로토타이핑 속도를 내다 보니 루트 폴더 하나에 블루프린트·머티리얼·입력·Niagara·레벨 등 에셋들이 한데 뒤섞여 참조 추적이 어려워졌습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">클라이언트 판단</span>
-            <div class="p-text"><code>UEStudy.Build.cs</code>의 <code>PublicIncludePaths</code>에 <code>"UEStudy/Sandbox"</code>를 열어 모듈 경계를 고정하고, 콘텐츠는 역할별 6개 디렉터리(<code>Blueprints</code>, <code>Input</code>, <code>Maps</code>, <code>Materials</code>, <code>Meshes</code>, <code>VFX</code>)로 재편 뒤 <code>FixUpRedirectors</code>로 잔여 리디렉터를 정리했습니다.</div>
+            <span class="p-label decision">설계 판단: 모듈 경계 고정 및 6분류 폴더 재편</span>
+            <div class="p-text">빌드 설정에서 샌드박스 경로를 독립 모듈 경계로 열어두고, 콘텐츠는 역할별 6개 디렉터리(블루프린트, 입력, 맵, 머티리얼, 메시, VFX)로 재편한 뒤 리디렉터를 정리해 에셋 구조를 깔끔하게 유지했습니다.</div>
           </div>
         </div>
 
@@ -1375,21 +1373,21 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <section id="sec-2-2" class="lesson-section">
         <h3>2.2 왜 <code>ACharacter</code>를 버리고 순수 <code>APawn</code>으로 직조했는가</h3>
         <p>
-          언리얼의 <code>ACharacter</code>는 빠른 개발을 돕지만, 내부의 <code>UCharacterMovementComponent</code>와 <code>UCapsuleComponent</code>는 <strong>중력 벡터, 바닥 경사각(Walkable Floor), 스켈레탈 메시 보행 상태 머신</strong>과 강하게 결합돼 있습니다.
+          언리얼의 기본 <code>ACharacter</code>는 빠른 개발을 돕지만, 내부 이동 컴포넌트와 캡슐 충돌체는 <strong>중력 벡터, 바닥 경사각, 스켈레탈 메시 보행 상태 머신</strong>과 강하게 결합돼 있습니다.
         </p>
 
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 의도</span>
-            <div class="p-text">본체는 위아래 구분 없는 구형 부유체이며, 외형은 스켈레탈 본이 아닌 WPO 물풍선 셰이더로 출렁이고, 카메라는 본체와 무관하게 360° 회전해야 합니다.</div>
+            <div class="p-text">본체는 위아래 구분 없는 구형 부유체이며, 외형은 뼈대 애니메이션이 아닌 셰이더 변형으로 출렁이고, 카메라는 본체 회전과 무관하게 360° 자유롭게 공전해야 했습니다.</div>
           </div>
           <div class="perspective-row">
             <span class="p-label issue">언리얼 설계의 제약</span>
-            <div class="p-text"><code>ACharacter</code>를 쓰면 사용하지도 않을 캡슐 기반 바닥 탐색, 네트워크 캐릭터 보정 오버헤드, 컨트롤러 Yaw 동기화 플래그를 매번 거슬러 싸워야 합니다.</div>
+            <div class="p-text"><code>ACharacter</code>를 그대로 쓰면 쓰지도 않을 바닥 탐색 로직, 보행 상태 보정, 컨트롤러 회전 동기화 플래그를 매번 우회하며 싸워야 합니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">클라이언트 판단</span>
-            <div class="p-text">경량 <code>ASpaceDrifterPawn</code> 위에 중력이 꺼진 <code>CollisionSphere</code>(반경 <code>50 cm</code>), <code>DrifterMesh</code>, <code>CameraPivot</code> → <code>CameraBoom</code> → <code>FollowCamera</code> 계층을 직접 조립하고, <code>ASpaceDrifterGameMode</code> / <code>ASpaceDrifterPlayerController</code>와 느슨하게 연결했습니다.</div>
+            <span class="p-label decision">설계 판단: 경량 순수 APawn 계층 직접 설계</span>
+            <div class="p-text">불필요한 캐릭터 기능을 덜어낸 순수 <code>APawn</code> 위에 중력이 꺼진 구형 물리 충돌체, 시각용 메시, 그리고 독립 회전이 가능한 카메라 피벗·스프링암 계층만 직접 설계하고 게임 모드·컨트롤러와 느슨하게 연결하도록 지시했습니다.</div>
           </div>
         </div>
 
@@ -1430,7 +1428,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <section id="sec-2-3" class="lesson-section">
         <h3>2.3 Enhanced Input 매핑과 제어 책임 분리</h3>
         <p>
-          컨트롤러(<code>ASpaceDrifterPlayerController</code>)는 로컬 환경에서 커서를 숨기고 <code>IMC_MiniProject</code> 컨텍스트를 우선순위에 맞춰 주입하는 역할만 맡고, 실제 액션 의미 해석(<code>IA_ExtendTendril</code>, <code>IA_ToggleTendrilStyle</code>, 카메라 회전)은 폰이 소유합니다. 덕분에 추후 다른 입력 모드나 UI 포커스 전환 시 폰 코드를 건드리지 않고 매핑 컨텍스트만 교체할 수 있습니다.
+          입력 구조 역시 확장성을 염두에 두고 책임을 나눴습니다. 플레이어 컨트롤러는 로컬 환경에서 커서를 숨기고 입력 매핑 컨텍스트를 주입하는 역할만 맡고, 실제 액션(촉수 발사, 스타일 전환, 카메라 회전)의 의미 해석과 실행은 폰이 소유하도록 설계했습니다. 덕분에 추후 다른 입력 모드나 UI 포커스로 전환할 때도 폰 로직을 건드리지 않고 매핑 컨텍스트만 교체할 수 있습니다.
         </p>
 
         <details class="tech-drawer">
@@ -1506,9 +1504,9 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </header>
 
       <section id="sec-3-1" class="lesson-section">
-        <h3>3.1 <code>Lvl_Main</code> 3단 레이어 아웃라이너 설계</h3>
+        <h3>3.1 우주 레벨 3단 레이어 아웃라이너 설계</h3>
         <p>
-          추후 행성·소행성·우주 정거장을 서브레벨로 얹더라도 조명과 천구 관리가 엉키지 않도록, <code>Lvl_Main</code>의 환경을 <code>Environment/Space</code>(천구), <code>Environment/Lighting</code>(조명·노출), 그리고 <code>BP_SpaceDrifterPawn</code> 부착 부유 먼지 3계층으로 분리했습니다.
+          추후 행성·소행성·우주 정거장을 서브레벨로 얹더라도 조명과 천구 관리가 엉키지 않도록, 메인 레벨의 환경을 <strong>① 천구 배경, ② 조명·노출 제어, ③ 플레이어 부착 부유 먼지</strong>의 3계층으로 분리하도록 설계했습니다.
         </p>
 
         <div class="compare-grid">
@@ -1538,43 +1536,43 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </section>
 
       <section id="sec-3-2" class="lesson-section">
-        <h3>3.2 2D UV 극점 왜곡 탈출: 0-샘플러 프로시저럴 천구 (<code>M_SpaceSky</code>)</h3>
+        <h3>3.2 2D UV 극점 왜곡 탈출: 0-샘플러 프로시저럴 천구</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label issue">직면한 문제</span>
-            <div class="p-text">초기에는 엔진 기본 <code>T_Sky_Stars</code> 2D 텍스처를 구형 스카이 스피어에 타일링했으나, 6-DoF 카메라로 천정·천저를 바라볼 때마다 <strong>별이 격자로 반복되고 극점(Pole)에서 소용돌이처럼 찌그러지는 문제</strong>가 도드라졌습니다.</div>
+            <div class="p-text">초기에는 엔진 기본 2D 별 텍스처를 구형 스카이 스피어에 타일링했으나, 6-DoF 카메라로 천정·천저를 바라볼 때마다 <strong>별이 격자로 반복되고 극점(Pole)에서 소용돌이처럼 찌그러지는 문제</strong>가 도드라졌습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">해결 선택</span>
-            <div class="p-text">UV 좌표를 버리고 <code>CameraVectorWS</code> 방향 벡터 기반의 <strong>0-샘플러 3D Voronoi/Cellnoise 프로시저럴 셰이더(<code>M_SpaceSky</code>)</strong>를 작성했습니다. 텍스처 메모리 점유 없이(0 samplers) 어느 각도로 회전해도 왜곡 없는 무한 별자리와 은은한 성운 농담을 얻었습니다.</div>
+            <span class="p-label decision">설계 판단: 방향 벡터 기반 0-샘플러 셰이더</span>
+            <div class="p-text">2D UV 좌표를 완전히 버리고 카메라 시선 방향 벡터만으로 별과 성운을 계산하는 <strong>0-샘플러 3D 프로시저럴 천구 셰이더</strong>로 전환하도록 지시했습니다. 텍스처 메모리 점유 없이 어느 각도로 회전해도 왜곡 없는 무한 별자리를 얻었습니다.</div>
           </div>
         </div>
       </section>
 
       <section id="sec-3-3" class="lesson-section">
-        <h3>3.3 자동 노출 함정과 비대칭 쿨 라이팅 (<code>PostProcessVolume_Space</code>)</h3>
+        <h3>3.3 자동 노출 함정과 비대칭 쿨 라이팅</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label issue">언리얼 기본 동작의 함정</span>
-            <div class="p-text">언리얼 에디터의 기본 히스토그램 자동 노출(<code>AutoExposure</code>)은 화면 대부분이 어두우면 이를 "어두운 실내"로 오인해 노출을 강제로 끌어올립니다. 그 결과 깊은 심우주가 칙칙한 <strong>회색빛 노이즈 배경</strong>으로 들떠 버렸습니다.</div>
+            <div class="p-text">언리얼 에디터의 기본 자동 노출(AutoExposure)은 화면 대부분이 어두우면 이를 "어두운 실내"로 오인해 노출을 강제로 끌어올립니다. 그 결과 깊은 심우주가 칙칙한 <strong>회색빛 노이즈 배경</strong>으로 들떠 버렸습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">해결 선택</span>
-            <div class="p-text"><code>bUnbound = true</code>로 둔 <code>PostProcessVolume_Space</code>에서 <code>AutoExposureMin/MaxBrightness = 0.0</code>, <code>Bias = 0.0</code>으로 톤을 못 박고(EV100=0), 대기 산란을 끈 사선 항성광(<code>DirectionalLight_Starlight</code>)과 낮은 청색 보조광(<code>SkyLight_SpaceAmbient</code>)으로 먼지공 표면 요철만 또렷이 살렸습니다.</div>
+            <span class="p-label decision">설계 판단: 노출 고정 및 비대칭 라이팅</span>
+            <div class="p-text">전역 포스트프로세스 볼륨에서 자동 노출 보정을 완전히 고정해 칠흑 같은 심우주 톤을 확보하고, 대기 산란을 끈 사선 항성광과 낮은 청색 보조광을 조합해 곰팡이 본체 표면의 요철만 또렷이 살아나도록 조정했습니다.</div>
           </div>
         </div>
       </section>
 
       <section id="sec-3-4" class="lesson-section">
-        <h3>3.4 원점 고정 2D 먼지의 왜곡 → 폰 부착 3D 메시 파티클 (<code>NS_SpaceDust</code>)</h3>
+        <h3>3.4 원점 고정 2D 먼지의 왜곡 → 폰 부착 3D 메시 파티클</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label issue">시각·인지 트러블슈팅</span>
-            <div class="p-text">월드에 고정된 2D 스프라이트 먼지는 폰이 조금만 이동해도 빈 공간으로 벗어나고, 6-DoF 회전 시 빌보드 평면 회전 아티팩트가 어색하게 드러났습니다.</div>
+            <div class="p-text">월드에 고정된 2D 스프라이트 먼지는 폰이 조금만 이동해도 빈 공간으로 벗어나고, 6-DoF 회전 시 평면 빌보드가 뒤집히는 아티팩트가 어색하게 드러났습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">해결 선택</span>
-            <div class="p-text"><code>NS_SpaceDust</code>를 <code>BP_SpaceDrifterPawn</code> 내부 컴포넌트(<code>SpaceDustComponent_GEN_VARIABLE</code>)로 부착해 플레이어를 항상 <code>1400 × 1400 × 1000 cm</code> 볼륨이 감싸게 했고, 입자도 스프라이트 대신 0-샘플러 발광 셰이더(<code>M_SpaceMoteOrb</code>)를 입힌 저비용 3D 구체 메시로 교체했습니다.</div>
+            <span class="p-label decision">설계 판단: 플레이어 추종 3D 입자 볼륨</span>
+            <div class="p-text">먼지 파티클 시스템을 플레이어 폰 내부에 부착해 어느 방향으로 비행하든 주변 공간에 일정하게 먼지가 감싸도록 바꾸고, 입자 역시 2D 스프라이트 대신 0-샘플러 발광 셰이더를 입힌 저비용 3D 구체 메시로 교체해 입체감과 속도감을 동시에 확보했습니다.</div>
           </div>
         </div>
 
@@ -1650,7 +1648,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </header>
 
       <section id="sec-4-1" class="lesson-section">
-        <h3>4.1 <code>ControlRotation</code> / <code>FRotator</code> 짐벌락 한계 → 쿼터니언 6-DoF 오빗</h3>
+        <h3>4.1 오일러 회전 짐벌락 한계 → 쿼터니언 6-DoF 오빗</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 의도</span>
@@ -1658,11 +1656,11 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
           </div>
           <div class="perspective-row">
             <span class="p-label issue">언리얼 설계의 제약</span>
-            <div class="p-text">언리얼 기본 <code>APlayerController::ControlRotation</code>은 내부적으로 오일러 각(<code>FRotator</code>) 기반의 Pitch ±89° 클램핑과 짐벌락 회피 로직이 박혀 있어, 수직 위아래를 연속으로 넘어가면 카메라가 급반전되거나 막혀 버립니다.</div>
+            <div class="p-text">언리얼 기본 컨트롤러 회전은 내부적으로 오일러 각 기반의 상하 ±89° 클램핑과 짐벌락 회피 로직이 박혀 있어, 수직 위아래를 연속으로 넘어가면 카메라가 급반전되거나 막혀 버립니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">클라이언트 판단</span>
-            <div class="p-text"><code>bUseControllerRotationPitch/Yaw/Roll = false</code>로 컨트롤러 회전과 본체를 끊고, <code>CameraPivot</code> 씬 컴포넌트에 매 입력마다 화면 로컬 축 기준 <code>FQuat</code> 델타를 곱해 정규화한 뒤 <code>FMath::QInterpTo</code>로 보간했습니다. <code>CameraBoom</code>에는 <code>SocketOffset = (0, 0, 78)</code>을 주어 본체 너머 전방 촉수 궤적이 가리지 않게 프레이밍했습니다.</div>
+            <span class="p-label decision">설계 판단: 로컬 축 쿼터니언 누적 &amp; 시야 오프셋</span>
+            <div class="p-text">컨트롤러 기본 회전을 본체에서 끊어내고, 카메라 피벗에 매 입력마다 화면 로컬 축 기준 쿼터니언 델타를 곱해 부드럽게 보간하도록 설계했습니다. 또한 카메라를 본체 중심보다 살짝 위로 띄워 전방으로 뻗는 촉수 궤적이 본체에 가리지 않도록 프레이밍을 잡았습니다.</div>
           </div>
         </div>
 
@@ -1692,8 +1690,8 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <section id="sec-4-2" class="lesson-section">
         <h3>4.2 Zero-G 부유·호흡 &amp; 2차 감쇠 스프링 탄성 통합</h3>
         <p>
-          본 애니메이션 리깅(Skeleton) 없이도 살아 있는 젤리·물풍선 느낌을 주기 위해, 물리 콜리전(<code>CollisionSphere</code>)은 단순 구형으로 놔두고 시각 메시(<code>DrifterMesh</code>)에만 무중력 부유/느린 자전, 정지 상태 호흡(Breathing), 그리고 <strong>가속도 자동 감지 + 촉수 사출/회수 반동</strong>을 2차 감쇠 스프링-댐퍼로 통합했습니다.
-          키프레임 애니메이션이 아니라 가속/반동 힘에 물리적으로 반응하므로 어떤 방향으로 튕겨도 자연스럽게 출렁입니다.
+          본 애니메이션 리깅(Skeleton) 없이도 살아 있는 젤리·물풍선 느낌을 주기 위해, 물리 충돌체는 단순 구형으로 놔두고 시각 메시에만 무중력 부유/느린 자전, 정지 상태 호흡(Breathing), 그리고 <strong>가속도 자동 감지 + 촉수 사출/회수 반동</strong>을 2차 감쇠 스프링-댐퍼로 통합하도록 설계했습니다.
+          키프레임 애니메이션이 아니라 실제 가속과 반동 힘에 반응하므로 어느 방향으로 튕겨도 자연스럽게 출렁입니다.
         </p>
 
         <details class="tech-drawer">
@@ -1777,9 +1775,9 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </section>
 
       <section id="sec-4-3" class="lesson-section">
-        <h3>4.3 UV 극점 뭉개짐 방지(<code>SM_DustPuffSphere</code>) &amp; 부피 보존 WPO</h3>
+        <h3>4.3 UV 극점 뭉개짐 방지(아이코스피어) &amp; 부피 보존 WPO</h3>
         <p>
-          일반적인 UV 구체에 WPO 노이즈를 주면 버텍스가 쏠린 양극점이 뾰족하게 뭉개집니다. 반경 <code>50 cm</code>의 균일 4단계 세분화 아이코스피어(<code>SM_DustPuffSphere</code>, 2,666 버텍스, Nanite 비활성)를 임포트해 털공 노이즈가 어느 면에서나 고르게 피어나게 했고, 셰이더에서 축 스케일 <code>s</code>와 수직 스케일 <code>s^(-0.5)</code>를 연동해 눌리거나 늘어나도 전체 부피가 <code>1</code>로 보존되게 했습니다.
+          일반적인 UV 구체에 WPO 노이즈를 주면 버텍스가 쏠린 양극점이 뾰족하게 뭉개집니다. 이를 막기 위해 균일하게 세분화된 아이코스피어(Icosphere) 메시를 채택해 털공 노이즈가 어느 면에서나 고르게 피어나게 했고, 셰이더에서는 변형 축이 늘어나거나 눌릴 때 수직 축이 반비례해 <strong>전체 부피가 항상 보존</strong>되도록 설계했습니다.
         </p>
 
         <div class="compare-grid">
@@ -1869,28 +1867,28 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <header class="lesson-header" id="ch-05">
         <h2>05. 촉수 시스템 (V1 / V2) &amp; "체감되는 튜닝" 설계기</h2>
         <p class="lesson-intro">
-          04단원에서 6-DoF 궤도 조작과 물풍선 탄성 본체를 완성했습니다. 이제 이 부유체가 무중력 우주를 탐색하고 상호작용할 '손' 역할을 할 촉수 시스템이 필요했습니다. 두 촉수의 모든 조형과 분지는 셰이더가 아니라 <strong>Niagara 동적 리본 시스템과 C++ <code>User.*</code> 제어</strong>로 구현하며, 조준 시 발생하는 "여의봉 현상"과 "수치 변경 미체감" 문제를 단계별로 풀었습니다.
+          04단원에서 6-DoF 궤도 조작과 물풍선 탄성 본체를 완성했습니다. 이제 이 부유체가 무중력 우주를 탐색하고 상호작용할 '손' 역할을 할 촉수 시스템이 필요했습니다. 두 촉수의 모든 조형과 분지는 정적 셰이더가 아니라 <strong>Niagara 동적 리본 시스템과 C++ 파라미터 제어</strong>로 설계했으며, 직접 플레이테스트하며 발견한 "여의봉 현상"과 "수치 변경 미체감" 문제를 단계별로 풀어냈습니다.
         </p>
       </header>
 
       <section id="sec-5-1" class="lesson-section">
-        <h3>5.1 발사 중 카메라를 따라 도는 "여의봉 현상" 해결: 조준 스냅샷 (Aim Latch)</h3>
+        <h3>5.1 발사 중 카메라를 따라 도는 "여의봉 현상" 해결: 조준 스냅샷</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label issue">직면한 문제</span>
-            <div class="p-text">초기에는 매 틱 카메라 전방 벡터로 촉수 끝점을 계산했더니, 촉수가 18m 길이로 뻗은 상태에서 마우스를 조금만 돌려도 긴 촉수가 허공을 휘젓는 <strong>여의봉처럼 따라 돌아가는 부자연스러움</strong>이 발생했습니다.</div>
+            <div class="p-text">초기에는 매 틱 카메라 정면 방향으로 촉수 끝점을 계산했더니, 촉수가 18m 길이로 뻗은 상태에서 마우스를 조금만 돌려도 긴 촉수가 허공을 휘젓는 <strong>여의봉처럼 따라 돌아가는 부자연스러움</strong>이 발생했습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">클라이언트 판단</span>
-            <div class="p-text">카메라 탐색과 투사 궤적을 디커플링했습니다. 발사 시점(<code>LatchTendrilAim</code>)에 <code>ECC_Visibility</code> 레이캐스트로 목표를 찾고 직교 기저(<code>LockedAimDir</code>, <code>LockedAimRight</code>, <code>LockedAimUp</code>)를 스냅샷으로 잠근 뒤, 촉수 전개/수축은 오직 <code>TendrilExtendAlpha</code> 비선형 이징만 따르도록 분리했습니다.</div>
+            <span class="p-label decision">설계 판단: 조준 스냅샷(Aim Latch) 분리</span>
+            <div class="p-text">카메라 탐색과 촉수 투사 궤적을 완전히 분리하도록 설계했습니다. 발사하는 순간 레이캐스트로 목표 지점과 방향 기저를 스냅샷으로 잠그고, 이후 촉수의 전개·수축은 잠긴 궤적 위에서 비선형 이징만 따르도록 해 발사 후 시점을 돌려도 촉수가 휘둘리지 않게 만들었습니다.</div>
           </div>
         </div>
       </section>
 
       <section id="sec-5-2" class="lesson-section">
-        <h3>5.2 긴 촉수(V1, <code>MyceliumWeb</code>): 고정 이미터 통합 &amp; 유지시간 제한</h3>
+        <h3>5.2 긴 촉수(V1): 고정 이미터 통합 &amp; 유지시간 제한</h3>
         <p>
-          초기 V1은 7개의 고정 곁가지 이미터(<code>Branch_LeftLow</code> ~ <code>Twig_TipL</code>)가 따로 놀아 사거리를 바꾸면 곁가지 배치가 망가졌습니다. 이를 <strong>본 가지(<code>CoreTrunk</code>) + <code>Particles.RibbonID</code> 기반 동적 다중 리본 이미터(<code>Branch_RightLow</code>, 0~64개)</strong>로 통합해 길이에 비례해 곁가지 개수가 자동 계산되게 만들었습니다. 또한 홀드형 조작의 긴장감을 위해 최대 길이 도달 후 일정 시간이 지나면 자동 회수되는 <code>bLimitLongTendrilHoldDuration</code> 타이머를 분리했습니다.
+          초기 V1은 7개의 고정 곁가지 이미터가 따로 놀아 사거리를 바꾸면 곁가지 배치가 망가지는 한계가 있었습니다. 이를 <strong>본 가지 1개 + 동적 다중 리본 이미터 1개</strong> 구조로 통합해, 사거리에 비례해 곁가지 개수가 자동 계산되도록 재설계했습니다. 또한 홀드형 조작의 긴장감을 살리기 위해 최대 길이 도달 후 일정 시간이 지나면 자동 회수되는 유지시간 제한 타이머도 함께 설계했습니다.
         </p>
 
         <div class="compare-grid">
@@ -2053,16 +2051,16 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         <h3>5.3 트러블슈팅: "수치를 바꿔도 플레이어 시점에서 체감이 안 돼요"</h3>
         <div class="perspective-card">
           <div class="perspective-row">
-            <span class="p-label collab">협업 피드백 발단</span>
-            <div class="p-text">초기 <code>LongTendrilBaseToTipLengthRatio</code>를 에디터에서 <code>0.35 → 0.1</code>로 낮추고 플레이테스트해 보니, <strong>"변수를 바꿨는데도 정면 카메라에서 실루엣 차이가 거의 안 느껴진다"</strong>는 피드백이 나왔습니다.</div>
+            <span class="p-label collab">플레이테스트 검증 발견</span>
+            <div class="p-text">에디터에서 뿌리쪽 곁가지 비율 파라미터를 낮추고 직접 플레이테스트해 보니, <strong>"변수를 바꿨는데도 정면 카메라 시점에서는 실루엣 차이가 거의 안 느껴진다"</strong>는 문제를 발견해 개선을 요청했습니다.</div>
           </div>
           <div class="perspective-row">
             <span class="p-label issue">원인 진단</span>
-            <div class="p-text">1) 기존 <code>User.BranchBaseToTipRatio</code>가 <code>0.05~2.0</code>으로 좁고 곁가지 <strong>길이 하나만</strong> 완만하게 보간됐으며, 뿌리쪽 퍼짐각(Spread)이 작아 1인칭에 가까운 정면 원근에서 본 가지에 가려졌습니다.<br />2) 리본 자체의 끝단 굵기 테이퍼가 모듈 내부에 하드코딩돼 끝 모양을 바꿀 수 없었습니다.</div>
+            <div class="p-text">1) 기존 비율 범위가 좁고 곁가지 <strong>길이 하나만</strong> 완만하게 보간됐으며, 뿌리쪽 퍼짐각이 작아 1인칭에 가까운 정면 원근에서 본 가지에 가려졌습니다.<br />2) 리본 끝단의 굵기 테이퍼가 내부에 하드코딩돼 끝 모양을 조절할 수 없었습니다.</div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">구조 개선 &amp; 결과</span>
-            <div class="p-text"><strong>1)</strong> 비율 범위를 <code>0.0 ~ 4.0</code>으로 넓히고 Niagara 내부에서 <strong>길이 + 굵기 + 퍼짐각 3요소가 함께 곱해지도록</strong> 재설계했습니다.<br /><strong>2)</strong> <code>LongTendrilTipWidthRatio</code>(<code>0.0 ~ 3.0</code>)를 신설해 바늘 끝(<code>0.0</code>)부터 곤봉형(<code>2.5</code>)까지 조절할 수 있게 했고, <code>PostEditChangeProperty</code>에서 <code>DeactivateImmediate()</code> 후 재활성화해 Details 변경이 뷰포트에 즉각 반영되도록 했습니다.</div>
+            <span class="p-label decision">설계 판단: 3요소 연동 &amp; 즉각 미리보기</span>
+            <div class="p-text"><strong>1)</strong> 비율 범위를 넓히고 Niagara 내부에서 <strong>길이 + 굵기 + 퍼짐각 3요소가 함께 곱해지도록</strong> 구조를 변경해 정면 원근에서도 실루엣 변화가 확실히 드러나게 했습니다.<br /><strong>2)</strong> 끝단 폭 비율 파라미터를 신설해 바늘 끝부터 곤봉형까지 조절 가능하게 했고, 에디터 디테일 패널에서 값을 바꾸면 즉시 재활성화되어 뷰포트에서 바로 체감되도록 튜닝 워크플로우를 다듬었습니다.</div>
           </div>
         </div>
 
@@ -2137,10 +2135,10 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </section>
 
       <section id="sec-5-4" class="lesson-section">
-        <h3>5.4 V2 그물 촉수 단발 전개 &amp; UHT 리플렉션 한글 툴팁화</h3>
+        <h3>5.4 V2 그물 촉수 단발 전개 &amp; 에디터 한글 툴팁 규약</h3>
         <p>
-          V2(<code>NS_Tendril_GossamerSpores</code>)는 원거리 조준 유지형 V1과 역할이 겹치지 않도록, <strong>한 번 짧게 탭해도 끝까지 펼쳐졌다가 <code>NetTendrilHoldDuration</code>(<code>0.55s</code>) 후 반동과 함께 자동 회수되는 단발식(One-Shot) 메커니즘</strong>으로 동작을 분화했습니다.
-          또한 파라미터가 늘어나면서 협업 시 단위(cm/s)와 증감 방향을 직관적으로 읽을 수 있도록, 별도 에디터 커스터마이징(<code>DetailCustomization</code>) 없이 언리얼 UHT가 자동 추출하는 <code>/** ... */</code> 문서 주석을 통일된 한글 툴팁으로 정비했습니다.
+          그물 촉수(V2)는 원거리 조준 유지형인 긴 촉수(V1)와 역할이 겹치지 않도록, <strong>한 번 짧게 탭해도 끝까지 펼쳐졌다가 짧은 유지시간 후 반동과 함께 자동 회수되는 단발식(One-Shot) 메커니즘</strong>으로 동작을 분화했습니다.
+          또한 외부 노출 파라미터가 늘어나면서 단위(cm/s)와 증감 방향을 직관적으로 읽고 튜닝할 수 있도록, 별도 에디터 UI 커스터마이징 없이 언리얼 UHT 리플렉션이 자동 추출하는 통일된 한글 툴팁 규약을 적용했습니다.
         </p>
 
         <div class="compare-grid three-col">
@@ -2262,9 +2260,9 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       </header>
 
       <section id="sec-6-1" class="lesson-section">
-        <h3>6.1 발단: 상태바 <code>진단(EditorPerformance)</code> Critical 메모리 경고</h3>
+        <h3>6.1 발단: 상태바 Critical 메모리 압력 경고</h3>
         <p>
-          무팬 패시브 쿨링 기반의 M4 MacBook Air(16GB 통합 메모리)에서 <code>Lvl_Main</code>을 편집할 때, 씬에는 구체 1개와 별하늘·파티클 몇 개뿐인데도 에디터 상태바 <code>진단(EditorPerformance)</code> 위젯에 <strong><code>Icons.Alert.Solid</code> (Critical 메모리 압력 경고)</strong>가 계속 점등됐습니다.
+          무팬 패시브 쿨링 기반의 M4 MacBook Air(16GB 통합 메모리)에서 메인 레벨을 편집할 때, 씬에는 구체 1개와 별하늘·파티클 몇 개뿐인데도 에디터 상태바 진단 위젯에 <strong>Critical 메모리 압력 경고</strong>가 계속 점등됐습니다.
         </p>
 
         <div class="benchmark-strip">
@@ -2291,11 +2289,11 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label issue">1차 가설 (오판)</span>
-            <div class="p-text">"Retina 2배 해상도(<code>2084×1496</code>)와 천구/털공 프로시저럴 노이즈, 우주 먼지 스폰율(<code>95/sec</code>)이 무거워서일 것"이라 보고 씬 요소 6가지를 대폭 낮췄습니다. 실제로 GPU Scene 시간은 <strong><code>13.57 ms → 5.20~5.39 ms</code>(약 60% 감소)</strong>까지 떨어졌지만, 정작 <strong>상태바 <code>진단</code> Critical 경고는 꿈쩍도 하지 않았습니다.</strong></div>
+            <div class="p-text">"고해상도 Retina 뷰포트와 천구·털공 프로시저럴 셰이더, 우주 먼지 입자량이 무거워서일 것"이라 추측하고 씬 요소 6가지를 대폭 낮추도록 지시했습니다. 실제로 GPU Scene 시간은 <strong>약 60% 감소</strong>했지만, 정작 <strong>메모리 경고는 꿈쩍도 하지 않았습니다.</strong></div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">프로파일링 원인 규명</span>
-            <div class="p-text"><code>STATGROUP_MemoryPlatform</code>, <code>rhi.DumpMemory</code>, <code>UEStudy.log</code>, 그리고 <code>EditorPerformanceModule.cpp</code>를 교차 추적하자 진짜 범인이 드러났습니다. 병목은 셰이더 ALU가 아니라, 언리얼 기본 템플릿에 켜져 있던 <strong>고비용 전역 렌더 패스(Lumen GI/Reflections, Virtual Shadow Maps, Mesh Distance Fields, RayTracing)</strong>가 16GB 통합 메모리 위에서 <strong><code>STAT_UsedPhysical = 21.40 GB</code> (<code>19.93 GiB</code>) + RHI <code>2,362.43 MB</code></strong>를 점유하며 OS 메모리 압박을 유발하던 것이었습니다.</div>
+            <span class="p-label decision">검증 방향 전환: 메모리 프로파일링으로 진짜 병목 규명</span>
+            <div class="p-text">렌더 부하가 아닌 메모리 점유율을 직접 프로파일링하도록 방향을 돌리자 진짜 원인이 드러났습니다. 병목은 셰이더 연산이 아니라 언리얼 기본 템플릿에 켜져 있던 <strong>고비용 전역 렌더 패스(Lumen GI/Reflections, Virtual Shadow Maps, Mesh Distance Fields, RayTracing)</strong>가 16GB 통합 메모리 위에서 21GB를 넘게 점유하며 OS 메모리 압박을 유발하던 것이었습니다.</div>
           </div>
         </div>
       </section>
@@ -2303,8 +2301,8 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <section id="sec-6-3" class="lesson-section">
         <h3>6.3 전역 렌더 패스 경량화 → 불필요한 시각 단순화 6건 100% 원복</h3>
         <p>
-          원인을 확인한 뒤 <code>Config/DefaultEngine.ini</code>와 <code>Config/DefaultScalability.ini</code>(<code>@1</code> 프리셋)에서 Lumen·VSM·MeshDistanceFields·RayTracing을 끄고 텍스처 스트리밍 풀(<code>400 MB</code>)과 스크린 퍼센트(<code>75%</code>)를 정리하자, <code>STAT_UsedPhysical</code>이 <strong><code>21.40 GB → 7.75 GB</code>(약 13.6GB 절감)</strong>로, <code>rhi.DumpMemory</code>는 <strong><code>2,362.43 MB → 1,215.13 MB</code></strong>로 급감하며 <code>진단</code> 경고가 즉시 사라졌습니다.
-          더 중요한 성과는 그다음이었습니다. 진짜 원인이 아님이 증명된 <strong>1차 시각 단순화 6건</strong>(<code>M_SpaceSky</code> Quality 2 / PS 852, <code>M_DustPuff</code> Levels 3, <code>NS_SpaceDust</code> 95/sec, 리본 <code>Tessellation 3</code>, <code>PostProcessVolume_Space</code>, Retina <code>HighDPI 2001×1496</code>)을 <strong>전부 최고 품질로 원복</strong>하고도 <code>STAT_UsedPhysical = 7.93 GB</code>(<code>7.39 GiB</code>), GPU <code>11.00 ms</code>(<code>Scene 8.746 ms</code>), <code>진단</code> 경고 <strong>0건</strong>을 유지했습니다.
+          진짜 원인을 확인한 뒤 엔진 설정에서 우주 게임에 불필요한 Lumen·VSM·거리장·레이트레이싱 패스를 끄고 스트리밍 풀을 정리하자, 물리 메모리 점유율이 <strong>21.40 GB → 7.75 GB(약 13.6GB 절감)</strong>로 급감하며 경고가 즉시 사라졌습니다.
+          더 중요한 의사결정은 그다음이었습니다. 원인이 아니었던 <strong>1차 시각 단순화 6건(천구 품질, 털공 세분화, 우주 먼지 밀도, 리본 테셀레이션, 포스트프로세스, Retina 해상도)을 전부 최고 품질로 원복</strong>하도록 지시했고, 원복 후에도 <strong>7.93 GB / 경고 0건</strong>을 유지함을 검증했습니다. (상세 프로파일링 지표와 INI 설정은 아래 서랍 참고)
         </p>
 
         <details class="tech-drawer">
@@ -2407,7 +2405,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         <header class="lesson-header" id="ch-07">
           <h2>07. 닿을 수 없는 무한 거리의 항성 &amp; 실시간 조명·MPC 동기화</h2>
           <p class="lesson-intro">
-            06단원에서 메모리 병목을 해소해 16GB 통합 메모리 위에서 안정적인 프레임과 품질을 확보했습니다. 이제 시각 환경을 한 단계 끌어올리기 위해, 우주 어디서나 든든한 광원이자 방향 기준점이 되어줄 항성을 배치하기로 했습니다. 플레이어가 무한 우주 공간을 아무리 멀리 표류해도 <strong>절대 가까워지거나 클리핑되지 않는 항성</strong>을 만들기 위해 천구 셰이더 위에 수학적으로 항성을 그리고 <code>UDistantStarSyncComponent</code>로 실시간 동기화했습니다.
+            06단원에서 메모리 병목을 해소해 16GB 통합 메모리 위에서 안정적인 프레임과 품질을 확보했습니다. 이제 시각 환경을 한 단계 끌어올리기 위해, 우주 어디서나 든든한 광원이자 방향 기준점이 되어줄 항성을 배치하기로 했습니다. 플레이어가 아무리 멀리 표류해도 <strong>절대 가까워지거나 잘리지 않는 항성</strong>을 만들기 위해, 3D 메시 태양이 아닌 천구 셰이더 수학 + 조명 실시간 동기화 구조를 설계했습니다.
           </p>
         </header>
 
@@ -2424,15 +2422,15 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </figure>
 
         <section id="sec-7-1" class="lesson-section">
-          <h3>7.1 메시 태양이 아닌 <code>M_SpaceSky</code> 무한 원거리 항성 셰이더 설계</h3>
+          <h3>7.1 메시 태양이 아닌 무한 원거리 항성 셰이더 설계</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label intent">클라이언트 설계 의도</span>
-              <div class="p-text">우주 어딘가에 거대한 구체 메시로 태양을 배치하면 플레이어가 장거리 비행할수록 시차(Parallax)가 어긋나거나 Far Clip에 잘리고, 결국 항성에 부딪히거나 스쳐 지나가는 이질감이 생깁니다. 진짜 우주처럼 <strong>"방향은 존재하지만 거리는 무한대여서 절대 도달할 수 없는 항성"</strong>을 구현해야 했습니다.</div>
+              <span class="p-label intent">설계 의도</span>
+              <div class="p-text">우주 어딘가에 거대한 구체 메시로 태양을 배치하면 플레이어가 장거리 비행할수록 시차가 어긋나거나 클리핑에 잘리고, 결국 항성에 부딪히거나 스쳐 지나가는 이질감이 생깁니다. 진짜 우주처럼 <strong>"방향은 존재하지만 거리는 무한대여서 절대 도달할 수 없는 항성"</strong>을 설계해야 했습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">클라이언트 판단 · 다층 프로시저럴 항성</span>
-              <div class="p-text">기존 0-샘플러 <code>M_SpaceSky</code>의 <code>CameraVectorWS</code>와 <code>MPC_SpaceEnvironment</code>의 <code>StarDirection</code> 내적만으로 각도 기반 원반(Core Disc), 방사형 코로나 헤일로(Corona Halo), 십자·대각선 회절 글레어 스파이크(Diffraction Glare), 그리고 수평 산란광을 직접 계산했습니다. <code>SM_SpaceSky</code>는 <code>bKeepSkyDomeCenteredOnCamera = true</code> 옵션으로 매 틱 활성 카메라 위치를 따라다니므로 스카이 돔 가장자리에 닿을 일도 없습니다.</div>
+              <span class="p-label decision">설계 판단: 천구 셰이더 다층 프로시저럴 항성</span>
+              <div class="p-text">기존 0-샘플러 천구 셰이더 위에서 시선 방향과 광원 방향의 내적만으로 중심 광구, 코로나 헤일로, 십자·대각선 회절 글레어 스파이크, 수평 산란광을 직접 계산하도록 설계했습니다. 또한 스카이 돔이 매 틱 활성 카메라 위치를 따라다니게 해 우주 어디로 가든 천구 가장자리에 닿지 않도록 보장했습니다.</div>
             </div>
           </div>
 
@@ -2498,15 +2496,15 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </section>
 
         <section id="sec-7-2" class="lesson-section">
-          <h3>7.2 <code>DirectionalLight</code> ↔ <code>MPC</code> 실시간 자동 동기화 (<code>UDistantStarSyncComponent</code>)</h3>
+          <h3>7.2 디렉셔널 라이트 ↔ 셰이더 실시간 자동 동기화</h3>
           <div class="perspective-card">
             <div class="perspective-row">
               <span class="p-label issue">라이팅과 하늘의 이원화 문제</span>
-              <div class="p-text">항성의 셰이더 방향·색상과 레벨의 <code>DirectionalLight</code> 회전·색온도가 따로 놀면, 소행성 그림자 방향과 하늘에 떠 있는 태양이 어긋나는 치명적인 위화감이 발생합니다.</div>
+              <div class="p-text">항성의 셰이더 방향·색상과 레벨의 태양광(DirectionalLight) 회전·색온도가 따로 놀면, 소행성 그림자 방향과 하늘에 떠 있는 태양이 어긋나는 치명적인 위화감이 발생합니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">클라이언트 판단 · 컴포넌트 기반 단방향 진실 공급원</span>
-              <div class="p-text"><code>UActorComponent</code> 기반 <code>UDistantStarSyncComponent</code>를 <code>DirectionalLight</code>에 부착해 <strong>빛 진행 방향(<code>+Forward</code>)의 정반대(<code>-Forward</code>)</strong>를 자동으로 <code>MPC_SpaceEnvironment</code>의 <code>StarDirection</code>으로 공급합니다. 광원의 색온도·컬러 변화도 감지해 중심 광구(<code>CoreColor</code>: 백열 <code>Lerp(1.0, NormLight, 0.35)</code>)와 코로나(<code>CoronaColor</code>: 주황·금빛 강조)를 함께 갱신하며, <code>PostEditChangeProperty</code> 및 한글 Details 코멘트를 노출해 에디터 뷰포트에서 라이트를 돌리기만 해도 항성 위치와 색이 실시간으로 따라옵니다.</div>
+              <span class="p-label decision">설계 판단: 라이트 기반 단방향 진실 공급원</span>
+              <div class="p-text">전용 동기화 컴포넌트를 라이트에 부착해 <strong>빛 진행 방향의 정반대</strong>를 자동으로 셰이더의 항성 방향으로 공급하도록 설계했습니다. 광원의 색온도 변화까지 실시간 반영하고 에디터 뷰포트 즉시 미리보기를 연결해, 레벨 디자이너가 에디터에서 라이트만 돌려도 항성 위치와 색감이 자동으로 따라오게 만들었습니다.</div>
             </div>
           </div>
 
@@ -2542,7 +2540,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         <header class="lesson-header" id="ch-08">
           <h2>08. 무한 절차적 소행성 벨트 스트리밍 &amp; 0ms 스위치형 풀링</h2>
           <p class="lesson-intro">
-            07단원에서 원거리 항성과 조명 동기화를 마쳤지만, 우주 공간에는 플레이어 외에 상호작용할 대상이 레벨에 수동 배치된 단일 테스트 소행성뿐이었습니다. 레벨 아웃라이너의 정적 배치를 걷어내고, <code>AAsteroidFieldManager</code>와 <code>ASpaceAsteroid</code>가 <strong>3D 해시 그리드 셀을 순회하며 플레이어 전방을 선제 스트리밍하고 288개 사전 베이킹 풀을 0ms로 깨우는 무한 소행성 벨트</strong>를 구축했습니다.
+            07단원에서 원거리 항성과 조명 동기화를 마쳤지만, 우주 공간에는 상호작용할 대상이 수동 배치된 단일 테스트 소행성뿐이었습니다. 레벨의 수동 배치를 모두 걷어내고, <strong>3D 해시 그리드 기반의 무한 소행성 벨트와 런타임 재빌드 비용을 없앤 0ms 사전 베이킹 풀링 아키텍처</strong>를 설계해 넣었습니다.
           </p>
         </header>
 
@@ -2562,12 +2560,12 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
           <h3>8.1 수동 배치 제거 → 3D 해시 그리드 기반 결정론적 무한 우주</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label intent">클라이언트 설계 의도</span>
+              <span class="p-label intent">설계 의도</span>
               <div class="p-text">테스트용 소행성 1개만 떠 있는 공간을 넘어, 어느 방향으로 계속 비행하든 끊기지 않는 우주 소행성 벨트가 필요했습니다. 모든 좌표를 메모리에 들고 있지 않으면서도 같은 구역으로 되돌아왔을 때 일관된 분포를 유지해야 했습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">클라이언트 판단 · 좌표 해시 기반 섹터 레이아웃</span>
-              <div class="p-text">우주 전체를 <code>CellSizeCm = 1800.0f</code> 단위의 3D 정수 셀(<code>FIntVector</code>)로 분할하고, <code>WorldSeed(202605)</code>와 셀 좌표를 결합한 결정론적 시드로 각 셀의 소행성 슬롯(<code>FCachedCellLayout</code>)을 즉석 산출합니다. 플레이어 주변 반경 밖으로 벗어나면 액터 자체는 회수되지만 셀 설계는 좌표 함수로 영속됩니다.</div>
+              <span class="p-label decision">설계 판단: 좌표 해시 기반 섹터 레이아웃</span>
+              <div class="p-text">우주 전체를 18m 단위의 3D 정수 격자 셀로 분할하고, 월드 시드와 셀 좌표를 결합한 결정론적 시드로 각 셀의 소행성 배치를 즉석 산출하도록 설계했습니다. 반경 밖으로 벗어나면 액터 자체는 풀로 회수되지만 공간 설계는 좌표 함수로 영속됩니다.</div>
             </div>
           </div>
         </section>
@@ -2577,14 +2575,14 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
           <div class="perspective-card">
             <div class="perspective-row">
               <span class="p-label issue">고속 비행 중 앞이 텅 비던 현상</span>
-              <div class="p-text">플레이어가 촉수 반동이나 추력으로 한 방향으로 빠르게 가속하자, 스트리밍 스캔이 이동 속도를 따라가지 못해 <strong>전방 시야에 소행성이 뒤늦게 팝인(Pop-in)되거나 순간적으로 텅 빈 공백</strong>이 드러났습니다. 단순 반경만 키우면 활성 풀(<code>MaxActiveAsteroids = 192</code>)이 플레이어 뒤쪽 이미 지나친 돌에 묶여 앞쪽 할당을 가로막는 역효과가 났습니다.</div>
+              <div class="p-text">플레이어가 촉수 반동이나 추력으로 빠르게 가속하자, 스트리밍 스캔이 이동 속도를 따라가지 못해 <strong>전방 시야에 소행성이 뒤늦게 팝인되거나 순간적으로 텅 빈 공백</strong>이 드러났습니다. 단순 반경만 키우면 활성 풀이 이미 지나친 뒤쪽 돌에 묶여 앞쪽 할당을 가로막는 역효과가 났습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">3단 해결 아키텍처 (히스테리시스 · 전방 편향 · 우선순위 큐)</span>
+              <span class="p-label decision">설계 판단: 3단 선제 스트리밍 아키텍처</span>
               <div class="p-text">
-                1) <strong>반경 확대 + 히스테리시스</strong>: 활성 반경(<code>ActivateRadiusCm = 4800.0f</code>)과 해제 반경(<code>DeactivateRadiusCm = 5600.0f</code>) 사이에 8m 완충대를 두어 경계 진동을 제거하고 <code>MinSafeSpawnRadiusCm = 520.0f</code>로 몸체 즉사 충돌을 차단했습니다.<br />
-                2) <strong>속도+시선 전방 편향 중심 (<code>StreamCenter</code>)</strong>: <code>Velocity * 0.85s + CamForward * 420.0f</code>만큼 스트리밍 구 중심을 진행 방향 앞쪽으로 선제 이동(최대 <code>min(2200cm, 0.6 * ActivateRadius)</code>)시켜 후방 자원을 조기 반납하고 전방을 먼저 채웁니다.<br />
-                3) <strong>전방 가중치 정렬 &amp; 프레임 예산 분산</strong>: 휴면 복원/신규 할당 후보를 <code>Dist - ForwardDot * 0.35</code>로 정렬해 시선·비행 앞쪽부터 세우고, <code>ScanIntervalSeconds = 0.04s</code> 주기마다 최대 <code>MaxBuildsPerScan = 36</code> 이내로 분산 처리합니다.
+                1) <strong>히스테리시스 완충대</strong>: 활성 반경과 해제 반경 사이에 완충 구간을 두어 경계선 왕복 시 깜빡임을 막고, 플레이어 즉사 충돌을 막는 최소 안전 거리를 설정했습니다.<br />
+                2) <strong>전방 예측 스트리밍 중심</strong>: 속도 벡터와 시선 방향을 더해 스트리밍 구의 중심을 진행 방향 앞쪽으로 선제 이동시켜, 뒤쪽 자원을 조기에 반납하고 앞쪽을 먼저 채우도록 했습니다.<br />
+                3) <strong>전방 우선 정렬 및 프레임 예산 분산</strong>: 시선과 진행 방향 앞쪽 후보부터 우선순위를 높여 매 스캔 주기마다 분산 처리함으로써 프레임 드랍을 차단했습니다.
               </div>
             </div>
           </div>
@@ -2613,15 +2611,15 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </section>
 
         <section id="sec-8-3" class="lesson-section">
-          <h3>8.3 런타임 메시 생성 스터터 제거: 0ms 사전 베이킹 아키타입 풀 &amp; 휴면 Tick 차단</h3>
+          <h3>8.3 런타임 메시 생성 스터터 제거: 0ms 사전 베이킹 풀 &amp; 휴면 틱 차단</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label issue">UProceduralMeshComponent + Chaos 충돌체 실시간 빌드의 비용</span>
-              <div class="p-text">비행 중 새로운 소행성 슬롯에 진입할 때마다 3D 노이즈·크레이터 버텍스를 계산하고 Chaos 물리 충돌체까지 즉석 쿠킹하면, M4 MacBook Air에서 프레임 히치(Stutter)가 발생했습니다.</div>
+              <span class="p-label issue">절차적 메시·물리 실시간 빌드의 비용</span>
+              <div class="p-text">비행 중 새로운 소행성이 나올 때마다 3D 노이즈 버텍스를 계산하고 Chaos 물리 충돌체까지 즉석 쿠킹하면, M4 MacBook Air에서 눈에 띄는 프레임 히치(Stutter)가 발생했습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">클라이언트 판단 · Prewarm 288 슬롯 + 스위치 ON 전환</span>
-              <div class="p-text">게임 시작 시 <code>PrewarmPoolCount = 288</code>개(<code>MaxPooledAsteroids = 288</code>) 슬롯마다 고유 시드(3종 암석 아키타입: <code>Carbonaceous Basalt</code>, <code>Stony Silicate</code>, <code>Cosmic Chondrite</code>)로 메시와 Chaos 충돌체를 <strong>단 1회 사전 베이킹(<code>BakePooledArchetype</code>)</strong>한 뒤 즉시 휴면(<code>EnterDormantPool</code>)시킵니다. 휴면 중에는 가시성·물리·콜리전은 물론 <strong><code>SetActorTickEnabled(false)</code>로 CPU 틱 부하를 0</strong>으로 유지하고, 스트리밍 반경에 재진입하면 <code>WakeFromDormantPool</code>이 물리/가시성 스위치만 <strong>0ms</strong>로 켭니다(기존 선/각속도도 복원).</div>
+              <span class="p-label decision">설계 판단: Prewarm 아키타입 풀 + 0ms 스위치 전환</span>
+              <div class="p-text">게임 시작 시 3종의 암석 아키타입으로 288개의 메시와 물리 충돌체를 단 1회 사전 베이킹해 휴면 풀에 대기시키도록 설계했습니다. 휴면 중에는 가시성·물리·CPU 틱을 모두 꺼 부하를 0으로 유지하고, 스트리밍 반경에 재진입할 때만 스위치만 0ms로 켜 기존 속도까지 복원하도록 구조화했습니다.</div>
             </div>
           </div>
 
@@ -2731,48 +2729,48 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </div>
 
         <section id="sec-9-1" class="lesson-section">
-          <h3>9.1 이중 스폰 미네랄 생태계 (<code>ASpaceMineral</code>) &amp; 112-슬롯 풀</h3>
+          <h3>9.1 이중 스폰 미네랄 생태계 &amp; 공용 풀링</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label intent">클라이언트 설계 의도</span>
-              <div class="p-text">미네랄이 허공에만 떠 있거나 암석에만 붙어 있으면 탐색 재미가 단조롭습니다. <strong>소행성 껍질에서 자라난 광맥</strong>과 <strong>우주를 자유롭게 떠다니는 부유 광석</strong>을 한 풀(<code>MaxPooledMinerals = 112</code>)에서 함께 관리하되, 한 번 채집한 광맥이 스트리밍 재방문 시 다시 살아나지 않도록 해야 했습니다.</div>
+              <span class="p-label intent">설계 의도</span>
+              <div class="p-text">미네랄이 허공에만 떠 있거나 암석에만 붙어 있으면 탐색 재미가 단조롭습니다. <strong>소행성 껍질에서 자라난 광맥</strong>과 <strong>우주를 자유롭게 떠다니는 부유 광석</strong>을 공용 풀에서 함께 관리하되, 한 번 채집한 광맥이 스트리밍 재방문 시 다시 살아나지 않도록 설계해야 했습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">표면 법선 샘플링 부착 + 해시 소비 영구 기록</span>
+              <span class="p-label decision">설계 판단: 표면 법선 샘플링 부착 + 해시 소비 영구 기록</span>
               <div class="p-text">
-                <strong>표면 부착형(<code>AttachedToAsteroid</code>)</strong>은 <code>MinAsteroidRadiusForSurfaceMineralCm = 55.0f</code> 이상인 소행성(<code>SurfaceMineralChance = 0.40f</code>)에서 <code>ASpaceAsteroid::SampleSurfaceAnchor</code>로 프로시저럴 버텍스 위치·법선을 뽑아 <code>-3.0cm</code> 깊이만큼 암석에 자연스럽게 박아 넣고 자체 <code>Tick</code>을 끕니다. <strong>자유 부유형(<code>FreeFloating</code>)</strong>은 셀당 <code>45%</code> 확률(<code>FloatingMineralChancePerCell = 0.45f</code>)로 배치되어 천천히 자전하며, 채집이 시작되는 즉시 <code>ConsumedMineralHashes</code>에 기록해 해당 시드 광석의 중복 재스폰을 차단합니다.
+                <strong>표면 부착형</strong>은 일정 크기 이상 소행성의 표면 버텍스 위치와 법선을 샘플링해 암석 안쪽에 자연스럽게 박아 넣고 자체 틱을 끄도록 했습니다. <strong>자유 부유형</strong>은 일정 확률로 공간에 배치되어 자전하며, 어느 쪽이든 채집이 시작되는 즉시 고유 시드 해시를 소비 목록에 기록해 재방문 시 중복 스폰을 영구 차단했습니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-9-2" class="lesson-section">
-          <h3>9.2 그물 오포획 트러블슈팅: Niagara HLSL 깔때기 수식 C++ 1:1 이식 &amp; 0프레임 바인딩</h3>
+          <h3>9.2 그물 오포획 트러블슈팅: 시각 깔때기 수식 일치 &amp; 0프레임 바인딩</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label issue">시각과 판정의 괴리 (56° 콘 오포획 &amp; 뒤처지는 끌림)</span>
-              <div class="p-text">초기에는 조준 방향 기준 <code>56°</code> 원뿔 + <code>240cm</code> 고정 반경으로 포획을 검사해 <strong>눈으로는 그물 바깥 허공인데도 광석이 잡히는 오포획</strong>이 발생했습니다. 게다가 포획된 미네랄이 자기 <code>Tick</code>에서 따로 폰을 쫓아오다 보니 회수되는 거미줄 그래픽과 미네랄 위치가 분리되어 붕 떠 보이는 문제가 드러났습니다.</div>
+              <span class="p-label issue">시각과 판정의 괴리 (허공 오포획 &amp; 뒤처지는 끌림)</span>
+              <div class="p-text">초기에는 넓은 원뿔과 고정 반경으로 포획을 검사해 <strong>눈으로는 그물 바깥 허공인데도 광석이 잡히는 오포획</strong>이 발생했습니다. 게다가 포획된 미네랄이 자기 틱에서 따로 폰을 쫓아오다 보니 회수되는 거미줄 그래픽과 미네랄 위치가 분리되어 붕 떠 보이는 문제가 드러났습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">HLSL ↔ C++ 1:1 수식 일치 &amp; Tick 위임 제거</span>
+              <span class="p-label decision">설계 판단: Niagara 수식 1:1 이식 &amp; 틱 위임 제거</span>
               <div class="p-text">
-                1) <strong>Niagara 깔때기 수학 C++ 이식</strong>: <code>NS_Tendril_GossamerSpores</code>의 <code>Spoke/WebRing</code> HLSL 식과 동일한 <code>EvaluateNetFunnelCenter</code> 및 <code>EvaluateNetFunnelRadiusCm</code>(<code>11*sin(t*π) + 250*(U²(0.25+0.75U))*Bloom</code>)을 C++에 구현하고 <code>NetCapturePaddingCm = 24.0f</code>만 허용해 시각적 그물망에 닿은 광석만 포획합니다.<br />
-                2) <strong>0프레임 오차 그물 바인딩</strong>: <code>BeginNetCapture</code> 시점에 <code>ASpaceMineral</code>의 자체 <code>Tick</code>을 끄고(<code>PrimaryActorTick.SetTickFunctionEnable(false)</code>), 포획 당시의 정규화 진행도(<code>NetAnchorT</code>)와 방사 오프셋(<code>NetRadialDir2D</code>, <code>NetRadialFraction</code>)을 저장한 뒤 <code>ASpaceDrifterPawn::UpdateCaughtNetMinerals</code>가 매 프레임 그물 회수(<code>NetTendrilRetractSpeed = 2.6f</code>)와 <strong>0프레임 오차</strong>로 좌표를 직접 갱신(<code>SyncToNetPosition</code>)합니다. 본체에 닿으면 <code>NotifyMineralAbsorbed</code>가 <code>MineralAbsorbSquishImpulse = 5.4f</code> 찌그러짐을 주고 <code>ConsumedMineralCount</code>와 <code>OnMineralConsumed</code> 델리게이트를 발행합니다.
+                1) <strong>시각과 판정의 1:1 동기화</strong>: 그물 VFX 내부의 HLSL 깔때기 곡선 수식을 그대로 C++ 판정식으로 이식하도록 지시해, 실제로 시각적 그물망에 닿은 광석만 포획되도록 정밀도를 끌어올렸습니다.<br />
+                2) <strong>0프레임 오차 그물 바인딩</strong>: 포획 순간 미네랄 자체 틱을 끄고 그물 위 상대 좌표만 기록한 뒤, 폰이 그물을 오므리는 매 프레임 직접 미네랄 좌표를 갱신하게 해 그래픽과 한 몸처럼 당겨지도록 만들었습니다. 본체에 닿으면 탄성 스퀴시 충격과 함께 흡수됩니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-9-3" class="lesson-section">
-          <h3>9.3 V1/V2 공통 촉수 재입력 쿨다운 가드 (<code>CanFireTendril</code>)</h3>
+          <h3>9.3 V1/V2 공통 촉수 재입력 쿨다운 가드</h3>
           <div class="perspective-card">
             <div class="perspective-row">
               <span class="p-label issue">회수 중 연타로 인한 리트랙트 끊김</span>
-              <div class="p-text">촉수가 완전히 회수되기 전에 발사 입력을 다시 누르면 회수 반동이나 그물 인양 상태가 중간에 끊기며 시각적 <code>TendrilExtendAlpha</code>와 판정이 어긋나는 엣지 케이스가 있었습니다.</div>
+              <div class="p-text">촉수가 완전히 회수되기 전에 발사 입력을 다시 누르면 회수 반동이나 그물 인양 상태가 중간에 끊기며 시각 상태와 판정이 어긋나는 엣지 케이스가 있었습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">단일 상태 게이트 <code>CanFireTendril()</code></span>
-              <div class="p-text">V1(<code>MyceliumWeb</code>)과 V2(<code>GossamerSpores</code>) 모두 <code>SetTendrilExtendingInternal(true)</code> 진입 직전에 <code>CanFireTendril()</code>(<code>!bIsExtendingTendril &amp;&amp; TendrilExtendAlpha &lt;= KINDA_SMALL_NUMBER &amp;&amp; !bHasLockedTendrilAim</code>)을 검사해 완전히 몸으로 돌아온 뒤에만 다음 촉수를 쏠 수 있도록 잠갔습니다.</div>
+              <span class="p-label decision">설계 판단: 단일 발사 게이트 잠금</span>
+              <div class="p-text">긴 촉수와 그물 촉수 모두 발사 직전에 완전 회수 여부를 검사하는 단일 상태 게이트를 두어, 촉수가 완전히 몸 안으로 돌아온 뒤에만 다음 발사가 가능하도록 안전장치를 마련했습니다.</div>
             </div>
           </div>
 
@@ -2868,9 +2866,9 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </div>
 
         <header class="lesson-header" id="ch-10">
-          <h2>10. 정육면체 청크(FIntVector) 단위 그룹 스트리밍 &amp; 전방 예측 구형 히스테리시스</h2>
+          <h2>10. 정육면체 청크 단위 그룹 스트리밍 &amp; 전방 예측 구형 히스테리시스</h2>
           <p class="lesson-intro">
-            09단원에서 미네랄을 그물로 낚아채 흡수하는 루프를 검증했지만, 소행성과 미네랄을 개별 액터 슬롯 단위로 관리하다 보니 고속 이동 시 전방 배치와 생명주기 관리가 점차 복잡해졌습니다. 개별 슬롯 스폰/슬립 방식의 한계를 넘어, 우주 공간을 <strong>정육면체 청크(<code>ChunkSizeCm = 2000.0f</code>, 20m) 단위로 묶어 레벨 스트리밍처럼 그룹 로드/언로드(<code>LoadChunk</code> / <code>UnloadChunk</code>)</strong>하는 구조로 전면 리팩토링했습니다. 특히 <code>N×N×N</code> 격자 판정의 모서리 왜곡 한계를 극복하고 <strong>전방 예측 구형 히스테리시스</strong>를 고정 채택해 6600cm 이상 연속 비행에서도 런타임 메시 재빌드 0회(0ms)를 달성했습니다.
+            09단원에서 미네랄을 그물로 낚아채 흡수하는 루프를 검증했지만, 소행성과 미네랄을 개별 슬롯 단위로 관리하다 보니 고속 이동 시 전방 배치와 생명주기 관리가 점차 복잡해졌습니다. 개별 슬롯 방식의 한계를 넘어, 우주 공간을 <strong>20m 정육면체 청크 단위로 묶어 그룹 로드/언로드</strong>하는 구조로 전면 리팩토링했습니다. 특히 격자 박스 판정의 모서리 왜곡 한계를 검증을 통해 발견하고, <strong>전방 예측 구형 히스테리시스</strong>로 고정해 연속 비행 중에도 런타임 재빌드 0회를 달성했습니다.
           </p>
         </header>
 
@@ -2887,24 +2885,24 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </figure>
 
         <section id="sec-10-1" class="lesson-section">
-          <h3>10.1 왜 <code>N×N×N</code> 정육면체 격자 판정 대신 전방 예측 구형 히스테리시스를 고정했는가</h3>
+          <h3>10.1 왜 <code>N×N×N</code> 격자 판정 대신 전방 예측 구형 히스테리시스를 고정했는가</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label intent">클라이언트 설계 의도</span>
-              <div class="p-text">우주 공간을 <code>FIntVector</code> 정육면체 청크 단위로 분할하면서, 로드 영역 판정 역시 마인크래프트처럼 플레이어 중심 <code>N×N×N</code> 정육면체 박스(예: 반경 2청크 = <code>5×5×5 = 125</code> 청크)로 검사하는 구조를 1차로 시도했습니다. 직관적이고 좌표 연산이 단순할 것이라 기대했습니다.</div>
+              <span class="p-label intent">설계 의도</span>
+              <div class="p-text">우주 공간을 정육면체 청크 단위로 분할하면서, 로드 영역 판정 역시 플레이어 중심의 <code>N×N×N</code> 정육면체 박스로 검사하는 구조를 1차로 시도했습니다. 직관적이고 좌표 연산이 단순할 것이라 기대했습니다.</div>
             </div>
             <div class="perspective-row">
               <span class="p-label issue">N×N×N 격자 판정의 수학적 함정 (대각선 왜곡 &amp; 풀 고갈)</span>
               <div class="p-text">
-                실제 PIE에서 <code>5×5×5</code> 청크 범위를 적용하자 두 가지 치명적 문제가 드러났습니다.<br />
+                실제 PIE 검증에서 5×5×5 청크 범위를 적용하자 두 가지 치명적 문제가 드러났습니다.<br />
                 1) <strong>대각선 거리 왜곡</strong>: 3D 정육면체 모서리 꼭짓점까지의 거리는 면 중심보다 <strong>$\sqrt&#123;3&#125; \approx 1.732$배</strong>나 멉니다. 플레이어 시야는 구형인데, 화면 밖 보이지도 않는 먼 대각선 꼭짓점 청크들까지 로드하느라 소행성 요구량이 폭증했습니다.<br />
-                2) <strong>활성 풀 조기 포화 &amp; 대기 큐 적체</strong>: 125개 청크가 동시에 슬롯을 요구하면서 <code>MaxActiveAsteroids = 256</code> 상한선에 즉시 걸렸고, 무려 <strong>48개 청크가 대기 큐(Pending)에 갇히는 병목</strong>이 발생해 정작 비행 전방 청크가 제때 로드되지 못했습니다.
+                2) <strong>활성 풀 조기 포화 &amp; 대기 큐 적체</strong>: 125개 청크가 동시에 슬롯을 요구하면서 풀 상한선에 즉시 걸렸고, 수십 개 청크가 대기 큐에 갇혀 정작 비행 전방 청크가 제때 로드되지 못했습니다.
               </div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">클라이언트 판단 · 저장(정육면체)과 판정(구형)의 명확한 분리</span>
+              <span class="p-label decision">설계 판단: 저장(정육면체)과 판정(구형)의 명확한 분리</span>
               <div class="p-text">
-                공간 분할·저장·그룹 생명주기는 <strong>정육면체 청크(<code>2000 cm</code>)</strong>로 묶되, 로드/언로드 영역 판정은 <strong>전방 속도·시선 예측 구형 히스테리시스(<code>ActivateRadiusCm = 4600</code>, <code>DeactivateRadiusCm = 5600</code>)</strong>로 일원화 고정했습니다. 모든 방향에서 등방적(Isotropic) 시야 거리를 보장하면서도 활성 청크 수를 최적 안정선(48~58청크)으로 유지하고, 에디터 UI에서도 불필요한 분기 열거형 없이 설정이 깔끔해졌습니다.
+                공간 분할·저장·그룹 생명주기는 <strong>정육면체 청크</strong>로 묶되, 로드/언로드 영역 판정은 불필요한 열거형 분기 없이 <strong>전방 속도·시선 예측 구형 히스테리시스</strong>로 일원화 고정했습니다. 모든 방향에서 등방적 시야 거리를 보장하면서도 활성 청크 수를 최적 안정선으로 유지했습니다.
               </div>
             </div>
           </div>
@@ -2987,16 +2985,16 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
           <h3>10.2 원자적 청크 레이아웃, 정지 스캔 스킵 &amp; 언로드 유예 보호망</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label intent">클라이언트 설계 의도</span>
-              <div class="p-text">청크 단위로 로드/언로드할 때, 소행성 성단과 부유 미네랄이 각각 따로 놀거나 플레이어가 촉수로 붙잡고 있는 소행성이 거리 이탈로 눈앞에서 갑자기 언로드되어 사라지면 몰입감이 완전히 파괴됩니다.</div>
+              <span class="p-label intent">설계 의도</span>
+              <div class="p-text">청크 단위로 로드/언로드할 때, 소행성 성단과 부유 미네랄이 각각 따로 놀거나 플레이어가 촉수로 붙잡고 있는 소행성이 거리 이탈로 눈앞에서 갑자기 사라지면 몰입감이 완전히 파괴됩니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">원자적 청크 관리 4대 보호 메커니즘</span>
+              <span class="p-label decision">설계 판단: 원자적 청크 관리 4대 보호 메커니즘</span>
               <div class="p-text">
-                1) <strong>성단 &amp; 부유 미네랄 원자적 일원화 (<code>GetOrBuildChunkLayout</code>)</strong>: <code>EmptyChunkProbability = 0.25</code>(우주 개방감 확보)를 통과한 청크는 소행성 성단(<code>ClustersPerChunkRange = (1, 2)</code>, <code>AsteroidsPerClusterRange = (3, 4)</code>)과 청크 부유 미네랄(<code>FloatingMineralChancePerChunk = 0.45</code>)을 한 청크 레이아웃 안에서 결정론적으로 함께 빌드합니다. 표면 미네랄도 호스트 소행성과 함께 원자적으로 활성/휴면되며 이미 채집된 해시(<code>ConsumedMineralHashes</code>)는 재스폰에서 안전하게 제외됩니다.<br />
-                2) <strong>정지 스캔 스킵 (<code>ChunkScanMoveThresholdCm = 250.0</code>)</strong>: 대기 청크 큐가 비어 있고 청크 좌표 변화 및 250cm 이상 이동이 없으면 무거운 3D 격자 스캔 루프를 아예 건너뛰어 CPU 틱 부하를 0으로 낮춥니다.<br />
-                3) <strong>촉수 락온 &amp; 근접 표류 언로드 유예 (<code>ShouldDeferChunkUnload</code>)</strong>: 이탈 반경 밖으로 나간 청크라도 플레이어 촉수가 꽂혀 있는 대상(<code>LatchedTarget</code>)이거나, 물리 충돌 반동으로 플레이어 근처(<code>ActivateRadiusCm * 0.80 = 3680cm</code>)로 튕겨 날아온 소행성이 포함되어 있다면 언로드를 즉시 유예해 눈앞에서 증발하는 버그를 차단합니다.<br />
-                4) <strong>전방 우선 분산 로드 &amp; 후방 청크 통째 퇴거 (<code>TryEvictRearChunkForCapacity</code>)</strong>: <code>ComputeChunkPriorityScore</code>(거리 - 전방 내적 가중치)로 앞쪽 청크부터 틱당 <code>MaxChunksPerScan = 4</code>개씩 로드하되, 풀 상한 도달 시 등 뒤 최원거리 청크를 통째로 언로드해 전방 청크 슬롯을 즉시 확보합니다.
+                1) <strong>성단·미네랄 원자적 일원화</strong>: 빈 청크 확률을 통과한 청크는 소행성 성단과 부유 미네랄을 한 청크 레이아웃 안에서 결정론적으로 함께 빌드하고, 채집 완료된 광석은 재스폰에서 제외했습니다.<br />
+                2) <strong>정지 스캔 스킵</strong>: 대기 청크 큐가 비어 있고 일정 거리 이상 이동하지 않았다면 무거운 3D 격자 스캔 루프 자체를 건너뛰어 CPU 부하를 0으로 낮췄습니다.<br />
+                3) <strong>촉수 락온·근접 표류 언로드 유예</strong>: 이탈 반경 밖 청크라도 촉수가 꽂혀 있는 대상이나 물리 반동으로 플레이어 근처로 날아온 소행성이 있으면 언로드를 유예해 눈앞 증발을 막았습니다.<br />
+                4) <strong>전방 우선 로드 &amp; 후방 통째 퇴거</strong>: 시선·이동 앞쪽 청크부터 우선순위로 분산 로드하고, 풀 상한 도달 시 등 뒤 최원거리 청크를 통째로 반납해 전방 슬롯을 즉시 확보했습니다.
               </div>
             </div>
           </div>
@@ -3036,10 +3034,10 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </section>
 
         <section id="sec-10-3" class="lesson-section">
-          <h3>10.3 에디터 프로퍼티 노출 &amp; 6600cm 연속 비행 0ms 실측 벤치마크</h3>
+          <h3>10.3 에디터 프로퍼티 노출 &amp; 연속 비행 0ms 실측 검증</h3>
           <p>
-            <code>Lvl_Main</code> 아웃라이너에는 수동 배치된 단일 소행성 액터가 하나도 없으며, 단 1개의 <strong><code>BP_AsteroidFieldManager</code></strong>만이 씬 전체를 관장합니다.
-            모든 청크·클러스터·풀·미네랄·디버그 파라미터가 <code>UPROPERTY(EditAnywhere, BlueprintReadWrite)</code>로 정리되어 <code>#if WITH_EDITOR PostEditChangeProperty</code> 및 <code>SanitizeRuntimeSettings</code>를 통해 에디터 뷰포트에서 값을 바꾸면 즉시 필드가 재구성됩니다.
+            메인 레벨 아웃라이너에는 수동 배치된 단일 소행성 액터가 하나도 없으며, 단 1개의 필드 매니저만이 씬 전체를 관장합니다.
+            모든 청크·클러스터·풀·미네랄 파라미터가 에디터 프로퍼티로 정리되어, 뷰포트에서 값을 바꾸면 즉시 필드가 재구성되도록 설계했습니다.
           </p>
 
           <figure class="media-card" style="margin: 1.25rem 0;">
@@ -3050,17 +3048,15 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
               loading="lazy"
             />
             <figcaption>
-              <strong>언리얼 에디터 Details 패널 &amp; Lvl_Main 아웃라이너</strong> — 아웃라이너에 단 1개의 <code>BP_AsteroidFieldManager</code>만 배치되어 있으며, 디테일 패널 <code>Asteroid Field -> Spatial</code>에서 청크 크기(2000)·활성 반경(4600)·예측 오프셋을 실시간 편집할 수 있습니다. (클릭해 확대)
+              <strong>언리얼 에디터 Details 패널 &amp; 아웃라이너</strong> — 아웃라이너에 단 1개의 필드 매니저만 배치되어 있으며, 디테일 패널에서 청크 크기·활성 반경·예측 오프셋을 실시간 편집할 수 있습니다. (클릭해 확대)
             </figcaption>
           </figure>
 
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label success">PIE 실측 벤치마크 결과 (360 풀 · 0ms 스위치)</span>
+              <span class="p-label success">PIE 검증 결과: 고속 횡단 중에도 런타임 재빌드 0회</span>
               <div class="p-text">
-                - <strong>초기 로드 직후 (BeginPlay <code>InitialChunkLoadBudget = 72</code>)</strong>: 활성 청크 <code>LoadedChunkCount = 48</code>, 대기 큐 <code>PendingChunkLoadCount = 0</code>, 활성 소행성 <code>ActiveAsteroidCount = 154</code>, 활성 미네랄 <code>ActiveMineralCount = 77</code>, 사전 베이킹 <code>TotalBuildsCount = 360</code> (풀 100% 프리베이크 완료).<br />
-                - <strong>+6600 cm 연속 비행 후 (3청크 이상 고속 횡단)</strong>: 활성 청크 <code>LoadedChunkCount = 58</code>, 활성 소행성 <code>ActiveAsteroidCount = 194</code>, 휴면 풀 <code>DormantAsteroidCount = 137</code>, 활성 미네랄 <code>ActiveMineralCount = 103</code>, 누적 청크 로드 <code>TotalChunkLoadsCount = 102</code>, 누적 청크 언로드 <code>TotalChunkUnloadsCount = 44</code>.<br />
-                - <strong>런타임 절차적 메시 재빌드: <span style="color: var(--accent-2); font-weight: 700;">0회 유지 (TotalBuildsCount = 360)</span></strong> — 3청크 이상을 고속으로 가로지르며 수십 개의 청크가 로드/언로드되는 동안에도, 런타임에 지형 버텍스를 새로 굽거나 Chaos 충돌체를 재쿠킹하지 않고 오직 <strong>가시성·콜리전·Tick 스위치만 0ms로 켜고 끄며 완벽한 무히치(Stutter-free) 비행</strong>을 달성했습니다.
+                3개 청크(66m) 이상을 고속으로 연속 횡단하며 수십 개의 청크가 로드·언로드되는 동안에도, 런타임에 지형 버텍스를 새로 굽거나 물리 충돌체를 재쿠킹하는 일 없이 <strong>오직 가시성·콜리전·Tick 스위치만 0ms로 전환하며 완벽한 무히치(Stutter-free) 비행</strong>을 달성함을 검증했습니다. (상세 실측 비교표는 아래 서랍 참고)
               </div>
             </div>
           </div>
@@ -3140,9 +3136,9 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         </div>
 
         <header class="lesson-header" id="ch-11">
-          <h2>11. 소행성 스폰의 자연화: 인위적 WPO 팽창 제거 &amp; 전방 타원구 껍질 스폰</h2>
+          <h2>11. 소행성 스폰의 자연화: 인위적 팽창 연출 제거 &amp; 전방 타원구 껍질 스폰</h2>
           <p class="lesson-intro">
-            10단원에서 청크 단위 그룹 스트리밍과 히스테리시스를 구축했지만, 소행성이 시야에 나타날 때 팝인을 가리기 위해 넣었던 <strong>'크기가 점점 커지며 등장하는 머티리얼 WPO 연출'</strong>이 오히려 풍선처럼 부풀어 오르는 인위적인 어색함을 낳았습니다. 시각 연출 트릭을 과감히 제거하고, <strong>수학적 공간 확장(<code>ComputeDirectionalRadii</code> 전방 타원형 스트레칭 + 코사인 가중 편향 88.4%)</strong>을 통해 소행성이 처음부터 100% 온전한 크기로 자연스럽게 다가오도록 완성했습니다.
+            10단원에서 청크 단위 그룹 스트리밍과 히스테리시스를 구축했지만, 소행성이 시야에 나타날 때 팝인을 가리기 위해 넣었던 <strong>'크기가 점점 커지며 등장하는 머티리얼 WPO 연출'</strong>이 플레이테스트 중 풍선처럼 부풀어 오르는 인위적인 어색함을 낳는다는 점을 발견했습니다. 이에 시각 트릭을 과감히 제거하고, <strong>플레이어 시선·이동 방향을 따라 B반경이 전방 타원구로 스트레칭되는 공간 스폰 구조</strong>를 지시해 소행성이 처음부터 100% 온전한 크기로 자연스럽게 다가오도록 완성했습니다.
           </p>
         </header>
 
@@ -3154,57 +3150,52 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
             loading="lazy"
           />
           <figcaption>
-            <strong>자연스러운 소행성 출현 (WPO 인위적 팽창 완전 제거, PIE)</strong> — <code>M_SpaceAsteroid</code> 및 <code>M_SpaceMineral</code>에서 정점 스케일링 WPO를 걷어내어, 소행성과 미네랄이 부풀어 오르는 풍선 현상 없이 원거리 전방에서 온전한 100% 실물 크기로 자연스럽게 시야에 진입합니다. (클릭해 확대)
+            <strong>자연스러운 소행성 출현 (WPO 인위적 팽창 완전 제거, PIE)</strong> — 정점 스케일링 트릭을 걷어내어, 소행성과 미네랄이 부풀어 오르는 풍선 현상 없이 원거리 전방에서 온전한 100% 실물 크기로 자연스럽게 시야에 진입합니다. (클릭해 확대)
           </figcaption>
         </figure>
 
         <section id="sec-11-1" class="lesson-section">
-          <h3>11.1 시각 트릭의 역효과: WPO 크기 팽창 제거 &amp; 미네랄 이미시브 직결</h3>
+          <h3>11.1 시각 트릭의 역효과: 인위적 WPO 크기 팽창 제거 &amp; 미네랄 발광 안정화</h3>
           <div class="perspective-card">
             <div class="perspective-row">
               <span class="p-label issue">초기 WPO 팽창 연출의 시각적 결함</span>
-              <div class="p-text">초기에는 소행성과 미네랄이 갑자기 화면에 팝인되는 것을 숨기고자, 머티리얼의 <code>MP_WORLD_POSITION_OFFSET</code>에 거리 기반 페이드 노드를 연결해 스폰 시 크기 0%에서 100%로 커지는 연출을 넣었습니다. 하지만 플레이어 속도가 빠르거나 비스듬히 접근할 때 <strong>"우주 바위가 눈앞에서 물풍선처럼 부풀어 오르는" 극도로 인위적인 위화감</strong>이 발생했습니다.</div>
+              <div class="p-text">초기에는 소행성과 미네랄이 갑자기 화면에 팝인되는 것을 숨기고자, 거리에 따라 크기가 0%에서 100%로 커지는 정점 변형(WPO) 연출을 넣었습니다. 하지만 플레이어 속도가 빠르거나 비스듬히 접근할 때 <strong>"우주 바위가 눈앞에서 물풍선처럼 부풀어 오르는" 극도로 인위적인 위화감</strong>이 발생했습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">클라이언트 판단 · 셰이더 트릭 대신 시야 밖 스폰 원칙</span>
+              <span class="p-label decision">설계 판단: 셰이더 트릭 대신 시야 밖 100% 스폰 원칙</span>
               <div class="p-text">
-                1) <code>M_SpaceAsteroid</code>와 <code>M_SpaceMineral</code>의 <code>MP_WORLD_POSITION_OFFSET</code> 연결을 완전히 제거했습니다. 소행성은 출현하는 첫 프레임부터 100% 완전한 지형과 충돌체를 가지고 생성됩니다.<br />
-                2) <code>M_SpaceMineral</code>의 <code>MP_EMISSIVE_COLOR</code> 역시 부자연스럽게 밝기가 깜빡이던 <code>DistFade</code> 함수를 우회하여 <code>MaterialExpressionMultiply_4</code>에 직접 연결함으로써, 원거리에서도 보석 같은 청록색 발광이 안정적으로 빛나도록 정리했습니다.
+                1) 소행성과 미네랄 머티리얼의 정점 스케일링 연결을 완전히 제거하도록 지시했습니다. 이제 모든 소행성은 출현하는 첫 프레임부터 100% 온전한 크기와 충돌체를 유지합니다.<br />
+                2) 미네랄의 발광(Emissive) 역시 거리에 따라 부자연스럽게 명멸하던 페이드 처리를 우회해 원거리에서도 보석 같은 청록색 빛을 안정적으로 유지하도록 정리했습니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-11-2" class="lesson-section">
-          <h3>11.2 속도·시선 편향 전방 타원구 확장 (<code>ComputeDirectionalRadii</code>)</h3>
+          <h3>11.2 속도·시선 편향 전방 타원구 껍질 확장</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label intent">클라이언트 설계 의도</span>
-              <div class="p-text">WPO 팽창 트릭을 뺐다면, 팝인을 막을 유일한 방법은 <strong>"소행성이 플레이어 시야각 바깥 혹은 극원거리 어둠 속에서 미리 태어나 다가오게 만드는 것"</strong>뿐입니다. 하지만 구형 껍질을 모든 방향으로 무작정 넓히면 불필요한 후방·측면 소행성까지 늘어나 풀 한도를 초과합니다.</div>
+              <span class="p-label intent">설계 의도</span>
+              <div class="p-text">WPO 팽창 트릭을 뺐다면, 팝인을 막을 유일한 해법은 <strong>"소행성이 플레이어의 인지 범위 밖 극원거리 어둠 속에서 미리 태어나 자연스럽게 다가오게 만드는 것"</strong>뿐입니다. 하지만 구형 껍질을 모든 방향으로 무작정 넓히면 보이지도 않는 후방·측면 소행성까지 늘어나 풀 자원이 낭비됩니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">비대칭 타원형 껍질 스트레칭</span>
+              <span class="p-label decision">설계 판단: 비대칭 전방 타원형 껍질 스트레칭</span>
               <div class="p-text">
-                <code>AAsteroidFieldManager::ComputeDirectionalRadii</code>를 구현하여, 플레이어의 이동 속도 벡터와 카메라 시선 방향으로 스폰 껍질 $[A, B]$의 반경을 앞쪽으로만 타원구 형태로 길게 늘렸습니다.<br />
-                - <strong>기본 확장 (<code>ForwardBaseExtensionCm = 1800.0f</code>)</strong>: 정지 상태에서도 시선 전방을 18m 더 멀리 밀어내 기본 시야 거리를 확보합니다.<br />
-                - <strong>속도 연동 확장 (<code>ForwardVelocityMaxExtensionCm = 6500.0f</code>)</strong>: 기준 속력 <code>1600 cm/s</code>(16 m/s) 도달 시 최대 65m까지 전방 반경을 추가 확장합니다.<br />
-                - <strong>내부 금지선 전진 (<code>ForwardInnerExtensionFraction = 0.85f</code>)</strong>: 바깥쪽 반경 $B$만 늘리면 가까운 곳에 소행성이 나타날 수 있으므로, 내부 금지 경계 $A$도 함께 85% 앞으로 밀어내 전방 스폰이 오직 <code>120m ~ 190m</code> 이상의 극원거리에서만 발생하도록 강제했습니다.
+                후방은 기존 기본 구형 반경을 그대로 유지하되, 플레이어의 이동 속도 벡터와 카메라 시선 방향(전방)으로만 껍질 반경을 달걀·물방울처럼 길게 늘리도록 설계했습니다.<br />
+                - <strong>기본·속도 연동 전방 확장</strong>: 정지 상태에서도 시선 앞쪽 반경을 18m 더 밀어내고, 고속 비행 시에는 속도에 비례해 최대 65m까지 추가로 앞쪽을 스트레칭합니다.<br />
+                - <strong>내부 금지 경계 동반 전진</strong>: 바깥쪽 반경만 늘리면 가까운 곳에 소행성이 생길 수 있으므로, 내부 생성 금지 경계 역시 85% 비율로 함께 앞으로 밀어내 전방 스폰이 오직 극원거리에서만 일어나도록 강제했습니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-11-3" class="lesson-section">
-          <h3>11.3 코사인 가중 전방 반구 샘플링 (<code>SampleDirectionInShell</code>) &amp; 실측 검증</h3>
+          <h3>11.3 코사인 가중 전방 반구 집중 스폰 &amp; PIE 검증</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label success">PIE 실측 검증 (88.4% 전방 집중 &amp; 0건 위반)</span>
+              <span class="p-label success">PIE 검증 결과: 전방 88.4% 집중 &amp; 경계 위반 0건</span>
               <div class="p-text">
-                단순 360° 균등 각도 샘플링 대신 <code>SampleDirectionInShell</code>에서 <code>ForwardSpawnBiasWeight = 0.85f</code>와 <code>cos(θ) ~ U^0.58</code> 곡선 가중치를 적용해 전방 중심 밀집 샘플링을 수행했습니다.<br />
-                - <strong>전방 반구 스폰 비율</strong>: 실측 <strong><code>88.4%</code></strong> (소행성 대다수가 비행 방향 전방 시야에 집중 투입)<br />
-                - <strong>전방 스폰 실측 거리</strong>: <strong><code>12,419 cm ~ 19,258 cm</code></strong> (124m ~ 192m 극원거리 스폰)<br />
-                - <strong>안전 경계 위반</strong>: <code>MinSafeSpawnRadiusCm(550cm)</code> 및 내부 금지선 침범 <strong><code>0건</code></strong> (완벽 준수)<br />
-                - <strong>활성 소행성 수</strong>: <code>TargetActiveAsteroids = 260</code>개 안정 유지
+                360° 균등 샘플링 대신 전방 반구 쪽에 높은 확률과 코사인 가중치를 부여한 결과, <strong>신규 스폰의 88.4%가 비행 전방 124m~192m 극원거리에 집중 투입</strong>되며 안전 경계 침범은 <strong>0건</strong>을 기록했습니다. 비행 중 소행성이 생겨난다는 인지를 거의 할 수 없는 자연스러운 우주 진입을 확인했습니다. (세부 파라미터와 C++ 구현 코드는 아래 서랍 참고)
               </div>
             </div>
           </div>
@@ -3285,7 +3276,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
         <header class="lesson-header" id="ch-12">
           <h2>12. 긴 촉수의 유기적 물리 완성: 근거리 가지 억제 &amp; 형태 고정 체내 수축</h2>
           <p class="lesson-intro">
-            11단원에서 소행성이 우주 저편에서 자연스럽게 다가오도록 정돈한 뒤, 실제로 긴 촉수를 꽂아 소행성을 끌어당기며 이동하는 플레이를 검증했습니다. 하지만 여기서 촉수의 조형과 물리 표현에 <strong>두 가지 시각적 어색함</strong>(근거리 착탄 시 빗자루 뭉침, 인양 중 곁가지가 깜빡이며 사라지는 현상)이 드러났습니다. <strong>최소 줄기 길이 문턱(<code>LongTendrilBranchMinTrunkCm = 420.0f</code>)</strong>과 <strong>형태 고정 체내 수축(<code>bIsTendrilReelingIn</code> + <code>TrunkRetractOffsetCm</code>)</strong> 아키텍처로 살아 숨 쉬는 유기체 균사체를 완성했습니다.
+            11단원에서 소행성이 우주 저편에서 자연스럽게 다가오도록 정돈한 뒤, 실제로 긴 촉수를 꽂아 소행성을 끌어당기는 플레이를 검증했습니다. 이때 촉수의 조형과 물리 표현에서 <strong>두 가지 시각적 어색함</strong>(짧게 쏠 때 곁가지가 너무 많아 빗자루처럼 뭉치는 현상, 끌어당길 때 곁가지가 깜빡이며 줄어드는 현상)을 포착했습니다. 이에 <strong>최소 줄기 길이 문턱</strong>과 <strong>형태 고정 체내 수축 메커니즘</strong>을 설계해 살아 숨 쉬는 유기체 균사체를 완성했습니다.
           </p>
         </header>
 
@@ -3298,7 +3289,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
               loading="lazy"
             />
             <figcaption>
-              <strong>근거리 착탄 곁가지 억제 (<code>LongTendrilBranchMinTrunkCm = 420</code>)</strong> — 4.2m 이하 근거리 발사 시 잔가지 생성을 0개로 억제하여 빗자루처럼 시야를 가리지 않고 단정한 메인 줄기만 적중합니다. (클릭해 확대)
+              <strong>근거리 착탄 곁가지 억제</strong> — 4.2m 이하 근거리 발사 시 잔가지 생성을 0개로 억제하여 시야를 가리지 않고 단정한 메인 줄기만 적중합니다. (클릭해 확대)
             </figcaption>
           </figure>
           <figure class="media-card">
@@ -3309,53 +3300,51 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
               loading="lazy"
             />
             <figcaption>
-              <strong>인양 중 형태 고정 체내 수축 (<code>bIsTendrilReelingIn</code>)</strong> — 소행성을 당길 때 줄기가 짧아져도 가지가 사라지지 않고, 발사 시 확정된 조형을 고정한 채 몸 안쪽으로 흡수되며 304.75cm 견인을 완수합니다. (클릭해 확대)
+              <strong>인양 중 형태 고정 체내 수축</strong> — 소행성을 당길 때 줄기가 짧아져도 가지가 사라지지 않고, 발사 시 확정된 조형을 고정한 채 몸 안쪽으로 그대로 빨려 들어갑니다. (클릭해 확대)
             </figcaption>
           </figure>
         </div>
 
         <section id="sec-12-1" class="lesson-section">
-          <h3>12.1 근거리 발사 시 빗자루 뭉침 방지: 최소 줄기 길이 문턱 (<code>420cm</code>)</h3>
+          <h3>12.1 근거리 발사 시 빗자루 뭉침 방지: 최소 줄기 길이 문턱</h3>
           <div class="perspective-card">
             <div class="perspective-row">
               <span class="p-label issue">초기 단순 비례식의 한계</span>
-              <div class="p-text">기존에는 <code>(길이 / 100) * BranchFrequency</code>라는 단순 선형식으로 곁가지 수를 계산했습니다. 이 때문에 <code>3m</code> 남짓 바로 앞 소행성에 촉수를 쏠 때도 8~10개의 곁가지가 빽빽하게 생성되어, 화면 전체를 헝클어진 빗자루처럼 가리는 조형적 어색함이 있었습니다.</div>
+              <div class="p-text">기존에는 길이에 비례하는 단순 선형식으로 곁가지 수를 계산했습니다. 이 때문에 바로 앞 소행성에 촉수를 짧게 쏠 때도 곁가지가 빽빽하게 생성되어, 화면을 헝클어진 빗자루처럼 가리는 조형적 어색함이 있었습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">지수 곡선 &amp; 데드존 도입 (<code>ComputeLongTendrilBranchCountForLength</code>)</span>
+              <span class="p-label decision">설계 판단: 데드존 문턱 + 지수 곡선 분화</span>
               <div class="p-text">
-                <code>LongTendrilBranchMinTrunkCm = 420.0f</code>(4.2m) 문턱을 도입했습니다. 목표 거리가 420cm 이하일 때는 <strong>곁가지를 무조건 0개</strong>로 억제해 깔끔한 직사 줄기만 나가도록 하고, 420cm를 넘어서는 순간부터 <code>Pow(LenRatio, 1.35f)</code> 지수 곡선(<code>(L - 420) / (L_max - 420)</code>)을 타며 완만하게 곁가지가 돋아나 원거리(36m)에서 최대 25개에 도달하도록 정밀 튜닝했습니다.<br />
-                - <strong>실측 검증</strong>: 근거리(~340cm) 착탄 시 <code>branch_count: 0</code> 확인.
+                4.2m 이하 근거리 발사에서는 <strong>곁가지를 무조건 0개로 억제</strong>해 깔끔한 단일 줄기만 나가도록 데드존 문턱을 설정하고, 문턱을 넘어 원거리로 뻗을 때만 완만한 지수 곡선을 타며 곁가지가 피어나도록 설계했습니다. 근거리 착탄 테스트에서 잔가지 0개, 원거리 최대 전개에서는 기존 풍성한 조형이 그대로 유지됨을 확인했습니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-12-2" class="lesson-section">
-          <h3>12.2 소행성 견인 및 회수 시 형태 고정 체내 수축 (<code>TrunkRetractOffsetCm</code>)</h3>
+          <h3>12.2 소행성 견인 및 회수 시 형태 고정 체내 수축</h3>
           <div class="perspective-card">
             <div class="perspective-row">
               <span class="p-label issue">거리 단축에 따른 가지 소멸 버그</span>
-              <div class="p-text">원거리 소행성에 촉수가 꽂힌 뒤 뉴턴 인력으로 서로를 끌어당길 때(인양), 폰과 소행성 사이 거리가 줄어들면서 <code>CurrentLiveLenCm</code>이 감소했습니다. 실시간 줄기 길이에 따라 가지 수를 재계산하다 보니, <strong>당겨지는 도중에 가지들이 하나씩 툭툭 꺼지며 사라지는</strong> 매우 부자연스러운 현상이 발생했습니다.</div>
+              <div class="p-text">원거리 소행성에 촉수가 꽂힌 뒤 서로를 끌어당길 때(인양), 거리가 줄어들면서 실시간 줄기 길이에 따라 가지 수를 다시 계산하다 보니 <strong>당겨지는 도중에 곁가지들이 하나씩 툭툭 꺼지며 사라지는</strong> 부자연스러운 현상이 발생했습니다.</div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">발사 조형 동결 &amp; 슬라이딩 체내 흡수 메커니즘</span>
+              <span class="p-label decision">설계 판단: 발사 조형 동결 &amp; 슬라이딩 체내 흡수</span>
               <div class="p-text">
-                인양이나 회수가 시작되는 순간(<code>CurrentLiveLenCm &lt; PeakTrunkLengthCm</code>), <strong><code>bIsTendrilReelingIn = true</code></strong> 플래그를 켜서 발사 최대 전개 시 확정되었던 곁가지 개수(<code>ActiveShotBranchCount</code>)와 스케일(<code>ActiveShotBranchLenScale</code>), 최대 길이(<code>PeakTrunkLengthCm</code>)를 <strong>완전히 동결(Freeze)</strong>합니다.<br />
-                대신 줄기가 짧아지는 만큼 <strong><code>TrunkRetractOffsetCm</code></strong> 오프셋을 증가시켜, Niagara 파티클 공간에서 촉수의 조형 전체가 <strong>플레이어 폰의 몸체 안쪽으로 미끄러져 들어가며 흡수</strong>되도록 설계했습니다. 가지가 허공에서 사라지는 대신 살아 있는 촉수가 몸속으로 빨려 들어가는 시각적 개연성을 얻었습니다.
+                길게 뻗을 때는 거리에 따라 곁가지가 자라나지만, <strong>일단 끌어당기거나 회수하는 순간에는 그 시점의 촉수 조형(가지 개수·길이·배치)을 완전히 동결(Freeze)</strong>하도록 설계했습니다.<br />
+                대신 줄기가 짧아지는 길이만큼 파티클 좌표를 플레이어 쪽으로 밀어넣는 오프셋을 적용해, 가지가 허공에서 쪼그라들거나 사라지지 않고 <strong>형태 그대로 폰의 몸체 안쪽으로 빨려 들어가는</strong> 유기적 연출을 완성했습니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-12-3" class="lesson-section">
-          <h3>12.3 Niagara HLSL 연동 &amp; 소행성 견인 304cm 실측 검증</h3>
+          <h3>12.3 Niagara HLSL 연동 &amp; 소행성 견인 PIE 검증</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label success">Niagara 연동 &amp; 견인 물리 실측 결과</span>
+              <span class="p-label success">검증 결과: 가지 개수 고정 유지 &amp; 3m 이상 물리 견인 확인</span>
               <div class="p-text">
-                1) <code>NS_Tendril_MyceliumWeb</code>에 <code>User.DeployedRefLengthCm</code>와 <code>User.TrunkRetractOffsetCm</code> 파라미터를 추가하고, <code>CoreTrunk</code> 및 <code>Branch_RightLow</code> 이미터의 HLSL 샘플링 좌표를 오프셋 기반으로 보정했습니다.<br />
-                2) <strong>원거리(~1600cm) 소행성 견인 실측 검증</strong>: 인양 전개 중 <code>branch_count: 6 → 6</code>으로 완벽히 고정되었으며, 소행성이 폰 쪽으로 <strong><code>304.75 cm</code> 당겨진 뒤</strong> 자연스럽게 촉수가 회수되고 <code>can_fire_tendril: true</code>로 안전 복귀함을 확인했습니다.
+                Niagara 이펙트 내부 좌표 계산과 C++ 상태 제어를 연동한 뒤 원거리 소행성 인양을 테스트한 결과, 소행성이 3m 이상 가까이 당겨지는 동안에도 <strong>곁가지 개수가 변하지 않고 그대로 유지되며 몸체 안쪽으로 매끄럽게 수축</strong>하고, 분리 후 다음 발사 가능 상태까지 안전하게 복귀함을 검증했습니다. (상세 변수 및 HLSL/C++ 코드는 아래 서랍 참고)
               </div>
             </div>
           </div>
@@ -3429,7 +3418,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
           <div class="callout callout-tip">
             <div class="callout-title">✅ Milestones 01–12 Summary &amp; Next Stage</div>
             <p>
-              macOS 툴체인 격리(01)·<code>APawn</code> 아키텍처(02)·3단 우주 환경(03)·쿼터니언 6-DoF 및 물풍선 탄성(04)·반응형 촉수(05)·M4 16GB 메모리 최적화(06)의 탄탄한 기반 위에, 닿을 수 없는 무한 항성(07)·무한 소행성 벨트(08)·미네랄 그물 포획(09)·청크 그룹 스트리밍(10)·소행성 전방 타원 자연 스폰(11)·긴 촉수 형태 고정 체내 수축(12)까지 <strong>언리얼 엔진 5.9 기반의 무중력 유기체 탐색 액션 핵심 시스템</strong>을 완성도 높게 매듭지었습니다. 다음 마일스톤에서는 수집한 미네랄 기반 곰팡이 성장 트리와 위젯 HUD, 심우주 탐험 레벨 시퀀스로 게임플레이를 확장해 나갈 예정입니다.
+              macOS 툴체인 격리(01)·순수 <code>APawn</code> 아키텍처(02)·3단 우주 환경(03)·쿼터니언 6-DoF 및 물풍선 탄성(04)·반응형 촉수(05)·M4 16GB 메모리 프로파일링 최적화(06)의 탄탄한 기반 위에, 닿을 수 없는 무한 항성(07)·무한 소행성 벨트(08)·미네랄 그물 포획(09)·청크 그룹 스트리밍(10)·소행성 전방 타원 자연 스폰(11)·긴 촉수 형태 고정 체내 수축(12)까지 <strong>AI와 협업하여 설계·검증·최적화를 주도한 UE 5.9 무중력 탐색 액션 핵심 시스템</strong>을 완성했습니다. 다음 마일스톤에서는 수집한 미네랄 기반 곰팡이 성장 트리와 위젯 HUD, 심우주 탐험 레벨 시퀀스로 게임플레이를 확장해 나갈 예정입니다.
             </p>
           </div>
         </section>

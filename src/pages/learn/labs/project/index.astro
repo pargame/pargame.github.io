@@ -39,7 +39,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
           <span class="engine-pill">UNREAL ENGINE 5.9 · macOS</span>
           <span class="path-pill">UEStudy / Sandbox / MiniProject</span>
         </div>
-        <span class="updated-meta">Updated 2026. 11. 13</span>
+        <span class="updated-meta">Updated 2026. 11. 16</span>
       </div>
 
       <div class="showcase-body">
@@ -169,8 +169,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-num">MILESTONE 08</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>무한 소행성 &amp; 0ms 풀링</h3>
-          <p>3D 해시 그리드 벨트, 전방 예측 <code>StreamCenter</code>로 공백 해소, <code>288</code> 슬롯 사전 베이킹 풀</p>
+          <h3>시드 질량·뉴턴 인력 &amp; 0ms 풀링</h3>
+          <p>단일 시드 질량·부피 1:1 물리, 그래픽 촉수+질량 비 상호 인력(Chaos 위임), <code>360</code> 슬롯 사전 베이킹 풀</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-09" class="milestone-card">
@@ -178,8 +178,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-num">MILESTONE 09</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>이중 미네랄 &amp; 그물 포획</h3>
-          <p><code>112</code>풀 표면/부유 광석, HLSL 깔때기 C++ 1:1 이식, 0프레임 바인딩 &amp; <code>CanFireTendril</code> 쿨다운</p>
+          <h3>이중 미네랄, 흡착→흡수 &amp; 쿨다운</h3>
+          <p><code>128</code>풀 표면/부유 광석, 흡착→흡수 의미 분리 &amp; 프레넬 폐기, 그물 0프레임 바인딩·쿨다운</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-10" class="milestone-card">
@@ -187,8 +187,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-num">MILESTONE 10</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>정육면체 청크 &amp; 구형 히스테리시스</h3>
-          <p>2000cm 청크 그룹 스트리밍, N×N×N 대각선 왜곡 극복, 6600cm 횡단 런타임 재빌드 0회</p>
+          <h3>정육면체 청크, 오버랩 검토 &amp; 한계</h3>
+          <p>20m 청크 그룹 스트리밍, N×N×N 왜곡 극복, Chaos 오버랩 vs 20Hz 스캔 비교 및 이동 소행성 한계 발견</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-11" class="milestone-card">
@@ -196,8 +196,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-num">MILESTONE 11</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>소행성 자연 스폰 &amp; 전방 타원 껍질</h3>
-          <p>인위적 WPO 팽창 제거, 전방 타원구 스트레칭, 코사인 가중 편향 88.4% 극원거리 출현</p>
+          <h3>구형 껍질 C=[A,B] 6규칙 &amp; 자연 스폰</h3>
+          <p>구형 껍질·삭제 큐 6규칙, 인위적 WPO 팽창 제거, 전방 타원 스트레칭 &amp; 코사인 편향 88.4% 출현</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#ch-12" class="milestone-card">
@@ -206,13 +206,13 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-arrow">➔</span>
           </div>
           <h3>긴 촉수 체내 수축 &amp; 가지 제어</h3>
-          <p>근거리 420cm 곁가지 억제, 인양 시 형태 고정 체내 흡수(TrunkRetractOffsetCm), 견인 304cm 검증</p>
+          <p>근거리 4.2m 곁가지 억제, 인양·수축 시 형태 고정 체내 흡수, 견인 304cm 검증</p>
         </a>
       </div>
 
       <div class="showcase-footer">
         <div class="footer-note">
-          클라이언트 설계 판단, C++ 소스(<code>SpaceDrifterPawn</code> 등), 엔진/환경 설정(<code>.ini</code>/<code>.zshrc</code>) 및 MCP 실측치를 바탕으로 작성했습니다. 상세 코드와 표는 접기 서랍에 수록되어 있습니다.
+          "구현은 AI가, 설계는 인간이" — 인간 설계자의 의사결정·검증·최적화 흐름과 실제 UE 5.9 C++ 소스 및 MCP 실측치를 바탕으로 작성했습니다. 상세 코드와 표는 접기 서랍에 수록되어 있습니다.
         </div>
         <a href="/learn/labs/project/fungal-space-conquest" class="cta-btn">
           프로젝트 허브 &amp; 개발 기록 읽기 →

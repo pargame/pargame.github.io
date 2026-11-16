@@ -1345,19 +1345,19 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <span class="phase-num">MILESTONE 14</span>
           <span class="phase-status active">내장 우선 · 아키텍처 문서화</span>
         </div>
-        <h3>언리얼 내장 우선 원칙 &amp; 혼돈 필드</h3>
-        <p class="phase-desc">수동 풀링 폐기(Niagara LocalSpace·FRuntimeFloatCurve), ARCHITECTURE.md 규약, 혼돈 속도·고밀도 필드</p>
+        <h3>언리얼 내장 우선 원칙 &amp; 데이터 주도 설계</h3>
+        <p class="phase-desc">수동 풀링 폐기(Niagara LocalSpace·FRuntimeFloatCurve), ARCHITECTURE.md 규약, 파라미터 노출·스폰 로직 정상화</p>
         <ul class="phase-list">
           <li class="current-lesson-item">
             <a href="#ch-14" class="phase-chapter-link">
               <span class="lesson-num">14</span>
-              <span class="chapter-name">내장 우선 · 혼돈 필드</span>
+              <span class="chapter-name">내장 우선 · 데이터 주도</span>
               <span class="goto-icon">➔</span>
             </a>
             <div class="sub-lesson-chips" aria-label="마일스톤 14 세부 섹션">
               <a href="#sec-14-1" class="sub-chip">14.1 바퀴 재발명 금지</a>
               <a href="#sec-14-2" class="sub-chip">14.2 ARCHITECTURE.md</a>
-              <a href="#sec-14-3" class="sub-chip">14.3 혼돈 속도·초기 밀도</a>
+              <a href="#sec-14-3" class="sub-chip">14.3 데이터 주도·버그 수정</a>
             </div>
           </li>
         </ul>
@@ -3837,14 +3837,14 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
 
           <!-- ================= MILESTONE 14 ================= -->
           <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
-            <span class="lesson-badge">MILESTONE 14 // BUILT-IN FIRST &amp; CHAOS ASTEROID FIELD</span>
-            <span class="read-time">내장 기능 위임 · ARCHITECTURE.md · 혼돈 속도·초기 고밀도</span>
+            <span class="lesson-badge">MILESTONE 14 // BUILT-IN FIRST &amp; DATA-DRIVEN WORKFLOW</span>
+            <span class="read-time">내장 기능 위임 · ARCHITECTURE.md · 데이터 주도 파라미터 노출</span>
           </div>
 
           <header class="lesson-header" id="ch-14">
-            <h2>14. 언리얼 내장 기능 우선 원칙, 객체 모델링 규약 &amp; 혼돈 소행성 필드</h2>
+            <h2>14. 언리얼 내장 기능 우선 원칙, 객체 모델링 규약 &amp; 데이터 주도 파라미터 설계</h2>
             <p class="lesson-intro">
-              아무리 동작하는 C++ 코드라도 <strong>엔진이 이미 제공하는 기능을 C++로 다시 구현(Reinventing the Wheel)하면 토큰과 유지보수 비용이 급증</strong>합니다. 설계자의 날카로운 피드백을 계기로 수동 C++ 풀링과 분포 수식을 언리얼 내장 기능으로 걷어내고, 다른 AI 모델도 일관된 설계를 유지할 수 있도록 <code>ARCHITECTURE.md</code>를 확립했으며, 소행성 필드의 속도 혼돈도와 초기 밀도까지 완성했습니다.
+              아무리 동작하는 C++ 코드라도 <strong>엔진이 이미 제공하는 기능을 C++로 다시 구현(Reinventing the Wheel)하면 토큰과 유지보수 비용이 급증</strong>합니다. 또한 수치 밸런싱을 C++ 코드에 묶어두면 작은 조정마다 빌드를 반복하게 됩니다. 설계자의 피드백을 계기로 수동 C++ 코드를 엔진 내장 기능으로 걷어내고, AI 협업 규약(<code>ARCHITECTURE.md</code>)과 <strong>컴파일 없는 데이터 주도(Data-Driven) 파라미터 노출 구조</strong>를 정착시켰습니다.
             </p>
           </header>
 
@@ -3886,19 +3886,19 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           </section>
 
           <section id="sec-14-3" class="lesson-section">
-            <h3>14.3 혼돈(Chaos) 소행성 필드: 속도 분산 확대 &amp; 초기 근거리 고밀도 배치</h3>
+            <h3>14.3 파라미터 노출을 통한 0초 반복 개발(Iteration) &amp; 초기 스폰 로직 결함 수정</h3>
             <div class="perspective-card">
               <div class="perspective-row">
-                <span class="p-label problem">문제: 일정해 보이는 소행성 속도와 텅 빈 초기 주변</span>
+                <span class="p-label problem">문제: 밸런싱마다 C++ 재컴파일 비용 발생 &amp; 초기 근거리 스폰 링 덮어쓰기 버그</span>
                 <div class="p-text">
-                  플레이테스트 결과 두 가지 현장 문제가 포착되었습니다. 첫째, 소행성 이동 속도가 <code>110~1100 cm/s</code> 좁은 구간에 몰려 전체가 비슷한 빠르기로 흘러가 보였습니다. 둘째, 초기 스폰 시 각 근거리 링의 최대 반경(<code>StepMaxR</code>)을 <code>SampleVolumeUniformInShell</code>이 외곽 반경(<code>520m</code>)으로 덮어써 버리는 버그 때문에 폰 코앞에 소행성이 거의 생성되지 않았습니다.
+                  초기 소행성 속도 분산과 주변 밀도를 조율하는 과정에서, C++ 기본값을 건드려 불필요한 UBT 재컴파일이 반복되는 비효율이 드러났습니다. 아울러 초기 스폰 시 근거리 링의 최대 반경(<code>StepMaxR</code>)이 <code>SampleVolumeUniformInShell</code> 내부에서 외곽 반경으로 덮어써져 플레이어 주변에 소행성이 배치되지 않던 로직 결함도 함께 발견되었습니다.
                 </div>
               </div>
               <div class="perspective-row">
-                <span class="p-label decision">해결: 혼돈 속도 커브 + 3배 밀도 압축 + 링 반경 버그 수정</span>
+                <span class="p-label decision">해결: 로직-데이터 완전 분리(UPROPERTY · 커브 노출) 및 스폰 분기 정상화</span>
                 <div class="p-text">
-                  1) <strong>속도·자전 혼돈 분산</strong>: 선형 속도를 <code>15 ~ 2400 cm/s</code>, 자전을 <code>2 ~ 140 deg/s</code>로 넓히고, <code>SpeedDistributionCurve</code>와 질량 관성 편차(<code>0.28x ~ 1.65x</code>)·폭주 유성체 배수(<code>ChaosBurstMultiplier</code>)를 결합해 우주에 거의 멈춰 떠 있는 거대 바위부터 사방에서 스쳐 가는 고속 파편까지 입체적 혼돈을 구현했습니다.<br />
-                  2) <strong>초기 근거리 고밀도 배치</strong>: <code>bInitialPopulate</code> 시 외곽 반경 덮어쓰기를 제거하고 링 내부에 선형 반경 보간을 적용했으며, 구형 껍질을 <code>A = 220m</code>, <code>B = 360m</code>로 조여 밀도를 약 3배 높이고 시작 직후 폰 코앞(<code>3.8m ~ 26m</code>)에만 45개의 소행성이 즉시 둘러싸도록 배치했습니다.
+                  1) <strong>데이터 주도(Data-Driven) 파라미터 구조 확립</strong>: 소행성의 질량·속도 범위, 커브 분포(<code>SizeDistributionCurve</code>·<code>SpeedDistributionCurve</code>), 껍질 반경·밀도·안전 거리 등을 모두 <code>UPROPERTY(EditAnywhere)</code>로 노출해 C++ 로직과 완전히 분리했습니다. 이제 설계자나 AI가 에디터 디테일 패널 및 MCP(<code>SetProperties</code>)만으로 <strong>C++ 빌드 없이 0초 만에 실시간 밸런싱과 시각 검증</strong>을 수행할 수 있어 개발 편의성과 토큰 효율이 크게 향상되었습니다.<br />
+                  2) <strong>초기 스폰 링 반경 덮어쓰기 결함 수정</strong>: <code>bInitialPopulate</code> 분기에서 외곽 반경 덮어쓰기를 제거하고 링 내부에 선형 반경 보간을 적용해, 알고리즘 자체의 결함만 C++로 깔끔히 바로잡았습니다.
                 </div>
               </div>
             </div>
@@ -4165,7 +4165,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
             </a>
             <a href="#sec-14-3" class="floating-toc-link" data-target="sec-14-3">
               <span class="toc-badge">14.3</span>
-              <span class="toc-name">혼돈 속도·고밀도</span>
+              <span class="toc-name">데이터 주도·결함 수정</span>
             </a>
           </nav>
         </div>

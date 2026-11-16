@@ -1138,8 +1138,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <span class="phase-num">MILESTONE 05</span>
           <span class="phase-status active">기록 완료</span>
         </div>
-        <h3>촉수 V1/V2 &amp; 체감 튜닝기</h3>
-        <p class="phase-desc">여의봉 현상(Aim Latch), 다중 리본, 비율·테이퍼 체감 개선, 한글 툴팁</p>
+        <h3>촉수 V1/V2 &amp; 파라미터 체감 연동</h3>
+        <p class="phase-desc">여의봉 현상(Aim Latch), 다중 리본, 비율·테이퍼 3요소 연동 및 즉각 미리보기, 한글 툴팁</p>
         <ul class="phase-list">
           <li class="current-lesson-item">
             <a href="#ch-05" class="phase-chapter-link">
@@ -3708,29 +3708,28 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
               </div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">설계 결단: Chaos 솔버 풀(근거리 35m · 최대 48개)과 원거리 Kinematic 유영의 2계층 분리</span>
+              <span class="p-label decision">설계 결단: Chaos 솔버 풀(근거리 소수)과 원거리 Kinematic 유영의 2계층 분리</span>
               <div class="p-text">
-                실제 플레이어와 충돌하거나 촉수로 상호작용할 수 있는 거리는 <code>35m</code> 이내뿐입니다. 따라서 <strong>플레이어 기준 <code>35m</code> 이내(히스테리시스 해제 <code>42m</code>)이면서 가장 가까운 최대 48개의 소행성만 Chaos 물리 솔버에 등록</strong>하고, 그 바깥의 소행성 수백 개는 물리와 콜리전을 완전히 끈 채 가벼운 등속·쿼터니언 회전 수식(<code>StepKinematicDrift</code>)으로만 유영하도록 분리했습니다. 물리 부하가 80% 이상 사라진 덕분에 스폰 껍질 반경을 <strong>기본 <code>320m ~ 520m</code>(고속 비행 시 전방 최대 <code>558m ~ 800m</code>)</strong>, 활성 소행성을 <strong>680개(풀 820개, 절반은 3단계 LOD 1,280 삼각형 프리베이크)</strong>로 대폭 확장하여, <code>1600 cm/s</code>로 날아가도 멀리서 수 픽셀짜리 작은 점으로 자연스럽게 출현하도록 해결했습니다. 또한 게임 시작 직후 주변이 비어 오도 가도 못하는 문제를 막기 위해 초기 스폰 시에만 <strong>4단 동심원 링(<code>5.5m~25m</code> 14개 보장)</strong>으로 근거리 발판을 확보했습니다.
+                실제 플레이어와 충돌하거나 촉수로 상호작용할 수 있는 거리는 근거리 영역뿐입니다. 따라서 <strong>근거리 히스테리시스 반경 이내의 가장 가까운 소수 소행성(상한 캡 적용)만 Chaos 물리 솔버에 등록</strong>하고, 그 바깥의 원거리 소행성들은 물리와 콜리전을 완전히 끈 채 가벼운 등속·쿼터니언 회전 수식(<code>StepKinematicDrift</code>)으로만 유영하도록 분리했습니다. 물리 부하가 대폭 절감된 덕분에 스폰 반경과 활성 풀 규모를 <strong>팝인이 인지되지 않는 원거리까지 확장</strong>하면서도 M4 Air 환경에서 안정적인 프레임을 유지할 수 있게 되었고, 반경·상한 캡·히스테리시스 거리 역시 모두 파라미터로 노출해 환경별 성능 조절이 가능하도록 설계했습니다.
               </div>
             </div>
           </div>
         </section>
 
         <section id="sec-13-2" class="lesson-section">
-          <h3>13.2 무중력 관성 조율(<code>0.01</code> 감쇠), 속력 연동 유동 스프링암 &amp; V3 이동용 본체 분사 촉수</h3>
+          <h3>13.2 데이터 기반 관성·속력 연동 유동 스프링암 &amp; V3 이동용 분사 촉수 신설</h3>
           <div class="perspective-card">
             <div class="perspective-row">
-              <span class="p-label issue">발견한 조작감 문제: 과도한 감쇠(<code>0.08</code>), 고속 비행 시 화면 이탈, 허공 자력 이동 수단 부재</span>
+              <span class="p-label issue">발견한 조작감 문제: 과도한 감쇠, 고속 비행 시 화면 이탈, 허공 자력 이동 수단 부재</span>
               <div class="p-text">
-                화면에 실시간 속력(<code>cm/s</code>)을 출력하며 직접 플레이해 본 결과 세 가지 문제가 드러났습니다. 첫째, 폰의 <code>PlayerLinearDamping</code>이 <code>0.08</code>로 설정되어 소행성(<code>0.005</code>)보다 16배 빨리 속력이 죽었습니다. 둘째, 속력이 빨라지면 고정된 스프링암과 무제한 카메라 지연 때문에 <strong>내 캐릭터가 화면 밖이나 카메라 뒤로 사라지는 사태</strong>가 발생했습니다. 셋째, 주변에 잡을 소행성이 없을 때 스스로 이동할 추진 수단이 필요했습니다.
+                실시간 비행 테스트 결과 세 가지 조작감 문제가 드러났습니다. 첫째, 폰의 선형 감쇠가 소행성보다 훨씬 커서 무중력 관성이 금방 죽었습니다. 둘째, 고속 비행 시 고정된 스프링암과 무제한 카메라 지연 때문에 <strong>내 캐릭터가 화면 밖이나 카메라 뒤로 사라지는 현상</strong>이 발생했습니다. 셋째, 주변에 잡을 소행성이 없을 때 스스로 이동할 추진 수단이 필요했습니다.
               </div>
             </div>
             <div class="perspective-row">
-              <span class="p-label decision">설계 판단: V1·V2는 무반동 유지, V3 '이동용 본체 분사 촉수' 신설 &amp; 상대속도 보존 발사체 풀</span>
+              <span class="p-label decision">설계 판단: V1·V2는 무반동 유지, 속력 연동 스프링암 &amp; V3 '이동용 분사 촉수(<code>SporeJet</code>)' 분리</span>
               <div class="p-text">
-                1) 폰의 선형 감쇠를 <strong><code>0.01</code></strong>로 낮춰 우주 유영의 관성을 살리고, 이동 속력(<code>0 ~ 2000 cm/s</code>)에 비례해 스프링암 길이가 <strong><code>390cm → 670cm</code></strong>로 유동 신축되며 최대 지연 거리(<code>110cm</code>)를 넘지 않도록 카메라를 보정했습니다.<br />
-                2) 처음에는 모든 촉수에 발사 반동을 넣어보았으나 조준 역할이 섞이는 문제가 있어 <strong>기존 1번(긴 촉수)·2번(그물 촉수)의 반작용은 제거</strong>하고, 오직 이동만을 위한 <strong>3번 '이동용 촉수(<code>SporeJet</code>)'</strong>를 분리 설계했습니다.<br />
-                3) 3번 촉수의 시각 표현에서도 단순 먼지 파티클이나 1번 촉수 리본 변형은 내 몸과 이질적이라고 판단하여 폐기하고, <strong>내 몸체(<code>DrifterMesh</code>)와 100% 동일한 메시(<code>SM_DustPuffSphere</code>)와 재질(<code>MI_DustPuff</code>)을 공유하는 32슬롯 경량 본체 방울 발사체 풀(<code>FJetBodyDroplet</code>)</strong>을 구축했습니다. 스페이스바를 누르는 동안 내 몸의 일부가 전방 원뿔(<code>13.5°</code>)로 떨어져 나가 발사되며(본체 속도를 기준계로 더해 고속 전진 중에도 항상 조준 정면으로 발사), 반작용으로 정반대 방향(<code>-LockedAimDir</code>)의 지속 추진 가속도(<code>1400 cm/s²</code>)를 얻습니다. 아울러 2번 그물 촉수 재사용 시 파티클 이미터가 죽어 다시 안 나오던 버그도 발사 시점 강제 리셋(<code>bForceRestartFX</code>)으로 함께 해결했습니다.
+                1) <strong>파라미터 노출 기반 관성·카메라 보정</strong>: 감쇠 계수와 속력 비례 스프링암 신축·최대 지연 거리를 에디터 노출 파라미터로 구성해, 어떤 속도 영역에서도 플레이어가 카메라 시야에서 벗어나지 않고 무중력 관성을 세밀하게 조율할 수 있게 했습니다.<br />
+                2) <strong>역할 분리(V1/V2 vs V3)</strong>: 모든 촉수에 발사 반동을 넣으면 조준 역할이 섞이는 문제가 있어 <strong>기존 1번(긴 촉수)·2번(그물 촉수)의 반작용은 제거</strong>하고, 오직 이동만을 위한 <strong>3번 '이동용 촉수(<code>SporeJet</code>)'</strong>를 분리 설계했습니다. 또한 2번 그물 촉수 재사용 시 파티클 이미터가 죽어 다시 안 나오던 버그도 발사 시점 강제 리셋(<code>bForceRestartFX</code>)으로 함께 해결했습니다. (초기 프로토타입에서는 C++ 본체 방울 풀로 분사를 구현했으나, 이후 Milestone 14에서 언리얼 내장 나이아가라 <code>bLocalSpace</code> + <code>Mesh Renderer</code> 구조로 깔끔하게 대체했습니다.)
               </div>
             </div>
           </div>
@@ -3752,7 +3751,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
                 1) <strong>호스트 디커플링 (<code>ISpaceTendrilHostInterface</code>)</strong>: 촉수 능력이 <code>ASpaceDrifterPawn</code> 구체 클래스를 직접 참조하지 않고 <code>UInterface</code> 계약만으로 시점·물리·몸체 메시를 조회하도록 분리했습니다.<br />
                 2) <strong>경량 다형성 객체 (<code>USpaceTendrilAbility</code> : <code>EditInlineNew UObject</code>)</strong>: 무거운 <code>UActorComponent</code> 틱 등록 없이 <code>ULongTendrilAbility</code>(1번), <code>UNetTendrilAbility</code>(2번), <code>UJetTendrilAbility</code>(3번) 3개 서브클래스로 책임을 완전히 격리했습니다. 향후 3번 촉수의 무한 분사 방지 규칙은 오직 <code>UJetTendrilAbility::CanConsumeJetResource()</code>와 <code>ConsumeJetResource()</code> 두 가상 함수만 수정하면 완결됩니다.<br />
                 3) <strong>평상시 0-Tick 보장, <code>FTimerManager</code> 이벤트 드리븐 &amp; <code>TG_PostPhysics</code> 0-지연 부착 동기화</strong>: 촉수가 휴면(<code>Idle</code>) 상태일 때는 <code>IsAbilityTickActive() == false</code>가 되어 폰의 <code>Tick</code>에서 아예 호출되지 않으며(0-Tick), 최대 유지 시간 제한은 <code>FTimerManager</code> 원샷 타이머 콜백으로 전환했습니다. 또한 고속 비행 중 촉수 뿌리가 본체에서 뒤처져 분리되어 보이는 현상을 막기 위해, 폰의 틱 그룹을 <code>TG_PostPhysics</code>로 옮기고 나이아가라 컴포넌트에 <code>AddTickPrerequisiteActor(this)</code> 선행 의존성을 부여하여 <strong>Chaos 물리 적분 → 폰의 촉수 좌표 갱신 → 나이아가라/발사체 시뮬레이션</strong>이 단일 프레임 안에서 지연 없이 수행되도록 정렬했습니다.<br />
-                4) <strong>선형 반경 공간($V^{1/3}$) 보간으로 소행성 크기 분산 대폭 확장 (<code>25 kg ~ 420,000 kg</code>)</strong>: 기존에는 질량을 선형 보간한 뒤 세제곱근($R \propto M^{1/3}$)으로 반경을 구해 상위 88% 구간이 <code>0.5~1.0 R_max</code>에 몰리는 세제곱근 압축 현상이 있었습니다. 이를 최소·최대 부피의 세제곱근(선형 반경 스케일) 공간에서 먼저 거듭제곱 분포(<code>Exponent = 1.85</code>)로 보간한 뒤 다시 세제곱하여 질량을 도출하도록 개선하고, 최대 질량을 <code>420,000 kg</code>(최대 지름 약 <code>14.5m</code>의 거대 랜드마크급 소행성)까지 넓혀 작은 암석 파편부터 거대 소행성까지 풍부한 크기 스펙트럼을 구현했습니다.<br />
+                4) <strong>선형 반경 공간($V^{1/3}$) 보간으로 세제곱근 압축 현상 해결</strong>: 기존에는 질량을 선형 보간한 뒤 세제곱근($R \propto M^{1/3}$)으로 반경을 구해 대다수 소행성이 큰 반경 구간에 몰리는 세제곱근 압축 현상이 있었습니다. 이를 최소·최대 부피의 세제곱근(선형 반경 스케일) 공간에서 먼저 분포를 샘플링한 뒤 다시 세제곱하여 질량을 도출하도록 알고리즘을 교정함으로써, 작은 파편부터 거대 랜드마크급 소행성까지 왜곡 없는 크기 스펙트럼을 확보했습니다.<br />
                 5) <strong>월드 전수 순회(<code>TActorIterator</code>) 및 그림자 오버헤드 제거</strong>: 매 프레임 월드를 뒤지던 <code>TActorIterator&lt;ASpaceMineral&gt;</code>를 제거하고 <code>AAsteroidFieldManager::GatherAvailableMinerals()</code> 활성 풀 직접 조회로 교체했으며, 자체 발광 미네랄의 동적 그림자 패스(<code>SetCastShadow(false)</code>)와 소행성 간 불필요한 강체 Hit 콜백(<code>SetNotifyRigidBodyCollision(false)</code>)까지 모두 걷어냈습니다.
               </div>
             </div>
@@ -3805,7 +3804,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
                     <tr>
                       <td><code>UJetTendrilAbility</code></td>
                       <td>V3 이동용 분사 서브클래스</td>
-                      <td>역추진 가속(<code>1400 cm/s²</code>), 48슬롯 본체 상대 오프셋 방울 풀(고속 이동 시 분리 원천 차단), <code>CanConsumeJetResource</code> 확장 훅</td>
+                      <td>역추진 가속, 내장 나이아가라 <code>bLocalSpace</code> + <code>MeshRenderer</code> 구동, <code>CanConsumeJetResource</code> 확장 훅</td>
                     </tr>
                     <tr>
                       <td><code>ASpaceAsteroid</code> 크기 분산</td>

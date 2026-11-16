@@ -898,6 +898,108 @@ const float DeployedRefLenCm = bHasLockedTendrilAim
 TargetFX->SetIntParameter(TEXT("User.SideBranchCount"), DesiredBranchCount);
 TargetFX->SetFloatParameter(TEXT("User.DeployedRefLengthCm"), DeployedRefLenCm);
 TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffsetCm);`;
+
+const codePhysicsTierAndAbilityOOP = `// 1. Source/UEStudy/Sandbox/MiniProject/AsteroidFieldManager.cpp — 2-Tier Chaos 물리 풀 & 원거리 Kinematic 분리
+void AAsteroidFieldManager::UpdatePhysicsSimulationTiers(const FVector& PlayerLocation, AActor* LatchedTarget)
+{
+	const double ActRadiusSq = FMath::Square(static_cast<double>(PhysicsActivationRadiusCm)); // 35m 이내 Chaos 진입
+	const double DeactRadiusSq = FMath::Square(static_cast<double>(PhysicsActivationRadiusCm + PhysicsHysteresisCm)); // 42m 이탈 시 강등
+
+	TArray<FPhysicsCandidate> Candidates;
+	for (const int32 PoolIdx : ActivePoolIndices)
+	{
+		ASpaceAsteroid* Asteroid = PoolEntries[PoolIdx].Asteroid.Get();
+		if (!IsValid(Asteroid)) continue;
+
+		const bool bProtected = (LatchedTarget && Asteroid == LatchedTarget);
+		const double DistSq = FVector::DistSquared(Asteroid->GetActorLocation(), PlayerLocation);
+		const bool bCurrentlyChaos = Asteroid->IsPhysicsTierActive();
+		const bool bEligible = bProtected || (bCurrentlyChaos ? (DistSq <= DeactRadiusSq) : (DistSq <= ActRadiusSq));
+
+		if (bEligible) Candidates.Add({ PoolIdx, DistSq, bProtected });
+		else if (bCurrentlyChaos) Asteroid->SetPhysicsSimulationTier(false); // 원거리는 Chaos 솔버에서 즉시 제외
+	}
+
+	// 플레이어 기준 가장 가까운 상위 MaxActivePhysicsAsteroids(48개)만 Chaos 솔버에 등록
+	if (Candidates.Num() > MaxActivePhysicsAsteroids)
+	{
+		Candidates.Sort([](const FPhysicsCandidate& A, const FPhysicsCandidate& B) {
+			return (A.bProtected != B.bProtected) ? A.bProtected : (A.DistSq < B.DistSq);
+		});
+		for (int32 i = MaxActivePhysicsAsteroids; i < Candidates.Num(); ++i)
+		{
+			PoolEntries[Candidates[i].PoolIdx].Asteroid->SetPhysicsSimulationTier(false);
+		}
+		Candidates.SetNum(MaxActivePhysicsAsteroids, EAllowShrinking::No);
+	}
+	for (const FPhysicsCandidate& Cand : Candidates)
+	{
+		PoolEntries[Cand.PoolIdx].Asteroid->SetPhysicsSimulationTier(true);
+	}
+}
+
+// 2. Source/UEStudy/Sandbox/MiniProject/SpaceTendrilAbility.h & SpaceDrifterPawn.cpp — 언리얼 표준 0-Tick Ability 다형성
+UCLASS(Abstract, BlueprintType, Blueprintable, EditInlineNew, DefaultToInstanced)
+class UESTUDY_API USpaceTendrilAbility : public UObject
+{
+	GENERATED_BODY()
+public:
+	virtual void InitializeAbility(TScriptInterface<ISpaceTendrilHostInterface> InHost);
+	virtual bool CanActivateAbility() const;
+	virtual bool OnInputStarted();
+	virtual void OnInputEnded();
+	virtual void TickActiveAbility(float DeltaTime);
+
+	// Idle 상태일 때는 false를 반환해 ASpaceDrifterPawn::Tick에서 아예 호출되지 않음 (0-Tick)
+	FORCEINLINE bool IsAbilityTickActive() const
+	{
+		return AbilityState != ETendrilAbilityState::Idle || ExtendAlpha > KINDA_SMALL_NUMBER || HasPendingActiveWork();
+	}
+};
+
+// ASpaceDrifterPawn::Tick — 평상시(Idle)에는 촉수 Tick 비용 0, 발동 중에만 현재 장착된 Ability 1개 구동
+if (ActiveTendrilAbility && ActiveTendrilAbility->IsAbilityTickActive())
+{
+	ActiveTendrilAbility->TickActiveAbility(DeltaTime);
+}`;
+
+const codeBuiltInFirstMilestone14 = `// 1. V3 분사 촉수: 수동 UStaticMeshComponent 48개 풀링 240줄 삭제 -> 내장 나이아가라(bLocalSpace=true + MeshRenderer) 위임
+void UJetTendrilAbility::OnActiveTick(float DeltaTime, const FVector& VisualOrigin, const FVector& StartPos, const FVector& EndPos, float EasedReach)
+{
+	ISpaceTendrilHostInterface* HostIfc = Host.GetInterface();
+	if (!HostIfc) return;
+
+	float ActiveSpawnRate = 0.0f;
+	if (IsExtending())
+	{
+		if (!ConsumeJetResource(DeltaTime)) { BeginRetract(true); }
+		else
+		{
+			LatchCameraAimBasis();
+			if (UPrimitiveComponent* HostPhys = HostIfc->GetTendrilPhysicsComponent())
+			{
+				HostPhys->WakeRigidBody();
+				HostPhys->AddImpulse(-LockedAimDir * (ThrustAccelerationCmPerSec2 * DeltaTime), NAME_None, true);
+			}
+			ActiveSpawnRate = FMath::Clamp(ProjectileSpawnRateScale * 0.45f, 30.0f, 96.0f);
+		}
+	}
+
+	if (UFXSystemComponent* FX = HostIfc->GetTendrilFXComponent(ETendrilVisualStyle::SporeJet))
+	{
+		FX->SetWorldLocationAndRotation(VisualOrigin + LockedAimDir * 3.0f, LockedAimDir.Rotation());
+		FX->SetFloatParameter(TEXT("User.TendrilAlpha"), ExtendAlpha);
+		FX->SetFloatParameter(TEXT("User.SporeSpawnRate"), ActiveSpawnRate);
+		if (!FX->IsActive()) FX->Activate(true);
+	}
+}
+
+// 2. ASpaceAsteroid: 하드코딩 수식 -> 내장 FRuntimeFloatCurve(SizeDistributionCurve / SpeedDistributionCurve) 위임
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpaceAsteroid|MassAndVolume")
+FRuntimeFloatCurve SizeDistributionCurve;
+
+UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SpaceAsteroid|Physics", meta = (EditCondition = "bApplySeededInitialDrift"))
+FRuntimeFloatCurve SpeedDistributionCurve;`;
 ---
 
 <BaseLayout
@@ -926,7 +1028,7 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
       <span class="meta-chip"><span class="chip-k">ENGINE</span> UE 5.9 (Xcode 26.1.1)</span>
       <span class="meta-chip"><span class="chip-k">WORKFLOW</span> Director + AI Co-Dev</span>
       <span class="meta-chip"><span class="chip-k">HARDWARE</span> M4 Air 16GB Unified</span>
-      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 → 2 (Milestones 01–12)</span>
+      <span class="meta-chip"><span class="chip-k">STAGE</span> Phase 1 → 2 (Milestones 01–14)</span>
     </div>
   </div>
 
@@ -934,8 +1036,8 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
   <section class="curriculum-overview">
     <div class="section-title-wrap">
       <span class="badge">PROJECT ROADMAP &amp; POSTMORTEM INDEX</span>
-      <h2>클라이언트 개발 마일스톤 (01 — 12)</h2>
-      <p>macOS 툴체인(01)에서 게임플레이·M4 최적화(02~06), 무한 항성·소행성·미네랄 그물(07~10), 그리고 소행성 전방 타원 자연 스폰(11)과 긴 촉수 체내 수축 완성(12)까지 순차적으로 탐색할 수 있습니다.</p>
+      <h2>클라이언트 개발 마일스톤 (01 — 14)</h2>
+      <p>macOS 툴체인(01)에서 게임플레이·M4 최적화(02~06), 무한 항성·소행성·미네랄 그물(07~10), 소행성 전방 타원 자연 스폰(11), 긴 촉수 체내 수축(12), 2-Tier Chaos 물리·언리얼 표준 Ability OOP(13), 그리고 <strong>언리얼 내장 기능 우선 원칙·객체 모델링 문서화·혼돈 소행성 필드(14)</strong>까지 순차적으로 탐색할 수 있습니다.</p>
     </div>
 
     <div class="roadmap-grid">
@@ -1210,6 +1312,52 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
               <a href="#sec-12-1" class="sub-chip">12.1 근거리 가지 억제</a>
               <a href="#sec-12-2" class="sub-chip">12.2 형태 고정 수축</a>
               <a href="#sec-12-3" class="sub-chip">12.3 HLSL &amp; 견인 검증</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 13</span>
+          <span class="phase-status active">OOP · 2-Tier 물리</span>
+        </div>
+        <h3>2-Tier Chaos 물리 &amp; 언리얼 Ability 리팩터링</h3>
+        <p class="phase-desc">근거리 48개 Chaos 솔버 캡 + 800m 원거리 스폰, V3 본체 분사 촉수, UInterface·0-Tick Ability 모듈화</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-13" class="phase-chapter-link">
+              <span class="lesson-num">13</span>
+              <span class="chapter-name">2-Tier 물리 · Ability OOP</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 13 세부 섹션">
+              <a href="#sec-13-1" class="sub-chip">13.1 2-Tier Chaos·800m 스폰</a>
+              <a href="#sec-13-2" class="sub-chip">13.2 V3 본체 분사·유동 카메라</a>
+              <a href="#sec-13-3" class="sub-chip">13.3 0-Tick Ability 리팩터링</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="phase-card active-phase">
+        <div class="phase-header">
+          <span class="phase-num">MILESTONE 14</span>
+          <span class="phase-status active">내장 우선 · 아키텍처 문서화</span>
+        </div>
+        <h3>언리얼 내장 우선 원칙 &amp; 혼돈 필드</h3>
+        <p class="phase-desc">수동 풀링 폐기(Niagara LocalSpace·FRuntimeFloatCurve), ARCHITECTURE.md 규약, 혼돈 속도·고밀도 필드</p>
+        <ul class="phase-list">
+          <li class="current-lesson-item">
+            <a href="#ch-14" class="phase-chapter-link">
+              <span class="lesson-num">14</span>
+              <span class="chapter-name">내장 우선 · 혼돈 필드</span>
+              <span class="goto-icon">➔</span>
+            </a>
+            <div class="sub-lesson-chips" aria-label="마일스톤 14 세부 섹션">
+              <a href="#sec-14-1" class="sub-chip">14.1 바퀴 재발명 금지</a>
+              <a href="#sec-14-2" class="sub-chip">14.2 ARCHITECTURE.md</a>
+              <a href="#sec-14-3" class="sub-chip">14.3 혼돈 속도·초기 밀도</a>
             </div>
           </li>
         </ul>
@@ -3533,14 +3681,257 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
               </div>
             </div>
           </details>
+        </section>
 
-          <div class="callout callout-tip">
-            <div class="callout-title">✅ Milestones 01–12 Summary &amp; Next Stage</div>
-            <p>
-              macOS 툴체인 격리(01)·순수 <code>APawn</code> 아키텍처(02)·3단 우주 환경(03)·쿼터니언 6-DoF 및 물풍선 탄성(04)·반응형 촉수(05)·M4 16GB 메모리 프로파일링 최적화(06)의 탄탄한 기반 위에, 닿을 수 없는 무한 항성(07)·시드 기반 소행성 물리 &amp; 뉴턴 상호 인력(08)·이중 스폰 미네랄 &amp; 흡착→흡수 분리(09)·정육면체 청크 실험 &amp; Chaos 오버랩 검토(10)·구형 껍질 C=[A,B]·삭제 큐 6규칙 &amp; 전방 타원 자연 스폰(11)·긴 촉수 형태 고정 체내 수축(12)까지 <strong>"구현은 AI가, 설계는 인간이" 철학 아래 의사결정·검증·최적화를 주도한 UE 5.9 핵심 시스템</strong>을 완성했습니다. 다음 마일스톤에서는 수집한 미네랄 기반 곰팡이 성장 트리와 위젯 HUD, 심우주 탐험 레벨 시퀀스로 게임플레이를 확장해 나갈 예정입니다.
-            </p>
+        <div class="chapter-separator" role="separator"></div>
+
+        <!-- ================= MILESTONE 13 ================= -->
+        <div class="lesson-nav-bar">
+          <span class="lesson-badge">MILESTONE 13 // 2-TIER CHAOS PHYSICS, BODY-JET PROPULSION &amp; UNREAL ABILITY OOP</span>
+          <span class="read-time">근거리 48개 Chaos 풀 · V3 본체 분사 촉수 · 0-Tick Ability 아키텍처</span>
+        </div>
+
+        <header class="lesson-header" id="ch-13">
+          <h2>13. 2-Tier Chaos 물리 계층화, V3 본체 분사 촉수 &amp; 언리얼 표준 Ability 아키텍처 리팩터링</h2>
+          <p class="lesson-intro">
+            타 게임(로블록스 고속 골프 게임 등)이 왜 원거리 다수 오브젝트 환경에서도 가벼운지 벤치마킹 분석한 뒤, <strong>"근거리 소수만 Chaos 솔버에 넣고 원거리는 등속 수식(Kinematic)으로 분리한다"</strong>는 설계 결정을 내렸습니다. 나아가 비대해진 단일 폰 클래스를 <strong>언리얼 엔진 표준 인터페이스(<code>UInterface</code>)와 0-Tick 다형성 능력 객체(<code>EditInlineNew UObject</code> + <code>FTimerManager</code>)</strong> 구조로 전면 리팩터링해, 향후 어떤 AI 모델이 후속 기능을 작업하더라도 구조가 무너지지 않는 뼈대를 완성했습니다.
+          </p>
+        </header>
+
+        <section id="sec-13-1" class="lesson-section">
+          <h3>13.1 로블록스 벤치마킹과 2-Tier 물리 분리: 근거리 48개 Chaos 캡 &amp; 전방 800m 원거리 스폰</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">설계자의 의문: 왜 모든 소행성이 저 멀리서도 무거운 Chaos 강체 물리를 돌리고 있는가?</span>
+              <div class="p-text">
+                고속 비행(<code>1600 cm/s</code> 이상) 테스트 중 두 가지 근본적인 한계를 발견했습니다. 첫째, 활성 소행성 수백 개가 전부 <code>bSimulatePhysics = true</code> 상태로 Chaos 3D Convex 충돌을 계산하느라 반경을 넓히면 CPU 물리 비용이 급증했습니다. 둘째, 스폰 반경이 <code>72m ~ 112m</code>에 머물러 있다 보니 고속 비행 시 전방에서 생성되는 소행성이 화면에 꽤 큰 덩어리로 나타나 <strong>스폰 팝인(Pop-in)이 육안으로 인지</strong>되었습니다.
+              </div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">설계 결단: Chaos 솔버 풀(근거리 35m · 최대 48개)과 원거리 Kinematic 유영의 2계층 분리</span>
+              <div class="p-text">
+                실제 플레이어와 충돌하거나 촉수로 상호작용할 수 있는 거리는 <code>35m</code> 이내뿐입니다. 따라서 <strong>플레이어 기준 <code>35m</code> 이내(히스테리시스 해제 <code>42m</code>)이면서 가장 가까운 최대 48개의 소행성만 Chaos 물리 솔버에 등록</strong>하고, 그 바깥의 소행성 수백 개는 물리와 콜리전을 완전히 끈 채 가벼운 등속·쿼터니언 회전 수식(<code>StepKinematicDrift</code>)으로만 유영하도록 분리했습니다. 물리 부하가 80% 이상 사라진 덕분에 스폰 껍질 반경을 <strong>기본 <code>320m ~ 520m</code>(고속 비행 시 전방 최대 <code>558m ~ 800m</code>)</strong>, 활성 소행성을 <strong>680개(풀 820개, 절반은 3단계 LOD 1,280 삼각형 프리베이크)</strong>로 대폭 확장하여, <code>1600 cm/s</code>로 날아가도 멀리서 수 픽셀짜리 작은 점으로 자연스럽게 출현하도록 해결했습니다. 또한 게임 시작 직후 주변이 비어 오도 가도 못하는 문제를 막기 위해 초기 스폰 시에만 <strong>4단 동심원 링(<code>5.5m~25m</code> 14개 보장)</strong>으로 근거리 발판을 확보했습니다.
+              </div>
+            </div>
           </div>
         </section>
+
+        <section id="sec-13-2" class="lesson-section">
+          <h3>13.2 무중력 관성 조율(<code>0.01</code> 감쇠), 속력 연동 유동 스프링암 &amp; V3 이동용 본체 분사 촉수</h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">발견한 조작감 문제: 과도한 감쇠(<code>0.08</code>), 고속 비행 시 화면 이탈, 허공 자력 이동 수단 부재</span>
+              <div class="p-text">
+                화면에 실시간 속력(<code>cm/s</code>)을 출력하며 직접 플레이해 본 결과 세 가지 문제가 드러났습니다. 첫째, 폰의 <code>PlayerLinearDamping</code>이 <code>0.08</code>로 설정되어 소행성(<code>0.005</code>)보다 16배 빨리 속력이 죽었습니다. 둘째, 속력이 빨라지면 고정된 스프링암과 무제한 카메라 지연 때문에 <strong>내 캐릭터가 화면 밖이나 카메라 뒤로 사라지는 사태</strong>가 발생했습니다. 셋째, 주변에 잡을 소행성이 없을 때 스스로 이동할 추진 수단이 필요했습니다.
+              </div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label decision">설계 판단: V1·V2는 무반동 유지, V3 '이동용 본체 분사 촉수' 신설 &amp; 상대속도 보존 발사체 풀</span>
+              <div class="p-text">
+                1) 폰의 선형 감쇠를 <strong><code>0.01</code></strong>로 낮춰 우주 유영의 관성을 살리고, 이동 속력(<code>0 ~ 2000 cm/s</code>)에 비례해 스프링암 길이가 <strong><code>390cm → 670cm</code></strong>로 유동 신축되며 최대 지연 거리(<code>110cm</code>)를 넘지 않도록 카메라를 보정했습니다.<br />
+                2) 처음에는 모든 촉수에 발사 반동을 넣어보았으나 조준 역할이 섞이는 문제가 있어 <strong>기존 1번(긴 촉수)·2번(그물 촉수)의 반작용은 제거</strong>하고, 오직 이동만을 위한 <strong>3번 '이동용 촉수(<code>SporeJet</code>)'</strong>를 분리 설계했습니다.<br />
+                3) 3번 촉수의 시각 표현에서도 단순 먼지 파티클이나 1번 촉수 리본 변형은 내 몸과 이질적이라고 판단하여 폐기하고, <strong>내 몸체(<code>DrifterMesh</code>)와 100% 동일한 메시(<code>SM_DustPuffSphere</code>)와 재질(<code>MI_DustPuff</code>)을 공유하는 32슬롯 경량 본체 방울 발사체 풀(<code>FJetBodyDroplet</code>)</strong>을 구축했습니다. 스페이스바를 누르는 동안 내 몸의 일부가 전방 원뿔(<code>13.5°</code>)로 떨어져 나가 발사되며(본체 속도를 기준계로 더해 고속 전진 중에도 항상 조준 정면으로 발사), 반작용으로 정반대 방향(<code>-LockedAimDir</code>)의 지속 추진 가속도(<code>1400 cm/s²</code>)를 얻습니다. 아울러 2번 그물 촉수 재사용 시 파티클 이미터가 죽어 다시 안 나오던 버그도 발사 시점 강제 리셋(<code>bForceRestartFX</code>)으로 함께 해결했습니다.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="sec-13-3" class="lesson-section">
+          <h3>13.3 언리얼 엔진 표준 Ability OOP 리팩터링: <code>UInterface</code> 디커플링 · <code>EditInlineNew</code> 0-Tick · <code>FTimerManager</code></h3>
+          <div class="perspective-card">
+            <div class="perspective-row">
+              <span class="p-label issue">아키텍처 점검: 1,600줄짜리 단일 폰 클래스(God Class)와 매 프레임 폴링의 한계</span>
+              <div class="p-text">
+                1·2·3번 촉수 기능과 카메라·물풍선 탄성이 <code>ASpaceDrifterPawn</code> 한 파일(약 1,605줄)에 <code>switch / if</code> 분기로 뒤섞여 있었고, 촉수를 안 쓸 때도 매 프레임 <code>Tick</code>이 돌며 유지 시간을 <code>float -= DeltaTime</code>으로 빼거나 <code>TActorIterator&lt;ASpaceMineral&gt;</code>로 월드 전체 액터를 전수 순회하고 있었습니다. 이 상태로는 향후 3번 촉수의 무한 분사 방지 조건(자원 소모·쿨타임)을 추가하거나 경량 AI 모델에게 후속 작업을 맡겼을 때 사이드 이펙트가 발생할 위험이 컸습니다.
+              </div>
+            </div>
+            <div class="perspective-row">
+              <span class="p-label success">설계 완성: 언리얼 표준 4대 원칙으로 모듈화하여 저비용 모델도 안전하게 확장 가능한 틀 확립</span>
+              <div class="p-text">
+                단순 C++ 상속이 아닌 <strong>언리얼 엔진 고유의 성능·객체지향 설계 원칙</strong>에 맞춰 전체 구조를 리팩터링했습니다:<br />
+                1) <strong>호스트 디커플링 (<code>ISpaceTendrilHostInterface</code>)</strong>: 촉수 능력이 <code>ASpaceDrifterPawn</code> 구체 클래스를 직접 참조하지 않고 <code>UInterface</code> 계약만으로 시점·물리·몸체 메시를 조회하도록 분리했습니다.<br />
+                2) <strong>경량 다형성 객체 (<code>USpaceTendrilAbility</code> : <code>EditInlineNew UObject</code>)</strong>: 무거운 <code>UActorComponent</code> 틱 등록 없이 <code>ULongTendrilAbility</code>(1번), <code>UNetTendrilAbility</code>(2번), <code>UJetTendrilAbility</code>(3번) 3개 서브클래스로 책임을 완전히 격리했습니다. 향후 3번 촉수의 무한 분사 방지 규칙은 오직 <code>UJetTendrilAbility::CanConsumeJetResource()</code>와 <code>ConsumeJetResource()</code> 두 가상 함수만 수정하면 완결됩니다.<br />
+                3) <strong>평상시 0-Tick 보장, <code>FTimerManager</code> 이벤트 드리븐 &amp; <code>TG_PostPhysics</code> 0-지연 부착 동기화</strong>: 촉수가 휴면(<code>Idle</code>) 상태일 때는 <code>IsAbilityTickActive() == false</code>가 되어 폰의 <code>Tick</code>에서 아예 호출되지 않으며(0-Tick), 최대 유지 시간 제한은 <code>FTimerManager</code> 원샷 타이머 콜백으로 전환했습니다. 또한 고속 비행 중 촉수 뿌리가 본체에서 뒤처져 분리되어 보이는 현상을 막기 위해, 폰의 틱 그룹을 <code>TG_PostPhysics</code>로 옮기고 나이아가라 컴포넌트에 <code>AddTickPrerequisiteActor(this)</code> 선행 의존성을 부여하여 <strong>Chaos 물리 적분 → 폰의 촉수 좌표 갱신 → 나이아가라/발사체 시뮬레이션</strong>이 단일 프레임 안에서 지연 없이 수행되도록 정렬했습니다.<br />
+                4) <strong>선형 반경 공간($V^{1/3}$) 보간으로 소행성 크기 분산 대폭 확장 (<code>25 kg ~ 420,000 kg</code>)</strong>: 기존에는 질량을 선형 보간한 뒤 세제곱근($R \propto M^{1/3}$)으로 반경을 구해 상위 88% 구간이 <code>0.5~1.0 R_max</code>에 몰리는 세제곱근 압축 현상이 있었습니다. 이를 최소·최대 부피의 세제곱근(선형 반경 스케일) 공간에서 먼저 거듭제곱 분포(<code>Exponent = 1.85</code>)로 보간한 뒤 다시 세제곱하여 질량을 도출하도록 개선하고, 최대 질량을 <code>420,000 kg</code>(최대 지름 약 <code>14.5m</code>의 거대 랜드마크급 소행성)까지 넓혀 작은 암석 파편부터 거대 소행성까지 풍부한 크기 스펙트럼을 구현했습니다.<br />
+                5) <strong>월드 전수 순회(<code>TActorIterator</code>) 및 그림자 오버헤드 제거</strong>: 매 프레임 월드를 뒤지던 <code>TActorIterator&lt;ASpaceMineral&gt;</code>를 제거하고 <code>AAsteroidFieldManager::GatherAvailableMinerals()</code> 활성 풀 직접 조회로 교체했으며, 자체 발광 미네랄의 동적 그림자 패스(<code>SetCastShadow(false)</code>)와 소행성 간 불필요한 강체 Hit 콜백(<code>SetNotifyRigidBodyCollision(false)</code>)까지 모두 걷어냈습니다.
+              </div>
+            </div>
+          </div>
+
+          <details class="tech-drawer">
+            <summary class="drawer-summary">
+              <span class="drawer-title-group">
+                <span class="drawer-tag cyan">C++ SOURCE &amp; OOP SPEC</span>
+                <span>코드 보기: 2-Tier Chaos 물리 풀 &amp; USpaceTendrilAbility 0-Tick 다형성 아키텍처</span>
+              </span>
+              <span class="drawer-chevron">▸</span>
+            </summary>
+            <div class="drawer-body">
+              <div class="spec-table-wrap">
+                <table class="spec-table">
+                  <colgroup>
+                    <col style="width: 30%;" />
+                    <col style="width: 24%;" />
+                    <col style="width: 46%;" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>클래스 / 모듈</th>
+                      <th>기반 타입 / 핵심 수치</th>
+                      <th>역할 및 언리얼 최적화 설계 포인트</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>ISpaceTendrilHostInterface</code></td>
+                      <td><code>UInterface</code></td>
+                      <td>촉수 능력과 소유 액터(폰) 간의 강결합을 끊는 표준 호스트 계약</td>
+                    </tr>
+                    <tr>
+                      <td><code>USpaceTendrilAbility</code></td>
+                      <td><code>UObject (EditInlineNew)</code></td>
+                      <td><code>Idle</code> 시 0-Tick 보장, <code>FTimerManager</code> 원샷 유지 시간 타이머 제공 추상 부모</td>
+                    </tr>
+                    <tr>
+                      <td><code>ULongTendrilAbility</code></td>
+                      <td>V1 긴 촉수 서브클래스</td>
+                      <td>스피어스윕 조준, 소행성 로컬 표면 앵커 락온, 뉴턴 인력·토크 및 리본 조형 제어</td>
+                    </tr>
+                    <tr>
+                      <td><code>UNetTendrilAbility</code></td>
+                      <td>V2 그물 촉수 서브클래스</td>
+                      <td>단발(One-Shot) 타이머 전개, 매니저 활성 미네랄 배열 기반 깔때기 포획·회수</td>
+                    </tr>
+                    <tr>
+                      <td><code>UJetTendrilAbility</code></td>
+                      <td>V3 이동용 분사 서브클래스</td>
+                      <td>역추진 가속(<code>1400 cm/s²</code>), 48슬롯 본체 상대 오프셋 방울 풀(고속 이동 시 분리 원천 차단), <code>CanConsumeJetResource</code> 확장 훅</td>
+                    </tr>
+                    <tr>
+                      <td><code>ASpaceAsteroid</code> 크기 분산</td>
+                      <td><code>25 kg ~ 420,000 kg</code> (지름 <code>~0.56m ~ 14.5m</code>)</td>
+                      <td>세제곱근 반경 압축을 해결한 선형 반경 스케일($V^{1/3}$) 보간 후 세제곱 질량 환산</td>
+                    </tr>
+                    <tr>
+                      <td><code>AAsteroidFieldManager</code></td>
+                      <td><code>320m ~ 520m</code> (전방 <code>~800m</code>)</td>
+                      <td>활성 <code>680개</code> 중 근거리 <code>35m</code> 이내 최대 <code>48개</code>만 Chaos 솔버 등록, 나머지는 Kinematic 유영</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="code-block-wrap">
+                <div class="code-header">
+                  <span class="file-name">AsteroidFieldManager.cpp &amp; SpaceTendrilAbility.h // 2-Tier 물리 &amp; 0-Tick Ability OOP</span>
+                  <div class="code-actions">
+                    <span class="code-lang">C++ // UE 5.9</span>
+                    <button type="button" class="copy-btn" data-copy={codePhysicsTierAndAbilityOOP}>Copy</button>
+                  </div>
+                </div>
+                <Code code={codePhysicsTierAndAbilityOOP} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+              </div>
+            </div>
+          </details>
+        </section>
+
+          <!-- ================= MILESTONE 14 ================= -->
+          <div class="lesson-nav-bar" style="margin-top: 3.5rem;">
+            <span class="lesson-badge">MILESTONE 14 // BUILT-IN FIRST &amp; CHAOS ASTEROID FIELD</span>
+            <span class="read-time">내장 기능 위임 · ARCHITECTURE.md · 혼돈 속도·초기 고밀도</span>
+          </div>
+
+          <header class="lesson-header" id="ch-14">
+            <h2>14. 언리얼 내장 기능 우선 원칙, 객체 모델링 규약 &amp; 혼돈 소행성 필드</h2>
+            <p class="lesson-intro">
+              아무리 동작하는 C++ 코드라도 <strong>엔진이 이미 제공하는 기능을 C++로 다시 구현(Reinventing the Wheel)하면 토큰과 유지보수 비용이 급증</strong>합니다. 설계자의 날카로운 피드백을 계기로 수동 C++ 풀링과 분포 수식을 언리얼 내장 기능으로 걷어내고, 다른 AI 모델도 일관된 설계를 유지할 수 있도록 <code>ARCHITECTURE.md</code>를 확립했으며, 소행성 필드의 속도 혼돈도와 초기 밀도까지 완성했습니다.
+            </p>
+          </header>
+
+          <section id="sec-14-1" class="lesson-section">
+            <h3>14.1 "바퀴를 다시 발명하지 마라" — 수동 C++ 코드 폐기 &amp; 엔진 내장 기능 위임</h3>
+            <div class="perspective-card">
+              <div class="perspective-row">
+                <span class="p-label issue">설계자의 핵심 지적: 과도한 C++ 직접 구현</span>
+                <div class="p-text">
+                  Milestone 13에서 V3 분사 촉수를 본체와 일체화하기 위해 C++에서 <code>UStaticMeshComponent</code> 48개 배열을 직접 생성·풀링·적분하는 240여 줄의 코드를 작성했고, 소행성 크기·속도 분포 역시 C++ <code>Pow</code>/<code>Lerp</code> 수식으로 하드코딩했습니다. 설계자는 이를 보며 <strong>"언리얼에 이미 만들어진 기능이 있다면 직접 짜지 말고 적극 활용하라"</strong>고 강하게 제동을 걸었습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">해결: 나이아가라 <code>bLocalSpace</code> + <code>Mesh Renderer</code> &amp; <code>FRuntimeFloatCurve</code></span>
+                <div class="p-text">
+                  <strong>1) V3 분사 촉수 240줄 삭제 → 나이아가라 내장 모듈 전환</strong>: <code>NS_Tendril_SporeJet</code> 에셋의 이미터 옵션에서 <code>bLocalSpace = true</code>를 켜고, 내장 <code>NiagaraMeshRendererProperties</code>(<code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>, <code>FacingMode = Velocity</code>)와 <code>AddVelocity (In Cone)</code>·<code>ScaleMeshSize</code>로 대체했습니다. 부모 머티리얼(<code>M_DustPuff</code>)의 <code>bUsedWithNiagaraMeshParticles</code> 플래그를 켜 디폴트 격자 머티리얼 폴백 문제까지 깔끔하게 해결했습니다.<br />
+                  <strong>2) 하드코딩 분포 수식 → 내장 <code>FRuntimeFloatCurve</code> 전환</strong>: <code>ASpaceAsteroid</code>의 크기(<code>SizeDistributionCurve</code>)와 속도(<code>SpeedDistributionCurve</code>)를 에디터 디테일 패널에서 마우스로 그래프를 그리거나 외부 <code>UCurveFloat</code> 에셋을 꽂을 수 있는 언리얼 내장 커브 구조로 교체했습니다. 이제 밸런스 수정 시 <strong>14초짜리 C++ 재컴파일 없이 0초 만에 실시간 튜닝</strong>이 가능합니다.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="sec-14-2" class="lesson-section">
+            <h3>14.2 <code>ARCHITECTURE.md</code> &amp; <code>GEMINI.md</code> — 멀티 에이전트 설계 가드레일</h3>
+            <div class="perspective-card">
+              <div class="perspective-row">
+                <span class="p-label problem">과제: 모델이 바뀌어도 무너지지 않는 설계 틀</span>
+                <div class="p-text">
+                  대화 컨텍스트가 길어지거나 경량·저급 AI 모델이 후속 작업을 이어받을 경우, 기존의 <code>UInterface</code> 계약이나 0-Tick 원칙, 엔진 내장 우선 원칙을 모른 채 <code>ASpaceDrifterPawn</code>에 다시 스파게티 코드를 추가할 위험이 있었습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">아키텍처 문서화 및 상시 규칙 연동</span>
+                <div class="p-text">
+                  <code>Source/UEStudy/Sandbox/MiniProject/ARCHITECTURE.md</code>에 전체 객체 모델링 다이어그램(<code>ISpaceTendrilHostInterface</code> ↔ <code>ASpaceDrifterPawn</code> ↔ <code>USpaceTendrilAbility</code>), 5대 언리얼 엔지니어링 원칙(<code>EditInlineNew UObject</code>, 조건부 0-Tick &amp; <code>FTimerManager</code>, <code>TG_PostPhysics</code> + <code>AddTickPrerequisiteActor</code> 0-지연 동기화, 나이아가라 머티리얼 플래그 주의사항, 2-Tier 물리 스케줄링), 그리고 향후 확장 훅(<code>CanConsumeJetResource</code>)을 명문화했습니다. 또한 워크스페이스 상시 규칙인 <code>GEMINI.md</code>에 MiniProject 수정 전 <code>ARCHITECTURE.md</code>를 반드시 선독하도록 강제했습니다.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="sec-14-3" class="lesson-section">
+            <h3>14.3 혼돈(Chaos) 소행성 필드: 속도 분산 확대 &amp; 초기 근거리 고밀도 배치</h3>
+            <div class="perspective-card">
+              <div class="perspective-row">
+                <span class="p-label problem">문제: 일정해 보이는 소행성 속도와 텅 빈 초기 주변</span>
+                <div class="p-text">
+                  플레이테스트 결과 두 가지 현장 문제가 포착되었습니다. 첫째, 소행성 이동 속도가 <code>110~1100 cm/s</code> 좁은 구간에 몰려 전체가 비슷한 빠르기로 흘러가 보였습니다. 둘째, 초기 스폰 시 각 근거리 링의 최대 반경(<code>StepMaxR</code>)을 <code>SampleVolumeUniformInShell</code>이 외곽 반경(<code>520m</code>)으로 덮어써 버리는 버그 때문에 폰 코앞에 소행성이 거의 생성되지 않았습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">해결: 혼돈 속도 커브 + 3배 밀도 압축 + 링 반경 버그 수정</span>
+                <div class="p-text">
+                  1) <strong>속도·자전 혼돈 분산</strong>: 선형 속도를 <code>15 ~ 2400 cm/s</code>, 자전을 <code>2 ~ 140 deg/s</code>로 넓히고, <code>SpeedDistributionCurve</code>와 질량 관성 편차(<code>0.28x ~ 1.65x</code>)·폭주 유성체 배수(<code>ChaosBurstMultiplier</code>)를 결합해 우주에 거의 멈춰 떠 있는 거대 바위부터 사방에서 스쳐 가는 고속 파편까지 입체적 혼돈을 구현했습니다.<br />
+                  2) <strong>초기 근거리 고밀도 배치</strong>: <code>bInitialPopulate</code> 시 외곽 반경 덮어쓰기를 제거하고 링 내부에 선형 반경 보간을 적용했으며, 구형 껍질을 <code>A = 220m</code>, <code>B = 360m</code>로 조여 밀도를 약 3배 높이고 시작 직후 폰 코앞(<code>3.8m ~ 26m</code>)에만 45개의 소행성이 즉시 둘러싸도록 배치했습니다.
+                </div>
+              </div>
+            </div>
+
+            <details class="tech-drawer">
+              <summary class="drawer-summary">
+                <span class="drawer-title-group">
+                  <span class="drawer-tag cyan">C++ &amp; NIAGARA</span>
+                  <span>코드 보기: V3 나이아가라 LocalSpace 위임 &amp; FRuntimeFloatCurve 데이터 주도 분포</span>
+                </span>
+                <span class="drawer-chevron">▸</span>
+              </summary>
+              <div class="drawer-body">
+                <div class="code-block-wrap">
+                  <div class="code-header">
+                    <span class="file-name">SpaceTendrilAbility.cpp &amp; SpaceAsteroid.h // 내장 기능 우선 전환</span>
+                    <div class="code-actions">
+                      <span class="code-lang">C++ // UE 5.9</span>
+                      <button type="button" class="copy-btn" data-copy={codeBuiltInFirstMilestone14}>Copy</button>
+                    </div>
+                  </div>
+                  <Code code={codeBuiltInFirstMilestone14} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+                </div>
+              </div>
+            </details>
+
+            <div class="callout callout-tip">
+              <div class="callout-title">✅ Milestones 01–14 Summary &amp; Next Stage</div>
+              <p>
+                macOS 툴체인 격리(01)·순수 <code>APawn</code> 아키텍처(02)·3단 우주 환경(03)·쿼터니언 6-DoF 및 물풍선 탄성(04)·반응형 촉수(05)·M4 16GB 메모리 프로파일링 최적화(06)에서 출발해, 무한 항성(07)·시드 기반 소행성 &amp; 뉴턴 인력(08)·이중 스폰 미네랄(09)·정육면체 청크 실험(10)·구형 껍질 C=[A,B]·전방 타원 스폰(11)·긴 촉수 체내 수축(12)·2-Tier Chaos 물리 &amp; 0-Tick Ability OOP(13), 그리고 <strong>언리얼 내장 기능 우선 원칙(<code>Niagara LocalSpace</code>·<code>FRuntimeFloatCurve</code>)·<code>ARCHITECTURE.md</code> 규약 확립·혼돈 소행성 필드(14)</strong>까지 완성했습니다. 이제 견고하게 문서화된 언리얼 표준 아키텍처 위에서 3번 촉수 자원 소모, 미네랄 기반 성장 트리, 위젯 HUD를 막힘없이 확장할 차례입니다.
+              </p>
+            </div>
+          </section>
       </article>
 
     <!-- 우측 스티키 플로팅 목차 (cpp.astro 동일 UX 패턴) -->
@@ -3743,6 +4134,38 @@ TargetFX->SetFloatParameter(TEXT("User.TrunkRetractOffsetCm"), TrunkRetractOffse
             <a href="#sec-12-3" class="floating-toc-link" data-target="sec-12-3">
               <span class="toc-badge">12.3</span>
               <span class="toc-name">HLSL &amp; 견인 검증</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">13 // 2-TIER &amp; ABILITY OOP</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 13 목차">
+            <a href="#sec-13-1" class="floating-toc-link" data-target="sec-13-1">
+              <span class="toc-badge">13.1</span>
+              <span class="toc-name">2-Tier Chaos·800m</span>
+            </a>
+            <a href="#sec-13-2" class="floating-toc-link" data-target="sec-13-2">
+              <span class="toc-badge">13.2</span>
+              <span class="toc-name">V3 본체 분사·카메라</span>
+            </a>
+            <a href="#sec-13-3" class="floating-toc-link" data-target="sec-13-3">
+              <span class="toc-badge">13.3</span>
+              <span class="toc-name">0-Tick Ability OOP</span>
+            </a>
+          </nav>
+
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">14 // BUILT-IN FIRST</div>
+          <nav class="floating-toc-list" aria-label="마일스톤 14 목차">
+            <a href="#sec-14-1" class="floating-toc-link" data-target="sec-14-1">
+              <span class="toc-badge">14.1</span>
+              <span class="toc-name">바퀴 재발명 금지</span>
+            </a>
+            <a href="#sec-14-2" class="floating-toc-link" data-target="sec-14-2">
+              <span class="toc-badge">14.2</span>
+              <span class="toc-name">ARCHITECTURE.md</span>
+            </a>
+            <a href="#sec-14-3" class="floating-toc-link" data-target="sec-14-3">
+              <span class="toc-badge">14.3</span>
+              <span class="toc-name">혼돈 속도·고밀도</span>
             </a>
           </nav>
         </div>

@@ -1427,7 +1427,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              오일러 각(<code>FRotator</code>) 기반의 컨트롤러 회전은 Pitch가 $\pm 90^\circ$에 가까워질 때 짐벌락(Gimbal Lock)이나 시점 뒤집힘을 유발합니다. 또한 우주 공간에서 고속으로 가속할 때 카메라가 뒤처져 캐릭터가 화면 밖으로 벗어나는 현상을 막아야 했습니다.
+              오일러 각(<code>FRotator</code>) 기반의 컨트롤러 회전은 Pitch가 <code>±90°</code>에 가까워질 때 짐벌락(Gimbal Lock)이나 시점 뒤집힘을 유발합니다. 또한 우주 공간에서 고속으로 가속할 때 카메라가 뒤처져 캐릭터가 화면 밖으로 벗어나는 현상을 막아야 했습니다.
             </div>
           </div>
           <div class="perspective-row">
@@ -1864,7 +1864,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
             <div class="p-text">
               1) <strong>폐곡면 서명 부피(Signed Volume) 적분 및 선형 반경(<code>V^(1/3)</code>) 보간</strong>: 질량을 먼저 선형 보간한 뒤 세제곱근(<code>R ∝ M^(1/3)</code>)을 취하면 대다수 소행성이 큰 반경 구간에 몰리는 '세제곱근 압축 현상'이 발생합니다. 이를 해결하기 위해 최소·최대 부피의 세제곱근(선형 반경 스케일) 공간에서 먼저 분포를 샘플링한 뒤 세제곱하여 목표 부피·질량을 구하고, 노이즈 변형된 메시의 실제 적분 부피가 목표 부피와 1:1로 일치하도록 정점 스케일을 정규화했습니다.<br />
               2) <strong>내장 <code>FRuntimeFloatCurve</code> 기반 데이터 주도 설계</strong>: 크기 분포(<code>SizeDistributionCurve</code>)와 초기 유영 속도 분포(<code>SpeedDistributionCurve</code>)를 언리얼 내장 커브로 노출해, 에디터 그래프에서 마우스로 곡선을 조작하며 0초 만에 필드 생태계를 조율할 수 있게 했습니다.<br />
-              3) <strong>0ms 아키타입 사전 베이킹 풀 &amp; 0-Tick 휴면</strong>: 런타임 스폰 시 버텍스 생성과 Chaos Convex 쿠킹으로 인한 프레임 히치를 막기 위해, `BeginPlay` 시점에 아키타입들을 미리 구워 풀에 대기시키고 런타임에는 가시성·물리 스위치만 0ms로 토글합니다.
+              3) <strong>0ms 아키타입 사전 베이킹 풀 &amp; 0-Tick 휴면</strong>: 런타임 스폰 시 버텍스 생성과 Chaos Convex 쿠킹으로 인한 프레임 히치를 막기 위해, <code>BeginPlay</code> 시점에 아키타입들을 미리 구워 풀에 대기시키고 런타임에는 가시성·물리 스위치만 0ms로 토글합니다.
             </div>
           </div>
         </div>
@@ -1916,8 +1916,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label decision">설계 결정: 무상태 구형 껍질 <code>C=[A,B]</code> 6규칙 · 전방 코사인 타원 확장 · 2-Tier 물리 분리</span>
             <div class="p-text">
-              1) <strong>설계자 정의 구형 껍질 <code>C=[A,B]</code> &amp; 삭제 대기 큐 6규칙</strong>: 고정된 월드 좌표 청크를 기억하는 대신, 플레이어 중심 내부 반경 $A$(생성 금지 구역)와 외부 반경 $B$ 사이의 껍질 $C=[A,B]$에서만 소행성을 동적 보충하고, $B$를 벗어난 소행성은 삭제 대기 큐에 넣어 유예 시간 내 $\le B$로 재진입하면 구제하고 만료 시에만 풀로 회수하는 무상태(Stateless) 생명주기를 확립했습니다.<br />
-              2) <strong>속력 연동 전방 타원 확장 &amp; 코사인 편향 샘플링</strong>: 플레이어 시선 및 비행 속도 방향으로만 $A$와 $B$를 타원구 형태로 깊게 늘리고 전방 반구에 코사인 가중치로 스폰을 집중시켜, 고속 비행 중에도 새 소행성이 아득한 원거리에서 작은 점으로 자연스럽게 출현하도록 만들었습니다.<br />
+              1) <strong>설계자 정의 구형 껍질 <code>C=[A,B]</code> &amp; 삭제 대기 큐 6규칙</strong>: 고정된 월드 좌표 청크를 기억하는 대신, 플레이어 중심 내부 반경 <code>A</code>(생성 금지 구역)와 외부 반경 <code>B</code> 사이의 껍질 <code>C=[A,B]</code>에서만 소행성을 동적 보충하고, <code>B</code>를 벗어난 소행성은 삭제 대기 큐에 넣어 유예 시간 내 <code>≤ B</code>로 재진입하면 구제하고 만료 시에만 풀로 회수하는 무상태(Stateless) 생명주기를 확립했습니다.<br />
+              2) <strong>속력 연동 전방 타원 확장 &amp; 코사인 편향 샘플링</strong>: 플레이어 시선 및 비행 속도 방향으로만 <code>A</code>와 <code>B</code>를 타원구 형태로 깊게 늘리고 전방 반구에 코사인 가중치로 스폰을 집중시켜, 고속 비행 중에도 새 소행성이 아득한 원거리에서 작은 점으로 자연스럽게 출현하도록 만들었습니다.<br />
               3) <strong>2-Tier 물리 스케줄링 (근거리 Chaos 캡 vs 원거리 Kinematic)</strong>: 실제 충돌·촉수 상호작용이 일어나는 근거리 소행성(상한 캡 적용)만 Chaos 물리 솔버에 등록하고, 원거리 소행성 수백 개는 물리와 콜리전을 끈 채 등속 선형·쿼터니언 회전 적분(<code>StepKinematicDrift</code>)만 수행해 광활한 시야와 높은 프레임을 동시에 달성했습니다.
             </div>
           </div>
@@ -2053,8 +2053,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label decision">설계 결정: 공용 미네랄 풀의 이중 배치 &amp; 2단계 채집 상태 머신</span>
             <div class="p-text">
-              1) <strong>이중 스폰 생태계와 레지스트리 조회</strong>: `AAsteroidFieldManager`가 프리웜 미네랄 풀을 관리하며 소행성 활성화 시 표면 버텍스 앵커(`SampleSurfaceAnchor`)에 부착형 광석을 붙이고, 외곽 껍질에는 독립 부유형 광석을 배치합니다. 촉수가 미네랄을 탐색할 때는 월드 전체 액터를 뒤지는 `TActorIterator` 대신 매니저의 활성 미네랄 배열(`GatherAvailableMinerals`)만 즉시 참조합니다.<br />
-              2) <strong>흡착(Adsorbed)과 흡수(Absorbing)의 의미론적 분리</strong>: 그물 촉수에 포획된 광석은 먼저 그물코에 달라붙어 함께 딸려 오는 <strong>1단계 흡착(`Adsorbed`)</strong> 상태가 되고, 그물이 완전히 회수되거나 플레이어 본체 반경에 직접 닿는 순간 본체 중심으로 빨려 들어가며 작아지는 <strong>2단계 흡수(`Absorbing`)</strong> 상태로 전이됩니다.
+              1) <strong>이중 스폰 생태계와 레지스트리 조회</strong>: <code>AAsteroidFieldManager</code>가 프리웜 미네랄 풀을 관리하며 소행성 활성화 시 표면 버텍스 앵커(<code>SampleSurfaceAnchor</code>)에 부착형 광석을 붙이고, 외곽 껍질에는 독립 부유형 광석을 배치합니다. 촉수가 미네랄을 탐색할 때는 월드 전체 액터를 뒤지는 <code>TActorIterator</code> 대신 매니저의 활성 미네랄 배열(<code>GatherAvailableMinerals</code>)만 즉시 참조합니다.<br />
+              2) <strong>흡착(Adsorbed)과 흡수(Absorbing)의 의미론적 분리</strong>: 그물 촉수에 포획된 광석은 먼저 그물코에 달라붙어 함께 딸려 오는 <strong>1단계 흡착(<code>Adsorbed</code>)</strong> 상태가 되고, 그물이 완전히 회수되거나 플레이어 본체 반경에 직접 닿는 순간 본체 중심으로 빨려 들어가며 작아지는 <strong>2단계 흡수(<code>Absorbing</code>)</strong> 상태로 전이됩니다.
             </div>
           </div>
         </div>
@@ -2097,7 +2097,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
               <div class="perspective-row">
                 <span class="p-label issue">설계 우여곡절: 과한 시각 기획(흡착 시 프레넬 림 발광 변화)의 검증과 폐기</span>
                 <div class="p-text">
-                  초기에는 미네랄이 그물에 흡착되었을 때 머티리얼 파라미터를 바꿔 프레넬 발광이 강해지는 연출을 추가했습니다. 하지만 실제 플레이테스트로 검증한 결과, 그물 회수가 워낙 빠르게 일어나는 데다 이미 자체 발광 중인 광석과 거미줄 이펙트가 겹쳐 <strong>시각적 체감은 거의 없는데 동적 머티리얼 업데이트와 셰이더 분기 복잡도만 늘리는 과잉 기획</strong>임이 드러났습니다. 즉시 해당 프레넬 변화 코드를 걷어내고 자체 발광 광석의 동적 그림자 패스(`SetCastShadow(false)`)까지 꺼버려 렌더 비용을 깔끔하게 덜어냈습니다.
+                  초기에는 미네랄이 그물에 흡착되었을 때 머티리얼 파라미터를 바꿔 프레넬 발광이 강해지는 연출을 추가했습니다. 하지만 실제 플레이테스트로 검증한 결과, 그물 회수가 워낙 빠르게 일어나는 데다 이미 자체 발광 중인 광석과 거미줄 이펙트가 겹쳐 <strong>시각적 체감은 거의 없는데 동적 머티리얼 업데이트와 셰이더 분기 복잡도만 늘리는 과잉 기획</strong>임이 드러났습니다. 즉시 해당 프레넬 변화 코드를 걷어내고 자체 발광 광석의 동적 그림자 패스(<code>SetCastShadow(false)</code>)까지 꺼버려 렌더 비용을 깔끔하게 덜어냈습니다.
                 </div>
               </div>
             </div>
@@ -2117,8 +2117,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label decision">설계 결정: 나이아가라 HLSL 곡선 방정식 공유 &amp; 촉수 주도 0프레임 위치 동기화</span>
             <div class="p-text">
-              1) <strong>시각-판정 깔때기 수식 1:1 일치</strong>: 나이아가라 `NS_Tendril_GossamerSpores`의 스포크/링 HLSL 반경 곡선 식과 중심 흔들림(Sway) 수식을 C++ `EvaluateFunnelRadiusCm` 및 `EvaluateFunnelCenter`에 그대로 이식해, 눈으로 보이는 그물망 내부에 들어온 광석만 정확히 포획되도록 맞췄습니다.<br />
-              2) <strong>자체 Tick 중지 &amp; 촉수 주도 0프레임 바인딩</strong>: 광석이 흡착(`BeginAdsorption`)되는 순간 광석 자신의 `Tick`을 끄고(`SetTickFunctionEnable(false)`), 그물 촉수의 `OnActiveTick`에서 정규화 앵커 좌표(`NetAnchorT`, `NetRadialDir2D`, `NetRadialFraction`)를 기반으로 광석의 월드 좌표를 직접 밀어 넣어 그물이 출렁이거나 수축할 때 0프레임 오차로 매달려 오도록 구현했습니다.
+              1) <strong>시각-판정 깔때기 수식 1:1 일치</strong>: 나이아가라 <code>NS_Tendril_GossamerSpores</code>의 스포크/링 HLSL 반경 곡선 식과 중심 흔들림(Sway) 수식을 C++ <code>EvaluateFunnelRadiusCm</code> 및 <code>EvaluateFunnelCenter</code>에 그대로 이식해, 눈으로 보이는 그물망 내부에 들어온 광석만 정확히 포획되도록 맞췄습니다.<br />
+              2) <strong>자체 Tick 중지 &amp; 촉수 주도 0프레임 바인딩</strong>: 광석이 흡착(<code>BeginAdsorption</code>)되는 순간 광석 자신의 <code>Tick</code>을 끄고(<code>SetTickFunctionEnable(false)</code>), 그물 촉수의 <code>OnActiveTick</code>에서 정규화 앵커 좌표(<code>NetAnchorT</code>, <code>NetRadialDir2D</code>, <code>NetRadialFraction</code>)를 기반으로 광석의 월드 좌표를 직접 밀어 넣어 그물이 출렁이거나 수축할 때 0프레임 오차로 매달려 오도록 구현했습니다.
             </div>
           </div>
         </div>
@@ -2136,7 +2136,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
               <div class="perspective-row">
                 <span class="p-label issue">설계 우여곡절: 단순 원뿔 판정으로 인한 허공 오포획과 1프레임 지연 분리</span>
                 <div class="p-text">
-                  첫 구현에서는 그물 판정을 단순 직선 원뿔로 근사하고 포획된 미네랄이 자기 `Tick`에서 그물 중심을 향해 `VInterpTo`로 따라오게 만들었습니다. 그 결과 그물 뿌리 옆의 허공에 있는 광석이 갑자기 잡히거나, 그물이 빠르게 수축할 때 광석이 그물 그래픽 뒤에 붕 떠서 뒤늦게 따라오는 문제가 나타났습니다. 판정 수식을 HLSL 깔때기 곡선과 일치시키고 틱 주도권을 `UNetTendrilAbility`로 일원화함으로써 두 문제를 동시에 해결했습니다.
+                  첫 구현에서는 그물 판정을 단순 직선 원뿔로 근사하고 포획된 미네랄이 자기 <code>Tick</code>에서 그물 중심을 향해 <code>VInterpTo</code>로 따라오게 만들었습니다. 그 결과 그물 뿌리 옆의 허공에 있는 광석이 갑자기 잡히거나, 그물이 빠르게 수축할 때 광석이 그물 그래픽 뒤에 붕 떠서 뒤늦게 따라오는 문제가 나타났습니다. 판정 수식을 HLSL 깔때기 곡선과 일치시키고 틱 주도권을 <code>UNetTendrilAbility</code>로 일원화함으로써 두 문제를 동시에 해결했습니다.
                 </div>
               </div>
             </div>
@@ -2167,7 +2167,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
       <header class="lesson-header" id="ch-06">
         <h2>06. 우주 환경 인지 설계 &amp; Apple Silicon(M4 16GB) 통합 메모리 최적화</h2>
         <p class="lesson-intro">
-          시점 자유도가 360도 열린 우주에서 극점 왜곡 없는 별자리 배경과 영원히 닿을 수 없는 원거리 항성을 셰이더로 구현하고, M4 MacBook Air(16GB 통합 메모리)에서 발생했던 메모리 경고(`21.4GB`)를 화질 저하 없이 `7.93GB`로 낮춘 프로파일링 기록입니다.
+          시점 자유도가 360도 열린 우주에서 극점 왜곡 없는 별자리 배경과 영원히 닿을 수 없는 원거리 항성을 셰이더로 구현하고, M4 MacBook Air(16GB 통합 메모리)에서 발생했던 메모리 경고(<code>21.4GB</code>)를 화질 저하 없이 <code>7.93GB</code>로 낮춘 프로파일링 기록입니다.
         </p>
       </header>
 
@@ -2183,9 +2183,9 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label decision">설계 결정: 3D 방향 벡터 절차적 성단 · 천구 내장 무한 항성 · <code>UDistantStarSyncComponent</code></span>
             <div class="p-text">
-              1) <strong>2D UV를 배제한 3D 구면 방향 벡터(`normalize(WorldPosition - CameraPosition)`)</strong>: 천구 셰이더(`M_SpaceSkybox`)가 UV 좌표 대신 3D 시선 방향 벡터만을 입력받아 다옥타브 성운 노이즈와 별자리를 생성하므로, 어느 방향으로 회전해도 이음매와 극점 왜곡이 전혀 없습니다.<br />
-              2) <strong>영원히 닿을 수 없는 천구 셰이더 항성 &amp; `MPC` 라이트 동기화</strong>: 항성을 월드 액터가 아닌 천구 셰이더 위의 각도 내적(`dot(ViewDir, StarDir)`) 기반 3층 광원(백열 코어·비대칭 코로나·6각 회절 글레어)으로 구현해 아무리 이동해도 시차(Parallax)가 0인 무한 거리를 유지했습니다. `DirectionalLight`에 부착된 `UDistantStarSyncComponent`가 회전과 색온도를 감지해 `MPC_SpaceEnvironment`로 자동 푸시하므로, 에디터에서 라이트만 돌리면 항성 위치와 소행성 조명이 실시간으로 함께 움직입니다.<br />
-              3) <strong>AutoExposure 암순응 왜곡 차단 및 로컬 우주 먼지</strong>: 칠흑 같은 우주 배경 때문에 자동 노출이 별과 본체를 하얗게 태우는 현상을 막기 위해 노출을 고정(`Min=Max=1.0`)하고, 카메라 주변 로컬 볼륨에서만 생성·소멸하는 3D 우주 먼지(`NS_SpaceDustMotes`)로 무중력 유영의 속도 체감을 확보했습니다.
+              1) <strong>2D UV를 배제한 3D 구면 방향 벡터(<code>normalize(WorldPosition - CameraPosition)</code>)</strong>: 천구 셰이더(<code>M_SpaceSkybox</code>)가 UV 좌표 대신 3D 시선 방향 벡터만을 입력받아 다옥타브 성운 노이즈와 별자리를 생성하므로, 어느 방향으로 회전해도 이음매와 극점 왜곡이 전혀 없습니다.<br />
+              2) <strong>영원히 닿을 수 없는 천구 셰이더 항성 &amp; <code>MPC</code> 라이트 동기화</strong>: 항성을 월드 액터가 아닌 천구 셰이더 위의 각도 내적(<code>dot(ViewDir, StarDir)</code>) 기반 3층 광원(백열 코어·비대칭 코로나·6각 회절 글레어)으로 구현해 아무리 이동해도 시차(Parallax)가 0인 무한 거리를 유지했습니다. <code>DirectionalLight</code>에 부착된 <code>UDistantStarSyncComponent</code>가 회전과 색온도를 감지해 <code>MPC_SpaceEnvironment</code>로 자동 푸시하므로, 에디터에서 라이트만 돌리면 항성 위치와 소행성 조명이 실시간으로 함께 움직입니다.<br />
+              3) <strong>AutoExposure 암순응 왜곡 차단 및 로컬 우주 먼지</strong>: 칠흑 같은 우주 배경 때문에 자동 노출이 별과 본체를 하얗게 태우는 현상을 막기 위해 노출을 고정(<code>Min=Max=1.0</code>)하고, 카메라 주변 로컬 볼륨에서만 생성·소멸하는 3D 우주 먼지(<code>NS_SpaceDustMotes</code>)로 무중력 유영의 속도 체감을 확보했습니다.
             </div>
           </div>
         </div>
@@ -2244,13 +2244,13 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              Apple Silicon(M4 16GB)은 CPU와 GPU가 단일 물리 메모리를 공유하는 통합 메모리(Unified Memory) 구조입니다. UE 5.9의 기본 데스크톱 하이엔드 렌더 설정(Lumen GI, Virtual Shadow Maps, 무제한 렌더 타깃/텍스처 풀)을 그대로 켜두면 에디터와 PIE 실행 시 커밋 메모리가 `21.4GB`까지 치솟아 macOS 스왑과 Critical 메모리 경고를 유발했습니다.
+              Apple Silicon(M4 16GB)은 CPU와 GPU가 단일 물리 메모리를 공유하는 통합 메모리(Unified Memory) 구조입니다. UE 5.9의 기본 데스크톱 하이엔드 렌더 설정(Lumen GI, Virtual Shadow Maps, 무제한 렌더 타깃/텍스처 풀)을 그대로 켜두면 에디터와 PIE 실행 시 커밋 메모리가 <code>21.4GB</code>까지 치솟아 macOS 스왑과 Critical 메모리 경고를 유발했습니다.
             </div>
           </div>
           <div class="perspective-row">
             <span class="p-label decision">설계 결정: 시각 품질 훼손 없는 렌더 패스 다이어트 (Lumen · VSM · SDF 비활성화 &amp; 풀 상한 캡)</span>
             <div class="p-text">
-              밀폐된 실내 반사광이 없는 칠흑의 우주 공간에서는 고비용 전역 조명(`Lumen`)과 가상 그림자 맵(`VSM`), 메시 거리장(`Mesh Distance Fields`)이 시각적 기여도 없이 수 기가바이트의 GBuffer와 렌더 타깃 풀만 점유합니다. 따라서 <strong>네이티브 해상도와 셰이더 디테일은 유지한 채 불필요한 렌더 패스만 정밀 제거하고 텍스처·렌더 타깃 풀 상한을 제어</strong>하여, 메모리 점유율을 <strong>`21.4GB → 7.93GB` (약 63% 절감, 여유 메모리 8GB 이상 확보)</strong>로 낮췄습니다.
+              밀폐된 실내 반사광이 없는 칠흑의 우주 공간에서는 고비용 전역 조명(<code>Lumen</code>)과 가상 그림자 맵(<code>VSM</code>), 메시 거리장(<code>Mesh Distance Fields</code>)이 시각적 기여도 없이 수 기가바이트의 GBuffer와 렌더 타깃 풀만 점유합니다. 따라서 <strong>네이티브 해상도와 셰이더 디테일은 유지한 채 불필요한 렌더 패스만 정밀 제거하고 텍스처·렌더 타깃 풀 상한을 제어</strong>하여, 메모리 점유율을 <strong><code>21.4GB → 7.93GB</code> (약 63% 절감, 여유 메모리 8GB 이상 확보)</strong>로 낮췄습니다.
             </div>
           </div>
         </div>
@@ -2286,8 +2286,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
               <div class="perspective-row">
                 <span class="p-label issue">설계 우여곡절: 계측 없는 'ScreenPercentage 60%' 1차 오판과 프로파일링 기반 원복</span>
                 <div class="p-text">
-                  메모리 경고가 처음 발생했을 때, 정확한 메모리 프로파일링 없이 성급하게 화면 해상도 스케일(`r.ScreenPercentage`)을 `60%`로 낮추고 천구 별자리 옥타브를 깎는 잘못된 처방을 내렸습니다. 그 결과 메모리는 거의 줄지 않으면서 우주 배경의 미세한 별빛과 촉수 리본 윤곽선만 뿌옇게 뭉개졌습니다.<br />
-                  설계자의 즉시 지적을 받고 `vm_stat` 및 프로세스 `footprint` 실측을 수행한 결과, 진짜 범인은 픽셀 셰이더 연산량이 아니라 **Lumen Scene 버퍼, Virtual Shadow Maps 페이지 테이블, 레이트레이싱 프록시, 그리고 과도하게 잡힌 스트리밍 풀**이었습니다. 즉시 해상도와 셰이더 품질을 원복하고 렌더 패스 설정(`DefaultEngine.ini`, `DefaultScalability.ini`)만 정밀 타격하여 선명한 화질과 `7.93GB` 메모리 안정성을 동시에 달성했습니다.
+                  메모리 경고가 처음 발생했을 때, 정확한 메모리 프로파일링 없이 성급하게 화면 해상도 스케일(<code>r.ScreenPercentage</code>)을 <code>60%</code>로 낮추고 천구 별자리 옥타브를 깎는 잘못된 처방을 내렸습니다. 그 결과 메모리는 거의 줄지 않으면서 우주 배경의 미세한 별빛과 촉수 리본 윤곽선만 뿌옇게 뭉개졌습니다.<br />
+                  설계자의 즉시 지적을 받고 <code>vm_stat</code> 및 프로세스 <code>footprint</code> 실측을 수행한 결과, 진짜 범인은 픽셀 셰이더 연산량이 아니라 <strong>Lumen Scene 버퍼, Virtual Shadow Maps 페이지 테이블, 레이트레이싱 프록시, 그리고 과도하게 잡힌 스트리밍 풀</strong>이었습니다. 즉시 해상도와 셰이더 품질을 원복하고 렌더 패스 설정(<code>DefaultEngine.ini</code>, <code>DefaultScalability.ini</code>)만 정밀 타격하여 선명한 화질과 <code>7.93GB</code> 메모리 안정성을 동시에 달성했습니다.
                 </div>
               </div>
             </div>
@@ -2309,7 +2309,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
         <div class="callout callout-tip">
           <div class="callout-title">✅ Architecture Summary &amp; Next Expansion</div>
           <p>
-            지금까지 <strong>1) macOS 툴체인 격리 &amp; 멀티 에이전트 설계 가드레일(<code>ARCHITECTURE.md</code>)</strong>, <strong>2) 순수 <code>APawn</code> 기반 6-DoF 쿼터니언 카메라 &amp; 물풍선 탄성</strong>, <strong>3) <code>ISpaceTendrilHostInterface</code> + <code>USpaceTendrilAbility</code> 다형성 0-Tick 촉수 시스템(V1·V2·V3)</strong>, <strong>4) 단일 시드 절차적 소행성 &amp; 2-Tier 물리 구형 껍질 스트리밍(<code>C=[A,B]</code>)</strong>, <strong>5) 이중 미네랄 생태계 &amp; 0프레임 그물 동기화</strong>, <strong>6) 3D 우주 천구 &amp; M4 16GB 통합 메모리 최적화</strong>까지 기능 단위로 견고하게 모듈화된 아키텍처를 완성했습니다. 이제 확립된 데이터 주도 설계 위에서 3번 촉수 자원 제약(`CanConsumeJetResource`), 미네랄 기반 성장 트리, 위젯 HUD를 확장해 나갈 예정입니다.
+            지금까지 <strong>1) macOS 툴체인 격리 &amp; 멀티 에이전트 설계 가드레일(<code>ARCHITECTURE.md</code>)</strong>, <strong>2) 순수 <code>APawn</code> 기반 6-DoF 쿼터니언 카메라 &amp; 물풍선 탄성</strong>, <strong>3) <code>ISpaceTendrilHostInterface</code> + <code>USpaceTendrilAbility</code> 다형성 0-Tick 촉수 시스템(V1·V2·V3)</strong>, <strong>4) 단일 시드 절차적 소행성 &amp; 2-Tier 물리 구형 껍질 스트리밍(<code>C=[A,B]</code>)</strong>, <strong>5) 이중 미네랄 생태계 &amp; 0프레임 그물 동기화</strong>, <strong>6) 3D 우주 천구 &amp; M4 16GB 통합 메모리 최적화</strong>까지 기능 단위로 견고하게 모듈화된 아키텍처를 완성했습니다. 이제 확립된 데이터 주도 설계 위에서 3번 촉수 자원 제약(<code>CanConsumeJetResource</code>), 미네랄 기반 성장 트리, 위젯 HUD를 확장해 나갈 예정입니다.
           </p>
         </div>
       </section>

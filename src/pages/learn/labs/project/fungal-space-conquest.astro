@@ -1135,20 +1135,20 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
       <div class="phase-card active-phase">
         <div class="phase-header">
           <span class="phase-num">MODULE 05</span>
-          <span class="phase-status active">상태 머신 · 0프레임 동기</span>
+          <span class="phase-status active">원테이크 · 자석 흡수</span>
         </div>
-        <h3>이중 미네랄 생태계 &amp; 그물 포획 동기화</h3>
-        <p class="phase-desc">표면 부착·우주 부유 이중 스폰, 흡착(Adsorbed)→흡수(Absorbing) 분리, 깔때기 수식 1:1 바인딩</p>
+        <h3>이중 미네랄 생태계 &amp; 자석형 즉시 흡수</h3>
+        <p class="phase-desc">표면 부착·우주 부유 이중 스폰, 전염 폭발 원테이크 흡수, 본체 반경 비례 자석 흡수 전환</p>
         <ul class="phase-list">
           <li class="current-lesson-item">
             <a href="#ch-05" class="phase-chapter-link">
               <span class="lesson-num">05</span>
-              <span class="chapter-name">미네랄 생태계 · 그물 포획</span>
+              <span class="chapter-name">미네랄 생태계 · 자석 흡수</span>
               <span class="goto-icon">➔</span>
             </a>
             <div class="sub-lesson-chips" aria-label="모듈 05 세부 섹션">
-              <a href="#sec-5-1" class="sub-chip">5.1 이중 풀링·흡착→흡수 분리</a>
-              <a href="#sec-5-2" class="sub-chip">5.2 HLSL-C++ 깔때기 일치·0프레임</a>
+              <a href="#sec-5-1" class="sub-chip">5.1 이중 풀링·분포 제어</a>
+              <a href="#sec-5-2" class="sub-chip">5.2 원테이크·자석 흡수 전환</a>
             </div>
           </li>
         </ul>
@@ -1967,7 +1967,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
       </section>
 
       <section id="sec-4-2" class="lesson-section">
-        <h3>4.2 2-Tier 물리 계층화(Chaos 솔버 캡 vs Kinematic) &amp; 전방 타원 구형 껍질 <code>C=[A,B]</code> 6규칙</h3>
+        <h3>4.2 2-Tier 물리 계층화(Chaos 솔버 캡 vs Kinematic) &amp; 상대 배율 구형 껍질 스트리밍</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
@@ -2106,14 +2106,14 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
 
       <!-- ================= MODULE 05 ================= -->
       <div class="lesson-nav-bar">
-        <span class="lesson-badge">MODULE 05 // DUAL MINERAL ECOSYSTEM &amp; ZERO-LAG NET CAPTURE</span>
-        <span class="read-time">이중 풀링 · 흡착→흡수 상태 머신 · 깔때기 수식 1:1 일치 · 0프레임 바인딩</span>
+        <span class="lesson-badge">MODULE 05 // DUAL MINERAL ECOSYSTEM &amp; MAGNETIC ABSORPTION</span>
+        <span class="read-time">이중 풀링 · 데이터 주도 분포 · 원테이크 전염 흡수 · 본체 반경 비례 자석 흡수</span>
       </div>
 
       <header class="lesson-header" id="ch-05">
-        <h2>05. 이중 미네랄 생태계(<code>ASpaceMineral</code>) &amp; 0프레임 그물 포획 동기화</h2>
+        <h2>05. 이중 미네랄 생태계(<code>ASpaceMineral</code>) &amp; 자석형 즉시 흡수</h2>
         <p class="lesson-intro">
-          소행성 표면에 자라나는 광석과 우주 공간을 떠다니는 부유 광석을 단일 오브젝트 풀로 관리하고, 그물 촉수(V2)로 포획할 때 허공 오포획이나 위치 지연이 발생하지 않도록 셰이더 수식과 틱 주도권을 일치시킨 설계입니다.
+          소행성 표면에 자라나는 광석과 우주 공간을 떠다니는 부유 광석을 단일 오브젝트 풀로 관리하고, 번거로운 별도 포획 조작 없이 전염 폭발 및 본체 근접 시 자석처럼 본체로 빨려 들어오는 끊김 없는 흡수 흐름을 구현한 설계입니다.
         </p>
       </header>
 
@@ -2182,19 +2182,19 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
       </section>
 
       <section id="sec-5-2" class="lesson-section">
-        <h3>5.2 그물 깔때기 HLSL-C++ 1:1 수식 일치 &amp; 0프레임 바인딩</h3>
+        <h3>5.2 그물 포집 폐기 및 자석형 원테이크 흡수(<code>BeginAbsorption</code>) 전환</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              2번 그물 촉수는 뿌리 쪽은 좁고 끝단으로 갈수록 나팔꽃처럼 퍼지는 곡선 깔때기 형태를 띱니다. 물리 판정 모양이 시각 그래픽과 다르거나, 포획된 광석이 그물 리본과 따로 움직이면 시각적 괴리가 발생합니다.
+              초기에는 2번 그물 촉수(<code>UNetTendrilAbility</code>)로 미네랄을 따로 낚아채는 2단계 조작을 두었으나, 1번 촉수로 소행성을 전염·폭발시킨 직후 다시 2번 그물을 쏴야 하는 조작 분절이 발생했고, 거대해진 본체 근처의 미네랄도 고정 여유 거리 때문에 흡수되지 않는 불편함이 드러났습니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 나이아가라 HLSL 곡선 방정식 공유 &amp; 촉수 주도 0프레임 위치 동기화</span>
+            <span class="p-label decision">설계 결정: 그물 포집 제거 · 폭발 원테이크 흡수 · 본체 반경 비례 자석 판정</span>
             <div class="p-text">
-              1) <strong>시각-판정 깔때기 수식 1:1 일치</strong>: 나이아가라 <code>NS_Tendril_GossamerSpores</code>의 스포크/링 HLSL 반경 곡선 식과 중심 흔들림(Sway) 수식을 C++ <code>EvaluateFunnelRadiusCm</code> 및 <code>EvaluateFunnelCenter</code>에 그대로 이식해, 눈으로 보이는 그물망 내부에 들어온 광석만 정확히 포획되도록 맞췄습니다.<br />
-              2) <strong>자체 Tick 중지 &amp; 촉수 주도 0프레임 바인딩</strong>: 광석이 흡착(<code>BeginAdsorption</code>)되는 순간 광석 자신의 <code>Tick</code>을 끄고(<code>SetTickFunctionEnable(false)</code>), 그물 촉수의 <code>OnActiveTick</code>에서 정규화 앵커 좌표(<code>NetAnchorT</code>, <code>NetRadialDir2D</code>, <code>NetRadialFraction</code>)를 기반으로 광석의 월드 좌표를 직접 밀어 넣어 그물이 출렁이거나 수축할 때 0프레임 오차로 매달려 오도록 구현했습니다.
+              1) <strong>전염 폭발 원테이크 즉시 흡수</strong>: 전염된 소행성이 폭발할 때 방출되는 보상 미네랄과 소행성 표면에 이미 부착되어 있던 미네랄을 모두 <code>BeginAbsorption()</code>으로 전환해 자석처럼 곧바로 본체로 빨아들이도록 일원화했습니다.<br />
+              2) <strong>본체 반경 비례 자석 흡수 범위 &amp; V2 전투 슬롯 해방</strong>: <code>SweepDirectContactMinerals()</code>가 고정 cm 대신 <code>BodyRadius × DirectContactAbsorbRadiusMultiplier + DirectContactAbsorbMarginCm</code>로 성장에 비례해 미네랄을 끌어당기도록 개선했고, 역할이 겹친 2번 그물 촉수의 미네랄 포집 코드는 제거해 향후 적군 전투용 능력으로 전환할 수 있게 정리했습니다.
             </div>
           </div>
         </div>
@@ -2202,31 +2202,19 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
-              <span class="drawer-tag">TRIAL &amp; ERROR + CODE</span>
-              <span>설계 우여곡절 &amp; 코드 보기: 단순 원뿔 판정의 허공 오포획 해결 &amp; SpaceMineral 동기화 코드</span>
+              <span class="drawer-tag">TRIAL &amp; ERROR + ARCHIVE</span>
+              <span>설계 진화 기록: 과거 2번 그물 촉수 포집(HLSL-C++ 0프레임 바인딩) 구현과 폐기 이유</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
             <div class="perspective-card" style="margin-top: 0;">
               <div class="perspective-row">
-                <span class="p-label issue">설계 우여곡절: 단순 원뿔 판정으로 인한 허공 오포획과 1프레임 지연 분리</span>
+                <span class="p-label issue">설계 진화: 정교했던 그물 포집 시스템을 과감히 걷어낸 이유</span>
                 <div class="p-text">
-                  첫 구현에서는 그물 판정을 단순 직선 원뿔로 근사하고 포획된 미네랄이 자기 <code>Tick</code>에서 그물 중심을 향해 <code>VInterpTo</code>로 따라오게 만들었습니다. 그 결과 그물 뿌리 옆의 허공에 있는 광석이 갑자기 잡히거나, 그물이 빠르게 수축할 때 광석이 그물 그래픽 뒤에 붕 떠서 뒤늦게 따라오는 문제가 나타났습니다. 판정 수식을 HLSL 깔때기 곡선과 일치시키고 틱 주도권을 <code>UNetTendrilAbility</code>로 일원화함으로써 두 문제를 동시에 해결했습니다.
+                  초기 2번 그물 포집 구현에서는 나이아가라 <code>NS_Tendril_GossamerSpores</code>의 HLSL 깔때기 반경 수식을 C++(<code>EvaluateFunnelRadiusCm</code>, <code>EvaluateFunnelCenter</code>)에 1:1로 이식하고, 흡착 시 광석 <code>Tick</code>을 꺼서 0프레임 오차로 매달려 오게 만드는 등 기술적으로 정교한 동기화를 완성했었습니다. 하지만 실제 게임플레이 루프를 검증한 결과, <strong>플레이어가 원하는 핵심 쾌감은 '그물로 줍는 번거로움'이 아니라 '소행성을 전염시켜 터뜨리고 보상이 자석처럼 쏟아져 들어오는 원테이크 손맛'</strong>이었습니다. 이에 포집 로직을 과감히 제거하고 자석형 즉시 흡수로 전환했으며, 다듬어 둔 깔때기 기하 코어는 향후 적군 전투 능력으로 재활용하도록 남겨 두었습니다.
                 </div>
               </div>
-            </div>
-
-            <div class="code-block-wrap">
-              <div class="code-header">
-                <span class="file-name">SpaceTendrilAbility.cpp &amp; SpaceMineral.cpp // 깔때기 수식 &amp; 0프레임 흡착→흡수 동기화</span>
-                <div class="code-actions">
-                  <span class="code-lang">C++ // Net &amp; Mineral</span>
-                  <button type="button" class="copy-btn" data-copy={codeMineralSync}>Copy</button>
-                </div>
-              </div>
-              <Code code={codeNetFunnelAndCooldown} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
-              <Code code={codeMineralSync} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
             </div>
           </div>
         </details>

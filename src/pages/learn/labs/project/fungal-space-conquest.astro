@@ -1435,7 +1435,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
             <span class="p-label decision">설계 결정: 로컬 기저 쿼터니언 누적 곱셈 &amp; 내장 스프링암 파라미터 연동</span>
             <div class="p-text">
               1) <strong>짐벌락 없는 <code>FQuat</code> 누적 회전</strong>: 매 입력마다 현재 카메라 피벗의 로컬 축을 기준으로 <code>YawDelta</code>와 <code>PitchDelta</code> 쿼터니언을 우측 곱셈(<code>TargetCameraOrbitQuat * YawDelta * PitchDelta</code>)으로 누적하고 <code>FMath::QInterpTo</code>로 구면 선형 보간해 전방위 360도 회전을 구현했습니다.<br />
-              2) <strong>내장 <code>USpringArmComponent</code> 활용 및 속력 비례 신축</strong>: 별도의 커스텀 카메라 추적기를 짜지 않고 언리얼 내장 <code>USpringArmComponent</code>의 <code>bEnableCameraLag</code>와 <code>CameraLagMaxDistance</code>를 그대로 활용하되, 본체 속력에 비례해 암 길이(<code>TargetArmLength</code>)와 추적 속도(<code>CameraLagSpeed</code>)가 부드럽게 확장되도록 파라미터화하여 고속 비행 시의 속도감과 시야 안정성을 동시에 확보했습니다.
+              2) <strong>내장 <code>USpringArmComponent</code> 활용 및 속력·본체 크기 비례 신축</strong>: 별도의 커스텀 카메라 추적기를 짜지 않고 언리얼 내장 <code>USpringArmComponent</code>의 <code>bEnableCameraLag</code>와 <code>CameraLagMaxDistance</code>를 그대로 활용하되, 본체 속력에 비례해 암 길이(<code>TargetArmLength</code>)와 추적 속도(<code>CameraLagSpeed</code>)가 부드럽게 확장되도록 파라미터화했습니다. 또한 본체가 거대해져도 화면 중앙 조준 리티클이 본체와 겹치지 않도록 <code>CameraBoom-&gt;SocketOffset</code> 역시 <code>BodyScale</code> 지수에 비례해 함께 스케일링하여 모든 성장 단계에서 동일한 상대 구도를 유지합니다.
             </div>
           </div>
         </div>
@@ -1766,14 +1766,14 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              2번 촉수는 소행성에 꽂아 당기는 1번 촉수와 달리 주변 우주 공간의 미네랄을 넓게 쓸어 담는 수확 전용 능력입니다. 입력을 길게 누르고 있지 않아도 한 번의 발사만으로 그물이 끝까지 펼쳐져 포획을 완료해야 하며, 발사 반동이 조준을 흔들지 않도록 무반동으로 동작해야 합니다.
+              2번 촉수는 소행성에 꽂아 당기는 1번 촉수와 달리 전방 부채꼴/깔때기 영역에 단발로 전개되는 능력입니다. 입력을 길게 누르고 있지 않아도 한 번의 발사만으로 끝까지 펼쳐졌다가 자동 회수되어야 하며, 발사 반동이 조준을 흔들지 않도록 무반동으로 동작해야 합니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 단발(One-Shot) 전개 · <code>FTimerManager</code> 유지 타이머 · <code>bForceRestartFX</code> 재사용 초기화</span>
+            <span class="p-label decision">설계 결정: 단발(One-Shot) 전개 · <code>FTimerManager</code> 유지 타이머 · 전투 확장용 코어 경량화</span>
             <div class="p-text">
-              1) <strong>입력 분리 및 <code>FTimerManager</code> 자동 회수</strong>: <code>IsHoldToMaintainAbility() == false</code>를 반환해 키를 떼더라도 전개를 유지하며, 최대 전개 도달 시 언리얼 내장 <code>FTimerManager</code> 원샷 타이머가 만료되면 자동으로 <code>BeginRetract()</code>를 호출해 미네랄을 본체로 회수합니다.<br />
-              2) <strong>반복 발사 안정화 및 매니저 풀 직접 조회</strong>: 방사형 스포크(<code>SpokeA~G</code>)와 동심원 링(<code>WebRingA~E</code>)을 깔때기 형태로 펼치며 <code>AAsteroidFieldManager::GatherAvailableMinerals()</code> 활성 배열만 스캔합니다. 또한 재발사 시 기존 이미터 잔여 상태로 인해 파티클이 누락되지 않도록 발사 직전 <code>bForceRestartFX</code> 리셋을 보장했습니다.
+              1) <strong>입력 분리 및 <code>FTimerManager</code> 자동 회수</strong>: <code>IsHoldToMaintainAbility() == false</code>를 반환해 키를 떼더라도 전개를 유지하며, 최대 전개 도달 시 언리얼 내장 <code>FTimerManager</code> 원샷 타이머가 만료되면 자동으로 <code>BeginRetract()</code>를 호출해 부드럽게 회수합니다.<br />
+              2) <strong>반복 발사 안정화 및 미네랄 포집 제거(전투 슬롯 전환)</strong>: 방사형 스포크(<code>SpokeA~G</code>)와 동심원 링(<code>WebRingA~E</code>)을 깔때기 형태로 펼치며, 재발사 시 기존 이미터 잔여 상태로 인해 파티클이 누락되지 않도록 발사 직전 <code>bForceRestartFX</code> 리셋을 보장합니다. 이후 전염 폭발 시 미네랄 즉시 흡수가 도입되면서 중복된 미네랄 포집 로직(<code>SweepAndCaptureMinerals</code>)은 과감히 제거하고, 향후 적군 전투 능력으로 바로 확장할 수 있도록 깔때기 기하 평가(<code>EvaluateFunnelCenter</code>, <code>EvaluateFunnelRadiusCm</code>)와 비주얼 코어만 남겼습니다.
             </div>
           </div>
         </div>
@@ -1980,7 +1980,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
             <div class="p-text">
               1) <strong>설계자 정의 구형 껍질 <code>C=[A,B]</code> &amp; 삭제 대기 큐 6규칙</strong>: 고정된 월드 좌표 청크를 기억하는 대신, 플레이어 중심 내부 반경 <code>A</code>(생성 금지 구역)와 외부 반경 <code>B</code> 사이의 껍질 <code>C=[A,B]</code>에서만 소행성을 동적 보충하고, <code>B</code>를 벗어난 소행성은 삭제 대기 큐에 넣어 유예 시간 내 <code>≤ B</code>로 재진입하면 구제하고 만료 시에만 풀로 회수하는 무상태(Stateless) 생명주기를 확립했습니다.<br />
               2) <strong>속력 연동 전방 타원 확장 &amp; 코사인 편향 샘플링</strong>: 플레이어 시선 및 비행 속도 방향으로만 <code>A</code>와 <code>B</code>를 타원구 형태로 깊게 늘리고 전방 반구에 코사인 가중치로 스폰을 집중시켜, 고속 비행 중에도 새 소행성이 아득한 원거리에서 작은 점으로 자연스럽게 출현하도록 만들었습니다.<br />
-              3) <strong>2-Tier 물리 스케줄링 (근거리 Chaos 캡 vs 원거리 Kinematic)</strong>: 실제 충돌·촉수 상호작용이 일어나는 근거리 소행성(상한 캡 적용)만 Chaos 물리 솔버에 등록하고, 원거리 소행성 수백 개는 물리와 콜리전을 끈 채 등속 선형·쿼터니언 회전 적분(<code>StepKinematicDrift</code>)만 수행해 광활한 시야와 높은 프레임을 동시에 달성했습니다.
+              3) <strong>2-Tier 물리 스케줄링 (근거리 Chaos 캡 vs 원거리 Kinematic)</strong>: 실제 충돌·촉수 상호작용이 일어나는 근거리 소행성(상한 캡 적용)만 Chaos 물리 솔버에 등록하고, 원거리 소행성 수백 개는 물리와 콜리전을 끈 채 등속 선형·쿼터니언 회전 적분(<code>StepKinematicDrift</code>)만 수행해 광활한 시야와 높은 프레임을 동시에 달성했습니다.<br />
+              4) <strong>본체 반지름 기준 상대 스케일링 &amp; 통합 양극단 분산 제어</strong>: 모든 생성·유지·전방 확장·물리 경계를 절대 거리(cm)가 아닌 현재 곰팡이폰 반지름 대비 배율로 전환해 성장 후에도 시야 비율이 무너지지 않도록 했으며, 디테일 패널을 <code>01~09</code> 의미론적 카테고리로 재정렬했습니다. 또한 개별 소행성에 흩어져 있던 선형·회전 속력 범위와 분산을 필드 매니저(<code>04. Asteroid Speed &amp; Spin</code>)에서 일괄 주입하도록 통합하고, 단방향 편향(<code>u^exp</code>) 대신 <code>[-1, 1]</code> 대칭 매핑 기반의 <strong>양극단 분산(<code>EvaluateSymmetricDispersion</code>)</strong>을 적용해 분산도가 클수록 아주 느리거나 아주 빠른 양 극단 개체 비율이 함께 높아지도록 설계했습니다.
             </div>
           </div>
         </div>
@@ -2128,8 +2129,8 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label decision">설계 결정: 공용 미네랄 풀의 이중 배치 &amp; 2단계 채집 상태 머신</span>
             <div class="p-text">
-              1) <strong>이중 스폰 생태계와 레지스트리 조회</strong>: <code>AAsteroidFieldManager</code>가 프리웜 미네랄 풀을 관리하며 소행성 활성화 시 표면 버텍스 앵커(<code>SampleSurfaceAnchor</code>)에 부착형 광석을 붙이고, 외곽 껍질에는 독립 부유형 광석을 배치합니다. 촉수가 미네랄을 탐색할 때는 월드 전체 액터를 뒤지는 <code>TActorIterator</code> 대신 매니저의 활성 미네랄 배열(<code>GatherAvailableMinerals</code>)만 즉시 참조합니다.<br />
-              2) <strong>흡착(Adsorbed)과 흡수(Absorbing)의 의미론적 분리</strong>: 그물 촉수에 포획된 광석은 먼저 그물코에 달라붙어 함께 딸려 오는 <strong>1단계 흡착(<code>Adsorbed</code>)</strong> 상태가 되고, 그물이 완전히 회수되거나 플레이어 본체 반경에 직접 닿는 순간 본체 중심으로 빨려 들어가며 작아지는 <strong>2단계 흡수(<code>Absorbing</code>)</strong> 상태로 전이됩니다.
+              1) <strong>이중 스폰 생태계와 데이터 주도 분포 제어</strong>: <code>AAsteroidFieldManager</code>가 프리웜 미네랄 풀을 관리하며 소행성 활성화 시 표면 버텍스 앵커(<code>SampleSurfaceAnchor</code>)에 부착형 광석을 붙이고(<code>SurfaceMineralCountRange</code> 및 <code>SurfaceMineralDistributionExponent</code>로 개수·편향 제어), 외곽 껍질에는 독립 부유형 광석을 배치합니다.<br />
+              2) <strong>전염 폭발 즉시 흡수(원테이크) &amp; 본체 반경 비례 직접 흡수</strong>: 전염된 소행성이 폭발할 때 새로 방출되는 미네랄과 기존 표면에 자라나 있던 미네랄을 모두 <code>BeginAbsorption()</code>으로 즉시 본체로 끌어들이며(<code>bAutoAbsorbColonizedExplosionMinerals</code>), 본체 직접 접촉 흡수 반경 역시 <code>BodyRadius × DirectContactAbsorbRadiusMultiplier + DirectContactAbsorbMarginCm</code>로 성장에 비례해 자동 확장되도록 설계했습니다.
             </div>
           </div>
         </div>

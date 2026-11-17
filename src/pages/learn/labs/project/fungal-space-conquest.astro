@@ -1020,7 +1020,7 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
     <div class="topic-tag">UE 5.9 CLIENT ARCHITECTURE // FEATURE-DRIVEN DESIGN &amp; POSTMORTEM</div>
     <h1>곰팡이 우주 정복 대작전: 기능별 아키텍처 설계와 엔지니어링 기록</h1>
     <p class="topic-desc">
-      Unreal Engine 5.9(macOS Apple Silicon) 환경에서 무중력 물풍선 부유체와 반응형 균사 촉수 시스템을 구축하며, <strong>"구현은 AI가, 설계는 인간이"</strong>라는 원칙 아래 확립한 <strong>기능 단위(Feature-Based) 클라이언트 아키텍처 문서</strong>입니다.
+      Unreal Engine 5.9(macOS Apple Silicon) 환경에서 무중력 물풍선 부유체와 반응형 균사 촉수 시스템을 구축하며, <strong>최신 UE 5.9에서 막 열린 공식 내장 MCP(<code>ModelContextProtocol</code>) 베타를 실전 프로덕션 워크플로우에 직접 검증</strong>하고, <strong>"구현은 AI가, 설계는 인간이"</strong>라는 원칙 아래 확립한 <strong>기능 단위(Feature-Based) 클라이언트 아키텍처 문서</strong>입니다.
       본문은 각 핵심 시스템의 <strong>설계 관점(객체 모델링, 언리얼 내장 기능 우선 활용, 파라미터 노출을 통한 0초 반복 개발·최적화 편의성)</strong>을 다루며, 설계 과정에서 겪은 <strong>시행착오(우여곡절)·폐기된 가설·상세 C++ 코드·스펙 표는 모두 접이식 서랍</strong>에 수록했습니다.
     </p>
 
@@ -1211,14 +1211,14 @@ FRuntimeFloatCurve SpeedDistributionCurve;`;
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              macOS 기본 개발 환경(CommandLineTools 및 Homebrew LLVM)과 UE 5.9 빌드 도구(UBT)가 요구하는 특정 Xcode 버전이 충돌하는 문제를 전역 <code>xcode-select</code> 변경 없이 해결해야 했습니다. 또한 에디터 내부 에셋·블루프린트·나이아가라·레벨 인스턴스 조작을 수작업 클릭 대신 자동화할 표준 인터페이스가 필요했습니다.
+              macOS 기본 개발 환경(CommandLineTools 및 Homebrew LLVM)과 UE 5.9 빌드 도구(UBT)가 요구하는 특정 Xcode 버전이 충돌하는 문제를 전역 <code>xcode-select</code> 변경 없이 해결해야 했습니다. 마침 <strong>최신 언리얼 엔진 5.9에서 에픽게임즈 공식 내장 MCP(<code>ModelContextProtocol</code>) 베타 지원</strong>이 열리면서, 기존 서드파티 브리지에 의존하지 않고 엔진 네이티브 AI 에이전트 연동 파이프라인의 실전 가능성을 직접 검증해 보고자 했습니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 환경변수 토글 격리 &amp; 공식 41개 MCP 툴셋 연동</span>
+            <span class="p-label decision">설계 결정: 환경변수 토글 격리 &amp; UE 5.9 공식 베타 MCP 툴셋 실전 검증</span>
             <div class="p-text">
               1) <strong>셸·GUI 이중 환경변수 격리</strong>: 터미널 셸(<code>export DEVELOPER_DIR</code>)과 macOS GUI 앱 세션(<code>launchctl setenv DEVELOPER_DIR</code>) 양쪽에 동시에 Xcode 경로를 주입·해제하는 <code>ue-on</code> / <code>ue-off</code> 토글 함수를 구축해 일반 개발 환경과의 간섭을 원천 차단했습니다.<br />
-              2) <strong>공식 내장 MCP(<code>AllToolsets</code>) 기반 무컴파일 제어</strong>: 서드파티 플러그인 대신 UE 5.9 내장 <code>ModelContextProtocol</code> 및 <code>AllToolsets</code>를 활성화하여, C++ 재컴파일 없이도 런타임 프로퍼티 반영(<code>SetProperties</code>), 나이아가라 모듈/렌더러 조립, 머티리얼 리컴파일 및 레벨 검증을 즉시 수행하는 파이프라인을 확립했습니다.
+              2) <strong>UE 5.9 공식 내장 MCP 베타(<code>ModelContextProtocol</code> + <code>AllToolsets</code>) 실전 검증</strong>: 최신 5.9 버전에 내장된 공식 MCP 서버(포트 <code>8000</code>, Streamable HTTP)와 41개 에디터 툴셋을 활성화해, 서드파티 플러그인 없이도 런타임 프로퍼티 반영(<code>SetProperties</code>), 나이아가라 모듈/렌더러 조립, 머티리얼 리컴파일, 에디터 콘솔(<code>HotReload</code>) 및 Python 스크립팅까지 에이전트가 직접 구동하는 최신 워크플로우를 검증·안착시켰습니다.
             </div>
           </div>
         </div>

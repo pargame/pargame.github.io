@@ -3,8 +3,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Project: 실전 개발 프로젝트 허브"
-  description="Study Notes > Labs & Projects > Project — 언리얼 엔진 5.9 곰팡이 우주 정복 대작전 프로젝트 허브 및 개발 아카이브"
+  title="Projects: 프로젝트 포트폴리오"
+  description="pargame 프로젝트 포트폴리오 — UE 5.9 C++ 「곰팡이 우주 정복 대작전」 완성 케이스 스터디"
 >
   <div class="note-header">
     <nav class="breadcrumb" aria-label="브레드크럼">
@@ -15,8 +15,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       <span class="current">Project</span>
     </nav>
 
-    <div class="topic-tag">LABS &amp; PROJECTS // PROJECT HUB</div>
-    <h1>Project: 실전 프로젝트 개발 기록 허브</h1>
+    <div class="topic-tag">LABS &amp; PROJECTS // PORTFOLIO</div>
+    <h1>Projects: 프로젝트 포트폴리오</h1>
     <p class="topic-desc">
       이론 스터디에서 검증한 C++ 메모리·수명주기 모델, 게임 엔진 아키텍처, 셰이더 및 VFX 파이프라인을 실제 작동하는 프로토타입과 게임으로 구현하며 남기는 엔지니어링 허브입니다.
     </p>
@@ -24,22 +24,21 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 
   <section class="projects-section">
     <div class="section-title-wrap">
-      <span class="badge">ACTIVE SHOWCASE</span>
-      <h2>진행 중인 프로젝트</h2>
-      <p>구현 코드와 객체 모델링, 언리얼 내장 기능 우선 설계 근거, PIE/에디터 검증 결과를 기능 모듈 단위로 정리합니다.</p>
+      <span class="badge">FEATURED CASE STUDY</span>
+      <h2>완성 프로젝트</h2>
+      <p>1분 요약으로 핵심 성과를 확인하고, 각 카드에서 딥다이브 장으로 바로 이동할 수 있습니다.</p>
     </div>
 
     <article class="project-showcase">
       <div class="showcase-top">
         <div class="showcase-badges">
-          <span class="status-pill active">
+          <span class="status-pill completed">
             <span class="pulse-dot"></span>
-            ACTIVE DEV · 6 FEATURE MODULES
+            COMPLETED · UE 5.9 (macOS / Windows)
           </span>
-          <span class="engine-pill">UNREAL ENGINE 5.9 · macOS</span>
-          <span class="path-pill">UEStudy / Sandbox / MiniProject</span>
+          <span class="path-pill">C++ · 10-Hunt Time Attack</span>
         </div>
-        <span class="updated-meta">Updated 2026. 11. 16</span>
+        <span class="updated-meta">Updated 2026. 11. 19</span>
       </div>
 
       <div class="showcase-body">
@@ -50,46 +49,49 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             </a>
           </h2>
           <p class="project-subtitle">
-            무중력 공간에 떠 있는 보송보송한 먼지공·곰팡이 부유체가 물풍선처럼 출렁이며, <strong>2-Tier Chaos 물리 &amp; 구형 껍질 C=[A,B] 소행성 벨트</strong>를 유영하고 <strong>V1(긴 촉수)·V2(그물 촉수)·V3(내장 나이아가라 분사 촉수)</strong>로 우주를 탐험·수확하는 UE 5.9 C++ 프로젝트.
+            무중력 우주에서 균류 세포로 성장하며 <strong>포식자 곰팡이 10마리를 최단 시간 안에 역포식</strong>하는 UE 5.9 C++ 미니게임. 처치 2마리에 <strong>V2 광역 그물</strong>, 5마리에 <strong>V3 긴급 탈출</strong>이 해금되고, 포식자는 <strong>공격 티켓 · 포위 링 AI</strong>로 압박합니다. 클리어 타임은 로컬 <strong>TOP 5 리더보드</strong>에 기록됩니다.
           </p>
 
           <div class="metrics-strip">
             <div class="metric-item">
-              <span class="metric-label">CORE OOP</span>
-              <span class="metric-value">UInterface · 0-Tick Ability</span>
+              <span class="metric-label">ARCHITECTURE</span>
+              <span class="metric-value">0-Tick OOP</span>
+              <span class="metric-desc">UInterface 의존성 역전 · EditInlineNew 능력 객체</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">2-TIER FIELD POOL</span>
-              <span class="metric-value">820 Asteroids · 128 Minerals</span>
+              <span class="metric-label">WORLD STREAMING</span>
+              <span class="metric-value">1,150 Asteroids · 2-Tier</span>
+              <span class="metric-desc">근거리 48 Chaos / 원거리 Kinematic · 크기 비례 0ms 스케일링</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">TENDRIL ABILITIES</span>
-              <span class="metric-value">V1 Tether · V2 Net · V3 Jet</span>
+              <span class="metric-label">GAMEPLAY AI</span>
+              <span class="metric-value">Attack Ticket AI · 10-Hunt</span>
+              <span class="metric-desc">최대 2마리 돌진 · 포위 링 · 최대 도달 크기 스폰</span>
             </div>
             <div class="metric-item">
-              <span class="metric-label">M4 MEMORY</span>
-              <span class="metric-value">21.4GB → 7.93GB Unified</span>
+              <span class="metric-label">OPTIMIZATION &amp; PIPELINE</span>
+              <span class="metric-value">M4 21.4GB → 7.93GB · UE 5.9 MCP</span>
+              <span class="metric-desc">공식 MCP 베타 실전 검증 · 멀티 에이전트 가드레일</span>
             </div>
           </div>
 
           <div class="stack-tags">
             <span class="stack-tag">#UE5_9</span>
-            <span class="stack-tag">#APawnDesign</span>
-            <span class="stack-tag">#Quaternion6DoF</span>
+            <span class="stack-tag">#AttackTicketAI</span>
             <span class="stack-tag">#ZeroTickAbilityOOP</span>
-            <span class="stack-tag">#NiagaraLocalSpace</span>
-            <span class="stack-tag">#RuntimeFloatCurve</span>
+            <span class="stack-tag">#UInterface</span>
             <span class="stack-tag">#TwoTierChaosPhysics</span>
-            <span class="stack-tag">#SphericalShell_C_AB</span>
-            <span class="stack-tag">#DistantStarMPC</span>
+            <span class="stack-tag">#RuntimeSizeScale</span>
+            <span class="stack-tag">#PureSlateHUD</span>
             <span class="stack-tag">#M4_16GB_Optimization</span>
+            <span class="stack-tag">#UE59_OfficialMCP</span>
           </div>
         </div>
 
         <a
           href="/learn/labs/project/fungal-space-conquest"
           class="showcase-preview"
-          aria-label="곰팡이 우주 정복 대작전 프로젝트 허브 열기"
+          aria-label="곰팡이 우주 정복 대작전 케이스 스터디 열기"
         >
           <img
             src="/images/projects/fungal-space-conquest/blog-pie-idle.png"
@@ -101,68 +103,64 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       </div>
 
       <div class="milestone-strip">
-        <a href="/learn/labs/project/fungal-space-conquest#ch-01" class="milestone-card">
+        <a href="/learn/labs/project/fungal-space-conquest#gameplay-ai" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MODULE 01</span>
+            <span class="m-num">CHAPTER 01</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>개발 환경 · 데이터 주도 · 가드레일</h3>
-          <p><code>ue-on/off</code> Xcode 격리, 공식 MCP, <code>Sandbox</code> 격리 &amp; <code>ARCHITECTURE.md</code> 멀티 에이전트 규약</p>
+          <h3>게임플레이 &amp; 포식자 AI</h3>
+          <p>10마리 타임어택 루프, 공격 티켓(최대 2마리)·포위 링·최소 이격, 순수 Slate HUD &amp; TOP 5</p>
         </a>
 
-        <a href="/learn/labs/project/fungal-space-conquest#ch-02" class="milestone-card">
+        <a href="/learn/labs/project/fungal-space-conquest#tendrils" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MODULE 02</span>
+            <span class="m-num">CHAPTER 02</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>무중력 본체 (<code>ASpaceDrifterPawn</code>)</h3>
-          <p><code>ACharacter</code>를 버린 순수 <code>APawn</code>, <code>FQuat</code> 6-DoF 유동 카메라, 2차 스프링·아이코스피어 탄성</p>
+          <h3>무중력 본체 &amp; 다형성 촉수</h3>
+          <p><code>ISpaceTendrilHostInterface</code> · <code>ISpaceColonizableTarget</code>, V1 길이 비례 인력, V2/V3 처치 해금</p>
         </a>
 
-        <a href="/learn/labs/project/fungal-space-conquest#ch-03" class="milestone-card">
+        <a href="/learn/labs/project/fungal-space-conquest#world-streaming" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MODULE 03</span>
+            <span class="m-num">CHAPTER 03</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>다형성 촉수 능력 (V1 · V2 · V3)</h3>
-          <p><code>UInterface</code> · <code>EditInlineNew</code> 0-Tick · <code>TG_PostPhysics</code> 동기화, V1·V2·V3(<code>bLocalSpace</code>) 역할 분리</p>
+          <h3>소행성 1,150 풀 &amp; 월드 스트리밍</h3>
+          <p>2-Tier 물리, 구형 껍질 C=[A,B], <code>RuntimeSizeScale</code> 0ms 균일 스케일링, 이중 미네랄</p>
         </a>
 
-        <a href="/learn/labs/project/fungal-space-conquest#ch-04" class="milestone-card">
+        <a href="/learn/labs/project/fungal-space-conquest#optimization" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MODULE 04</span>
+            <span class="m-num">CHAPTER 04</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>결정론적 소행성 &amp; 구형 껍질 C=[A,B]</h3>
-          <p>시드 부피 정규화·<code>FRuntimeFloatCurve</code> 분포, 0ms 프리베이크 풀, 2-Tier 물리 &amp; 전방 타원 스트리밍</p>
+          <h3>최적화 &amp; Windows 이식</h3>
+          <p>천구 <code>MPC</code>, M4 16GB <code>21.4GB → 7.93GB</code>, MSVC C2397 수정 &amp; 1.08 MB 퍼블릭 리포</p>
         </a>
 
-        <a href="/learn/labs/project/fungal-space-conquest#ch-05" class="milestone-card">
+        <a href="/learn/labs/project/fungal-space-conquest#pipeline" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">MODULE 05</span>
+            <span class="m-num">CHAPTER 05</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>이중 미네랄 &amp; 0프레임 그물 포획</h3>
-          <p>표면·부유 이중 스폰, 흡착→흡수 상태 분리, HLSL-C++ 깔때기 1:1 일치 &amp; 촉수 주도 동기화</p>
-        </a>
-
-        <a href="/learn/labs/project/fungal-space-conquest#ch-06" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">MODULE 06</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>우주 환경 &amp; M4 16GB 메모리 최적화</h3>
-          <p>3D 구면 천구 · 천구 내장 무한 항성 <code>MPC</code>, 불필요 렌더 패스 제거(<code>21.4GB → 7.93GB</code>)</p>
+          <h3>개발 파이프라인 &amp; AI 가드레일</h3>
+          <p><code>ue-on/off</code> 격리, UE 5.9 공식 MCP 베타 검증, <code>ARCHITECTURE.md</code> 멀티 에이전트 규약</p>
         </a>
       </div>
 
       <div class="showcase-footer">
         <div class="footer-note">
-          "구현은 AI가, 설계는 인간이" — 인간 설계자의 의사결정·검증·최적화 흐름과 실제 UE 5.9 C++ 소스 및 MCP 실측치를 바탕으로 작성했습니다. 상세 코드와 표는 접기 서랍에 수록되어 있습니다.
+          "구현은 AI가, 설계는 인간이" — 모든 코드 스니펫은 공개 리포지토리의 최신 UE 5.9 C++ 소스와 동일합니다.
         </div>
-        <a href="/learn/labs/project/fungal-space-conquest" class="cta-btn">
-          프로젝트 허브 &amp; 개발 기록 읽기 →
-        </a>
+        <div class="footer-actions">
+          <a href="https://github.com/pargame/FungalSpaceConquest" class="cta-btn secondary" target="_blank" rel="noopener noreferrer">
+            GitHub ↗
+          </a>
+          <a href="/learn/labs/project/fungal-space-conquest" class="cta-btn">
+            케이스 스터디 읽기 →
+          </a>
+        </div>
       </div>
     </article>
   </section>
@@ -269,7 +267,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     border-radius: 999px;
     border: 1px solid var(--border-subtle);
   }
-  .status-pill.active {
+  .status-pill.completed {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -352,6 +350,11 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     font-size: 0.86rem;
     font-weight: 600;
     color: var(--text-1);
+  }
+  .metric-desc {
+    font-size: 0.76rem;
+    color: var(--text-3);
+    line-height: 1.45;
   }
 
   .stack-tags {
@@ -474,6 +477,22 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     font-size: 0.92rem;
     text-decoration: none;
     transition: all var(--dur-fast);
+  }
+  .footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  .cta-btn.secondary {
+    background: var(--surface-2);
+    color: var(--text-1);
+    border: 1px solid var(--border);
+  }
+  .cta-btn.secondary:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: none;
   }
   .cta-btn:hover {
     background: var(--accent-strong);

@@ -1784,7 +1784,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
     <h1>곰팡이 우주 정복 대작전: UE 5.9 C++ 포트폴리오 케이스 스터디</h1>
     <p class="topic-desc">
       무중력 우주에서 균류 세포로 성장하며 <strong>포식자 곰팡이 10마리를 최단 시간 안에 역포식</strong>하는 Unreal Engine 5.9 C++ 미니게임의 완성 기록입니다. <strong>"구현은 AI가, 설계는 인간이"</strong>라는 원칙 아래, 최신 UE 5.9에서 막 열린 <strong>공식 내장 MCP(<code>ModelContextProtocol</code>) 베타를 실전 프로덕션 워크플로우에 직접 검증</strong>하며 완성했습니다.
-      본문은 <strong>게임플레이 &amp; AI → 촉수 능력 → 월드 스트리밍 → 최적화 &amp; 이식 → 개발 파이프라인</strong> 5장 스토리라인으로 구성되며, 시행착오·폐기된 설계·상세 C++ 코드는 접이식 서랍에 수록했습니다. 모든 코드 스니펫은 공개 리포지토리의 최신 소스와 동일합니다.
+      본문은 <strong>게임플레이 &amp; AI → 촉수 능력 → 월드 스트리밍 → 최적화 &amp; 이식</strong> 4장의 UE 5 클라이언트 설계·최적화와 <strong>부록: 개발 파이프라인</strong>으로 구성됩니다. 각 절은 설계 배경 · 설계 결정 · 결과/검증 3행 카드로 요약하고, 구현 상세·시행착오·폐기된 설계·C++ 코드는 접이식 서랍에 수록했습니다. 모든 코드 스니펫은 공개 리포지토리의 최신 소스와 동일합니다.
     </p>
 
     <div class="meta-bar">
@@ -1840,8 +1840,8 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
   <section class="curriculum-overview">
     <div class="section-title-wrap">
       <span class="badge">STORYLINE INDEX</span>
-      <h2>5장 스토리라인 (01 — 05)</h2>
-      <p>플레이어가 체감하는 게임플레이에서 출발해 그것을 떠받치는 시스템, 최적화, 개발 파이프라인 순으로 내려갑니다.</p>
+      <h2>4장 스토리라인 (01 — 04) + 부록</h2>
+      <p>플레이어가 체감하는 게임플레이에서 출발해 그것을 떠받치는 시스템과 최적화 순으로 내려가며, 개발 파이프라인은 부록으로 분리했습니다.</p>
     </div>
 
     <div class="roadmap-grid">
@@ -1941,23 +1941,18 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
 
       <div class="phase-card active-phase">
         <div class="phase-header">
-          <span class="phase-num">CHAPTER 05</span>
-          <span class="phase-status active">환경 · MCP · 가드레일</span>
+          <span class="phase-num">APPENDIX</span>
+          <span class="phase-status active">툴체인 · MCP · 가드레일</span>
         </div>
         <h3>개발 파이프라인</h3>
-        <p class="phase-desc">ue-on/off 툴체인 격리, UE 5.9 공식 MCP 베타 검증, 멀티 에이전트 가드레일</p>
+        <p class="phase-desc">ue-on/off 툴체인 격리, UE 5.9 공식 MCP 베타 검증, 멀티 에이전트 가드레일 (단일 절 요약)</p>
         <ul class="phase-list">
           <li class="current-lesson-item">
             <a href="#pipeline" class="phase-chapter-link">
-              <span class="lesson-num">05</span>
-              <span class="chapter-name">개발 파이프라인</span>
+              <span class="lesson-num">A</span>
+              <span class="chapter-name">부록: 개발 파이프라인</span>
               <span class="goto-icon">➔</span>
             </a>
-            <div class="sub-lesson-chips" aria-label="5장 세부 섹션">
-              <a href="#pipe-toolchain" class="sub-chip">5.1 ue-on/off</a>
-              <a href="#pipe-mcp" class="sub-chip">5.2 공식 MCP</a>
-              <a href="#pipe-guardrails" class="sub-chip">5.3 가드레일</a>
-            </div>
           </li>
         </ul>
       </div>
@@ -1975,6 +1970,89 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <strong>3) 단일 진실(Single Source of Truth)</strong>: "이 포식자가 위협인가"는 <code>AEnemyMoldManager::IsEnemyThreatToPlayer</code> 하나로만 판정하고, 피격·HUD 마커·티켓·림 라이트가 모두 이를 참조해 규칙 불일치를 원천 차단했습니다.
         </p>
       </div>
+
+      <figure class="arch-figure">
+        <div class="arch-scroll">
+          <svg class="arch-svg" viewBox="0 0 960 470" role="img" aria-labelledby="svgArchTitle svgArchDesc">
+            <title id="svgArchTitle">UE 5 클라이언트 전체 아키텍처</title>
+            <desc id="svgArchDesc">한 프레임 실행 순서: TG_PrePhysics 매니저 일괄 틱, TG_DuringPhysics Chaos 48캡과 Kinematic, TG_PostPhysics ASpaceDrifterPawn, AddTickPrerequisiteActor로 정렬된 Niagara 3종. 하단은 ISpaceTendrilHostInterface와 ISpaceColonizableTarget을 통한 의존성 역전과 조건부 0-Tick 능력 객체입니다.</desc>
+            <defs>
+              <marker id="arrArch" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" class="s-fill-accent" />
+              </marker>
+              <marker id="arrArch2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M0 0 L10 5 L0 10 z" class="s-hollow-head" />
+              </marker>
+            </defs>
+
+            <text x="20" y="26" class="s-label">한 프레임 실행 순서 (TickGroup)</text>
+
+            <rect x="20" y="40" width="210" height="190" rx="10" class="s-box" />
+            <text x="36" y="66" class="s-title s-accent">TG_PrePhysics</text>
+            <text x="36" y="96" class="s-text-strong">매니저 일괄 틱</text>
+            <text x="36" y="120" class="s-text">AEnemyMoldManager</text>
+            <text x="36" y="142" class="s-text">AAsteroidFieldManager</text>
+            <text x="36" y="176" class="s-small">개별 소행성·포식자</text>
+            <text x="36" y="194" class="s-small">bCanEverTick = false</text>
+            <text x="36" y="216" class="s-small s-accent2">→ 조건부 0-Tick</text>
+
+            <rect x="255" y="40" width="210" height="190" rx="10" class="s-box" />
+            <text x="271" y="66" class="s-title s-accent">TG_DuringPhysics</text>
+            <text x="271" y="96" class="s-text-strong">Chaos 적분</text>
+            <text x="271" y="120" class="s-text">근거리 강체 ≤ 48</text>
+            <text x="271" y="142" class="s-text">원거리 Kinematic</text>
+            <text x="271" y="176" class="s-small">활성/해제 반경</text>
+            <text x="271" y="194" class="s-small">히스테리시스 전환</text>
+
+            <rect x="490" y="40" width="210" height="190" rx="10" class="s-box-accent" />
+            <text x="506" y="66" class="s-title s-accent">TG_PostPhysics</text>
+            <text x="506" y="96" class="s-text-strong">ASpaceDrifterPawn</text>
+            <text x="506" y="120" class="s-text">카메라 · 촉수 좌표</text>
+            <text x="506" y="142" class="s-text">User.TendrilStart/End</text>
+            <text x="506" y="194" class="s-small">AddTickPrerequisiteActor</text>
+            <text x="506" y="212" class="s-small">(Pawn 완료 후 FX 실행)</text>
+
+            <rect x="725" y="40" width="215" height="190" rx="10" class="s-box" />
+            <text x="741" y="66" class="s-title s-accent">TG_PostUpdateWork</text>
+            <text x="741" y="96" class="s-text-strong">Niagara 3종</text>
+            <text x="741" y="120" class="s-text">V1 · V2 · V3 촉수 FX</text>
+            <text x="741" y="142" class="s-text">같은 프레임 좌표 반영</text>
+            <text x="741" y="194" class="s-small">V3 bLocalSpace</text>
+            <text x="741" y="212" class="s-small">+ MeshRenderer</text>
+
+            <path d="M231 135 L253 135" class="s-arrow" marker-end="url(#arrArch)" />
+            <path d="M466 135 L488 135" class="s-arrow" marker-end="url(#arrArch)" />
+            <path d="M701 135 L723 135" class="s-arrow" marker-end="url(#arrArch)" />
+
+            <text x="20" y="272" class="s-label">의존성 역전 (UINTERFACE) · 조건부 0-Tick 능력</text>
+
+            <rect x="40" y="292" width="250" height="56" rx="8" class="s-box" />
+            <text x="165" y="313" text-anchor="middle" class="s-small">«interface»</text>
+            <text x="165" y="335" text-anchor="middle" class="s-text-strong">ISpaceTendrilHostInterface</text>
+            <rect x="40" y="398" width="250" height="44" rx="8" class="s-box" />
+            <text x="165" y="425" text-anchor="middle" class="s-text">ASpaceDrifterPawn</text>
+            <path d="M165 397 L165 351" class="s-line s-dash" marker-end="url(#arrArch2)" />
+
+            <rect x="355" y="318" width="250" height="64" rx="10" class="s-box-accent" />
+            <text x="480" y="343" text-anchor="middle" class="s-text-strong">USpaceTendrilAbility</text>
+            <text x="480" y="365" text-anchor="middle" class="s-small">EditInlineNew UObject · V1 / V2 / V3</text>
+            <path d="M354 340 L292 324" class="s-arrow" marker-end="url(#arrArch)" />
+            <path d="M606 340 L668 324" class="s-arrow" marker-end="url(#arrArch)" />
+            <text x="480" y="412" text-anchor="middle" class="s-small s-accent2">IsAbilityTickActive() == false → Tick 0</text>
+            <text x="480" y="432" text-anchor="middle" class="s-small s-accent2">유지·지속 시간은 FTimerManager 원샷</text>
+
+            <rect x="670" y="292" width="250" height="56" rx="8" class="s-box" />
+            <text x="795" y="313" text-anchor="middle" class="s-small">«interface»</text>
+            <text x="795" y="335" text-anchor="middle" class="s-text-strong">ISpaceColonizableTarget</text>
+            <rect x="670" y="398" width="250" height="44" rx="8" class="s-box" />
+            <text x="795" y="425" text-anchor="middle" class="s-text">ASpaceAsteroid · ASpaceEnemyMold</text>
+            <path d="M795 397 L795 351" class="s-line s-dash" marker-end="url(#arrArch2)" />
+
+            <text x="20" y="462" class="s-small">→ 의존(호출)   ⇢ 구현(realize)</text>
+          </svg>
+        </div>
+        <figcaption><strong>UE 5 클라이언트 아키텍처</strong> — 매니저 일괄 틱 → Chaos 2-Tier → 폰 → Niagara 순서를 TickGroup으로 고정하고, 능력은 두 인터페이스에만 의존하는 0-Tick 객체로 분리했습니다.</figcaption>
+      </figure>
 
       <!-- CHAPTER 01 -->
       <div class="lesson-nav-bar">
@@ -1999,11 +2077,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 10마리 처치 = 승리 · 클리어 타임 기록 · 처치 수 기반 해금</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong><code>TargetVictoryEnemyCount = 10</code> 승리 판정</strong>: <code>ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer</code>가 처치 수를 올리고 10마리 도달 시 <code>EndRun(ESpaceRunState::Victory)</code>로 종료합니다. 생체량이 임계치 아래로 떨어지면 <code>GameOver</code>입니다.<br />
-              2) <strong>처치 기반 점진 해금</strong>: 처치 2마리(<code>V2UnlockDefeatedEnemyCount</code>)에 V2 광역 그물, 5마리(<code>V3UnlockDefeatedEnemyCount</code>)에 V3 긴급 탈출이 열립니다. 잠긴 능력을 선택하면 "포식자 처치 n/m 달성 시 해금" 배너로 다음 목표를 안내합니다.<br />
-              3) <strong>역포식 전환</strong>: 포식자의 전염 필요 생체량이 플레이어 가용 생체량보다 작아지는 순간 위협이 아닌 사냥감으로 바뀌고, 포식자 표면 림 라이트가 전환되어 공수 역전을 시각적으로 알립니다.
+              <code>ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer</code> 한 곳에서 처치 수를 집계해 <strong>10마리 처치 = 승리 · 클리어 타임 기록 · 처치 수 기반 V2/V3 해금</strong>을 함께 판정합니다. 판정 지점을 하나로 모아 승리·해금·HUD 연출이 같은 카운터를 공유합니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              10마리 도달 시 <code>EndRun(ESpaceRunState::Victory)</code>로 클리어 타임이 확정되고, 처치 2/5마리 해금 배너가 다음 목표를 안내해 "버티기" 대신 기록 경쟁 루프가 성립했습니다.
             </div>
           </div>
         </div>
@@ -2011,12 +2093,23 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
-              <span class="drawer-tag">CODE</span>
-              <span>코드 보기: 승리 판정 · 처치 해금 (NotifyEnemyDefeatedByPlayer · IsTendrilStyleUnlocked)</span>
+              <span class="drawer-tag">DETAIL + CODE</span>
+              <span>상세 보기: 구현 상세 · 승리 판정 · 처치 해금 (NotifyEnemyDefeatedByPlayer · IsTendrilStyleUnlocked)</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong><code>TargetVictoryEnemyCount = 10</code> 승리 판정</strong>: <code>ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer</code>가 처치 수를 올리고 10마리 도달 시 <code>EndRun(ESpaceRunState::Victory)</code>로 종료합니다. 생체량이 임계치 아래로 떨어지면 <code>GameOver</code>입니다.<br />
+                  2) <strong>처치 기반 점진 해금</strong>: 처치 2마리(<code>V2UnlockDefeatedEnemyCount</code>)에 V2 광역 그물, 5마리(<code>V3UnlockDefeatedEnemyCount</code>)에 V3 긴급 탈출이 열립니다. 잠긴 능력을 선택하면 "포식자 처치 n/m 달성 시 해금" 배너로 다음 목표를 안내합니다.<br />
+                  3) <strong>역포식 전환</strong>: 포식자의 전염 필요 생체량이 플레이어 가용 생체량보다 작아지는 순간 위협이 아닌 사냥감으로 바뀌고, 포식자 표면 림 라이트가 전환되어 공수 역전을 시각적으로 알립니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">SpaceDrifterPawn.cpp // 10-Hunt 승리 &amp; V2/V3 해금</span>
@@ -2041,25 +2134,121 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 공격 티켓 + 포위 링으로 압박 밀도를 통제</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>공격 티켓(<code>MaxAttackingEnemies = 2</code>)</strong>: 가장 가까운 위협 포식자 최대 2마리만 리드 추격(Lead Pursuit)으로 돌진합니다. 더 가까운 후보가 생겨도 <code>350cm</code> 히스테리시스를 넘어야 교체되고, V2 그물로 둔화된 보유자는 교체 대상에서 보호하며, 사냥 가능 상태로 바뀐 보유자는 <code>0.5s</code> 유예 후 반납해 깜빡임을 막았습니다.<br />
-              2) <strong>포위 링 &amp; 최소 이격</strong>: 티켓이 없는 포식자는 플레이어 표면 기준 <code>950~1450cm</code> 링을 유지하며 선회하고, 모든 포식자 사이에 <code>550cm</code> 최소 표면 이격 반발을 걸어 서로 겹치지 않게 했습니다. V1 전염이 진행 중인 포식자는 조향을 멈춰 링으로 끌려나가지 않습니다.<br />
-              3) <strong>최대 도달 크기 기준 스폰 &amp; 템포 제어</strong>: 신규 포식자 크기는 현재가 아닌 <code>MaxReachedBodyRadiusCm</code>(최대 도달 반지름)에 배율을 곱해 산출하고, 활성 수는 시간(<code>90s</code>)·미네랄(<code>50</code>개) 중 큰 쪽으로 완만히 증가합니다. 필드가 비면 <code>2초</code> 만에 다음 포식자를 투입해 루프가 끊기지 않습니다.<br />
-              4) <strong>베놈 WPO &amp; 카메라 침투 방지</strong>: 포식자 머티리얼(<code>M_EnemyMold</code>)은 심비오트풍 WPO 가시와 검은 타르 광택으로 위협을 표현하고, 카메라가 포식자 반지름 <code>1.65배</code> 안으로 파고들면 시각 메시만 임시로 숨겨 화면 가림과 어지럼을 막았습니다.
+              <code>AEnemyMoldManager</code>가 <strong>공격 티켓(최대 2마리 돌진) + 외곽 포위 링 선회 + 전 개체 최소 이격</strong>으로 압박 밀도를 중앙 통제하고, 스폰 크기는 현재가 아닌 <code>MaxReachedBodyRadiusCm</code> 기준으로 산출합니다. 개별 포식자는 0-Tick으로 두고 매니저 일괄 갱신만 수행합니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              동시 돌진이 2마리로 고정되고 <code>350cm</code> 히스테리시스로 티켓 교체 떨림이 사라졌으며, 최대 도달 크기 기준 스폰으로 "일부러 작아진 뒤 약한 적만 사냥"하는 악용이 차단되었습니다.
             </div>
           </div>
         </div>
+
+        <figure class="arch-figure">
+          <div class="arch-scroll">
+            <svg class="arch-svg" viewBox="0 0 960 440" role="img" aria-labelledby="svgAiTitle svgAiDesc">
+              <title id="svgAiTitle">포식자 AI 공간 배치도</title>
+              <desc id="svgAiDesc">플레이어 주변에 공격 티켓 보유 포식자 2마리가 돌진하고, 나머지는 표면 기준 950~1450cm 포위 링에서 550cm 최소 이격을 유지하며 선회합니다. 스폰 크기는 최대 도달 반지름 기준입니다.</desc>
+              <defs>
+                <marker id="arrAi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0 L10 5 L0 10 z" class="s-fill-accent" />
+                </marker>
+                <marker id="arrAi2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0 L10 5 L0 10 z" class="s-fill-accent2" />
+                </marker>
+              </defs>
+
+              <circle cx="300" cy="225" r="150" class="s-band" stroke-width="70" />
+              <circle cx="300" cy="225" r="115" class="s-line s-dash" />
+              <circle cx="300" cy="225" r="185" class="s-line s-dash" />
+              <text x="300" y="28" text-anchor="middle" class="s-label s-accent2">포위 링 · 표면 기준 950~1450cm</text>
+
+              <path d="M386 102 A150 150 0 0 0 300 75" class="s-arrow2" marker-end="url(#arrAi2)" />
+              <path d="M249 366 A150 150 0 0 0 339 370" class="s-arrow2" marker-end="url(#arrAi2)" />
+              <text x="394" y="58" class="s-small">선회 0.65×</text>
+
+              <circle cx="406" cy="119" r="30" class="s-sep" />
+              <circle cx="274" cy="77" r="30" class="s-sep" />
+              <circle cx="170" cy="150" r="30" class="s-sep" />
+              <circle cx="225" cy="355" r="30" class="s-sep" />
+              <circle cx="406" cy="119" r="14" class="s-enemy" />
+              <circle cx="274" cy="77" r="14" class="s-enemy" />
+              <circle cx="170" cy="150" r="14" class="s-enemy" />
+              <circle cx="225" cy="355" r="14" class="s-enemy" />
+              <text x="454" y="100" class="s-small">최소 이격 550cm</text>
+
+              <circle cx="375" cy="355" r="14" class="s-enemy-ghost" />
+              <text x="375" y="359" text-anchor="middle" class="s-glyph">C</text>
+              <line x1="378" y1="340" x2="381" y2="290" class="s-line s-dash" />
+              <text x="404" y="398" class="s-small">Δd &gt; 350cm일 때만 교체</text>
+
+              <circle cx="300" cy="225" r="36" class="s-player" />
+              <text x="300" y="229" text-anchor="middle" class="s-label">Player</text>
+
+              <circle cx="222" cy="168" r="15" class="s-enemy-hot" />
+              <text x="222" y="172" text-anchor="middle" class="s-glyph">T1</text>
+              <path d="M236 179 L267 201" class="s-arrow" marker-end="url(#arrAi)" />
+
+              <circle cx="382" cy="272" r="22" class="s-shield" />
+              <circle cx="382" cy="272" r="15" class="s-enemy-hot" />
+              <text x="382" y="276" text-anchor="middle" class="s-glyph">T2</text>
+              <path d="M362 261 L337 246" class="s-arrow" marker-end="url(#arrAi)" />
+
+              <rect x="625" y="16" width="320" height="200" rx="10" class="s-box" />
+              <text x="645" y="44" class="s-title">공격 티켓 2슬롯</text>
+              <circle cx="653" cy="72" r="7" class="s-enemy-hot" />
+              <text x="670" y="76" class="s-text">T1·T2 · MaxAttackingEnemies = 2</text>
+              <path d="M645 98 L661 98" class="s-arrow" marker-end="url(#arrAi)" />
+              <text x="670" y="102" class="s-text">Lead Pursuit 돌진</text>
+              <circle cx="653" cy="124" r="8" class="s-shield" />
+              <text x="670" y="128" class="s-text">V2 둔화 보유자 교체 보호</text>
+              <circle cx="653" cy="150" r="7" class="s-enemy-ghost" />
+              <text x="670" y="154" class="s-text">교체 히스테리시스 350cm</text>
+              <circle cx="653" cy="176" r="7" class="s-enemy" />
+              <text x="670" y="180" class="s-text">비티켓: 포위 링 선회</text>
+              <circle cx="653" cy="200" r="9" class="s-sep" />
+              <text x="670" y="204" class="s-text">전 개체 최소 이격 550cm</text>
+
+              <rect x="625" y="232" width="320" height="192" rx="10" class="s-box" />
+              <text x="645" y="260" class="s-title">스폰 크기 기준</text>
+              <circle cx="680" cy="304" r="30" class="s-line s-dash" />
+              <circle cx="680" cy="304" r="13" class="s-player" />
+              <text x="680" y="350" text-anchor="middle" class="s-small">현재 · 최대 도달</text>
+              <path d="M718 304 L770 304" class="s-arrow" marker-end="url(#arrAi)" />
+              <circle cx="820" cy="304" r="36" class="s-enemy" />
+              <text x="820" y="308" text-anchor="middle" class="s-glyph">신규</text>
+              <text x="785" y="374" text-anchor="middle" class="s-text">MaxReachedBodyRadiusCm × 배율</text>
+              <text x="785" y="396" text-anchor="middle" class="s-small">활성 수: 90s · 미네랄 50개 중 큰 쪽 (최대 6)</text>
+              <text x="785" y="414" text-anchor="middle" class="s-small">빈 필드 → 2초 리스폰</text>
+            </svg>
+          </div>
+          <figcaption><strong>포식자 AI 공간 배치도</strong> — 티켓 보유 2마리만 돌진하고, 나머지는 포위 링에서 최소 이격을 유지하며 선회합니다. (개념도 · 비례 아님)</figcaption>
+        </figure>
 
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag cyan">AI SPEC &amp; CODE</span>
-              <span>상세 보기: AI 파라미터 표 · UpdateAttackTickets 전문 · 포위 링 조향 · 스폰/리스폰 규칙</span>
+              <span>상세 보기: 구현 상세 · AI 파라미터 표 · UpdateAttackTickets 전문 · 포위 링 조향 · 스폰/리스폰 규칙</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>공격 티켓(<code>MaxAttackingEnemies = 2</code>)</strong>: 가장 가까운 위협 포식자 최대 2마리만 리드 추격(Lead Pursuit)으로 돌진합니다. 더 가까운 후보가 생겨도 <code>350cm</code> 히스테리시스를 넘어야 교체되고, V2 그물로 둔화된 보유자는 교체 대상에서 보호하며, 사냥 가능 상태로 바뀐 보유자는 <code>0.5s</code> 유예 후 반납해 깜빡임을 막았습니다.<br />
+                  2) <strong>포위 링 &amp; 최소 이격</strong>: 티켓이 없는 포식자는 플레이어 표면 기준 <code>950~1450cm</code> 링을 유지하며 선회하고, 모든 포식자 사이에 <code>550cm</code> 최소 표면 이격 반발을 걸어 서로 겹치지 않게 했습니다. V1 전염이 진행 중인 포식자는 조향을 멈춰 링으로 끌려나가지 않습니다.<br />
+                  3) <strong>최대 도달 크기 기준 스폰 &amp; 템포 제어</strong>: 신규 포식자 크기는 현재가 아닌 <code>MaxReachedBodyRadiusCm</code>(최대 도달 반지름)에 배율을 곱해 산출하고, 활성 수는 시간(<code>90s</code>)·미네랄(<code>50</code>개) 중 큰 쪽으로 완만히 증가합니다. 필드가 비면 <code>2초</code> 만에 다음 포식자를 투입해 루프가 끊기지 않습니다.<br />
+                  4) <strong>WPO 가시 변위 &amp; 카메라 침투 방지</strong>: 포식자 머티리얼(<code>M_EnemyMold</code>)은 WPO 가시 변위와 검은 타르 광택으로 위협을 표현하고, 카메라가 포식자 반지름 <code>1.65배</code> 안으로 파고들면 시각 메시만 임시로 숨겨 화면 가림과 어지럼을 막았습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="spec-table-wrap">
               <table class="spec-table">
                 <thead>
@@ -2150,11 +2339,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: <code>RebuildWidget</code> 순수 Slate + <code>USaveGame</code> 로컬 기록</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>순수 Slate <code>USpaceDrifterHUDWidget</code></strong>: <code>UUserWidget::RebuildWidget</code>에서 <code>SNew</code> 트리로 타이틀(이름 입력 자동 포커스·TOP 5·초기화 버튼), 인게임 이중 세그먼트 생체량 바, 4면 피격 비네트, 포식자별 개별 마커 풀(최대 8개), V1~V3 쿨타임 슬롯을 모두 구성합니다.<br />
-              2) <strong><code>USpaceDrifterLeaderboardSave</code> 정렬 규칙</strong>: 10마리 완주 기록이 항상 상위이며 완주끼리는 클리어 타임 오름차순, 미완주는 처치 수 → 흡수 미네랄 → 최대 반지름 순입니다. 타이틀 화면에는 상위 5개만 노출합니다.<br />
-              3) <strong>입력 관통 가드</strong>: 이름 입력 Enter 확정 → <code>SPACE</code> 전용 시작으로 분리하고, 시작 직후 <code>SPACE</code>를 뗄 때까지 촉수 발사를 억제(<code>IsSuppressingTendrilUntilSpaceRelease</code>)해 시작 키가 V1 발사로 관통되지 않게 했습니다.
+              UMG 에셋 대신 <code>UUserWidget::RebuildWidget</code>에서 <code>SNew</code> 트리로 HUD 전체를 구성하고, 기록은 <code>USaveGame</code>(<code>USpaceDrifterLeaderboardSave</code>)에 저장했습니다. 위젯 바인딩이 C++ 한 곳에 모여 사람·에이전트 모두 텍스트 diff로 검증할 수 있습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              바이너리 위젯 에셋 0개로 타이틀·인게임 HUD·TOP 5 리더보드를 구성했고, 시작 키(<code>SPACE</code>)가 V1 발사로 관통되던 오발을 입력 억제 가드로 제거했습니다.
             </div>
           </div>
         </div>
@@ -2162,12 +2355,23 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
-              <span class="drawer-tag">CODE</span>
-              <span>코드 보기: EndRun 리더보드 등록 &amp; SortEntries 정렬 규칙</span>
+              <span class="drawer-tag">DETAIL + CODE</span>
+              <span>상세 보기: 구현 상세 · EndRun 리더보드 등록 &amp; SortEntries 정렬 규칙</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>순수 Slate <code>USpaceDrifterHUDWidget</code></strong>: <code>UUserWidget::RebuildWidget</code>에서 <code>SNew</code> 트리로 타이틀(이름 입력 자동 포커스·TOP 5·초기화 버튼), 인게임 이중 세그먼트 생체량 바, 4면 피격 비네트, 포식자별 개별 마커 풀(최대 8개), V1~V3 쿨타임 슬롯을 모두 구성합니다.<br />
+                  2) <strong><code>USpaceDrifterLeaderboardSave</code> 정렬 규칙</strong>: 10마리 완주 기록이 항상 상위이며 완주끼리는 클리어 타임 오름차순, 미완주는 처치 수 → 흡수 미네랄 → 최대 반지름 순입니다. 타이틀 화면에는 상위 5개만 노출합니다.<br />
+                  3) <strong>입력 관통 가드</strong>: 이름 입력 Enter 확정 → <code>SPACE</code> 전용 시작으로 분리하고, 시작 직후 <code>SPACE</code>를 뗄 때까지 촉수 발사를 억제(<code>IsSuppressingTendrilUntilSpaceRelease</code>)해 시작 키가 V1 발사로 관통되지 않게 했습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">SpaceDrifterPawn.cpp &amp; SpaceDrifterLeaderboardSave.h</span>
@@ -2198,7 +2402,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
       </header>
 
       <section id="tendrils-pawn" class="lesson-section">
-        <h3>2.1 순수 <code>APawn</code> 무중력 본체: FQuat 6-DoF 카메라 · 성장 스케일 · 물풍선 탄성</h3>
+        <h3>2.1 순수 <code>APawn</code> 무중력 본체: FQuat 6-DoF 카메라 · 성장 스케일 · 부피 보존 Squash/Stretch</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
@@ -2207,36 +2411,48 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 구형 강체 루트 + 쿼터니언 카메라 + 생체량 지수 성장</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong><code>USphereComponent</code> 루트 <code>APawn</code></strong>: 어느 방향 충돌에도 동일한 반발을 얻는 구형 Chaos 강체를 루트로 두고 회전 DOF를 잠가, 시각 메시(<code>DrifterMesh</code>)와 카메라 피벗 회전을 물리와 분리했습니다.<br />
-              2) <strong>짐벌락 없는 <code>FQuat</code> 누적 회전 + 내장 스프링암</strong>: 로컬 축 기준 <code>YawDelta · PitchDelta</code> 우측 곱셈과 <code>QInterpTo</code>로 전방위 360° 회전을 구현하고, 내장 <code>USpringArmComponent</code>의 암 길이·랙 속도·<code>SocketOffset</code>을 속력과 본체 크기 지수(<code>CameraArmBodyScaleExponent = 0.72</code>)에 비례시켰습니다.<br />
-              3) <strong>생체량 → 반지름 지수 성장 &amp; 질량 <code>s³</code></strong>: <code>BiomassToRadiusExponent = 0.40</code>으로 반지름을 산출하고, 콜리전 반지름·메시 스케일·질량(부피비 <code>s³</code>)을 한 번에 갱신하며 <code>MaxReachedBodyRadiusCm</code>를 기록해 포식자 스폰 기준으로 사용합니다.<br />
-              4) <strong>2차 스프링-댐퍼 + 부피 보존 WPO</strong>: C++는 가속도·능력별 스트레치를 감지해 단일 스칼라/축만 적분하고, GPU WPO가 주축 신축과 수직축 <code>1/√s</code> 부피 보존 변형을 수행합니다.
+              <code>ACharacter</code> 대신 <code>USphereComponent</code> 루트의 순수 <code>APawn</code>에 <code>FQuat</code> 누적 회전 카메라와 내장 <code>USpringArmComponent</code>를 결합했습니다. 생체량 지수 성장 하나로 콜리전·메시·질량(<code>s³</code>)·카메라 암을 함께 갱신해 성장 후에도 비율이 유지됩니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              CMC 비용 없이 짐벌락 없는 360° 시점을 확보했고, 부피 보존 Squash/Stretch는 C++ 단일 스칼라 적분 + GPU WPO로 처리되어 CPU 정점 연산 없이 동작합니다.
             </div>
           </div>
         </div>
 
-        <div class="compare-grid">
-          <figure class="media-card">
-            <img src="/images/projects/fungal-space-conquest/02-squash-preview.png" alt="물풍선 본체 Squash (압축) 프리뷰" class="zoomable-img" loading="lazy" />
-            <figcaption><strong>충돌·역가속 시 압축(Squash)</strong> — 진행 축으로 납작해지며 수직 단면이 팽창해 부피를 보존합니다.</figcaption>
-          </figure>
-          <figure class="media-card">
-            <img src="/images/projects/fungal-space-conquest/03-stretch-preview.png" alt="물풍선 본체 Stretch (인장) 프리뷰" class="zoomable-img" loading="lazy" />
-            <figcaption><strong>급가속·촉수 사출 시 인장(Stretch)</strong> — 가속 및 능력 발동 방향으로 본체가 매끄럽게 늘어납니다.</figcaption>
-          </figure>
-        </div>
+        <figure class="media-card pair-figure">
+          <div class="pair-img">
+            <img src="/images/projects/fungal-space-conquest/02-squash-preview.png" alt="본체 부피 보존 Squash (압축) 프리뷰" class="zoomable-img" loading="lazy" />
+            <img src="/images/projects/fungal-space-conquest/03-stretch-preview.png" alt="본체 부피 보존 Stretch (인장) 프리뷰" class="zoomable-img" loading="lazy" />
+          </div>
+          <figcaption><strong>부피 보존 Squash / Stretch</strong> — 충돌·역가속 시 진행 축으로 압축(좌), 급가속·촉수 사출 시 가속 방향으로 인장(우)되며 수직축 <code>1/√s</code> 변형으로 부피를 보존합니다.</figcaption>
+        </figure>
 
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">COMPARISON + TRIAL &amp; ERROR + CODE</span>
-              <span>상세 보기: ACharacter vs APawn 비교 · 화면 이탈/UV Sphere 극점 문제 · 카메라·성장·탄성 코드</span>
+              <span>상세 보기: 구현 상세 · ACharacter vs APawn 비교 · 화면 이탈/UV Sphere 극점 문제 · 카메라·성장·Squash/Stretch 코드</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong><code>USphereComponent</code> 루트 <code>APawn</code></strong>: 어느 방향 충돌에도 동일한 반발을 얻는 구형 Chaos 강체를 루트로 두고 회전 DOF를 잠가, 시각 메시(<code>DrifterMesh</code>)와 카메라 피벗 회전을 물리와 분리했습니다.<br />
+                  2) <strong>짐벌락 없는 <code>FQuat</code> 누적 회전 + 내장 스프링암</strong>: 로컬 축 기준 <code>YawDelta · PitchDelta</code> 우측 곱셈과 <code>QInterpTo</code>로 전방위 360° 회전을 구현하고, 내장 <code>USpringArmComponent</code>의 암 길이·랙 속도·<code>SocketOffset</code>을 속력과 본체 크기 지수(<code>CameraArmBodyScaleExponent = 0.72</code>)에 비례시켰습니다.<br />
+                  3) <strong>생체량 → 반지름 지수 성장 &amp; 질량 <code>s³</code></strong>: <code>BiomassToRadiusExponent = 0.40</code>으로 반지름을 산출하고, 콜리전 반지름·메시 스케일·질량(부피비 <code>s³</code>)을 한 번에 갱신하며 <code>MaxReachedBodyRadiusCm</code>를 기록해 포식자 스폰 기준으로 사용합니다.<br />
+                  4) <strong>2차 스프링-댐퍼 + 부피 보존 WPO</strong>: C++는 가속도·능력별 스트레치를 감지해 단일 스칼라/축만 적분하고, GPU WPO가 주축 신축과 수직축 <code>1/√s</code> 부피 보존 변형을 수행합니다.
+                </div>
+              </div>
+            </div>
+
             <div class="spec-table-wrap">
               <table class="spec-table">
                 <thead>
@@ -2317,12 +2533,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 두 개의 <code>UINTERFACE</code> 계약 + 경량 인라인 <code>UObject</code> 능력</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>호스트 계약 <code>ISpaceTendrilHostInterface</code></strong>: 능력은 폰 구체 클래스를 모른 채 시점·물리 루트·생체량 소비/환불·나이아가라 컴포넌트만 인터페이스로 조회합니다. 향후 적이 같은 능력을 써도 그대로 재사용됩니다.<br />
-              2) <strong>전염 계약 <code>ISpaceColonizableTarget</code></strong>: V1은 소행성(<code>ASpaceAsteroid</code>)과 포식자(<code>ASpaceEnemyMold</code>)를 구분하지 않고 "필요 생체량 · 진행 연출 · 완료 · 리셋" 계약만으로 전염합니다. 포식자 사냥은 소행성 전염 로직을 단 한 줄도 복제하지 않고 추가되었습니다.<br />
-              3) <strong><code>EditInlineNew</code> + <code>DefaultToInstanced</code> 0-Tick</strong>: Idle 상태에서는 <code>IsAbilityTickActive() == false</code>로 Tick 비용이 0이고, 유지 시간·탈출 지속 시간은 <code>FTimerManager</code> 원샷 타이머가 처리합니다.<br />
-              4) <strong>틱 순서 고정</strong>: 폰은 <code>TG_PostPhysics</code>, 촉수 나이아가라는 <code>TG_PostUpdateWork</code> + <code>AddTickPrerequisiteActor</code>로 정렬해 <strong>Chaos 적분 → 촉수 좌표 갱신 → 나이아가라 시뮬레이션</strong>이 같은 프레임 안에서 실행되도록 보장, 고속 비행 시 촉수 뿌리 분리를 제거했습니다.
+              능력을 <code>ISpaceTendrilHostInterface</code>(호스트)·<code>ISpaceColonizableTarget</code>(전염 대상) 두 <code>UINTERFACE</code> 계약에만 의존하는 <code>EditInlineNew</code> 인라인 <code>UObject</code>로 분리했습니다. <code>UActorComponent</code>와 달리 틱 등록 비용이 없고, 폰 수정 없이 능력을 추가할 수 있습니다. (전체 구조는 상단 아키텍처 도식 참고)
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              Idle 능력의 Tick 비용은 0이고 포식자 사냥은 소행성 전염 로직 복제 없이 추가되었으며, <code>TG_PostPhysics</code> → <code>TG_PostUpdateWork</code> 순서 고정으로 고속 비행 시 촉수 뿌리 분리가 제거되었습니다.
             </div>
           </div>
         </div>
@@ -2331,11 +2550,23 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag cyan">OOP SPEC &amp; CODE</span>
-              <span>상세 보기: 클래스 책임 표 · 추상 베이스/인터페이스 선언 · 0-Tick 게이트 · FTimerManager 유지 타이머</span>
+              <span>상세 보기: 구현 상세 · 클래스 책임 표 · 추상 베이스/인터페이스 선언 · 0-Tick 게이트 · FTimerManager 유지 타이머</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>호스트 계약 <code>ISpaceTendrilHostInterface</code></strong>: 능력은 폰 구체 클래스를 모른 채 시점·물리 루트·생체량 소비/환불·나이아가라 컴포넌트만 인터페이스로 조회합니다. 향후 적이 같은 능력을 써도 그대로 재사용됩니다.<br />
+                  2) <strong>전염 계약 <code>ISpaceColonizableTarget</code></strong>: V1은 소행성(<code>ASpaceAsteroid</code>)과 포식자(<code>ASpaceEnemyMold</code>)를 구분하지 않고 "필요 생체량 · 진행 연출 · 완료 · 리셋" 계약만으로 전염합니다. 포식자 사냥은 소행성 전염 로직을 단 한 줄도 복제하지 않고 추가되었습니다.<br />
+                  3) <strong><code>EditInlineNew</code> + <code>DefaultToInstanced</code> 0-Tick</strong>: Idle 상태에서는 <code>IsAbilityTickActive() == false</code>로 Tick 비용이 0이고, 유지 시간·탈출 지속 시간은 <code>FTimerManager</code> 원샷 타이머가 처리합니다.<br />
+                  4) <strong>틱 순서 고정</strong>: 폰은 <code>TG_PostPhysics</code>, 촉수 나이아가라는 <code>TG_PostUpdateWork</code> + <code>AddTickPrerequisiteActor</code>로 정렬해 <strong>Chaos 적분 → 촉수 좌표 갱신 → 나이아가라 시뮬레이션</strong>이 같은 프레임 안에서 실행되도록 보장, 고속 비행 시 촉수 뿌리 분리를 제거했습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="spec-table-wrap">
               <table class="spec-table">
                 <thead>
@@ -2415,12 +2646,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 길이 비례 증폭 · 즉시 실패 · 월드 시간 잠금</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>길이 비례 인력</strong>: 유효 사거리/기준 길이 배율(<code>ReachScale</code>)에 지수(<code>PullSpeedLengthExponent</code>, <code>PullForceLengthExponent</code>)를 적용해 최대 상대 속도·최소 구심 가속도·인력을 함께 증폭하고, 근접 시 접선 감쇠로 공전을 억제해 확실히 맞붙게 했습니다. 반작용은 질량 비례 상한을 둔 <code>AddForceAtLocation</code>으로 대상에 전달합니다.<br />
-              2) <strong>사전 실패 판정</strong>: 표면 접촉 직후 필요 생체량이 (가용 + 이미 투자한) 풀 이상이면 한 프레임도 투자하지 않고 즉시 실패 배너 → 환불 → 회수합니다. 성공 가능한 경우에만 가용 풀의 <code>50%/s</code> 속도로 전염합니다.<br />
-              3) <strong>1.4초 재발사 잠금</strong>: 전염 완료 시점에 <code>PostColonizeLockoutEndTime</code>을 기록하고 <code>CanActivateAbility</code> 오버라이드에서 조용히 차단합니다. 별도 Tick 없이 월드 시간 비교 한 번으로 끝납니다.<br />
-              4) <strong>형태 고정 체내 수축</strong>: 곁가지 수는 발사 시점의 착탄 거리로 1회 결정하고, 인양 중에는 기준 길이(<code>DeployedRefLengthCm</code>)를 동결한 채 체내 진입 오프셋만 늘려 가지가 깜빡이지 않고 몸속으로 미끄러져 들어옵니다.
+              유효 사거리 배율(<code>ReachScale</code>) 지수로 인력을 증폭하고, 표면 접촉 직후 전염 성공 여부를 사전 판정하며, 재발사 잠금은 Tick 없이 월드 시간 비교(<code>PostColonizeLockoutEndTime</code>)로 처리했습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              긴 촉수에서도 견인 속도가 유지되고, 이길 수 없는 대상에는 생체량 투자 없이 즉시 환불·회수되며, 전염 직후 <code>1.4초</code> 동안 오발이 차단되었습니다.
             </div>
           </div>
         </div>
@@ -2440,20 +2674,29 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">TRIAL &amp; ERROR + CODE</span>
-              <span>상세 보기: '여의봉 현상' · 근거리 빗자루 뭉침 해결 &amp; 인력·전염·곁가지 코드</span>
+              <span>상세 보기: 구현 상세 · 카메라 회전 시 촉수 휩쓸림 · 근거리 곁가지 뭉침 해결 &amp; 인력·전염·곁가지 코드</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
             <div class="perspective-card" style="margin-top: 0;">
               <div class="perspective-row">
-                <span class="p-label issue">시행착오 1: 카메라를 돌리면 뻗은 촉수가 통째로 휘둘리던 '여의봉 현상'</span>
+                <span class="p-label decision">구현 상세</span>
                 <div class="p-text">
-                  매 틱 카메라 Forward로 끝점을 계산해, 마우스를 돌리면 수십 미터짜리 촉수가 막대기처럼 허공을 휩쓸었습니다. 발사 순간의 조준 기저를 래치(<code>LatchCameraAimBasis</code>)하고, 미적중 시에는 본체 병진만 추종하도록 바꿔 해결했습니다.
+                  1) <strong>길이 비례 인력</strong>: 유효 사거리/기준 길이 배율(<code>ReachScale</code>)에 지수(<code>PullSpeedLengthExponent</code>, <code>PullForceLengthExponent</code>)를 적용해 최대 상대 속도·최소 구심 가속도·인력을 함께 증폭하고, 근접 시 접선 감쇠로 공전을 억제해 확실히 맞붙게 했습니다. 반작용은 질량 비례 상한을 둔 <code>AddForceAtLocation</code>으로 대상에 전달합니다.<br />
+                  2) <strong>사전 실패 판정</strong>: 표면 접촉 직후 필요 생체량이 (가용 + 이미 투자한) 풀 이상이면 한 프레임도 투자하지 않고 즉시 실패 배너 → 환불 → 회수합니다. 성공 가능한 경우에만 가용 풀의 <code>50%/s</code> 속도로 전염합니다.<br />
+                  3) <strong>1.4초 재발사 잠금</strong>: 전염 완료 시점에 <code>PostColonizeLockoutEndTime</code>을 기록하고 <code>CanActivateAbility</code> 오버라이드에서 조용히 차단합니다. 별도 Tick 없이 월드 시간 비교 한 번으로 끝납니다.<br />
+                  4) <strong>형태 고정 체내 수축</strong>: 곁가지 수는 발사 시점의 착탄 거리로 1회 결정하고, 인양 중에는 기준 길이(<code>DeployedRefLengthCm</code>)를 동결한 채 체내 진입 오프셋만 늘려 가지가 깜빡이지 않고 몸속으로 미끄러져 들어옵니다.
                 </div>
               </div>
               <div class="perspective-row">
-                <span class="p-label issue">시행착오 2: 근거리 착탄 시 곁가지 빗자루 뭉침 &amp; 인양 중 가지 증발</span>
+                <span class="p-label issue">시행착오 1: 카메라 회전 시 뻗은 촉수 전체가 함께 휩쓸리는 문제</span>
+                <div class="p-text">
+                  매 틱 카메라 Forward로 끝점을 계산해, 마우스를 돌리면 수십 미터 길이의 촉수 전체가 조준 방향을 따라 회전했습니다. 발사 순간의 조준 기저를 래치(<code>LatchCameraAimBasis</code>)하고, 미적중 시에는 본체 병진만 추종하도록 바꿔 해결했습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label issue">시행착오 2: 근거리 착탄 시 곁가지 밀집 &amp; 인양 중 가지 소실</span>
                 <div class="p-text">
                   짧은 줄기에 곁가지가 빽빽하게 몰리거나, 인양 중 실시간 길이 비례 식 때문에 가지가 하나씩 꺼졌습니다. <code>BranchMinTrunkCm</code> 이하에서는 곁가지를 0개로 억제하고, 가지 수와 기준 길이를 발사 시점 값으로 동결해 해결했습니다. 과거 폰에 있던 곁가지 계산은 V1 능력 객체로 이관되어 폰은 위임만 합니다.
                 </div>
@@ -2502,15 +2745,19 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              초기 V2는 미네랄 채집용 그물, V3는 무한 분사 추진이었습니다. 미네랄 흡수가 자석형 원테이크로 일원화되면서(3.4절) V2의 역할이 사라졌고, 무한 분사는 V1 견인의 의미를 지웠습니다. 두 능력을 "포식자와 싸우는 도구"로 재정의해야 했습니다.
+              초기 V2는 미네랄 채집용 그물, V3는 무한 분사 추진이었습니다. 미네랄 흡수가 단일 흡수 진입점(<code>BeginAbsorption</code>)으로 일원화되면서(3.4절) V2의 역할이 사라졌고, 무한 분사는 V1 견인의 의미를 지웠습니다. 두 능력을 "포식자와 싸우는 도구"로 재정의해야 했습니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 전투 슬롯 재정의 &amp; 처치 보상형 해금</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>V2 광역 그물(2킬 해금, 쿨타임 6초)</strong>: 깔때기 기하(<code>EvaluateFunnelCenter</code>, <code>EvaluateFunnelRadiusCm</code>)와 본체 크기 비례 광역 반경으로 원뿔 안의 모든 포식자를 <code>2.5초</code> 동안 <code>35%</code> 속도로 둔화하고, 반지름을 <code>-15%</code> 영구 축소합니다. 생체량은 성장 역지수(<code>2.5</code>)로 함께 줄어 "위협 → 사냥감" 전환을 직접 만들어 냅니다(초기 크기 50% 하한).<br />
-              2) <strong>V3 긴급 탈출(5킬 해금, 쿨타임 6초)</strong>: 가용 생체량의 <code>8%</code>(최소값 보장)를 지불하고 전방으로 <code>1400 cm/s</code> 단발 임펄스를 줍니다. 비용이 감당되지 않으면 <code>CanActivateAbility</code>에서 차단되어 위기 탈출에 대가가 따릅니다.<br />
-              3) <strong>내장 나이아가라 분사</strong>: V3 분사는 <code>NS_Tendril_SporeJet</code>의 <code>bLocalSpace = true</code> + <code>NiagaraMeshRendererProperties</code>(본체와 동일한 <code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>)로 렌더링해, 본체 일부가 떨어져 나가는 일체감을 C++ 보간 없이 얻었습니다.
+              V2·V3를 포식자 처치 보상(2·5마리)으로 해금되는 전투 능력으로 재정의하고, V3 분사는 수동 C++ 대신 내장 Niagara <code>bLocalSpace</code> + <code>MeshRenderer</code>로 렌더링했습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              V2는 원뿔 안의 포식자를 <code>2.5초</code> <code>35%</code> 둔화 + 반지름 <code>-15%</code> 영구 축소해 "위협 → 사냥감" 전환을 직접 만들고, V3 분사는 240줄 수동 메시 풀링 대신 머티리얼 플래그 1개(<code>bUsedWithNiagaraMeshParticles</code>)로 동작합니다.
             </div>
           </div>
         </div>
@@ -2530,12 +2777,20 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag cyan">REFLECTION &amp; CODE</span>
-              <span>상세 보기: C++ 수동 메시 풀링 240줄 폐기 · 그물 재발사 파티클 소실 해결 &amp; V2/V3 코드</span>
+              <span>상세 보기: 구현 상세 · C++ 수동 메시 풀링 240줄 폐기 · 그물 재발사 파티클 소실 해결 &amp; V2/V3 코드</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
             <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>V2 광역 그물(2킬 해금, 쿨타임 6초)</strong>: 깔때기 기하(<code>EvaluateFunnelCenter</code>, <code>EvaluateFunnelRadiusCm</code>)와 본체 크기 비례 광역 반경으로 원뿔 안의 모든 포식자를 <code>2.5초</code> 동안 <code>35%</code> 속도로 둔화하고, 반지름을 <code>-15%</code> 영구 축소합니다. 생체량은 성장 역지수(<code>2.5</code>)로 함께 줄어 "위협 → 사냥감" 전환을 직접 만들어 냅니다(초기 크기 50% 하한).<br />
+                  2) <strong>V3 긴급 탈출(5킬 해금, 쿨타임 6초)</strong>: 가용 생체량의 <code>8%</code>(최소값 보장)를 지불하고 전방으로 <code>1400 cm/s</code> 단발 임펄스를 줍니다. 비용이 감당되지 않으면 <code>CanActivateAbility</code>에서 차단되어 위기 탈출에 대가가 따릅니다.<br />
+                  3) <strong>내장 나이아가라 분사</strong>: V3 분사는 <code>NS_Tendril_SporeJet</code>의 <code>bLocalSpace = true</code> + <code>NiagaraMeshRendererProperties</code>(본체와 동일한 <code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>)로 렌더링해, 본체 일부가 떨어져 나가는 일체감을 C++ 보간 없이 얻었습니다.
+                </div>
+              </div>
               <div class="perspective-row">
                 <span class="p-label issue">반성: 왜 C++ 수동 메시 풀링(48슬롯 · 240줄)을 짜고도 폐기했는가</span>
                 <div class="p-text">
@@ -2601,11 +2856,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 부피 정규화 · 내장 커브 분포 · 사전 베이킹 풀</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>폐곡면 서명 부피 정규화 &amp; 선형 반경(<code>V^(1/3)</code>) 샘플링</strong>: 반경 스케일 공간에서 분포를 샘플링한 뒤 세제곱해 목표 부피·질량을 구하고, 노이즈 변형된 메시의 실제 적분 부피가 목표와 1:1이 되도록 정점을 정규화했습니다.<br />
-              2) <strong>내장 <code>FRuntimeFloatCurve</code></strong>: 크기(<code>SizeDistributionCurve</code>)·속도(<code>SpeedDistributionCurve</code>) 분포를 에디터 그래프로 노출해 재컴파일 없이 필드 생태계를 조율합니다.<br />
-              3) <strong>1,150 슬롯 프리베이크 &amp; 0-Tick 휴면</strong>: <code>BeginPlay</code>에서 슬롯마다 고유 아키타입을 구워 두고(홀수 슬롯은 3단계 LOD로 정점 부하 절감), 런타임에는 가시성·콜리전·물리 스위치만 토글합니다. 소행성 자체는 <code>bCanEverTick = false</code>입니다.
+              슬롯별 시드로 <code>BeginPlay</code>에 1,150개 아키타입을 사전 베이킹하고, 크기·속도 분포는 내장 <code>FRuntimeFloatCurve</code>로 노출했습니다. 런타임에는 가시성·콜리전·물리 스위치만 토글합니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              런타임 스폰 시 버텍스 생성·Convex 쿠킹이 발생하지 않고(<code>bCanEverTick = false</code> 휴면), 메시 적분 부피와 물리 질량이 1:1로 일치해 견인 역학이 형상과 무관하게 일관됩니다.
             </div>
           </div>
         </div>
@@ -2619,11 +2878,22 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">CODE &amp; OPTIMIZATION</span>
-              <span>코드 보기: 아키타입 사전 베이킹 · Dormant 전환 · FRuntimeFloatCurve 선언</span>
+              <span>상세 보기: 구현 상세 · 아키타입 사전 베이킹 · Dormant 전환 · FRuntimeFloatCurve 선언</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>폐곡면 서명 부피 정규화 &amp; 선형 반경(<code>V^(1/3)</code>) 샘플링</strong>: 반경 스케일 공간에서 분포를 샘플링한 뒤 세제곱해 목표 부피·질량을 구하고, 노이즈 변형된 메시의 실제 적분 부피가 목표와 1:1이 되도록 정점을 정규화했습니다.<br />
+                  2) <strong>내장 <code>FRuntimeFloatCurve</code></strong>: 크기(<code>SizeDistributionCurve</code>)·속도(<code>SpeedDistributionCurve</code>) 분포를 에디터 그래프로 노출해 재컴파일 없이 필드 생태계를 조율합니다.<br />
+                  3) <strong>1,150 슬롯 프리베이크 &amp; 0-Tick 휴면</strong>: <code>BeginPlay</code>에서 슬롯마다 고유 아키타입을 구워 두고(홀수 슬롯은 3단계 LOD로 정점 부하 절감), 런타임에는 가시성·콜리전·물리 스위치만 토글합니다. 소행성 자체는 <code>bCanEverTick = false</code>입니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">AsteroidFieldManager.cpp · SpaceAsteroid.cpp/.h // 0ms 프리베이크 풀</span>
@@ -2648,36 +2918,128 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 플레이어 중심 무상태 껍질 + 거리 기반 물리 계층</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>구형 껍질 <code>C=[A,B]</code> &amp; 삭제 유예 큐</strong>: 플레이어 반지름 배율로 정의된 내부 금지 반경 <code>A</code>와 외부 반경 <code>B</code> 사이에서만 소행성을 보충하고, <code>B</code>를 벗어나면 삭제 대기 큐에 넣어 유예 시간 안에 재진입하면 구제합니다.<br />
-              2) <strong>전방 타원 확장 &amp; 코사인 편향 샘플링</strong>: 비행 방향으로만 <code>A</code>·<code>B</code>를 늘리고 전방 반구에 스폰을 집중시켜, 고속 비행에도 새 소행성이 원거리의 작은 점으로 자연스럽게 나타납니다.<br />
-              3) <strong>2-Tier 물리</strong>: 플레이어 근처 최대 <code>48</code>개(<code>MaxActivePhysicsAsteroids</code>, 락온 대상 최우선 보호)만 Chaos 강체로 두고, 나머지는 물리·콜리전 없이 <code>StepKinematicDrift</code> 등속 적분만 수행합니다.
+              플레이어 중심 무상태 구형 껍질 <code>C=[A,B]</code>에서만 보충·회수하고, 근거리 최대 <code>48</code>개만 Chaos 강체, 나머지는 콜리전 없는 Kinematic 등속 적분으로 계층화했습니다. 위치를 기억하지 않으므로 움직이는 소행성과 좌표 모순이 생기지 않습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              Chaos 강체 수가 <code>48</code>로 상한 고정되고 활성/해제 반경 히스테리시스로 계층 전환 떨림이 없으며, <code>4000 cm/s</code> 고속 비행에서도 전방 확장 껍질 덕분에 코앞 팝인 없이 원거리에서 스폰됩니다.
             </div>
           </div>
         </div>
 
-        <div class="compare-grid">
-          <figure class="media-card">
-            <img src="/images/projects/fungal-space-conquest/blog4-01-natural-spawn-v4.png" alt="구형 껍질 C=[A,B] 및 전방 타원 확장을 통한 자연스러운 소행성 필드" class="zoomable-img" loading="lazy" />
-            <figcaption><strong>무상태 구형 껍질 &amp; 2-Tier 물리 필드</strong> — 근거리는 Chaos 강체, 원거리는 Kinematic 드리프트로 유영합니다.</figcaption>
-          </figure>
-          <figure class="media-card">
-            <img src="/images/projects/fungal-space-conquest/c-shell-ellipsoid-4000.png" alt="4000 cm/s 고속 이동 시 C=[A,B] 디버그 필드" class="zoomable-img" loading="lazy" />
-            <figcaption><strong>고속 비행(4000 cm/s) 디버그 뷰</strong> — 기본 구형 경계와 전방으로 확장된 <code>C=[A,B]</code> 활성 소행성 점군.</figcaption>
-          </figure>
-        </div>
+        <figure class="arch-figure">
+          <div class="arch-scroll">
+            <svg class="arch-svg" viewBox="0 0 960 440" role="img" aria-labelledby="svgWorldTitle svgWorldDesc">
+              <title id="svgWorldTitle">소행성 스트리밍 및 2-Tier 물리 공간 배치도</title>
+              <desc id="svgWorldDesc">플레이어 중심 무상태 구형 껍질 C=[A,B]가 비행 방향으로 확장되고, 근거리 최대 48개는 Chaos 강체, 나머지는 Kinematic으로 이동합니다. B 밖의 소행성은 삭제 유예 큐에 들어가며, 스폰 크기는 RuntimeSizeScale로 0ms 반영됩니다.</desc>
+              <defs>
+                <marker id="arrWorld" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0 L10 5 L0 10 z" class="s-fill-accent" />
+                </marker>
+                <marker id="arrWorld2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0 0 L10 5 L0 10 z" class="s-fill-accent2" />
+                </marker>
+              </defs>
+
+              <path d="M80 230 A230 170 0 1 0 540 230 A230 170 0 1 0 80 230 Z M180 230 A90 70 0 1 0 360 230 A90 70 0 1 0 180 230 Z" fill-rule="evenodd" class="s-shell" />
+              <ellipse cx="310" cy="230" rx="230" ry="170" class="s-line s-dash" />
+              <ellipse cx="270" cy="230" rx="90" ry="70" class="s-line s-dash" />
+              <text x="270" y="154" text-anchor="middle" class="s-label">A</text>
+              <text x="476" y="102" class="s-label">B</text>
+
+              <circle cx="250" cy="230" r="110" class="s-ring-accent s-dash" />
+              <circle cx="250" cy="230" r="130" class="s-ring-accent s-dot" />
+
+              <circle cx="330" cy="185" r="6" class="s-fill-accent" />
+              <circle cx="195" cy="160" r="6" class="s-fill-accent" />
+              <circle cx="170" cy="285" r="6" class="s-fill-accent" />
+              <circle cx="300" cy="305" r="6" class="s-fill-accent" />
+              <circle cx="345" cy="262" r="6" class="s-fill-accent" />
+              <circle cx="240" cy="320" r="6" class="s-fill-accent" />
+
+              <circle cx="420" cy="140" r="6" class="s-kin" />
+              <circle cx="470" cy="250" r="6" class="s-kin" />
+              <circle cx="400" cy="330" r="6" class="s-kin" />
+              <circle cx="130" cy="140" r="6" class="s-kin" />
+              <circle cx="120" cy="290" r="6" class="s-kin" />
+              <circle cx="500" cy="180" r="6" class="s-kin" />
+              <circle cx="330" cy="90" r="6" class="s-kin" />
+              <circle cx="260" cy="385" r="6" class="s-kin" />
+              <circle cx="440" cy="350" r="6" class="s-kin" />
+
+              <circle cx="45" cy="95" r="6" class="s-evict" />
+              <circle cx="80" cy="62" r="6" class="s-evict" />
+              <circle cx="30" cy="150" r="6" class="s-evict" />
+              <path d="M52 100 Q 95 105 118 140" class="s-arrow2 s-dash" marker-end="url(#arrWorld2)" />
+              <text x="20" y="30" class="s-small">B 밖: 삭제 유예 큐 → 재진입 시 구제</text>
+
+              <circle cx="250" cy="230" r="26" class="s-player" />
+              <text x="250" y="234" text-anchor="middle" class="s-glyph">P</text>
+              <path d="M280 230 L345 230" class="s-arrow" marker-end="url(#arrWorld)" />
+              <text x="312" y="222" text-anchor="middle" class="s-small">v</text>
+              <text x="550" y="234" class="s-small">전방 확장</text>
+
+              <circle cx="30" cy="421" r="5" class="s-fill-accent" />
+              <text x="42" y="425" class="s-small">Chaos ≤48</text>
+              <circle cx="130" cy="421" r="5" class="s-kin" />
+              <text x="142" y="425" class="s-small">Kinematic</text>
+              <circle cx="232" cy="421" r="5" class="s-evict" />
+              <text x="244" y="425" class="s-small">삭제 유예</text>
+              <line x1="320" y1="421" x2="344" y2="421" class="s-ring-accent s-dash" />
+              <text x="350" y="425" class="s-small">활성 r</text>
+              <line x1="402" y1="421" x2="426" y2="421" class="s-ring-accent s-dot" />
+              <text x="432" y="425" class="s-small">해제 r (히스테리시스)</text>
+
+              <rect x="625" y="16" width="320" height="200" rx="10" class="s-box" />
+              <text x="645" y="44" class="s-title">2-Tier 물리 &amp; 무상태 껍질</text>
+              <circle cx="653" cy="72" r="6" class="s-fill-accent" />
+              <text x="670" y="76" class="s-text">Chaos 강체 최대 48 (락온 최우선)</text>
+              <circle cx="653" cy="98" r="6" class="s-kin" />
+              <text x="670" y="102" class="s-text">Kinematic · StepKinematicDrift</text>
+              <line x1="645" y1="124" x2="661" y2="124" class="s-ring-accent s-dash" />
+              <text x="670" y="128" class="s-text">활성 k·R / 해제 (k+h)·R</text>
+              <circle cx="653" cy="150" r="6" class="s-evict" />
+              <text x="670" y="154" class="s-text">B 밖 → 삭제 유예 큐</text>
+              <text x="645" y="182" class="s-small">C=[A,B] · 활성 반경 · 스폰 간격 =</text>
+              <text x="645" y="200" class="s-small">모두 플레이어 반지름 R 배율</text>
+
+              <rect x="625" y="232" width="320" height="192" rx="10" class="s-box" />
+              <text x="645" y="260" class="s-title">0ms RuntimeSizeScale</text>
+              <circle cx="668" cy="312" r="10" class="s-rock" />
+              <circle cx="730" cy="312" r="20" class="s-rock" />
+              <circle cx="822" cy="312" r="35" class="s-rock" />
+              <text x="668" y="364" text-anchor="middle" class="s-small">s=1.0</text>
+              <text x="730" y="364" text-anchor="middle" class="s-small">s=2.0</text>
+              <text x="822" y="364" text-anchor="middle" class="s-small">s=3.5</text>
+              <text x="785" y="390" text-anchor="middle" class="s-text">반지름 × s · 질량 × s³</text>
+              <text x="785" y="412" text-anchor="middle" class="s-small">프리베이크 메시·Convex 재사용 (재생성 0)</text>
+            </svg>
+          </div>
+          <figcaption><strong>소행성 스트리밍 &amp; 2-Tier 물리 배치도</strong> — 무상태 껍질 <code>C=[A,B]</code>가 비행 방향으로 확장되고, 근거리 48개만 Chaos 강체로 시뮬레이션됩니다. (개념도 · 비례 아님)</figcaption>
+        </figure>
 
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag violet">DESIGN EVOLUTION &amp; CODE</span>
-              <span>설계 진화: 이전 청크 설계 → 구형 껍질 C=[A,B] 교체 이유 · 오버랩 vs 스캔 · WPO 스케일업 폐기 &amp; 최종 코드</span>
+              <span>상세 보기: 구현 상세 · 이전 청크 설계 → 구형 껍질 C=[A,B] 교체 이유 · 오버랩 vs 스캔 · WPO 스케일업 폐기 &amp; 최종 코드</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
             <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>구형 껍질 <code>C=[A,B]</code> &amp; 삭제 유예 큐</strong>: 플레이어 반지름 배율로 정의된 내부 금지 반경 <code>A</code>와 외부 반경 <code>B</code> 사이에서만 소행성을 보충하고, <code>B</code>를 벗어나면 삭제 대기 큐에 넣어 유예 시간 안에 재진입하면 구제합니다.<br />
+                  2) <strong>전방 타원 확장 &amp; 코사인 편향 샘플링</strong>: 비행 방향으로만 <code>A</code>·<code>B</code>를 늘리고 전방 반구에 스폰을 집중시켜, 고속 비행에도 새 소행성이 원거리의 작은 점으로 자연스럽게 나타납니다.<br />
+                  3) <strong>2-Tier 물리</strong>: 플레이어 근처 최대 <code>48</code>개(<code>MaxActivePhysicsAsteroids</code>, 락온 대상 최우선 보호)만 Chaos 강체로 두고, 나머지는 물리·콜리전 없이 <code>StepKinematicDrift</code> 등속 적분만 수행합니다.
+                </div>
+              </div>
               <div class="perspective-row">
                 <span class="p-label issue">이전 청크 설계 → 구형 껍질 C=[A,B] 교체 이유</span>
                 <div class="p-text">
@@ -2693,9 +3055,20 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
               <div class="perspective-row">
                 <span class="p-label issue">폐기: 머티리얼 WPO 0→1 스케일업 팝인 은폐</span>
                 <div class="p-text">
-                  "멀리서 바위가 풍선처럼 부푸는 모습이 더 인위적"이라는 플레이테스트 결과로 폐기하고, 2-Tier 물리로 확보한 여유로 전방 스폰 거리를 밀어내 원근감만으로 자연스럽게 나타나게 했습니다.
+                  "멀리서 바위가 0에서 커지는 모습이 오히려 인위적"이라는 플레이테스트 결과로 폐기하고, 2-Tier 물리로 확보한 여유로 전방 스폰 거리를 밀어내 원근감만으로 자연스럽게 나타나게 했습니다.
                 </div>
               </div>
+            </div>
+
+            <div class="compare-grid">
+              <figure class="media-card">
+                <img src="/images/projects/fungal-space-conquest/blog4-01-natural-spawn-v4.png" alt="구형 껍질 C=[A,B] 및 전방 타원 확장을 통한 자연스러운 소행성 필드" class="zoomable-img" loading="lazy" />
+                <figcaption><strong>무상태 구형 껍질 &amp; 2-Tier 물리 필드</strong> — 근거리는 Chaos 강체, 원거리는 Kinematic 드리프트로 유영합니다.</figcaption>
+              </figure>
+              <figure class="media-card">
+                <img src="/images/projects/fungal-space-conquest/c-shell-ellipsoid-4000.png" alt="4000 cm/s 고속 이동 시 C=[A,B] 디버그 필드" class="zoomable-img" loading="lazy" />
+                <figcaption><strong>고속 비행(4000 cm/s) 디버그 뷰</strong> — 기본 구형 경계와 전방으로 확장된 <code>C=[A,B]</code> 활성 소행성 점군.</figcaption>
+              </figure>
             </div>
 
             <div class="code-block-wrap">
@@ -2753,15 +3126,19 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              본체가 커질수록 고정 크기 소행성은 먼지처럼 작아져 V1으로 잡을 대상이 사라지고, 필드도 상대적으로 비어 보였습니다. 그렇다고 성장 단계마다 다른 크기의 메시를 새로 생성하면 프리베이크 풀의 의미가 사라집니다.
+              본체가 커질수록 고정 크기 소행성은 상대적으로 지나치게 작아져 V1으로 잡을 대상이 사라지고, 필드도 상대적으로 비어 보였습니다. 그렇다고 성장 단계마다 다른 크기의 메시를 새로 생성하면 프리베이크 풀의 의미가 사라집니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 성장 비율 지수 스케일 + 트랜스폼 스케일 재사용</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>성장 비율 → 스폰 스케일</strong>: <code>GetPlayerGrowthRatio</code>(현재/초기 반지름)에 <code>AsteroidSizeGrowthExponent = 0.75</code>를 적용하고 <code>1.0~3.5x</code>로 클램프해, 플레이어보다 약간 느리게 커지는 세계를 만들었습니다.<br />
-              2) <strong>0ms 균일 스케일링</strong>: 이미 구워진 메시·Convex를 그대로 두고 활성화 트랜스폼 스케일만 바꿔 <code>RuntimeSizeScale</code>로 기록합니다. 실제 반지름은 <code>× s</code>, 물리 질량은 <code>× s³</code>로 일관되게 환산되어 견인 역학이 크기와 무관하게 유지됩니다.<br />
-              3) <strong>필드 반경도 동일 기준</strong>: 껍질 <code>A/B</code>, 물리 활성 반경, 최소 스폰 간격까지 플레이어 반지름 배율로 정의해 성장 후에도 시야 비율이 무너지지 않습니다.
+              성장 비율에 지수 <code>0.75</code>를 적용한 스폰 스케일을 기존 프리베이크 메시의 트랜스폼 스케일(<code>RuntimeSizeScale</code>)로만 반영했습니다. 메시·Convex를 재생성하지 않아 풀링 구조가 그대로 유지됩니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              스케일 반영 비용은 0ms(재생성 없음)이며, 반지름 <code>× s</code>·질량 <code>× s³</code> 일관 환산(<code>1.0~3.5x</code> 클램프)으로 성장 단계와 무관하게 견인 역학과 시야 비율이 유지됩니다.
             </div>
           </div>
         </div>
@@ -2770,11 +3147,22 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">CODE</span>
-              <span>코드 보기: GetPlayerGrowthRatio · GetEffectiveAsteroidSpawnScale · RuntimeSizeScale &amp; 질량 s³</span>
+              <span>상세 보기: 구현 상세 · GetPlayerGrowthRatio · GetEffectiveAsteroidSpawnScale · RuntimeSizeScale &amp; 질량 s³</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>성장 비율 → 스폰 스케일</strong>: <code>GetPlayerGrowthRatio</code>(현재/초기 반지름)에 <code>AsteroidSizeGrowthExponent = 0.75</code>를 적용하고 <code>1.0~3.5x</code>로 클램프해, 플레이어보다 약간 느리게 커지는 세계를 만들었습니다.<br />
+                  2) <strong>0ms 균일 스케일링</strong>: 이미 구워진 메시·Convex를 그대로 두고 활성화 트랜스폼 스케일만 바꿔 <code>RuntimeSizeScale</code>로 기록합니다. 실제 반지름은 <code>× s</code>, 물리 질량은 <code>× s³</code>로 일관되게 환산되어 견인 역학이 크기와 무관하게 유지됩니다.<br />
+                  3) <strong>필드 반경도 동일 기준</strong>: 껍질 <code>A/B</code>, 물리 활성 반경, 최소 스폰 간격까지 플레이어 반지름 배율로 정의해 성장 후에도 시야 비율이 무너지지 않습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">AsteroidFieldManager.cpp · SpaceAsteroid.cpp/.h // 크기 비례 0ms 스케일링</span>
@@ -2790,7 +3178,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
       </section>
 
       <section id="world-minerals" class="lesson-section">
-        <h3>3.4 이중 미네랄 생태계 &amp; 자석형 원테이크 흡수</h3>
+        <h3>3.4 이중 미네랄 생태계 &amp; 단일 흡수 진입점(<code>BeginAbsorption</code>)</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
@@ -2799,49 +3187,61 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 단일 흡수 진입점 · 본체 반지름 비례 자석 반경</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>이중 스폰</strong>: 필드 매니저가 프리웜 미네랄 풀(<code>640</code>)로 소행성 표면 버텍스 앵커(<code>SampleSurfaceAnchor</code>)의 부착형 광석과 껍질 내 부유형 광석을 함께 관리합니다.<br />
-              2) <strong>원테이크 흡수</strong>: 전염 폭발 보상, 표면에 남아 있던 광석, 본체 직접 접촉이 모두 <code>ASpaceMineral::BeginAbsorption</code> 하나로 진입해 자석처럼 빨려 들어옵니다.<br />
-              3) <strong>성장 비례 반경</strong>: <code>BodyRadius × DirectContactAbsorbRadiusMultiplier + DirectContactAbsorbMarginCm</code>로 흡수 반경이 자동 확장됩니다. 흡수 미네랄 수는 포식자 스폰 템포(50개당 +1)에도 반영됩니다.
+              전염 폭발 보상·표면 광석·직접 접촉의 세 경로를 단일 흡수 진입점 <code>ASpaceMineral::BeginAbsorption</code>으로 통합하고, 흡수 반경을 본체 반지름 비례로 정의했습니다.
             </div>
           </div>
-        </div>
-
-        <div class="compare-grid">
-          <figure class="media-card">
-            <img src="/images/projects/fungal-space-conquest/blog2-03-net-hold-capture.png" alt="[이전 설계] V2 그물 촉수 미네랄 흡착 포획" class="zoomable-img" loading="lazy" />
-            <figcaption><strong>[이전 설계] 그물 흡착(Adsorbed)</strong> — 그물 줄기에 바인딩해 끌어오던 2단계 채집. 원테이크 흡수로 대체되었습니다.</figcaption>
-          </figure>
-          <figure class="media-card">
-            <img src="/images/projects/fungal-space-conquest/blog2-04-net-reeling-in.png" alt="본체로 흡수(Absorbing) 전이" class="zoomable-img" loading="lazy" />
-            <figcaption><strong>본체 흡수(Absorbing)</strong> — 현재는 모든 경로가 이 단일 흡수 상태로 수렴합니다.</figcaption>
-          </figure>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              V1 → V2로 이어지던 2단계 채집이 1단계로 줄었고, 본체가 성장해도 흡수 반경이 자동 확장되어 고정 cm 반경에서 생기던 흡수 누락이 사라졌습니다.
+            </div>
+          </div>
         </div>
 
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">TRIAL &amp; ERROR + CODE</span>
-              <span>상세 보기: 정교했던 그물 포집(HLSL-C++ 0프레임 바인딩)을 걷어낸 이유 &amp; 자석 흡수 코드</span>
+              <span>상세 보기: 구현 상세 · 그물 포집(HLSL-C++ 0프레임 바인딩) 폐기 이유 · [이전 설계] 이미지 &amp; 흡수 코드</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
             <div class="perspective-card" style="margin-top: 0;">
               <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>이중 스폰</strong>: 필드 매니저가 프리웜 미네랄 풀(<code>640</code>)로 소행성 표면 버텍스 앵커(<code>SampleSurfaceAnchor</code>)의 부착형 광석과 껍질 내 부유형 광석을 함께 관리합니다.<br />
+                  2) <strong>단일 흡수 진입점</strong>: 전염 폭발 보상, 표면에 남아 있던 광석, 본체 직접 접촉이 모두 <code>ASpaceMineral::BeginAbsorption</code> 하나로 진입해 본체로 보간 흡수됩니다.<br />
+                  3) <strong>성장 비례 반경</strong>: <code>BodyRadius × DirectContactAbsorbRadiusMultiplier + DirectContactAbsorbMarginCm</code>로 흡수 반경이 자동 확장됩니다. 흡수 미네랄 수는 포식자 스폰 템포(50개당 +1)에도 반영됩니다.
+                </div>
+              </div>
+              <div class="perspective-row">
                 <span class="p-label issue">설계 진화: 그물 포집 시스템을 과감히 걷어낸 이유</span>
                 <div class="p-text">
-                  나이아가라 HLSL 깔때기 반경 식을 C++에 1:1 이식하고 흡착 시 광석 Tick을 꺼 0프레임 오차로 매달리게 하는 등 기술적으로 정교한 동기화를 완성했었습니다. 하지만 핵심 쾌감은 "그물로 줍는 번거로움"이 아니라 <strong>"터뜨리면 보상이 자석처럼 쏟아지는 원테이크 손맛"</strong>이었습니다. 포집 로직을 제거하고, 다듬어 둔 깔때기 기하는 V2 광역 그물의 포식자 판정으로 재활용했습니다. 흡착 프레넬 발광 연출도 체감 대비 셰이더 비용만 늘려 함께 폐기했습니다.
+                  나이아가라 HLSL 깔때기 반경 식을 C++에 1:1 이식하고 흡착 시 광석 Tick을 꺼 0프레임 오차로 매달리게 하는 등 기술적으로 정교한 동기화를 완성했었습니다. 하지만 핵심 쾌감은 "그물로 줍는 번거로움"이 아니라 <strong>"전염 폭발 즉시 보상이 흡수되는 단일 흡수 흐름"</strong>이었습니다. 포집 로직을 제거하고, 다듬어 둔 깔때기 기하는 V2 광역 그물의 포식자 판정으로 재활용했습니다. 흡착 프레넬 발광 연출도 체감 대비 셰이더 비용만 늘려 함께 폐기했습니다.
                 </div>
               </div>
             </div>
 
+            <div class="compare-grid">
+              <figure class="media-card">
+                <img src="/images/projects/fungal-space-conquest/blog2-03-net-hold-capture.png" alt="[이전 설계] V2 그물 촉수 미네랄 흡착 포획" class="zoomable-img" loading="lazy" />
+                <figcaption><strong>[이전 설계] 그물 흡착(Adsorbed)</strong> — 그물 줄기에 바인딩해 끌어오던 2단계 채집. 단일 흡수 진입점으로 대체되었습니다.</figcaption>
+              </figure>
+              <figure class="media-card">
+                <img src="/images/projects/fungal-space-conquest/blog2-04-net-reeling-in.png" alt="본체로 흡수(Absorbing) 전이" class="zoomable-img" loading="lazy" />
+                <figcaption><strong>본체 흡수(Absorbing)</strong> — 현재는 모든 경로가 이 단일 흡수 상태로 수렴합니다.</figcaption>
+              </figure>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
-                <span class="file-name">SpaceDrifterPawn.cpp &amp; SpaceMineral.cpp // 자석 흡수 반경 &amp; 단일 흡수 진입점</span>
+                <span class="file-name">SpaceDrifterPawn.cpp &amp; SpaceMineral.cpp // 본체 비례 흡수 반경 &amp; 단일 흡수 진입점</span>
                 <div class="code-actions">
-                  <span class="code-lang">C++ // One-Take Absorb</span>
+                  <span class="code-lang">C++ // BeginAbsorption</span>
                   <button type="button" class="copy-btn" data-copy={codeMineralAbsorb}>Copy</button>
                 </div>
               </div>
@@ -2876,11 +3276,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 방향 벡터 천구 · 셰이더 항성 · <code>UDistantStarSyncComponent</code></span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>3D 방향 벡터 천구</strong>: <code>M_SpaceSkybox</code>가 UV 대신 <code>normalize(WorldPosition - CameraPosition)</code>만으로 성운·별을 생성해 이음매와 극점 왜곡이 없습니다.<br />
-              2) <strong>시차 0 항성 &amp; MPC 동기화</strong>: 항성을 천구 위 <code>dot(ViewDir, StarDir)</code> 기반 3층 광원(코어·코로나·회절 글레어)으로 구현하고, <code>DirectionalLight</code>에 붙은 컴포넌트가 회전·색온도를 <code>MPC_SpaceEnvironment</code>로 푸시합니다. 값이 바뀐 경우에만 갱신해 비용을 최소화했습니다.<br />
-              3) <strong>AutoExposure 고정 &amp; 로컬 우주 먼지</strong>: 노출을 고정해 칠흑 배경의 과노출을 막고, 카메라 주변 로컬 볼륨 먼지(<code>NS_SpaceDustMotes</code>)로 속도감을 확보했습니다.
+              UV 스카이박스 대신 방향 벡터(<code>normalize(WorldPosition - CameraPosition)</code>) 천구 셰이더에 항성을 그리고, <code>UDistantStarSyncComponent</code>가 값이 바뀐 경우에만 <code>MPC_SpaceEnvironment</code>로 조명 방향·색온도를 푸시합니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              극점 왜곡·이음매 없는 천구와 시차 0 항성을 3D 액터 없이 구현했고, 천구 항성 방향과 <code>DirectionalLight</code> 조명이 항상 일치합니다.
             </div>
           </div>
         </div>
@@ -2900,11 +3304,22 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">CODE &amp; MPC SYNC</span>
-              <span>코드 보기: UDistantStarSyncComponent::SyncStarParameters</span>
+              <span>상세 보기: 구현 상세 · UDistantStarSyncComponent::SyncStarParameters</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>3D 방향 벡터 천구</strong>: <code>M_SpaceSkybox</code>가 UV 대신 <code>normalize(WorldPosition - CameraPosition)</code>만으로 성운·별을 생성해 이음매와 극점 왜곡이 없습니다.<br />
+                  2) <strong>시차 0 항성 &amp; MPC 동기화</strong>: 항성을 천구 위 <code>dot(ViewDir, StarDir)</code> 기반 3층 광원(코어·코로나·회절 글레어)으로 구현하고, <code>DirectionalLight</code>에 붙은 컴포넌트가 회전·색온도를 <code>MPC_SpaceEnvironment</code>로 푸시합니다. 값이 바뀐 경우에만 갱신해 비용을 최소화했습니다.<br />
+                  3) <strong>AutoExposure 고정 &amp; 로컬 우주 먼지</strong>: 노출을 고정해 칠흑 배경의 과노출을 막고, 카메라 주변 로컬 볼륨 먼지(<code>NS_SpaceDustMotes</code>)로 속도감을 확보했습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">DistantStarSyncComponent.cpp // SyncStarParameters</span>
@@ -2929,9 +3344,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 해상도·셰이더 디테일은 유지하고 기여도 0인 렌더 패스만 제거</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              실내 반사광이 없는 우주에서 <code>Lumen</code>·<code>VSM</code>·<code>Mesh Distance Fields</code>·레이트레이싱 프록시는 시각 기여 없이 GBuffer와 렌더 타깃 풀만 점유합니다. 이 패스들만 끄고 텍스처·렌더 타깃 풀 상한을 걸어 <strong><code>21.4GB → 7.93GB</code>(약 63% 절감)</strong>를 달성했습니다.
+              실내 반사광이 없는 우주에서 시각 기여가 없는 <code>Lumen</code>·<code>VSM</code>·<code>Mesh Distance Fields</code>·레이트레이싱 프록시만 끄고, 텍스처·렌더 타깃 풀 상한을 고정했습니다. 해상도·셰이더 디테일은 유지합니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              에디터+PIE 커밋 메모리 <strong><code>21.4GB → 7.93GB</code>(약 63%, <code>-13.47GB</code>)</strong>를 절감해 M4 16GB 환경에서 60 FPS 무스왑 구동을 확인했습니다.
             </div>
           </div>
         </div>
@@ -2954,60 +3375,60 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           </div>
         </div>
 
-        <div class="spec-table-wrap">
-          <table class="spec-table">
-            <thead>
-              <tr>
-                <th>항목</th>
-                <th>기본값 (UE 5.9 Desktop)</th>
-                <th>최적화 설정</th>
-                <th>근거</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>전역 조명</strong></td>
-                <td>Lumen GI</td>
-                <td><code>r.DynamicGlobalIlluminationMethod=0</code></td>
-                <td>반사광 없는 우주에서 시각 기여 미미</td>
-              </tr>
-              <tr>
-                <td><strong>그림자</strong></td>
-                <td>Virtual Shadow Maps</td>
-                <td><code>r.Shadow.Virtual.Enable=0</code> · CSM 1단 · <code>1024</code></td>
-                <td>VSM 페이지 테이블 메모리 제거</td>
-              </tr>
-              <tr>
-                <td><strong>거리장 / RT</strong></td>
-                <td>Mesh SDF · RT 프록시</td>
-                <td><code>r.GenerateMeshDistanceFields=False</code> · <code>r.RayTracing=False</code></td>
-                <td>절차적 소행성 1,150개의 SDF·프록시 상주 방지</td>
-              </tr>
-              <tr>
-                <td><strong>스트리밍 풀</strong></td>
-                <td>무제한</td>
-                <td><code>r.Streaming.PoolSize=400</code> · <code>r.RenderTargetPoolMin=200</code></td>
-                <td>통합 메모리 상한 고정</td>
-              </tr>
-              <tr>
-                <td><strong>해상도</strong></td>
-                <td>100%</td>
-                <td><code>r.ScreenPercentage.Default=75</code></td>
-                <td>별빛·촉수 윤곽 선명도 유지 범위</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
         <details class="tech-drawer">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag violet">TRIAL &amp; ERROR + INI CONFIG</span>
-              <span>상세 보기: 계측 없는 'ScreenPercentage 60%' 오판과 프로파일링 기반 원복 &amp; 실제 ini 설정</span>
+              <span>상세 보기: 렌더 설정 비교표 · 계측 없는 'ScreenPercentage 60%' 오판과 프로파일링 기반 원복 &amp; 실제 ini 설정</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="spec-table-wrap">
+              <table class="spec-table">
+                <thead>
+                  <tr>
+                    <th>항목</th>
+                    <th>기본값 (UE 5.9 Desktop)</th>
+                    <th>최적화 설정</th>
+                    <th>근거</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>전역 조명</strong></td>
+                    <td>Lumen GI</td>
+                    <td><code>r.DynamicGlobalIlluminationMethod=0</code></td>
+                    <td>반사광 없는 우주에서 시각 기여 미미</td>
+                  </tr>
+                  <tr>
+                    <td><strong>그림자</strong></td>
+                    <td>Virtual Shadow Maps</td>
+                    <td><code>r.Shadow.Virtual.Enable=0</code> · CSM 1단 · <code>1024</code></td>
+                    <td>VSM 페이지 테이블 메모리 제거</td>
+                  </tr>
+                  <tr>
+                    <td><strong>거리장 / RT</strong></td>
+                    <td>Mesh SDF · RT 프록시</td>
+                    <td><code>r.GenerateMeshDistanceFields=False</code> · <code>r.RayTracing=False</code></td>
+                    <td>절차적 소행성 1,150개의 SDF·프록시 상주 방지</td>
+                  </tr>
+                  <tr>
+                    <td><strong>스트리밍 풀</strong></td>
+                    <td>무제한</td>
+                    <td><code>r.Streaming.PoolSize=400</code> · <code>r.RenderTargetPoolMin=200</code></td>
+                    <td>통합 메모리 상한 고정</td>
+                  </tr>
+                  <tr>
+                    <td><strong>해상도</strong></td>
+                    <td>100%</td>
+                    <td><code>r.ScreenPercentage.Default=75</code></td>
+                    <td>별빛·촉수 윤곽 선명도 유지 범위</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
             <div class="perspective-card" style="margin-top: 0;">
               <div class="perspective-row">
                 <span class="p-label issue">시행착오: 계측 없이 해상도부터 깎은 1차 오판</span>
@@ -3042,10 +3463,15 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 컴파일러 차이 수정 · 미니프로젝트만 분리한 경량 리포</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              1) <strong>MSVC C2397 수정</strong>: UE 5.9의 LWC(Large World Coordinates)로 <code>FVector::Distance</code>는 <code>double</code>을 반환합니다. Apple Clang은 통과시킨 중괄호 초기화 축소 변환(<code>double → float</code>)을 MSVC는 C2397 오류로 거부했고, <code>AEnemyMoldManager::UpdateAttackTickets</code>에 명시적 <code>static_cast&lt;float&gt;</code>를 추가해 해결했습니다.<br />
-              2) <strong>독립 퍼블릭 리포(<code>1.08 MB</code>)</strong>: <code>Source/UEStudy/Sandbox/MiniProject</code>와 <code>/Game/Sandbox/MiniProject</code> 에셋, 최소 Config만 추출해 <a href="https://github.com/pargame/FungalSpaceConquest" target="_blank" rel="noopener noreferrer">pargame/FungalSpaceConquest</a>로 분리했습니다. 블루프린트·레벨 에셋의 <code>/Script/UEStudy</code> 참조 호환을 위해 모듈명은 <code>UEStudy</code>를 유지하고, 의존성은 엔진 기본 모듈만 남겨 <code>.uproject</code> 우클릭 → Generate Visual Studio project files → PIE로 바로 실행됩니다.
+              LWC <code>double</code> 반환으로 생긴 MSVC C2397 축소 변환을 명시적 <code>static_cast&lt;float&gt;</code>로 수정하고, <code>Sandbox/MiniProject</code> 경계만 추출해 엔진 기본 모듈에만 의존하는 독립 리포로 분리했습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              <code>1.08 MB</code> 퍼블릭 리포 <a href="https://github.com/pargame/FungalSpaceConquest" target="_blank" rel="noopener noreferrer">pargame/FungalSpaceConquest</a>가 Windows에서 Generate Visual Studio project files → PIE로 바로 실행됩니다.
             </div>
           </div>
         </div>
@@ -3054,11 +3480,21 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">CODE</span>
-              <span>코드 보기: MSVC C2397 축소 변환 수정 diff &amp; 퍼블릭 Build.cs</span>
+              <span>상세 보기: 구현 상세 · MSVC C2397 축소 변환 수정 diff &amp; 퍼블릭 Build.cs</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong>MSVC C2397 수정</strong>: UE 5.9의 LWC(Large World Coordinates)로 <code>FVector::Distance</code>는 <code>double</code>을 반환합니다. Apple Clang은 통과시킨 중괄호 초기화 축소 변환(<code>double → float</code>)을 MSVC는 C2397 오류로 거부했고, <code>AEnemyMoldManager::UpdateAttackTickets</code>에 명시적 <code>static_cast&lt;float&gt;</code>를 추가해 해결했습니다.<br />
+                  2) <strong>독립 퍼블릭 리포(<code>1.08 MB</code>)</strong>: <code>Source/UEStudy/Sandbox/MiniProject</code>와 <code>/Game/Sandbox/MiniProject</code> 에셋, 최소 Config만 추출해 <a href="https://github.com/pargame/FungalSpaceConquest" target="_blank" rel="noopener noreferrer">pargame/FungalSpaceConquest</a>로 분리했습니다. 블루프린트·레벨 에셋의 <code>/Script/UEStudy</code> 참조 호환을 위해 모듈명은 <code>UEStudy</code>를 유지하고, 의존성은 엔진 기본 모듈만 남겨 <code>.uproject</code> 우클릭 → Generate Visual Studio project files → PIE로 바로 실행됩니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">EnemyMoldManager.cpp // commit 90fd1ef (Fix MSVC C2397)</span>
@@ -3086,46 +3522,63 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
 
       <div class="chapter-separator" role="separator"></div>
 
-      <!-- CHAPTER 05 -->
+      <!-- APPENDIX -->
       <div class="lesson-nav-bar">
-        <span class="lesson-badge">CHAPTER 05 // DEVELOPMENT PIPELINE &amp; AI GUARDRAILS</span>
+        <span class="lesson-badge">APPENDIX // DEVELOPMENT PIPELINE</span>
         <span class="read-time">ue-on/off · UE 5.9 Official MCP Beta · ARCHITECTURE.md</span>
       </div>
 
-      <header class="lesson-header" id="pipeline">
-        <h2>05. 개발 환경 격리 · UE 5.9 공식 MCP 베타 검증 · 멀티 에이전트 가드레일</h2>
-        <p class="lesson-intro">
-          "구현은 AI가, 설계는 인간이"를 실제로 가능하게 만든 토대입니다. 툴체인 충돌을 격리하고, 엔진 네이티브 MCP로 에이전트가 에디터를 직접 조작하게 하되, 아키텍처 규약 문서로 여러 모델의 작업이 같은 원칙을 따르도록 강제했습니다.
-        </p>
-      </header>
+      <section id="pipeline" class="lesson-section">
+        <header class="lesson-header">
+          <h2>부록: 개발 파이프라인</h2>
+          <p class="lesson-intro">
+            본문(01~04)의 UE 5 클라이언트 설계·최적화를 뒷받침한 개발 환경입니다. 툴체인 격리, UE 5.9 공식 MCP 베타 검증, 멀티 에이전트 가드레일을 하나의 절로 요약하고 세부 내용은 접이식 서랍에 수록했습니다.
+          </p>
+        </header>
 
-      <section id="pipe-toolchain" class="lesson-section">
-        <h3>5.1 macOS <code>Xcode 26.1.1</code> 이중 세션 격리 (<code>ue-on</code> / <code>ue-off</code>)</h3>
         <div class="perspective-card">
           <div class="perspective-row">
             <span class="p-label intent">설계 배경</span>
             <div class="p-text">
-              macOS 기본 개발 환경(CommandLineTools, Homebrew LLVM)과 UE 5.9 UBT가 요구하는 Xcode 버전이 충돌했고, 전역 <code>xcode-select</code>를 바꾸면 다른 프로젝트가 깨졌습니다.
+              UE 5.9 UBT의 Xcode 요구 버전이 일반 개발 환경과 충돌했고, 여러 AI 모델이 교대로 작업하면 이전 설계 의도를 모른 채 엔진 기능을 우회하는 회귀가 반복되었습니다.
             </div>
           </div>
           <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 셸·GUI 이중 환경변수 토글</span>
+            <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              터미널(<code>export DEVELOPER_DIR</code>)과 GUI 앱 세션(<code>launchctl setenv DEVELOPER_DIR</code>)에 동시에 Xcode 경로를 주입·해제하는 <code>ue-on</code> / <code>ue-off</code> / <code>ue-status</code>로 일반 개발 환경과의 간섭을 차단했습니다. 에디터는 항상 <code>.uproject</code> 절대 경로를 인자로 실행하도록 표준화했습니다.
+              <code>ue-on</code>/<code>ue-off</code>로 <code>DEVELOPER_DIR</code>을 셸·GUI 세션에 동시 격리하고, UE 5.9 공식 내장 MCP를 일상 개발 루프에 투입하되 <code>Sandbox</code> 격리·<code>UPROPERTY</code> 한글 툴팁·<code>ARCHITECTURE.md</code>로 에이전트 작업 경계를 고정했습니다.
+            </div>
+          </div>
+          <div class="perspective-row">
+            <span class="p-label result">결과 / 검증</span>
+            <div class="p-text">
+              본문의 수치 튜닝·PIE 캡처·메모리 실측 대부분을 공식 MCP 경로로 검증했고, <code>Sandbox</code> 경계가 그대로 <code>1.08 MB</code> 퍼블릭 리포 분리 단위가 되었습니다.
             </div>
           </div>
         </div>
 
-        <details class="tech-drawer">
+        <details class="tech-drawer" id="pipe-toolchain">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
-              <span class="drawer-tag">TROUBLESHOOTING &amp; CODE</span>
-              <span>상세 보기: 모듈 누락 팝업 원인(LaunchEngineLoop) · Live Coding 잔여물 · ~/.zshrc</span>
+              <span class="drawer-tag">A · TOOLCHAIN</span>
+              <span>A. macOS <code>Xcode 26.1.1</code> 이중 세션 격리 (<code>ue-on</code> / <code>ue-off</code>) · 모듈 누락 팝업 · Live Coding 잔여물</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
             <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label intent">배경</span>
+                <div class="p-text">
+                  macOS 기본 개발 환경(CommandLineTools, Homebrew LLVM)과 UE 5.9 UBT가 요구하는 Xcode 버전이 충돌했고, 전역 <code>xcode-select</code>를 바꾸면 다른 프로젝트가 깨졌습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  터미널(<code>export DEVELOPER_DIR</code>)과 GUI 앱 세션(<code>launchctl setenv DEVELOPER_DIR</code>)에 동시에 Xcode 경로를 주입·해제하는 <code>ue-on</code> / <code>ue-off</code> / <code>ue-status</code>로 일반 개발 환경과의 간섭을 차단했습니다. 에디터는 항상 <code>.uproject</code> 절대 경로를 인자로 실행하도록 표준화했습니다.
+                </div>
+              </div>
               <div class="perspective-row">
                 <span class="p-label issue">시행착오 1: 에디터 단독 실행 시 모듈 누락 팝업</span>
                 <div class="p-text">
@@ -3163,34 +3616,31 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
         </details>
-      </section>
 
-      <section id="pipe-mcp" class="lesson-section">
-        <h3>5.2 UE 5.9 공식 내장 MCP(<code>ModelContextProtocol</code>) 베타 실전 검증</h3>
-        <div class="perspective-card">
-          <div class="perspective-row">
-            <span class="p-label intent">설계 배경</span>
-            <div class="p-text">
-              UE 5.9에서 에픽게임즈 공식 내장 MCP 베타가 열리면서, 서드파티 브리지 없이 엔진 네이티브로 AI 에이전트가 에디터를 조작하는 워크플로우가 실전에서 버티는지 직접 검증할 기회가 생겼습니다.
-            </div>
-          </div>
-          <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 공식 MCP 서버 + 에디터 툴셋을 일상 개발 루프에 투입</span>
-            <div class="p-text">
-              개발용 로컬 프로젝트에서 내장 MCP 서버(포트 <code>8000</code>, Streamable HTTP)와 에디터 툴셋(<code>AllToolsets</code>)을 활성화해, 런타임 프로퍼티 반영(<code>SetProperties</code>), 나이아가라 모듈/렌더러 조립, 머티리얼 리컴파일, 에디터 콘솔 및 Python 스크립팅을 에이전트가 직접 수행하도록 했습니다. 본문의 수치 튜닝·PIE 캡처·메모리 실측 대부분이 이 경로로 검증되었습니다. 퍼블릭 배포본에서는 재현성을 위해 MCP 플러그인을 제외했습니다.
-            </div>
-          </div>
-        </div>
-
-        <details class="tech-drawer">
+        <details class="tech-drawer" id="pipe-mcp">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
-              <span class="drawer-tag">CONFIG</span>
-              <span>설정 보기: 개발용 UEStudy.uproject MCP 플러그인 구성</span>
+              <span class="drawer-tag">B · MCP</span>
+              <span>B. UE 5.9 공식 내장 MCP(<code>ModelContextProtocol</code>) 베타 실전 검증 · 개발용 .uproject 구성</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label intent">배경</span>
+                <div class="p-text">
+                  UE 5.9에서 에픽게임즈 공식 내장 MCP 베타가 열리면서, 서드파티 브리지 없이 엔진 네이티브로 AI 에이전트가 에디터를 조작하는 워크플로우가 실전에서 버티는지 직접 검증할 기회가 생겼습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  개발용 로컬 프로젝트에서 내장 MCP 서버(포트 <code>8000</code>, Streamable HTTP)와 에디터 툴셋(<code>AllToolsets</code>)을 활성화해, 런타임 프로퍼티 반영(<code>SetProperties</code>), 나이아가라 모듈/렌더러 조립, 머티리얼 리컴파일, 에디터 콘솔 및 Python 스크립팅을 에이전트가 직접 수행하도록 했습니다. 본문의 수치 튜닝·PIE 캡처·메모리 실측 대부분이 이 경로로 검증되었습니다. 퍼블릭 배포본에서는 재현성을 위해 MCP 플러그인을 제외했습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">UEStudy.uproject (개발용 로컬) // 공식 MCP 활성화</span>
@@ -3203,36 +3653,33 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </div>
           </div>
         </details>
-      </section>
 
-      <section id="pipe-guardrails" class="lesson-section">
-        <h3>5.3 멀티 에이전트 가드레일: <code>Sandbox</code> 격리 · 데이터 주도 툴팁 · <code>ARCHITECTURE.md</code></h3>
-        <div class="perspective-card">
-          <div class="perspective-row">
-            <span class="p-label intent">설계 배경</span>
-            <div class="p-text">
-              여러 AI 모델(경량 모델 포함)이 번갈아 작업하면, 이전 설계 의도를 모르는 모델이 엔진 기능을 무시하고 수동 C++ 코드를 덧대거나 폰 클래스에 기능을 다시 몰아넣는 회귀가 반복됩니다.
-            </div>
-          </div>
-          <div class="perspective-row">
-            <span class="p-label decision">설계 결정: 물리적 격리 · 파라미터화 · 아키텍처 명문화</span>
-            <div class="p-text">
-              1) <strong><code>Sandbox</code> 물리 격리</strong>: C++는 <code>Source/UEStudy/Sandbox/MiniProject/</code>, 에셋은 <code>/Game/Sandbox/MiniProject/</code> 하위 기능 폴더로 격리해 템플릿 자산과 섞이지 않게 했고, 이 경계가 그대로 퍼블릭 리포 분리 단위가 되었습니다.<br />
-              2) <strong>데이터 주도 한글 툴팁</strong>: 모든 제어 변수를 <code>UPROPERTY(EditAnywhere)</code> + <code>ClampMin/Max</code> + UHT 한글 주석으로 노출해, 사람과 에이전트 모두 재컴파일 없이 같은 디테일 패널로 밸런싱합니다.<br />
-              3) <strong><code>ARCHITECTURE.md</code></strong>: 클래스 계층·책임 표, 0-Tick·<code>TickGroup</code> 원칙, "4번 능력은 <code>USpaceTendrilAbility</code> 서브클래스 3개 가상 함수만 구현", "V3 자원 규칙은 <code>CanConsumeJetResource</code>/<code>ConsumeJetResource</code>만 오버라이드" 같은 확장 체크리스트를 코드베이스에 상주시켜, 후속 에이전트가 설계를 깨지 않고 이어받도록 강제했습니다.
-            </div>
-          </div>
-        </div>
-
-        <details class="tech-drawer">
+        <details class="tech-drawer" id="pipe-guardrails">
           <summary class="drawer-summary">
             <span class="drawer-title-group">
-              <span class="drawer-tag">CODE</span>
-              <span>코드 보기: UHT 한글 툴팁 &amp; ClampMin/Max 메타데이터</span>
+              <span class="drawer-tag">C · GUARDRAILS</span>
+              <span>C. 멀티 에이전트 가드레일: <code>Sandbox</code> 격리 · 데이터 주도 툴팁 · <code>ARCHITECTURE.md</code></span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
           <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label intent">배경</span>
+                <div class="p-text">
+                  여러 AI 모델(경량 모델 포함)이 번갈아 작업하면, 이전 설계 의도를 모르는 모델이 엔진 기능을 무시하고 수동 C++ 코드를 덧대거나 폰 클래스에 기능을 다시 몰아넣는 회귀가 반복됩니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">구현 상세</span>
+                <div class="p-text">
+                  1) <strong><code>Sandbox</code> 물리 격리</strong>: C++는 <code>Source/UEStudy/Sandbox/MiniProject/</code>, 에셋은 <code>/Game/Sandbox/MiniProject/</code> 하위 기능 폴더로 격리해 템플릿 자산과 섞이지 않게 했고, 이 경계가 그대로 퍼블릭 리포 분리 단위가 되었습니다.<br />
+                  2) <strong>데이터 주도 한글 툴팁</strong>: 모든 제어 변수를 <code>UPROPERTY(EditAnywhere)</code> + <code>ClampMin/Max</code> + UHT 한글 주석으로 노출해, 사람과 에이전트 모두 재컴파일 없이 같은 디테일 패널로 밸런싱합니다.<br />
+                  3) <strong><code>ARCHITECTURE.md</code></strong>: 클래스 계층·책임 표, 0-Tick·<code>TickGroup</code> 원칙, "4번 능력은 <code>USpaceTendrilAbility</code> 서브클래스 3개 가상 함수만 구현", "V3 자원 규칙은 <code>CanConsumeJetResource</code>/<code>ConsumeJetResource</code>만 오버라이드" 같은 확장 체크리스트를 코드베이스에 상주시켜, 후속 에이전트가 설계를 깨지 않고 이어받도록 강제했습니다.
+                </div>
+              </div>
+            </div>
+
             <div class="code-block-wrap">
               <div class="code-header">
                 <span class="file-name">EnemyMoldManager.h // 데이터 주도 UPROPERTY &amp; 한글 툴팁</span>
@@ -3249,7 +3696,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
         <div class="callout callout-tip">
           <div class="callout-title">✅ Project Complete</div>
           <p>
-            <strong>10마리 타임어택 루프 &amp; 공격 티켓 AI</strong>, <strong>0-Tick 다형성 촉수 능력(V1·V2·V3)</strong>, <strong>1,150 소행성 2-Tier 물리 &amp; 크기 비례 0ms 스케일링</strong>, <strong>M4 16GB 21.4GB → 7.93GB 최적화 &amp; Windows 이식</strong>, <strong>UE 5.9 공식 MCP 베타 검증 &amp; 멀티 에이전트 가드레일</strong>까지 완성했습니다. 전체 소스는 <a href="https://github.com/pargame/FungalSpaceConquest" target="_blank" rel="noopener noreferrer">GitHub 리포지토리</a>에서 확인할 수 있습니다.
+            <strong>10마리 타임어택 루프 &amp; 공격 티켓 AI</strong>, <strong>0-Tick 다형성 촉수 능력(V1·V2·V3)</strong>, <strong>1,150 소행성 2-Tier 물리 &amp; 크기 비례 0ms 스케일링</strong>, <strong>M4 16GB 21.4GB → 7.93GB 최적화 &amp; Windows 이식</strong>, 개발 파이프라인(<strong>UE 5.9 공식 MCP 베타 검증 &amp; 멀티 에이전트 가드레일</strong>)은 부록으로 정리했습니다. 전체 소스는 <a href="https://github.com/pargame/FungalSpaceConquest" target="_blank" rel="noopener noreferrer">GitHub 리포지토리</a>에서 확인할 수 있습니다.
           </p>
         </div>
       </section>
@@ -3337,19 +3784,11 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
             </a>
           </nav>
 
-          <div class="floating-toc-label" style="margin-top: 0.9rem;">05 // PIPELINE</div>
-          <nav class="floating-toc-list" aria-label="5장 목차">
-            <a href="#pipe-toolchain" class="floating-toc-link" data-target="pipe-toolchain">
-              <span class="toc-badge">5.1</span>
-              <span class="toc-name">ue-on/off</span>
-            </a>
-            <a href="#pipe-mcp" class="floating-toc-link" data-target="pipe-mcp">
-              <span class="toc-badge">5.2</span>
-              <span class="toc-name">UE 5.9 공식 MCP</span>
-            </a>
-            <a href="#pipe-guardrails" class="floating-toc-link" data-target="pipe-guardrails">
-              <span class="toc-badge">5.3</span>
-              <span class="toc-name">멀티 에이전트 가드레일</span>
+          <div class="floating-toc-label" style="margin-top: 0.9rem;">APPENDIX</div>
+          <nav class="floating-toc-list" aria-label="부록 목차">
+            <a href="#pipeline" class="floating-toc-link" data-target="pipeline">
+              <span class="toc-badge">A</span>
+              <span class="toc-name">개발 파이프라인</span>
             </a>
           </nav>
         </div>
@@ -3972,6 +4411,71 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
   .p-label.issue { color: var(--warn); }
   .p-label.decision { color: var(--success); }
   .p-label.collab { color: var(--accent-2); }
+  .p-label.result { color: var(--accent-2); }
+
+  /* Inline SVG Architecture Diagrams */
+  .arch-figure {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 1.35rem 0 1.65rem;
+    padding: 0.9rem 0.9rem 0;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .arch-scroll {
+    overflow-x: auto;
+  }
+  .arch-svg {
+    display: block;
+    width: 100%;
+    min-width: 640px;
+    height: auto;
+    font-family: var(--font-mono);
+  }
+  .arch-figure figcaption {
+    padding: 0.7rem 0.2rem 0.85rem;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+  .arch-figure figcaption strong {
+    color: var(--text-1);
+  }
+  .arch-svg .s-box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.2; }
+  .arch-svg .s-box-accent { fill: var(--surface-2); stroke: var(--accent); stroke-width: 1.6; }
+  .arch-svg .s-title { fill: var(--text-1); font-size: 15px; font-weight: 700; }
+  .arch-svg .s-label { fill: var(--text-1); font-size: 13.5px; font-weight: 700; }
+  .arch-svg .s-text { fill: var(--text-2); font-size: 12.5px; }
+  .arch-svg .s-text-strong { fill: var(--text-1); font-size: 13px; font-weight: 700; }
+  .arch-svg .s-small { fill: var(--text-2); font-size: 11px; }
+  .arch-svg .s-glyph { fill: var(--text-1); font-size: 11px; font-weight: 700; }
+  .arch-svg .s-accent { fill: var(--accent); }
+  .arch-svg .s-accent2 { fill: var(--accent-2); }
+  .arch-svg .s-fill-accent { fill: var(--accent); }
+  .arch-svg .s-fill-accent2 { fill: var(--accent-2); }
+  .arch-svg .s-hollow-head { fill: var(--surface-2); stroke: var(--text-2); stroke-width: 1.2; }
+  .arch-svg .s-line { fill: none; stroke: var(--text-2); stroke-width: 1.3; }
+  .arch-svg .s-arrow { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+  .arch-svg .s-arrow2 { fill: none; stroke: var(--accent-2); stroke-width: 1.6; }
+  .arch-svg .s-ring-accent { fill: none; stroke: var(--accent); stroke-width: 1.4; }
+  .arch-svg .s-dash { stroke-dasharray: 6 4; }
+  .arch-svg .s-dot { stroke-dasharray: 2 3; }
+  .arch-svg .s-band { fill: none; stroke: var(--accent-2); stroke-opacity: 0.14; }
+  .arch-svg .s-shell { fill: var(--accent); fill-opacity: 0.07; }
+  .arch-svg .s-player { fill: var(--accent); fill-opacity: 0.22; stroke: var(--accent); stroke-width: 2; }
+  .arch-svg .s-enemy { fill: var(--accent-2); fill-opacity: 0.3; stroke: var(--accent-2); stroke-width: 1.5; }
+  .arch-svg .s-enemy-hot { fill: var(--accent-2); fill-opacity: 0.75; stroke: var(--accent-2); stroke-width: 1.5; }
+  .arch-svg .s-enemy-ghost { fill: var(--surface-2); stroke: var(--accent-2); stroke-width: 1.5; stroke-dasharray: 3 2; }
+  .arch-svg .s-shield { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 2 2; }
+  .arch-svg .s-sep { fill: none; stroke: var(--border); stroke-width: 1.2; stroke-dasharray: 3 3; }
+  .arch-svg .s-kin { fill: var(--surface-2); stroke: var(--text-2); stroke-width: 1.4; }
+  .arch-svg .s-evict { fill: none; stroke: var(--text-2); stroke-opacity: 0.5; stroke-width: 1.2; stroke-dasharray: 2 2; }
+  .arch-svg .s-rock { fill: var(--surface-1); stroke: var(--text-2); stroke-width: 1.4; }
+  .tech-drawer[id] {
+    scroll-margin-top: 5rem;
+  }
   .p-text {
     font-size: 0.93rem;
     line-height: 1.72;
@@ -4308,6 +4812,16 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
   }
   .media-card figcaption strong {
     color: var(--text-1);
+  }
+  .media-card.pair-figure {
+    margin: 1.35rem 0 1.65rem;
+  }
+  .pair-img {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--border-subtle);
+    overflow: hidden;
   }
 
   .chapter-separator {

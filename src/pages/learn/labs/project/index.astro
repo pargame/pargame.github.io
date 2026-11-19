@@ -4,7 +4,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Projects: 프로젝트 포트폴리오"
-  description="pargame 프로젝트 포트폴리오 — UE 5.9 C++ 「곰팡이 우주 정복 대작전」 완성 케이스 스터디"
+  description="pargame 프로젝트 포트폴리오 — UE 5.9 C++ 게임 클라이언트 「곰팡이 우주 정복 대작전」 설계·최적화 케이스 스터디"
 >
   <div class="note-header">
     <nav class="breadcrumb" aria-label="브레드크럼">
@@ -49,7 +49,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             </a>
           </h2>
           <p class="project-subtitle">
-            무중력 우주에서 균류 세포로 성장하며 <strong>포식자 곰팡이 10마리를 최단 시간 안에 역포식</strong>하는 UE 5.9 C++ 미니게임. 처치 2마리에 <strong>V2 광역 그물</strong>, 5마리에 <strong>V3 긴급 탈출</strong>이 해금되고, 포식자는 <strong>공격 티켓 · 포위 링 AI</strong>로 압박합니다. 클리어 타임은 로컬 <strong>TOP 5 리더보드</strong>에 기록됩니다.
+            무중력 6-DoF 환경에서 <strong>포식자 10마리 처치 타임어택</strong>을 구현한 UE 5.9 C++ 게임 클라이언트. <strong>TickGroup 실행 순서 고정</strong>, <strong>UInterface 기반 0-Tick 능력 객체</strong>, <strong>공격 티켓 · 포위 링 AI</strong>, <strong>1,150 소행성 2-Tier 물리 스트리밍</strong>, <strong>M4 16GB 통합 메모리 실측 최적화</strong>를 절마다 설계 배경 · 설계 결정 · 결과/검증으로 정리했습니다.
           </p>
 
           <div class="metrics-strip">
@@ -118,7 +118,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-arrow">➔</span>
           </div>
           <h3>무중력 본체 &amp; 다형성 촉수</h3>
-          <p><code>ISpaceTendrilHostInterface</code> · <code>ISpaceColonizableTarget</code>, V1 길이 비례 인력, V2/V3 처치 해금</p>
+          <p>순수 <code>APawn</code> · <code>FQuat</code> 카메라, 부피 보존 Squash/Stretch, <code>ISpaceTendrilHostInterface</code> · <code>ISpaceColonizableTarget</code> 0-Tick 능력</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#world-streaming" class="milestone-card">
@@ -127,7 +127,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <span class="m-arrow">➔</span>
           </div>
           <h3>소행성 1,150 풀 &amp; 월드 스트리밍</h3>
-          <p>2-Tier 물리, 구형 껍질 C=[A,B], <code>RuntimeSizeScale</code> 0ms 균일 스케일링, 이중 미네랄</p>
+          <p>Chaos 48캡 2-Tier 물리, 무상태 구형 껍질 C=[A,B], <code>RuntimeSizeScale</code> 0ms 스케일링, 단일 흡수 진입점</p>
         </a>
 
         <a href="/learn/labs/project/fungal-space-conquest#optimization" class="milestone-card">
@@ -141,10 +141,10 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 
         <a href="/learn/labs/project/fungal-space-conquest#pipeline" class="milestone-card">
           <div class="m-top">
-            <span class="m-num">CHAPTER 05</span>
+            <span class="m-num">APPENDIX</span>
             <span class="m-arrow">➔</span>
           </div>
-          <h3>개발 파이프라인 &amp; AI 가드레일</h3>
+          <h3>부록: 개발 파이프라인</h3>
           <p><code>ue-on/off</code> 격리, UE 5.9 공식 MCP 베타 검증, <code>ARCHITECTURE.md</code> 멀티 에이전트 규약</p>
         </a>
       </div>

@@ -1,0 +1,442 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="곰팡이 우주 정복 대작전 — 게임 기획서 (GDD)"
+  description="UE 5.9 C++ 무중력 균류 역포식 타임어택 「곰팡이 우주 정복 대작전」 게임 기획서(GDD) 및 기술 명세"
+>
+  <article class="gdd-page">
+    <nav class="breadcrumb" aria-label="이동 경로">
+      <a href="/learn">Study Notes</a>
+      <span>/</span>
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <a href="/learn/projects/fungal-space-conquest">곰팡이 우주 정복 대작전</a>
+      <span>/</span>
+      <span class="current">기획서</span>
+    </nav>
+
+    <header class="gdd-header">
+      <div class="gdd-tag">PROJECT GDD &amp; TECHNICAL SPEC // UE 5.9</div>
+      <h1>곰팡이 우주 정복 대작전 — 게임 기획서 (GDD)</h1>
+      <p class="gdd-sub">
+        무중력 우주 소행성대에서 균류 세포로 성장하며 포식자 곰팡이를 역포식하는 3D 타임어택 액션 게임의 초기 기획서 및 기술 명세 원문입니다.
+      </p>
+
+      <div class="gdd-meta">
+        <span><strong>프로젝트명</strong> Fungal Space Conquest</span>
+        <span><strong>엔진</strong> Unreal Engine 5.9 (C++ / Chaos / Niagara / Slate)</span>
+        <span><strong>리포지토리</strong> <a href="https://github.com/pargame/FungalSpaceConquest" target="_blank" rel="noopener noreferrer">pargame/FungalSpaceConquest ↗</a></span>
+      </div>
+    </header>
+
+    <aside class="diff-callout">
+      <div class="diff-title">기획 시점 원문 안내 · 최종 구현에서 변경된 항목</div>
+      <p>
+        이 문서는 초기 기획 당시의 의사결정을 보존한 원문입니다. 이후 개발·밸런싱 과정에서 아래 규칙이 변경되었으며, 최종 구현과 검증 과정은 <a href="/learn/projects/fungal-space-conquest/devlog#gameplay-ai">설계·개발 기록(01장)</a>에서 확인할 수 있습니다.
+      </p>
+      <ul>
+        <li><strong>클리어 조건:</strong> 기획 원문 <code>포식자 10마리 처치</code> → 최종 구현 <code>포식자 6마리 처치 AND 미네랄 200개</code> (<code>UDeveloperSettings</code> 규칙 기반 구성)</li>
+        <li><strong>V3 긴급 탈출 해금:</strong> 기획 원문 <code>5마리 처치</code> → 최종 구현 <code>3마리 처치</code></li>
+      </ul>
+    </aside>
+
+    <section class="gdd-section">
+      <h2>1. 프로젝트 개요</h2>
+      <ul>
+        <li><strong>기본 콘셉트:</strong> 무중력 우주 소행성대에 떠다니는 균류 세포(<code>ASpaceDrifterPawn</code>)가 촉수로 소행성을 붙잡아 전염·배양 폭발시키고, 쏟아지는 미네랄을 흡수해 몸집을 키우며 <strong>포식자 곰팡이 10마리를 최단 시간 안에 역포식</strong>하는 3D 무중력 타임어택 액션 게임입니다.</li>
+        <li><strong>개발 기반 (C++ APawn):</strong> 중력과 지면 보행에 종속된 <code>ACharacter</code> 대신 순수 물리 구체(<code>USphereComponent</code>) 기반 <code>APawn</code>을 채택해, 부피 보존 물풍선 탄성 변형·쿼터니언 자유 궤도 카메라·뉴턴 작용·반작용 그래플링을 정밀하게 구현합니다.</li>
+        <li><strong>승리 및 패배 규칙 (기획 원문 기준):</strong>
+          <ul>
+            <li><strong>승리 (CLEAR):</strong> 포식자 곰팡이 <strong>10마리</strong>(<code>TargetVictoryEnemyCount = 10</code>) 역포식 달성 시 즉시 클리어 타임(<code>MM:SS.d</code>) 확정 및 로컬 TOP 5 리더보드 등록.</li>
+            <li><strong>패배 (GAME OVER):</strong> 포식자 접촉 흡수 등으로 생체량이 고갈되어 본체 반지름이 <strong>32 cm</strong>(<code>MinGameOverBodyRadiusCm</code>) 이하로 축소되면 즉시 게임오버.</li>
+          </ul>
+        </li>
+      </ul>
+    </section>
+
+    <section class="gdd-section">
+      <h2>2. 핵심 게임 루프</h2>
+      <ol class="loop-list">
+        <li><strong>타이틀 &amp; 플레이어 등록:</strong> 라이브 3D 우주 배경 위에서 플레이어 이름 입력(자동 포커스, <code>Enter</code> 확정) 후 <code>SPACE</code>로 즉시 출격합니다.</li>
+        <li><strong>탐색 · 소행성 전염 · 성장:</strong> V1 긴 촉수로 소행성에 락온·끌어당김·표면 전염을 진행하고, 배양 폭발로 쏟아지는 미네랄을 흡수해 생체량과 반지름을 키웁니다.</li>
+        <li><strong>위협 판정 &amp; 역포식 전환:</strong> 단일 판정 기준 함수 <code>IsEnemyThreatToPlayer()</code>가 플레이어 가용 생체량과 포식자 전염 요구량을 실시간 비교합니다. 플레이어가 충분히 커지거나 V2로 포식자를 축소시키면 포식자가 <strong>사냥 가능(시안 림)</strong> 상태로 전환되어 피격 면역과 V1 역포식이 가능해집니다.</li>
+        <li><strong>능력 해금 (Progression):</strong> 포식자 <strong>2마리 처치 시 V2 그물 촉수</strong>, <strong>5마리 처치 시 V3 긴급 탈출 분사</strong>가 해금됩니다(화면 중앙 대형 팝업 3.2초 + 4면 시안/골드 플래시 + 하단 슬롯 해금 글로우).</li>
+        <li><strong>완주 &amp; 리더보드 경신:</strong> 목표 처치 달성 시 승리 화면에 클리어 시간을 표시하고, <code>USaveGame</code> TOP 5 리더보드에 완주 최단 시간순(오름차순)을 최우선으로, 미완주는 처치 수 순으로 정렬해 저장합니다.</li>
+      </ol>
+    </section>
+
+    <section class="gdd-section">
+      <h2>3. 조작법 및 3종 촉수 능력</h2>
+      <ul class="controls-list">
+        <li><strong>마우스 이동:</strong> 3인칭 쿼터니언 자유 궤도 시점 회전 (짐벌락 없는 360° 전방위 비행)</li>
+        <li><strong><code>SPACE</code> (홀드 / 단발):</strong> 현재 선택된 촉수 발동</li>
+        <li><strong><code>1</code> / <code>2</code> / <code>3</code> 또는 <code>Tab</code>:</strong> 해금된 촉수 능력 전환</li>
+      </ul>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>슬롯</th>
+              <th>능력명</th>
+              <th>해금 조건 (기획 원문)</th>
+              <th>쿨타임</th>
+              <th>핵심 메커니즘</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>V1 긴 촉수 (<code>ULongTendrilAbility</code>)</td>
+              <td>기본 보유</td>
+              <td>없음 (전염 완료 후 1.4s 오발사 잠금)</td>
+              <td>스피어 스윕 락온, 길이 비례 인력·최대 속도 증폭, 가용 생체량 50%/s 전염·사전 실패 판정, 배양 폭발 흡수</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>V2 그물 촉수 (<code>UNetTendrilAbility</code>)</td>
+              <td>포식자 2마리 처치</td>
+              <td>6.0초</td>
+              <td>단발 광역 포자 그물. 미네랄 대량 포획 + 광역 원뿔 내 모든 포식자 2.5초 35% 둔화 + 반지름 -15%·생체량 영구 축소(하한 50%)</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>V3 긴급 탈출 (<code>UJetTendrilAbility</code>)</td>
+              <td>포식자 5마리 처치</td>
+              <td>6.0초</td>
+              <td>단발 고속 분사. 가용 생체량 8%(최소 4) 소모 + 전방 고속 임펄스(+1400 cm/s) 긴급 탈출</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="gdd-section">
+      <h2>4. 성장 · 포식자 AI · 소행성 필드 설계</h2>
+
+      <h3>4.1 성장 체감 및 생체량 시스템</h3>
+      <ul>
+        <li><strong>성장 지수:</strong> <code>BiomassToRadiusExponent = 0.40</code> (시작 반지름 75 cm, 게임오버 32 cm, 최대 400 cm), 물리 질량 <code>Scale³</code> 연동.</li>
+        <li><strong>카메라 스케일링:</strong> 본체 성장 시 카메라 암 길이(<code>Scale^0.72</code>)와 소켓 오프셋(<code>Scale^1.0</code>)이 점진 확장되어 거대화 체감을 유지합니다.</li>
+        <li><strong>V1 길이 비례 인력:</strong> 본체 질량이 커져도 둔해지지 않도록 V1 유효 사거리 배율에 비례해 끌어당김 최대 상대 속도와 최소 구심 가속도를 함께 증폭하고, 가벼운 소행성의 과도한 반작용 속도를 질량 비례로 제한합니다.</li>
+      </ul>
+
+      <h3>4.2 포식자 곰팡이 AI (<code>AEnemyMoldManager</code> / <code>ASpaceEnemyMold</code>)</h3>
+      <ul>
+        <li><strong>공격 티켓 시스템 (최대 2마리):</strong> 다수의 포식자가 활성 상태여도 <code>MaxAttackingEnemies = 2</code>만 공격 티켓을 받아 리드 추격 돌진(교체 히스테리시스 350 cm, V2 둔화 중 티켓 보호·해제 시 즉시 복귀, 비위협 0.5초 유예).</li>
+        <li><strong>포위 링 &amp; 개체 분산:</strong> 비티켓 포식자는 표면 거리 <code>950~1450 cm</code> 링에서 선회 추종하며, 공격 티켓 보유자를 포함한 모든 포식자가 서로 최소 <code>550 cm</code> 표면 이격(<code>EnemySeparationWeight = 2.2</code>)을 유지합니다.</li>
+        <li><strong>최대 도달 크기 기준 스폰:</strong> 현재 크기가 아닌 <code>MaxReachedBodyRadiusCm</code>의 <code>1.12~1.28배</code>로 스폰해, 작아진 상태에서 약한 포식자만 반복 파밍하는 루프를 차단합니다.</li>
+        <li><strong>스케일링 &amp; 단축 리스폰:</strong> 시간(90초)·미네랄(50개) 기준으로 최대 6마리까지 점진 확대되며, 필드에 활성 포식자가 0마리가 되면 <code>2.0초</code> 뒤 즉시 리스폰됩니다.</li>
+        <li><strong>비주얼 &amp; 카메라 보호:</strong> <code>M_EnemyMold</code>(WPO 가시·타르 광택·위협 진홍 ↔ 사냥 가능 시안 림 전환), <code>CollisionSphere</code>의 <code>ECC_Camera</code> 무시 + 카메라 근접 시 시각 메시 임시 숨김(<code>SetCameraProximityHidden</code>)으로 시야 가림을 방지합니다.</li>
+      </ul>
+
+      <h3>4.3 소행성 필드 &amp; 0ms 동적 크기 스케일링 (<code>AAsteroidFieldManager</code> / <code>ASpaceAsteroid</code>)</h3>
+      <ul>
+        <li><strong>상태 없는 프리베이크 풀링:</strong> <code>BeginPlay</code> 시 1,150개 소행성의 절차적 메시와 Chaos Convex 콜리전을 사전 베이킹해 런타임 스폰 비용을 0 ms로 유지합니다.</li>
+        <li><strong>2-Tier 물리 스케줄링:</strong> 플레이어 반경 이내 최대 48개 소행성만 Chaos 강체 물리를 활성화하고, 원거리 소행성은 <code>StepKinematicDrift</code>로 경량 등속 유영합니다.</li>
+        <li><strong>플레이어 크기 비례 0ms 스케일링:</strong> 플레이어 현재 반지름 배율에 따라 새로 스폰되는 소행성에 균일 액터 스케일(<code>AsteroidSizeGrowthExponent = 0.75</code>, <code>1.0~3.5x</code>)을 적용해 메시 재빌드 없이 크기·물리 질량(<code>s³</code>)·전염 비용·폭발 미네랄 보상을 일괄 연동합니다.</li>
+      </ul>
+    </section>
+
+    <section class="gdd-section">
+      <h2>5. HUD / UI 구성 (<code>USpaceDrifterHUDWidget</code>)</h2>
+      <ul>
+        <li><strong>타이틀 화면:</strong> 플레이어 이름 입력창 자동 포커스(<code>Enter</code> 확정), 조작 가이드, TOP 5 리더보드 &amp; 초기화 버튼, <code>SPACE</code> 출격 프롬프트.</li>
+        <li><strong>인게임 HUD:</strong>
+          <ul>
+            <li><strong>좌상단:</strong> <code>HUNT TIME</code> 스톱워치(<code>MM:SS.d</code>), 목표 진행도, 활성 포식자 수.</li>
+            <li><strong>좌하단:</strong> 상대 가용 생체량 <code>%</code> 이중 게이지 바(민트=잔여, 앰버=전염 투자 중), 현재/최대 반지름.</li>
+            <li><strong>우상단:</strong> 비행 속도계, 유효 사거리, 누적 미네랄 카운터.</li>
+            <li><strong>중앙:</strong> 사거리 연동 조준 레티클, 포식자별 개별 마커 풀(최대 8개, <code>▲ 포식자</code> / <code>◆ 사냥 가능</code> / <code>[둔화]</code>), 4면 붉은 피격 비네트 &amp; 시안/골드 해금 플래시, 신규 능력 해금 대형 팝업.</li>
+            <li><strong>하단 중앙:</strong> 3종 촉수 슬롯 독(잠금 진행도, 해금 글로우, 실시간 쿨타임).</li>
+          </ul>
+        </li>
+        <li><strong>종료 화면:</strong> <code>CLEAR! MM:SS.d</code> 또는 <code>GAME OVER</code> 결과 카드, TOP 5 리더보드, 초기화 버튼, 2초 유예 후 <code>SPACE</code> 즉시 재시작.</li>
+      </ul>
+    </section>
+
+    <section class="gdd-section">
+      <h2>6. C++ 핵심 아키텍처 &amp; 트러블슈팅 요약</h2>
+      <p class="section-note">
+        상세한 C++ 코드, TickGroup 실행 순서, M4 16GB 실측 메모리 최적화 및 시행착오 전체 기록은 <a href="/learn/projects/fungal-space-conquest/devlog">설계·개발 기록</a>에 수록되어 있습니다.
+      </p>
+
+      <details class="gdd-drawer">
+        <summary>핵심 클래스 및 인터페이스 요약표 펼쳐 보기</summary>
+        <div class="table-wrap drawer-body">
+          <table>
+            <thead>
+              <tr>
+                <th>구분</th>
+                <th>클래스 / 인터페이스</th>
+                <th>핵심 역할</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>인터페이스</td><td><code>ISpaceTendrilHostInterface</code></td><td>촉수 능력이 호스트 위치·카메라·물리 루트·Niagara FX를 조회하는 계약</td></tr>
+              <tr><td>전염 계약</td><td><code>ISpaceColonizableTarget</code></td><td>소행성과 포식자의 공통 전염·배양 폭발 인터페이스</td></tr>
+              <tr><td>플레이어 폰</td><td><code>ASpaceDrifterPawn</code></td><td>Chaos 물리 구체, 부피 보존 탄성, 성장 카메라, 승리 조건 및 해금 관리</td></tr>
+              <tr><td>능력 베이스</td><td><code>USpaceTendrilAbility</code></td><td><code>EditInlineNew</code> 추상 <code>UObject</code>, 조건부 0-Tick 및 공통 쿨타임 관리</td></tr>
+              <tr><td>적 매니저</td><td><code>AEnemyMoldManager</code></td><td>0-Tick 포식자 풀 일괄 갱신(공격 티켓·포위 링·이격·단축 리스폰)</td></tr>
+              <tr><td>필드 매니저</td><td><code>AAsteroidFieldManager</code></td><td>1,150 프리베이크 소행성 풀, 2-Tier 물리, 크기 비례 0ms 스케일링</td></tr>
+              <tr><td>컨트롤러 / UI</td><td><code>ASpaceDrifterPlayerController</code> · <code>USpaceDrifterHUDWidget</code></td><td>Enhanced Input 제어, 순수 Slate HUD 및 <code>USaveGame</code> TOP 5 리더보드</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="gdd-drawer">
+        <summary>주요 트러블슈팅 4건 요약 펼쳐 보기</summary>
+        <ul class="drawer-list">
+          <li><strong>고속 비행 시 촉수 시작점 분리:</strong> <code>ASpaceDrifterPawn</code>과 3종 Niagara 컴포넌트를 <code>TG_PostPhysics</code> / <code>TG_PostUpdateWork</code> + <code>AddTickPrerequisiteActor</code>로 정렬해 해결 (<a href="/learn/projects/fungal-space-conquest/devlog#tendrils">02장 상세</a>).</li>
+          <li><strong>거대화 시 V1 그래플링 둔화:</strong> 유효 사거리 배율에 비례해 끌어당김 최대 속도·구심 가속도를 증폭하고 타겟 반작용 힘에 질량 비례 상한 적용.</li>
+          <li><strong>포식자 WPO 가시 카메라 침투:</strong> <code>CollisionSphere</code>의 <code>ECC_Camera</code> 응답 무시 + 카메라 근접 시 시각 메시 임시 숨김 처리.</li>
+          <li><strong>Windows MSVC C2397 축소 변환 오류:</strong> LWC <code>double</code> 반환에 명시적 <code>static_cast&lt;float&gt;</code> 적용 후 독립 리포지토리 분리 (<a href="/learn/projects/fungal-space-conquest/devlog#optimization">04장 상세</a>).</li>
+        </ul>
+      </details>
+    </section>
+
+    <footer class="gdd-footer">
+      <a href="/learn/projects/fungal-space-conquest" class="nav-btn secondary">← 토픽 허브로</a>
+      <a href="/learn/projects/fungal-space-conquest/devlog" class="nav-btn primary">설계·개발 기록 보기 →</a>
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .gdd-page {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.4rem;
+  }
+  .breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.2rem;
+  }
+  .breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb .current {
+    color: var(--accent-2);
+  }
+
+  .gdd-header {
+    padding-bottom: 1.8rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .gdd-tag {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+  .gdd-header h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.45rem);
+    line-height: 1.25;
+  }
+  .gdd-sub {
+    color: var(--text-2);
+    line-height: 1.75;
+    margin: 0 0 1.2rem;
+    font-size: 1rem;
+  }
+  .gdd-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem 1.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+  .gdd-meta strong {
+    color: var(--text-2);
+    margin-right: 0.35rem;
+  }
+  .gdd-meta a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .diff-callout {
+    background: color-mix(in srgb, var(--accent-2) 10%, var(--surface-1));
+    border: 1px solid color-mix(in srgb, var(--accent-2) 32%, var(--border));
+    border-radius: var(--radius);
+    padding: 1.25rem 1.4rem;
+  }
+  .diff-title {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin-bottom: 0.55rem;
+  }
+  .diff-callout p,
+  .diff-callout li {
+    font-size: 0.92rem;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+  .diff-callout p {
+    margin: 0 0 0.65rem;
+  }
+  .diff-callout ul {
+    margin: 0;
+    padding-left: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .diff-callout a {
+    color: var(--accent);
+  }
+
+  .gdd-section h2 {
+    margin: 0 0 1rem;
+    font-size: 1.4rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .gdd-section h3 {
+    margin: 1.4rem 0 0.65rem;
+    font-size: 1.08rem;
+    color: var(--text-1);
+  }
+  .gdd-section ul,
+  .gdd-section ol {
+    margin: 0;
+    padding-left: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    font-size: 0.95rem;
+  }
+  .gdd-section ul ul {
+    margin-top: 0.45rem;
+  }
+  .gdd-section strong {
+    color: var(--text-1);
+  }
+  .controls-list {
+    margin-bottom: 1.1rem !important;
+  }
+  .section-note {
+    color: var(--text-2);
+    font-size: 0.94rem;
+    line-height: 1.7;
+    margin: 0 0 1rem;
+  }
+  .section-note a {
+    color: var(--accent);
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  th, td {
+    padding: 0.75rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+  th {
+    background: var(--surface-2);
+    color: var(--text-1);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  td {
+    color: var(--text-2);
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  .gdd-drawer {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.95rem 1.15rem;
+    margin-bottom: 0.8rem;
+  }
+  .gdd-drawer summary {
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+  .drawer-body {
+    margin-top: 0.9rem;
+  }
+  .drawer-list {
+    margin-top: 0.9rem !important;
+  }
+  .drawer-list a {
+    color: var(--accent);
+  }
+
+  .gdd-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.7rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .nav-btn.primary {
+    background: var(--accent);
+    color: var(--text-inverse);
+  }
+  .nav-btn.primary:hover {
+    background: var(--accent-strong);
+    box-shadow: var(--glow);
+  }
+  .nav-btn.secondary {
+    background: var(--surface-2);
+    color: var(--text-1);
+    border: 1px solid var(--border);
+  }
+  .nav-btn.secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+</style>

@@ -1,0 +1,434 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="곰팡이 우주 정복 대작전 — 프로젝트 토픽"
+  description="UE 5.9 C++ 무중력 6-DoF 게임 「곰팡이 우주 정복 대작전」 토픽 허브 — 기획서(GDD)와 설계·개발 기록 선택"
+>
+  <script is:inline>
+    (() => {
+      const hash = window.location.hash;
+      const devlogHashes = new Set([
+        '#gameplay-ai',
+        '#tendrils',
+        '#world-streaming',
+        '#optimization',
+        '#pipeline',
+      ]);
+      if (hash && devlogHashes.has(hash)) {
+        window.location.replace('/learn/projects/fungal-space-conquest/devlog' + hash);
+      }
+    })();
+  </script>
+
+  <div class="topic-hub">
+    <nav class="breadcrumb" aria-label="이동 경로">
+      <a href="/learn">Study Notes</a>
+      <span>/</span>
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <span class="current">곰팡이 우주 정복 대작전</span>
+    </nav>
+
+    <header class="hub-hero">
+      <div class="hub-copy">
+        <div class="hub-pills">
+          <span class="status-pill completed">
+            <span class="pulse-dot"></span>
+            COMPLETED · UE 5.9 (macOS / Windows)
+          </span>
+          <span class="meta-pill">C++ · Zero-G Time Attack</span>
+        </div>
+
+        <h1>곰팡이 우주 정복 대작전</h1>
+        <p class="hub-desc">
+          무중력 6-DoF 우주 소행성대에서 균류 세포로 성장해 <strong>포식자 6마리 처치와 미네랄 200개 수집</strong>을 최단 시간 안에 달성하는 Unreal Engine 5.9 C++ 미니게임입니다. 아래에서 <strong>기획서(GDD)</strong>와 <strong>설계·개발 기록</strong> 중 원하는 문서를 선택해 볼 수 있습니다.
+        </p>
+
+        <div class="hub-actions">
+          <a href="https://github.com/pargame/FungalSpaceConquest" class="hub-link-btn" target="_blank" rel="noopener noreferrer">
+            GitHub 리포지토리 ↗
+          </a>
+          <a href="/learn/projects" class="hub-link-btn ghost">
+            ← 프로젝트 목록
+          </a>
+        </div>
+      </div>
+
+      <a
+        href="/learn/projects/fungal-space-conquest/devlog"
+        class="hub-thumb"
+        aria-label="곰팡이 우주 정복 대작전 설계·개발 기록 열기"
+      >
+        <img
+          src="/images/projects/fungal-space-conquest/blog-pie-idle.png"
+          alt="UE 5.9 Lvl_Main 우주 공간에서 부유 중인 곰팡이 우주 정복 대작전 PIE 뷰포트"
+          loading="eager"
+        />
+        <span class="thumb-cap">UE 5.9 PIE · Lvl_Main + BP_SpaceDrifterPawn</span>
+      </a>
+    </header>
+
+    <section class="posts-section">
+      <div class="section-head">
+        <span class="eyebrow">POSTS IN THIS TOPIC</span>
+        <h2>포스팅 선택</h2>
+        <p>초기 기획 의도부터 최종 C++ 아키텍처·최적화 기록까지 문서별로 분리해 정리했습니다.</p>
+      </div>
+
+      <div class="post-cards">
+        <a href="/learn/projects/fungal-space-conquest/gdd" class="post-card gdd-card">
+          <div class="post-top">
+            <span class="post-type">POST 01 · GDD</span>
+            <span class="post-arrow">→</span>
+          </div>
+          <h3>게임 기획서 (GDD &amp; Technical Spec)</h3>
+          <p>
+            초기 기획 시점의 게임 콘셉트, 핵심 루프, 3종 촉수 능력 표, 성장·포식자 AI·소행성 필드 설계 및 HUD 구성 원문입니다. 최종 구현에서 바뀐 규칙과의 차이점도 상단에 정리했습니다.
+          </p>
+          <div class="post-tags">
+            <span>#기획서</span>
+            <span>#게임루프</span>
+            <span>#3종촉수</span>
+            <span>#HUD설계</span>
+          </div>
+        </a>
+
+        <a href="/learn/projects/fungal-space-conquest/devlog" class="post-card devlog-card">
+          <div class="post-top">
+            <span class="post-type">POST 02 · DEVLOG</span>
+            <span class="post-arrow">→</span>
+          </div>
+          <h3>설계·개발 기록 (본문 4개 장 + 부록)</h3>
+          <p>
+            포식자 6마리 &amp; 미네랄 200개 타임어택 루프, 공격 티켓 AI, 0-Tick 다형성 촉수, 1,150 소행성 2-Tier 물리, M4 16GB 메모리 63% 절감과 Windows 이식, UE 5.9 공식 MCP 검증을 실제 C++ 코드와 함께 다룹니다.
+          </p>
+          <div class="post-tags">
+            <span>#C++아키텍처</span>
+            <span>#Chaos물리</span>
+            <span>#M4최적화</span>
+            <span>#UE59_MCP</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <section class="chapters-section">
+      <div class="section-head">
+        <span class="eyebrow">QUICK JUMP · DEVLOG CHAPTERS</span>
+        <h2>개발 기록 챕터 바로가기</h2>
+      </div>
+
+      <div class="chapter-grid">
+        <a href="/learn/projects/fungal-space-conquest/devlog#gameplay-ai" class="chapter-link">
+          <span class="c-num">01</span>
+          <span class="c-title">게임플레이 &amp; 포식자 AI</span>
+        </a>
+        <a href="/learn/projects/fungal-space-conquest/devlog#tendrils" class="chapter-link">
+          <span class="c-num">02</span>
+          <span class="c-title">무중력 본체 &amp; 다형성 촉수</span>
+        </a>
+        <a href="/learn/projects/fungal-space-conquest/devlog#world-streaming" class="chapter-link">
+          <span class="c-num">03</span>
+          <span class="c-title">소행성 1,150 풀 &amp; 월드 스트리밍</span>
+        </a>
+        <a href="/learn/projects/fungal-space-conquest/devlog#optimization" class="chapter-link">
+          <span class="c-num">04</span>
+          <span class="c-title">최적화 &amp; Windows 이식</span>
+        </a>
+        <a href="/learn/projects/fungal-space-conquest/devlog#pipeline" class="chapter-link">
+          <span class="c-num">부록</span>
+          <span class="c-title">개발 파이프라인 &amp; UE 5.9 MCP</span>
+        </a>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .topic-hub {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.6rem;
+  }
+  .breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .breadcrumb .current {
+    color: var(--accent-2);
+  }
+
+  .hub-hero {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-1);
+  }
+  .hub-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .status-pill.completed {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+  }
+  .pulse-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+  .meta-pill {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+  }
+  .hub-copy h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.4rem);
+  }
+  .hub-desc {
+    color: var(--text-2);
+    line-height: 1.75;
+    margin: 0 0 1.4rem;
+    font-size: 0.98rem;
+  }
+  .hub-desc strong {
+    color: var(--text-1);
+  }
+  .hub-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  .hub-link-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .hub-link-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .hub-link-btn.ghost {
+    color: var(--text-3);
+  }
+
+  .hub-thumb {
+    display: block;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+    text-decoration: none;
+    transition: transform var(--dur), border-color var(--dur), box-shadow var(--dur);
+  }
+  .hub-thumb:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .hub-thumb img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+  .thumb-cap {
+    display: block;
+    padding: 0.5rem 0.85rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--text-3);
+  }
+
+  .section-head {
+    margin-bottom: 1.3rem;
+  }
+  .eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+  .section-head h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.45rem;
+  }
+  .section-head p {
+    margin: 0;
+    color: var(--text-3);
+    font-size: 0.94rem;
+  }
+
+  .post-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.3rem;
+  }
+  .post-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.7rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    transition: all var(--dur-fast);
+  }
+  .post-card.gdd-card {
+    border-top: 3px solid var(--accent-2);
+  }
+  .post-card.devlog-card {
+    border-top: 3px solid var(--accent);
+  }
+  .post-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: var(--glow);
+  }
+  .post-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+  .gdd-card .post-type {
+    color: var(--accent-2);
+  }
+  .devlog-card .post-type {
+    color: var(--accent);
+  }
+  .post-arrow {
+    color: var(--text-3);
+    font-size: 1.05rem;
+    transition: transform var(--dur-fast), color var(--dur-fast);
+  }
+  .post-card:hover .post-arrow {
+    color: var(--accent);
+    transform: translateX(4px);
+  }
+  .post-card h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-1);
+  }
+  .post-card p {
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.7;
+    font-size: 0.92rem;
+    flex: 1;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding-top: 0.4rem;
+  }
+  .post-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 0.8rem;
+  }
+  .chapter-link {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.05rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all var(--dur-fast);
+  }
+  .chapter-link:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .c-num {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-muted);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+  }
+  .c-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  @media (max-width: 900px) {
+    .hub-hero,
+    .post-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

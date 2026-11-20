@@ -13,7 +13,7 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
 
 **2026. 11. 20** · `#Gemini4` `#AgenticWorkflow` `#LogAnalysis` `#UE5_9`
 
-최근 UE 5.9 곰팡이 프로젝트([곰팡이 우주 정복 대작전](/learn/projects/fungal-space-conquest))를 마무리하고 블로그를 개편하면서 **Gemini 3.8 Flash**에서 **Gemini 4 계열(Argon · Hydrogen · Neon)**로 작업 환경이 넘어왔습니다.
+최근 UE 5.9 곰팡이 프로젝트([곰팡이 우주 정복 대작전](/learn/projects/fungal-space-conquest))를 마무리하고 블로그를 개편하면서 **Gemini 3.8 Flash**에서 <strong>Gemini 4 계열(Argon · Hydrogen · Neon)</strong>로 작업 환경이 넘어왔습니다.
 
 로컬에 쌓인 실제 에이전트 로그(`transcript.jsonl`) 102개, 총 **6,367개 응답 턴**에서 유의미한 실측 기준 3가지(**병렬 도구 호출 배치율**, **파일 읽기·편집 1스텝 중앙값–P90 범위**, **도구 구성 비중**)를 추려 한눈에 비교할 수 있도록 시각화했습니다.
 
@@ -47,13 +47,13 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
 />
 
 * **3.8 Flash**는 `High`·`Medium` 모두 **1턴 1도구(평균 1.00~1.01개)** 순차 처리에 머물렀습니다.
-* **Gemini 4 계열**에서는 4개 조합 모두 20% 이상으로 올라섰고, 특히 `4 Neon`은 **40.3%(평균 2.08개)**로 여러 파일을 동시에 읽고 고치는 편집 작업에서 왕복 턴 수가 크게 줄었습니다.
+* **Gemini 4 계열**에서는 4개 조합 모두 20% 이상으로 올라섰고, 특히 `4 Neon`은 <strong>40.3%(평균 2.08개)</strong>로 여러 파일을 동시에 읽고 고치는 편집 작업에서 왕복 턴 수가 크게 줄었습니다.
 
 ---
 
 ## 2. 파일 읽기·편집 1스텝 왕복 시간 (중앙값 – P90 범위)
 
-로그의 `PLANNER_RESPONSE.created_at`은 생성 시작 시각이므로, 다음 스텝까지의 간격은 순수 추론 시간이 아니라 **생성(thinking 포함) + 도구 실행이 합쳐진 1스텝 왕복 시간**입니다. 빌드나 테스트 실행 시간 편차가 큰 `run_command`와 사용자 대기가 섞이는 `ask_question`을 제외하고, **파일 읽기·편집 전용 스텝(`read_file` / `edit_file` / `write_file`)**만 0~40초 동일 선형 축에 올렸습니다.
+로그의 `PLANNER_RESPONSE.created_at`은 생성 시작 시각이므로, 다음 스텝까지의 간격은 순수 추론 시간이 아니라 **생성(thinking 포함) + 도구 실행이 합쳐진 1스텝 왕복 시간**입니다. 빌드나 테스트 실행 시간 편차가 큰 `run_command`와 사용자 대기가 섞이는 `ask_question`을 제외하고, <strong>파일 읽기·편집 전용 스텝(<code>read_file</code> / <code>edit_file</code> / <code>write_file</code>)</strong>만 0~40초 동일 선형 축에 올렸습니다.
 
 <LatencyRangeChart
   title="파일 읽기·편집 전용 스텝 왕복 시간 (중앙값 ● ~ P90 ◆)"
@@ -70,10 +70,10 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
   ]}
 />
 
-* **`4 Hydrogen (Medium)`**은 중앙값 **6초**에 P90 **11초**로 꼬리 구간이 가장 짧고 균일했습니다.
-* **`3.8 Flash (Medium)`**은 중앙값은 5초로 빠르지만 P90이 **24초**까지 벌어졌습니다.
-* **`4 Neon (Medium)`**은 중앙값 8초 / P90 17초로 `3.8 Flash (High)`(5초 / 15초)보다 턴당 2~3초 더 걸리지만, 위 차트 1의 병렬 배치(평균 2.08개)가 이를 상쇄합니다.
-* **`4 Argon`**은 `Medium`(10s–35s)과 `High`(11.5s–31s) 모두 왕복 구간이 가장 길었습니다.
+* <strong><code>4 Hydrogen (Medium)</code></strong>은 중앙값 **6초**에 P90 **11초**로 꼬리 구간이 가장 짧고 균일했습니다.
+* <strong><code>3.8 Flash (Medium)</code></strong>은 중앙값은 5초로 빠르지만 P90이 **24초**까지 벌어졌습니다.
+* <strong><code>4 Neon (Medium)</code></strong>은 중앙값 8초 / P90 17초로 `3.8 Flash (High)`(5초 / 15초)보다 턴당 2~3초 더 걸리지만, 위 차트 1의 병렬 배치(평균 2.08개)가 이를 상쇄합니다.
+* <strong><code>4 Argon</code></strong>은 `Medium`(10s–35s)과 `High`(11.5s–31s) 모두 왕복 구간이 가장 길었습니다.
 
 ---
 

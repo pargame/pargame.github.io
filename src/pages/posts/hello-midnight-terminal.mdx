@@ -29,7 +29,7 @@ Gemini Pro와의 페어 프로그래밍 및 멀티 에이전트 교차 검증을
 ### ① Zero-FOIT (무깜빡임) 인라인 테마 인젝터
 리액트 `useEffect`나 외부 스크립트로 다크 모드를 제어하면, 브라우저가 흰 배경을 먼저 렌더링한 후 다크 모드로 전환되면서 화면이 번쩍이는 **FOIT(Flash of Inaccurate Theme)** 현상이 발생합니다.
 
-이를 완벽히 차단하기 위해 `src/layouts/BaseLayout.astro`의 `<head>` 최상단에 **동기식 인라인 자바스크립트(`script is:inline`)**를 배치했습니다:
+이를 완벽히 차단하기 위해 `src/layouts/BaseLayout.astro`의 `<head>` 최상단에 <strong>동기식 인라인 자바스크립트(<code>script is:inline</code>)</strong>를 배치했습니다:
 
 ```html
 <!-- BaseLayout.astro: First Paint 이전 동기 실행 -->

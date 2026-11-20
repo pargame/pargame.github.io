@@ -1,0 +1,388 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="왁뿌던전 탈출 — 프로젝트 홈"
+  description="UE 5.9 Chaos 물리 솔버와 ACharacter를 활용하는 20라운드 왁뿌볼 물리 파괴 액션 디펜스 「왁뿌던전 탈출」 프로젝트 홈"
+>
+  <div class="wp-hub">
+    <nav class="wp-breadcrumb" aria-label="이동 경로">
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <span class="current">왁뿌던전 탈출</span>
+    </nav>
+
+    <header class="wp-hero">
+      <div class="wp-hero-copy">
+        <div class="wp-pills">
+          <span class="wp-pill status">
+            <span class="wp-dot"></span>
+            PLANNING · UE 5.9
+          </span>
+          <span class="wp-pill meta">Chaos Solver · ACharacter · 20 Waves</span>
+        </div>
+
+        <h1>왁뿌던전 탈출 (가제)</h1>
+        <p class="wp-desc">
+          언리얼 엔진 내장 <strong>Chaos 물리 솔버</strong>와 <strong>ACharacter</strong>를 적극 활용하는 3D 물리 파괴 웨이브 디펜스입니다.
+          플레이어가 가한 힘에 따라 실시간으로 부서지는 왁뿌볼 몬스터를 처치하며 <strong>20라운드와 거대 왁뿌볼 보스</strong>를 돌파해 던전에서 탈출합니다.
+        </p>
+
+        <div class="wp-actions">
+          <a href="/learn/projects" class="wp-link-btn ghost">
+            ← 프로젝트 목록
+          </a>
+        </div>
+      </div>
+
+      <a
+        href="/learn/projects/waxppu-dungeon/gdd"
+        class="wp-thumb"
+        aria-label="왁뿌던전 탈출 기획서 열기"
+      >
+        <div class="wp-thumb-art">
+          <span class="wp-thumb-orb"></span>
+          <span class="wp-thumb-label">CHAOS × ACHARACTER</span>
+        </div>
+        <span class="wp-thumb-cap">UE 5.9 Planning · 20 Waves + Giant Wax-Ppu Boss</span>
+      </a>
+    </header>
+
+    <section class="posts-section">
+      <div class="section-head">
+        <span class="eyebrow">POSTS IN THIS PROJECT</span>
+        <h2>포스팅 선택</h2>
+        <p>기획서와 추후 구현될 포트폴리오를 문서별로 분리해 관리합니다.</p>
+      </div>
+
+      <div class="post-cards">
+        <a href="/learn/projects/waxppu-dungeon/gdd" class="post-card gdd-card">
+          <div class="post-top">
+            <span class="post-type">POST 01 · 기획서</span>
+            <span class="post-arrow">→</span>
+          </div>
+          <h3>게임 기획서 (GDD)</h3>
+          <p>
+            Chaos 물리 솔버와 <code>ACharacter</code> 적극 활용이라는 2대 목표, 20라운드 웨이브 및 거대 왁뿌볼 보스 탈출 루프, 주요 구성 요소의 큰 틀을 정리했습니다.
+          </p>
+          <div class="post-tags">
+            <span>#기획서</span>
+            <span>#ChaosSolver</span>
+            <span>#ACharacter</span>
+            <span>#20Waves</span>
+          </div>
+        </a>
+
+        <div class="post-card portfolio-card is-soon" aria-disabled="true">
+          <div class="post-top">
+            <span class="post-type">POST 02 · 포트폴리오</span>
+            <span class="soon-badge">SOON</span>
+          </div>
+          <h3>포트폴리오 (준비 중)</h3>
+          <p>
+            프로토타입 착수 후 Chaos 파괴 실험, <code>ACharacter</code> 액션 구조, 20라운드 웨이브·보스 구현과 최적화 기록이 이곳에 추가될 예정입니다.
+          </p>
+          <div class="post-tags">
+            <span>#준비중</span>
+            <span>#UE5_9</span>
+            <span>#ChaosDestruction</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .wp-hub {
+    --wp-coral: #ff5e9c;
+    --wp-peach: #ff9f43;
+    --wp-mint: #2ce6b8;
+    --wp-border: color-mix(in srgb, var(--wp-coral) 28%, var(--border));
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+  :global([data-theme="light"]) .wp-hub {
+    --wp-coral: #e12d78;
+    --wp-peach: #e07016;
+    --wp-mint: #0e9f7d;
+  }
+
+  .wp-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.6rem;
+  }
+  .wp-breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .wp-breadcrumb a:hover {
+    color: var(--wp-coral);
+  }
+  .wp-breadcrumb .current {
+    color: var(--wp-coral);
+    font-weight: 600;
+  }
+
+  .wp-hero {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--wp-border);
+    background:
+      radial-gradient(circle at 90% 16%, color-mix(in srgb, var(--wp-coral) 14%, transparent), transparent 45%),
+      var(--surface-1);
+    box-shadow: var(--shadow-1);
+  }
+  .wp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .wp-pill {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+  }
+  .wp-pill.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--wp-coral);
+    background: color-mix(in srgb, var(--wp-coral) 12%, transparent);
+    border-color: color-mix(in srgb, var(--wp-coral) 35%, transparent);
+  }
+  .wp-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--wp-coral);
+    box-shadow: 0 0 8px var(--wp-coral);
+  }
+  .wp-pill.meta {
+    color: var(--text-2);
+    background: var(--surface-2);
+  }
+  .wp-hero-copy h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.4rem);
+  }
+  .wp-desc {
+    color: var(--text-2);
+    line-height: 1.75;
+    margin: 0 0 1.4rem;
+    font-size: 0.98rem;
+  }
+  .wp-desc strong {
+    color: var(--text-1);
+  }
+  .wp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  .wp-link-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-link-btn:hover {
+    border-color: var(--wp-coral);
+    color: var(--wp-coral);
+  }
+
+  .wp-thumb {
+    display: block;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: transform var(--dur), border-color var(--dur), box-shadow var(--dur);
+  }
+  .wp-thumb:hover {
+    transform: translateY(-2px);
+    border-color: var(--wp-coral);
+    box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--wp-coral) 35%, transparent);
+  }
+  .wp-thumb-art {
+    aspect-ratio: 16 / 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    background:
+      radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--wp-coral) 24%, transparent), transparent 52%),
+      radial-gradient(circle at 75% 75%, color-mix(in srgb, var(--wp-peach) 22%, transparent), transparent 52%),
+      var(--surface-2);
+  }
+  .wp-thumb-orb {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #ffd1e6 0%, #ff5e9c 48%, #ff8a3d 100%);
+    box-shadow:
+      inset -8px -10px 18px rgba(130, 18, 66, 0.35),
+      inset 6px 6px 14px rgba(255, 255, 255, 0.45),
+      0 10px 24px -6px rgba(255, 94, 156, 0.55);
+  }
+  .wp-thumb-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--wp-coral);
+  }
+  .wp-thumb-cap {
+    display: block;
+    padding: 0.5rem 0.85rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--text-3);
+  }
+
+  .section-head {
+    margin-bottom: 1.3rem;
+  }
+  .eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+  .section-head h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.45rem;
+  }
+  .section-head p {
+    margin: 0;
+    color: var(--text-3);
+    font-size: 0.94rem;
+  }
+
+  .post-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.3rem;
+  }
+  .post-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.7rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    transition: all var(--dur-fast);
+  }
+  .post-card.gdd-card {
+    border-top: 3px solid var(--wp-coral);
+  }
+  .post-card.gdd-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--wp-coral);
+    box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--wp-coral) 35%, transparent);
+  }
+  .post-card.portfolio-card {
+    border-top: 3px solid var(--wp-peach);
+  }
+  .post-card.is-soon {
+    opacity: 0.68;
+    cursor: default;
+  }
+  .post-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+  .gdd-card .post-type {
+    color: var(--wp-coral);
+  }
+  .portfolio-card .post-type {
+    color: var(--wp-peach);
+  }
+  .post-arrow {
+    color: var(--text-3);
+    font-size: 1.05rem;
+    transition: transform var(--dur-fast), color var(--dur-fast);
+  }
+  .gdd-card:hover .post-arrow {
+    color: var(--wp-coral);
+    transform: translateX(4px);
+  }
+  .soon-badge {
+    font-size: 0.68rem;
+    padding: 0.12rem 0.48rem;
+    border-radius: 999px;
+    color: var(--text-3);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+  }
+  .post-card h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-1);
+  }
+  .post-card p {
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.7;
+    font-size: 0.92rem;
+    flex: 1;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding-top: 0.4rem;
+  }
+  .post-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 900px) {
+    .wp-hero,
+    .post-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

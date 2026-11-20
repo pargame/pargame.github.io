@@ -48,7 +48,7 @@ pargame.github.io/
 1. **Foundations (기반 공학)**: Modern C++, Core CS (운영체제, 컴퓨터구조, 알고리즘)
 2. **Systems (시스템 엔지니어링)**: Concurrency (동시성/Lock-free), Network (소켓/epoll), Database & SQL
 3. **Game Engine (게임 엔진)**: Unreal Engine (UObject, 블루프린트 연동, 라이프사이클)
-- **Projects (상단 헤더 독립 섹션)**: 대(Projects) → 중(개별 프로젝트 홈: `waxppu-dungeon`, `fungal-space-conquest`) → 소(기획서 / 포트폴리오)
+- **Projects (상단 헤더 독립 섹션)**: 대(Projects: `IN PROGRESS` / `COMPLETED` / `DESIGN` 3단계 분류) → 중(개별 프로젝트 홈) → 소(기획서 / 아키텍처 / 포트폴리오 문서)
 
 ### 확장 절차 (Extension Guide)
 * **새 토픽 추가**: `src/content/learn/[track]/[new-topic]/` 폴더 생성 및 마크다운 추가. `src/data/tracks.json`의 해당 트랙 `topics` 배열에 id/name 추가.

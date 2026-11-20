@@ -1,10 +1,65 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+
+const completedProjects = [
+  {
+    slug: 'metal-cube',
+    title: 'Metal Cube (3D Rotating Cube)',
+    status: 'COMPLETED · C++26 · metal-cpp',
+    accent: '#38bdf8',
+    summary:
+      'Objective-C 브릿지 없이 순수 C++26과 Apple 공식 metal-cpp로 구현한 9단계 의미론적 3D 회전 큐브 렌더링 파이프라인.',
+    tags: ['#Cpp26', '#MetalCpp', '#MSL', '#3DGraphics', '#RAII'],
+    github: 'https://github.com/pargame/metal-cube',
+    live: null,
+  },
+  {
+    slug: 'pocopia',
+    title: '포코피아 (Pokopia)',
+    status: 'COMPLETED · LIVE SERVICE',
+    accent: '#10b981',
+    summary:
+      '닌텐도 스위치2 게임 「포코피아」의 써드파티 클라우드섬 실시간 공유 웹 플랫폼. Flask API, 다국어(ko/en/ja), Cloudflare Tunnel로 운영.',
+    tags: ['#Python', '#Flask', '#CloudflareTunnel', '#i18n', '#pokoclouds'],
+    github: 'https://github.com/pargame/pocopia',
+    live: 'https://pokoclouds.com',
+  },
+];
+
+const designProjects = [
+  {
+    slug: 'nung-lang',
+    title: 'nung_lang (눙 언어)',
+    status: 'DESIGN · LANGUAGE',
+    accent: '#a78bfa',
+    summary:
+      '언어가 막을 수 있는 문제는 모두 막고 초고속 실행을 지향하는 자체 프로그래밍 언어 및 추상 머신 설계 프로젝트.',
+    tags: ['#LanguageDesign', '#AbstractMachine', '#TypeSystem', '#StaticSafety'],
+  },
+  {
+    slug: 'whynode',
+    title: 'WhyNode (와이노드)',
+    status: 'DESIGN · NATIVE APP',
+    accent: '#f59e0b',
+    summary:
+      '소크라테스식 재귀 질문을 무한 캔버스 위 지식 트리로 확장하는 macOS · iPadOS 네이티브 마인드맵 앱 설계 프로젝트.',
+    tags: ['#SwiftUI', '#macOS', '#iPadOS', '#Canvas', '#ForceDirectedGraph'],
+  },
+  {
+    slug: 'biz-agent-sim',
+    title: 'BizAgentSim',
+    status: 'DESIGN · SIMULATION',
+    accent: '#6366f1',
+    summary:
+      '비즈니스 업무 자동화 AI 에이전트를 가상 시뮬레이션 환경에서 사전 검증하는 이산 사건 시뮬레이션(DES) 테스트베드 설계 프로젝트.',
+    tags: ['#AIAgents', '#DES', '#MultiAgent', '#ReliabilityTesting'],
+  },
+];
 ---
 
 <BaseLayout
   title="Projects: 개발 프로젝트"
-  description="pargame 개발 프로젝트 — UE 5.9 C++ 게임 「왁뿌던전 탈출」 및 「곰팡이 우주 정복 대작전」"
+  description="pargame 개발 프로젝트 아카이브 — 게임 엔진, 3D 그래픽스, 웹 플랫폼, 자체 언어, 네이티브 앱 및 AI 시뮬레이션"
 >
   <div class="note-header">
     <nav class="breadcrumb" aria-label="이동 경로">
@@ -16,7 +71,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     <div class="topic-tag">TRACK // PROJECTS</div>
     <h1>Projects: 개발 프로젝트</h1>
     <p class="topic-desc">
-      이론 스터디에서 검증한 C++ 메모리·수명주기 모델, 게임 엔진 아키텍처, 셰이더 및 VFX 파이프라인을 실제 작동하는 프로토타입과 게임으로 구현하며 남기는 프로젝트 아카이브입니다.
+      게임 엔진과 3D 그래픽스 파이프라인부터 웹 플랫폼, 자체 프로그래밍 언어, 네이티브 앱, AI 에이전트 시뮬레이션까지 개별 리포지토리 단위로 설계하고 구현한 프로젝트 아카이브입니다.
     </p>
   </div>
 
@@ -179,6 +234,77 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         </div>
       </div>
     </article>
+
+    <div class="compact-grid">
+      {completedProjects.map((project) => (
+        <article class="compact-card" style={`--card-accent: ${project.accent}`}>
+          <div class="compact-top">
+            <span class="compact-status">
+              <span class="compact-dot"></span>
+              {project.status}
+            </span>
+          </div>
+          <h3>
+            <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
+          </h3>
+          <p class="compact-summary">{project.summary}</p>
+          <div class="stack-tags">
+            {project.tags.map((tag) => (
+              <span class="stack-tag compact-tag">{tag}</span>
+            ))}
+          </div>
+          <div class="compact-actions">
+            <a href={`/learn/projects/${project.slug}`} class="compact-btn primary">
+              프로젝트 보기 →
+            </a>
+            {project.live && (
+              <a href={project.live} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
+                Live ↗
+              </a>
+            )}
+            <a href={project.github} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
+              GitHub ↗
+            </a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="projects-section">
+    <div class="section-title-wrap">
+      <span class="badge design-badge">DESIGN // PRIVATE REPOS</span>
+      <h2>설계 중 프로젝트</h2>
+      <p>비공개 리포지토리에서 아키텍처와 명세를 설계 중인 프로젝트입니다. 각 프로젝트 홈에서 개요를 확인할 수 있습니다.</p>
+    </div>
+
+    <div class="compact-grid three-col">
+      {designProjects.map((project) => (
+        <article class="compact-card design-card" style={`--card-accent: ${project.accent}`}>
+          <div class="compact-top">
+            <span class="compact-status design-status">
+              <span class="compact-dot"></span>
+              {project.status}
+            </span>
+            <span class="private-pill">PRIVATE</span>
+          </div>
+          <h3>
+            <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
+          </h3>
+          <p class="compact-summary">{project.summary}</p>
+          <div class="stack-tags">
+            {project.tags.map((tag) => (
+              <span class="stack-tag compact-tag">{tag}</span>
+            ))}
+          </div>
+          <div class="compact-actions">
+            <a href={`/learn/projects/${project.slug}`} class="compact-btn secondary">
+              프로젝트 홈 →
+            </a>
+          </div>
+        </article>
+      ))}
+    </div>
   </section>
 </BaseLayout>
 
@@ -584,8 +710,141 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     box-shadow: 0 8px 24px -8px rgba(255, 94, 156, 0.5);
   }
 
+  .design-badge {
+    color: #a78bfa !important;
+  }
+  .compact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.35rem;
+    margin-top: 1.5rem;
+  }
+  .compact-grid.three-col {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 0;
+  }
+  .compact-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--card-accent);
+    border-radius: var(--radius-lg);
+    padding: 1.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    transition: transform var(--dur-fast), border-color var(--dur-fast), box-shadow var(--dur-fast);
+  }
+  .compact-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--card-accent);
+    box-shadow: 0 10px 26px -14px color-mix(in srgb, var(--card-accent) 40%, transparent);
+  }
+  .compact-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .compact-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.22rem 0.58rem;
+    border-radius: 999px;
+    color: var(--card-accent);
+    background: color-mix(in srgb, var(--card-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-accent) 32%, transparent);
+  }
+  .compact-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--card-accent);
+    box-shadow: 0 0 6px var(--card-accent);
+  }
+  .private-pill {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.16rem 0.5rem;
+    border-radius: 999px;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+  }
+  .compact-card h3 {
+    margin: 0;
+    font-size: 1.22rem;
+  }
+  .compact-card h3 a {
+    color: var(--text-1);
+    text-decoration: none;
+  }
+  .compact-card h3 a:hover {
+    color: var(--card-accent);
+  }
+  .compact-summary {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    flex: 1;
+  }
+  .compact-tag {
+    color: var(--card-accent);
+    border-color: color-mix(in srgb, var(--card-accent) 26%, var(--border-subtle));
+  }
+  .compact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .compact-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.48rem 0.88rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .compact-btn.primary {
+    background: var(--card-accent);
+    color: #0b1120;
+  }
+  :global([data-theme="light"]) .compact-btn.primary {
+    color: #ffffff;
+  }
+  .compact-btn.primary:hover {
+    filter: brightness(1.08);
+  }
+  .compact-btn.secondary {
+    background: var(--surface-2);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .compact-btn.secondary:hover {
+    border-color: var(--card-accent);
+    color: var(--card-accent);
+  }
+
+  @media (max-width: 960px) {
+    .compact-grid.three-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   @media (max-width: 900px) {
-    .showcase-body {
+    .showcase-body,
+    .compact-grid,
+    .compact-grid.three-col {
       grid-template-columns: 1fr;
     }
   }

@@ -1,0 +1,297 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="BizAgentSim — 프로젝트 홈"
+  description="비즈니스 업무 자동화 AI 에이전트를 가상 시뮬레이션 환경에서 사전 검증하는 이산 사건 시뮬레이션(DES) 테스트베드 설계 프로젝트 홈"
+>
+  <div class="design-hub">
+    <nav class="design-breadcrumb" aria-label="이동 경로">
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <span class="current">BizAgentSim</span>
+    </nav>
+
+    <header class="design-hero">
+      <div class="design-pills">
+        <span class="design-pill status">
+          <span class="design-dot"></span>
+          DESIGN · SIMULATION
+        </span>
+        <span class="design-pill private">PRIVATE REPO</span>
+      </div>
+
+      <h1>BizAgentSim (Business Agent Simulator)</h1>
+      <p class="design-desc">
+        비즈니스 업무 자동화 AI 에이전트를 가상 시뮬레이션 환경에서 사전 테스트하고 신뢰성을 통계적으로 검증하는 이산 사건 시뮬레이션(DES) 플랫폼 설계 프로젝트입니다.
+      </p>
+
+      <div class="design-tags">
+        <span>#AIAgents</span>
+        <span>#DiscreteEventSimulation</span>
+        <span>#MultiAgent</span>
+        <span>#ReliabilityTesting</span>
+        <span>#Sandbox</span>
+      </div>
+
+      <div class="design-actions">
+        <a href="/learn/projects" class="design-btn ghost">
+          ← 프로젝트 목록
+        </a>
+      </div>
+    </header>
+
+    <section class="posts-section">
+      <div class="section-head">
+        <span class="eyebrow">POSTS IN THIS PROJECT</span>
+        <h2>포스팅 선택</h2>
+        <p>비공개 리포지토리에서 설계를 진행 중이며, 공개 가능한 시점에 문서가 추가될 예정입니다.</p>
+      </div>
+
+      <div class="post-cards">
+        <div class="post-card is-soon" aria-disabled="true">
+          <div class="post-top">
+            <span class="post-type">POST 01 · 아키텍처 명세</span>
+            <span class="soon-badge">SOON</span>
+          </div>
+          <h3>시뮬레이션 런타임 &amp; 에이전트 검증 구조 (준비 중)</h3>
+          <p>
+            현재 비공개 설계 단계입니다. 가상 비즈니스 환경과 에이전트 런타임 아키텍처가 확정되면 공개 문서가 추가됩니다.
+          </p>
+          <div class="post-tags">
+            <span>#준비중</span>
+            <span>#DES</span>
+          </div>
+        </div>
+
+        <div class="post-card is-soon" aria-disabled="true">
+          <div class="post-top">
+            <span class="post-type">POST 02 · 구현 기록</span>
+            <span class="soon-badge">SOON</span>
+          </div>
+          <h3>시뮬레이터 구현 및 벤치마크 (준비 중)</h3>
+          <p>
+            시뮬레이션 러너 구현 착수 후 에이전트 신뢰성 검증 및 벤치마크 결과가 이곳에 추가될 예정입니다.
+          </p>
+          <div class="post-tags">
+            <span>#준비중</span>
+            <span>#Benchmark</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .design-hub {
+    --d-accent: #6366f1;
+    --d-border: color-mix(in srgb, var(--d-accent) 30%, var(--border));
+    display: flex;
+    flex-direction: column;
+    gap: 2.8rem;
+  }
+  :global([data-theme="light"]) .design-hub {
+    --d-accent: #4f46e5;
+  }
+  .design-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.4rem;
+  }
+  .design-breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .design-breadcrumb a:hover {
+    color: var(--d-accent);
+  }
+  .design-breadcrumb .current {
+    color: var(--d-accent);
+    font-weight: 600;
+  }
+  .design-hero {
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--d-border);
+    background:
+      radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--d-accent) 14%, transparent), transparent 45%),
+      var(--surface-1);
+    box-shadow: var(--shadow-1);
+  }
+  .design-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .design-pill {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+  }
+  .design-pill.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--d-accent);
+    background: color-mix(in srgb, var(--d-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--d-accent) 35%, transparent);
+  }
+  .design-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--d-accent);
+    box-shadow: 0 0 8px var(--d-accent);
+  }
+  .design-pill.private {
+    color: var(--text-3);
+    background: var(--surface-2);
+  }
+  .design-hero h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.3rem);
+  }
+  .design-desc {
+    color: var(--text-2);
+    line-height: 1.75;
+    margin: 0 0 1.25rem;
+    max-width: 780px;
+  }
+  .design-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-bottom: 1.4rem;
+  }
+  .design-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    color: var(--d-accent);
+  }
+  .design-btn.ghost {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .design-btn.ghost:hover {
+    border-color: var(--d-accent);
+    color: var(--d-accent);
+  }
+
+  .section-head {
+    margin-bottom: 1.3rem;
+  }
+  .eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--d-accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+  .section-head h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.45rem;
+  }
+  .section-head p {
+    margin: 0;
+    color: var(--text-3);
+    font-size: 0.94rem;
+  }
+
+  .post-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.3rem;
+  }
+  .post-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--d-accent);
+    border-radius: var(--radius-lg);
+    padding: 1.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .post-card.is-soon {
+    opacity: 0.68;
+    cursor: default;
+  }
+  .post-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+  .post-type {
+    color: var(--d-accent);
+  }
+  .soon-badge {
+    font-size: 0.68rem;
+    padding: 0.12rem 0.48rem;
+    border-radius: 999px;
+    color: var(--text-3);
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+  }
+  .post-card h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-1);
+  }
+  .post-card p {
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.7;
+    font-size: 0.92rem;
+    flex: 1;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding-top: 0.4rem;
+  }
+  .post-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 900px) {
+    .post-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,412 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Metal Cube — 프로젝트 홈"
+  description="Apple Silicon Mac 환경에서 순수 C++26과 metal-cpp로 구현한 9단계 의미론적 3D 회전 큐브 렌더링 프로젝트 홈"
+>
+  <div class="proj-hub">
+    <nav class="proj-breadcrumb" aria-label="이동 경로">
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <span class="current">Metal Cube</span>
+    </nav>
+
+    <header class="proj-hero">
+      <div class="proj-hero-copy">
+        <div class="proj-pills">
+          <span class="proj-pill status">
+            <span class="proj-dot"></span>
+            COMPLETED · C++26 · metal-cpp
+          </span>
+          <span class="proj-pill meta">Apple Silicon · MSL · 9-Stage Pipeline</span>
+        </div>
+
+        <h1>Metal Cube (3D Rotating Cube)</h1>
+        <p class="proj-desc">
+          Objective-C 브릿지 없이 Apple 공식 <strong>metal-cpp</strong>와 <strong>모던 C++26</strong>만으로 구현한 하드웨어 가속 3D 회전 큐브 애플리케이션입니다.
+          3D 가상 공간이 2D 물리 화면에 표출되기까지의 <strong>9단계 의미론적 렌더링 파이프라인</strong>을 헤더 모듈과 1:1로 대응시켜 설계했습니다.
+        </p>
+
+        <div class="proj-tags">
+          <span>#Cpp26</span>
+          <span>#MetalCpp</span>
+          <span>#MSL</span>
+          <span>#3DGraphics</span>
+          <span>#AppleSilicon</span>
+          <span>#RAII</span>
+          <span>#TripleBuffering</span>
+        </div>
+
+        <div class="proj-actions">
+          <a
+            href="https://github.com/pargame/metal-cube"
+            class="proj-btn primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub 리포지토리 ↗
+          </a>
+          <a href="/learn/projects" class="proj-btn ghost">
+            ← 프로젝트 목록
+          </a>
+        </div>
+      </div>
+
+      <a
+        href="/learn/projects/metal-cube/architecture"
+        class="proj-thumb"
+        aria-label="Metal Cube 아키텍처 문서 열기"
+      >
+        <div class="proj-thumb-art">
+          <div class="cube-wireframe" aria-hidden="true">
+            <span class="cube-face front"></span>
+            <span class="cube-face back"></span>
+          </div>
+          <span class="proj-thumb-label">C++26 × METAL-CPP</span>
+        </div>
+        <span class="proj-thumb-cap">9-Stage Semantic 3D Rendering Pipeline</span>
+      </a>
+    </header>
+
+    <section class="posts-section">
+      <div class="section-head">
+        <span class="eyebrow">POSTS IN THIS PROJECT</span>
+        <h2>포스팅 선택</h2>
+        <p>의미론적 9단계 파이프라인과 C++26 모듈 구현 구조를 정리한 문서입니다.</p>
+      </div>
+
+      <div class="post-cards">
+        <a href="/learn/projects/metal-cube/architecture" class="post-card">
+          <div class="post-top">
+            <span class="post-type">POST 01 · 아키텍처</span>
+            <span class="post-arrow">→</span>
+          </div>
+          <h3>9단계 의미론적 3D 렌더링 파이프라인 &amp; C++26 설계</h3>
+          <p>
+            Local → World → View → Clip → Screen 좌표계 전이 사슬, 9단계 렌더링 인과 모델과 1:1 매핑된 헤더 아키텍처, 그리고 <code>NS::SharedPtr</code> RAII 및 C++26 적용 포인트를 정리했습니다.
+          </p>
+          <div class="post-tags">
+            <span>#아키텍처</span>
+            <span>#9StagePipeline</span>
+            <span>#metal-cpp</span>
+            <span>#TripleBuffering</span>
+          </div>
+        </a>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .proj-hub {
+    --p-accent: #38bdf8;
+    --p-accent-2: #818cf8;
+    --p-border: color-mix(in srgb, var(--p-accent) 30%, var(--border));
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+  :global([data-theme="light"]) .proj-hub {
+    --p-accent: #0284c7;
+    --p-accent-2: #4f46e5;
+  }
+
+  .proj-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.6rem;
+  }
+  .proj-breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .proj-breadcrumb a:hover {
+    color: var(--p-accent);
+  }
+  .proj-breadcrumb .current {
+    color: var(--p-accent);
+    font-weight: 600;
+  }
+
+  .proj-hero {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--p-border);
+    background:
+      radial-gradient(circle at 90% 16%, color-mix(in srgb, var(--p-accent) 14%, transparent), transparent 45%),
+      var(--surface-1);
+    box-shadow: var(--shadow-1);
+  }
+  .proj-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .proj-pill {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+  }
+  .proj-pill.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  }
+  .proj-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+  .proj-pill.meta {
+    color: var(--text-2);
+    background: var(--surface-2);
+  }
+  .proj-hero-copy h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.4rem);
+  }
+  .proj-desc {
+    color: var(--text-2);
+    line-height: 1.75;
+    margin: 0 0 1.2rem;
+    font-size: 0.98rem;
+  }
+  .proj-desc strong {
+    color: var(--text-1);
+  }
+  .proj-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-bottom: 1.4rem;
+  }
+  .proj-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    color: var(--p-accent);
+  }
+  .proj-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+  .proj-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.58rem 1.05rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .proj-btn.primary {
+    background: var(--p-accent);
+    color: #0b1120;
+    border: 1px solid transparent;
+  }
+  :global([data-theme="light"]) .proj-btn.primary {
+    color: #ffffff;
+  }
+  .proj-btn.primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .proj-btn.ghost {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-3);
+  }
+  .proj-btn.ghost:hover {
+    border-color: var(--p-accent);
+    color: var(--p-accent);
+  }
+
+  .proj-thumb {
+    display: block;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: transform var(--dur), border-color var(--dur), box-shadow var(--dur);
+  }
+  .proj-thumb:hover {
+    transform: translateY(-2px);
+    border-color: var(--p-accent);
+    box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--p-accent) 35%, transparent);
+  }
+  .proj-thumb-art {
+    aspect-ratio: 16 / 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.1rem;
+    background:
+      radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--p-accent) 22%, transparent), transparent 55%),
+      radial-gradient(circle at 75% 75%, color-mix(in srgb, var(--p-accent-2) 22%, transparent), transparent 55%),
+      var(--surface-2);
+  }
+  .cube-wireframe {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+  .cube-face {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
+    border: 2px solid var(--p-accent);
+  }
+  .cube-face.front {
+    top: 0;
+    left: 0;
+    background: color-mix(in srgb, var(--p-accent) 16%, transparent);
+  }
+  .cube-face.back {
+    bottom: 0;
+    right: 0;
+    border-color: var(--p-accent-2);
+    background: color-mix(in srgb, var(--p-accent-2) 14%, transparent);
+  }
+  .proj-thumb-label {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--p-accent);
+  }
+  .proj-thumb-cap {
+    display: block;
+    padding: 0.5rem 0.85rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--text-3);
+  }
+
+  .section-head {
+    margin-bottom: 1.3rem;
+  }
+  .eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--p-accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+  .section-head h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.45rem;
+  }
+  .section-head p {
+    margin: 0;
+    color: var(--text-3);
+    font-size: 0.94rem;
+  }
+
+  .post-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.3rem;
+  }
+  .post-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--p-accent);
+    border-radius: var(--radius-lg);
+    padding: 1.7rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    transition: all var(--dur-fast);
+  }
+  .post-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--p-accent);
+    box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--p-accent) 35%, transparent);
+  }
+  .post-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+  .post-type {
+    color: var(--p-accent);
+  }
+  .post-arrow {
+    color: var(--text-3);
+    font-size: 1.05rem;
+    transition: transform var(--dur-fast), color var(--dur-fast);
+  }
+  .post-card:hover .post-arrow {
+    color: var(--p-accent);
+    transform: translateX(4px);
+  }
+  .post-card h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--text-1);
+  }
+  .post-card p {
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.7;
+    font-size: 0.92rem;
+    flex: 1;
+  }
+  .post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding-top: 0.4rem;
+  }
+  .post-tags span {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-3);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 900px) {
+    .proj-hero {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

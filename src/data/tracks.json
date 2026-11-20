@@ -40,7 +40,7 @@
     "accent": "#FF5E9C",
     "topics": [
       { "id": "waxppu-dungeon", "name": "왁뿌던전 탈출", "summary": "UE 5.9 Chaos 물리 솔버와 ACharacter를 활용하는 20라운드 왁뿌볼 물리 파괴 액션 디펜스 (기획)" },
-      { "id": "fungal-space-conquest", "name": "곰팡이 우주 정복 대작전", "summary": "UE 5.9 C++ 무중력 6-DoF 포식자 6마리 & 미네랄 200개 타임어택 · 기획서 및 설계·개발 기록 (완성)" },
+      { "id": "fungal-space-conquest", "name": "곰팡이 우주 정복 대작전", "summary": "UE 5.9 C++ 무중력 6-DoF 포식자 6마리 & 미네랄 200개 타임어택 · 기획서 및 포트폴리오 (완성)" },
       { "id": "nung-lang", "name": "nung_lang", "summary": "자체 프로그래밍 언어 및 인터프리터 설계" },
       { "id": "whynode", "name": "whynode", "summary": "소크라테스식 재귀적 지식 탐구 마인드맵" }
     ]

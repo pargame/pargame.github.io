@@ -18,10 +18,10 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     </nav>
 
     <header class="gdd-header">
-      <div class="gdd-tag">PROJECT GDD &amp; TECHNICAL SPEC // UE 5.9</div>
-      <h1>곰팡이 우주 정복 대작전 — 게임 기획서 (GDD)</h1>
+      <div class="gdd-tag">PROJECT GDD // UE 5.9</div>
+      <h1>곰팡이 우주 정복 대작전 — 게임 기획서</h1>
       <p class="gdd-sub">
-        무중력 우주 소행성대에서 균류 세포로 성장하며 포식자 곰팡이를 역포식하는 3D 타임어택 액션 게임의 초기 기획서 및 기술 명세 원문입니다.
+        언리얼 엔진 <code>APawn</code>에 가장 적합한 게임 소재를 찾는 과정에서 출발한, 무중력 우주 소행성대 균류 성장·역포식 타임어택 게임의 초기 기획서입니다.
       </p>
 
       <div class="gdd-meta">
@@ -34,7 +34,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     <aside class="diff-callout">
       <div class="diff-title">기획 시점 원문 안내 · 최종 구현에서 변경된 항목</div>
       <p>
-        이 문서는 초기 기획 당시의 의사결정을 보존한 원문입니다. 이후 개발·밸런싱 과정에서 아래 규칙이 변경되었으며, 최종 구현과 검증 과정은 <a href="/learn/projects/fungal-space-conquest/devlog#gameplay-ai">설계·개발 기록(01장)</a>에서 확인할 수 있습니다.
+        이 문서는 초기 기획 당시의 의사결정을 보존한 원문입니다. 이후 개발·밸런싱 과정에서 아래 규칙이 변경되었으며, 최종 구현과 검증 과정은 <a href="/learn/projects/fungal-space-conquest/devlog#gameplay-ai">포트폴리오(01장)</a>에서 확인할 수 있습니다.
       </p>
       <ul>
         <li><strong>클리어 조건:</strong> 기획 원문 <code>포식자 10마리 처치</code> → 최종 구현 <code>포식자 6마리 처치 AND 미네랄 200개</code> (<code>UDeveloperSettings</code> 규칙 기반 구성)</li>
@@ -43,10 +43,10 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     </aside>
 
     <section class="gdd-section">
-      <h2>1. 프로젝트 개요</h2>
+      <h2>1. 프로젝트 개요 및 기획 배경</h2>
       <ul>
+        <li><strong>기획 출발점 (언리얼 <code>APawn</code>에 적합한 소재 찾기):</strong> 중력과 지면 보행에 특화된 <code>ACharacter</code> 대신 순수 <code>APawn</code>을 직접 제어해야만 제맛이 나는 소재를 찾다, 중력이 없는 우주 공간에서 물리 구체가 360° 자유 궤도로 비행하며 촉수로 소행성을 끌어당기는 콘셉트를 선정했습니다.</li>
         <li><strong>기본 콘셉트:</strong> 무중력 우주 소행성대에 떠다니는 균류 세포(<code>ASpaceDrifterPawn</code>)가 촉수로 소행성을 붙잡아 전염·배양 폭발시키고, 쏟아지는 미네랄을 흡수해 몸집을 키우며 <strong>포식자 곰팡이 10마리를 최단 시간 안에 역포식</strong>하는 3D 무중력 타임어택 액션 게임입니다.</li>
-        <li><strong>개발 기반 (C++ APawn):</strong> 중력과 지면 보행에 종속된 <code>ACharacter</code> 대신 순수 물리 구체(<code>USphereComponent</code>) 기반 <code>APawn</code>을 채택해, 부피 보존 물풍선 탄성 변형·쿼터니언 자유 궤도 카메라·뉴턴 작용·반작용 그래플링을 정밀하게 구현합니다.</li>
         <li><strong>승리 및 패배 규칙 (기획 원문 기준):</strong>
           <ul>
             <li><strong>승리 (CLEAR):</strong> 포식자 곰팡이 <strong>10마리</strong>(<code>TargetVictoryEnemyCount = 10</code>) 역포식 달성 시 즉시 클리어 타임(<code>MM:SS.d</code>) 확정 및 로컬 TOP 5 리더보드 등록.</li>
@@ -157,50 +157,9 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       </ul>
     </section>
 
-    <section class="gdd-section">
-      <h2>6. C++ 핵심 아키텍처 &amp; 트러블슈팅 요약</h2>
-      <p class="section-note">
-        상세한 C++ 코드, TickGroup 실행 순서, M4 16GB 실측 메모리 최적화 및 시행착오 전체 기록은 <a href="/learn/projects/fungal-space-conquest/devlog">설계·개발 기록</a>에 수록되어 있습니다.
-      </p>
-
-      <details class="gdd-drawer">
-        <summary>핵심 클래스 및 인터페이스 요약표 펼쳐 보기</summary>
-        <div class="table-wrap drawer-body">
-          <table>
-            <thead>
-              <tr>
-                <th>구분</th>
-                <th>클래스 / 인터페이스</th>
-                <th>핵심 역할</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>인터페이스</td><td><code>ISpaceTendrilHostInterface</code></td><td>촉수 능력이 호스트 위치·카메라·물리 루트·Niagara FX를 조회하는 계약</td></tr>
-              <tr><td>전염 계약</td><td><code>ISpaceColonizableTarget</code></td><td>소행성과 포식자의 공통 전염·배양 폭발 인터페이스</td></tr>
-              <tr><td>플레이어 폰</td><td><code>ASpaceDrifterPawn</code></td><td>Chaos 물리 구체, 부피 보존 탄성, 성장 카메라, 승리 조건 및 해금 관리</td></tr>
-              <tr><td>능력 베이스</td><td><code>USpaceTendrilAbility</code></td><td><code>EditInlineNew</code> 추상 <code>UObject</code>, 조건부 0-Tick 및 공통 쿨타임 관리</td></tr>
-              <tr><td>적 매니저</td><td><code>AEnemyMoldManager</code></td><td>0-Tick 포식자 풀 일괄 갱신(공격 티켓·포위 링·이격·단축 리스폰)</td></tr>
-              <tr><td>필드 매니저</td><td><code>AAsteroidFieldManager</code></td><td>1,150 프리베이크 소행성 풀, 2-Tier 물리, 크기 비례 0ms 스케일링</td></tr>
-              <tr><td>컨트롤러 / UI</td><td><code>ASpaceDrifterPlayerController</code> · <code>USpaceDrifterHUDWidget</code></td><td>Enhanced Input 제어, 순수 Slate HUD 및 <code>USaveGame</code> TOP 5 리더보드</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </details>
-
-      <details class="gdd-drawer">
-        <summary>주요 트러블슈팅 4건 요약 펼쳐 보기</summary>
-        <ul class="drawer-list">
-          <li><strong>고속 비행 시 촉수 시작점 분리:</strong> <code>ASpaceDrifterPawn</code>과 3종 Niagara 컴포넌트를 <code>TG_PostPhysics</code> / <code>TG_PostUpdateWork</code> + <code>AddTickPrerequisiteActor</code>로 정렬해 해결 (<a href="/learn/projects/fungal-space-conquest/devlog#tendrils">02장 상세</a>).</li>
-          <li><strong>거대화 시 V1 그래플링 둔화:</strong> 유효 사거리 배율에 비례해 끌어당김 최대 속도·구심 가속도를 증폭하고 타겟 반작용 힘에 질량 비례 상한 적용.</li>
-          <li><strong>포식자 WPO 가시 카메라 침투:</strong> <code>CollisionSphere</code>의 <code>ECC_Camera</code> 응답 무시 + 카메라 근접 시 시각 메시 임시 숨김 처리.</li>
-          <li><strong>Windows MSVC C2397 축소 변환 오류:</strong> LWC <code>double</code> 반환에 명시적 <code>static_cast&lt;float&gt;</code> 적용 후 독립 리포지토리 분리 (<a href="/learn/projects/fungal-space-conquest/devlog#optimization">04장 상세</a>).</li>
-        </ul>
-      </details>
-    </section>
-
     <footer class="gdd-footer">
       <a href="/learn/projects/fungal-space-conquest" class="nav-btn secondary">← 토픽 허브로</a>
-      <a href="/learn/projects/fungal-space-conquest/devlog" class="nav-btn primary">설계·개발 기록 보기 →</a>
+      <a href="/learn/projects/fungal-space-conquest/devlog" class="nav-btn primary">포트폴리오 보기 →</a>
     </footer>
   </article>
 </BaseLayout>

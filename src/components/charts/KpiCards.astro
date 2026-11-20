@@ -1,0 +1,78 @@
+---
+export interface KpiItem {
+  label: string;
+  value: string;
+  sub: string;
+  accent?: 'cyan' | 'violet' | 'green' | 'amber';
+}
+
+interface Props {
+  items: KpiItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="kpi-grid wide">
+  {items.map((item) => (
+    <div class={`kpi-card ${item.accent ?? 'cyan'}`}>
+      <span class="kpi-label">{item.label}</span>
+      <strong class="kpi-value">{item.value}</strong>
+      <span class="kpi-sub">{item.sub}</span>
+    </div>
+  ))}
+</div>
+
+<style>
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin: 1.8rem 0 2.2rem;
+  }
+  .kpi-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border-top: 3px solid var(--accent);
+  }
+  .kpi-card.violet { border-top-color: var(--accent-2); }
+  .kpi-card.green { border-top-color: var(--success); }
+  .kpi-card.amber { border-top-color: var(--warn); }
+
+  .kpi-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+  }
+  .kpi-value {
+    font-family: var(--font-mono);
+    font-size: clamp(1.2rem, 1rem + 0.7vw, 1.55rem);
+    font-weight: 700;
+    color: var(--text-1);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .kpi-sub {
+    font-size: 0.8rem;
+    color: var(--text-2);
+    line-height: 1.45;
+  }
+
+  @media (max-width: 860px) {
+    .kpi-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 480px) {
+    .kpi-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

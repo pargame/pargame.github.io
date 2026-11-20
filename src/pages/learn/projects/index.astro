@@ -3,8 +3,8 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Projects: 개발 포트폴리오"
-  description="pargame 개발 포트폴리오 — UE 5.9 C++ 게임 프로젝트 「왁뿌던전 탈출」 및 「곰팡이 우주 정복 대작전」 설계·개발 기록"
+  title="Projects: 개발 프로젝트"
+  description="pargame 개발 프로젝트 — UE 5.9 C++ 게임 「왁뿌던전 탈출」 및 「곰팡이 우주 정복 대작전」"
 >
   <div class="note-header">
     <nav class="breadcrumb" aria-label="이동 경로">
@@ -14,7 +14,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     </nav>
 
     <div class="topic-tag">TRACK // PROJECTS</div>
-    <h1>Projects: 개발 포트폴리오</h1>
+    <h1>Projects: 개발 프로젝트</h1>
     <p class="topic-desc">
       이론 스터디에서 검증한 C++ 메모리·수명주기 모델, 게임 엔진 아키텍처, 셰이더 및 VFX 파이프라인을 실제 작동하는 프로토타입과 게임으로 구현하며 남기는 프로젝트 아카이브입니다.
     </p>
@@ -74,7 +74,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
       <div class="showcase-footer">
         <div class="footer-note">
-          기획 큰 틀 정리 완료 — 프로토타입 착수 및 개발 기록 추가 예정
+          기획 큰 틀 정리 완료 — 추후 포트폴리오 페이지 별도 추가 예정
         </div>
         <div class="footer-actions">
           <a href="/learn/projects/waxppu-dungeon" class="cta-btn wax-cta">
@@ -89,7 +89,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
     <div class="section-title-wrap">
       <span class="badge">FEATURED PROJECT</span>
       <h2>완성 프로젝트</h2>
-      <p>1분 요약으로 핵심 성과를 확인하고, 각 카드에서 상세 챕터로 바로 이동할 수 있습니다.</p>
+      <p>프로젝트 홈에서 기획서와 포트폴리오 중 원하는 문서를 선택해 볼 수 있습니다.</p>
     </div>
 
     <article class="project-showcase">
@@ -152,9 +152,9 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         </div>
 
         <a
-          href="/learn/projects/fungal-space-conquest/devlog"
+          href="/learn/projects/fungal-space-conquest"
           class="showcase-preview"
-          aria-label="곰팡이 우주 정복 대작전 포트폴리오 열기"
+          aria-label="곰팡이 우주 정복 대작전 프로젝트 홈 열기"
         >
           <img
             src="/images/projects/fungal-space-conquest/blog-pie-idle.png"
@@ -165,66 +165,16 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
         </a>
       </div>
 
-      <div class="milestone-strip">
-        <a href="/learn/projects/fungal-space-conquest/devlog#gameplay-ai" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">CHAPTER 01</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>게임플레이 &amp; 포식자 AI</h3>
-          <p>6마리 &amp; 미네랄 200개 타임어택 루프, 공격 티켓(최대 2마리)·포위 링·최소 이격, 순수 Slate HUD &amp; TOP 5</p>
-        </a>
-
-        <a href="/learn/projects/fungal-space-conquest/devlog#tendrils" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">CHAPTER 02</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>무중력 본체 &amp; 다형성 촉수</h3>
-          <p>순수 <code>APawn</code> · <code>FQuat</code> 카메라, 부피 보존 Squash/Stretch, <code>ISpaceTendrilHostInterface</code> · <code>ISpaceColonizableTarget</code> 0-Tick 능력</p>
-        </a>
-
-        <a href="/learn/projects/fungal-space-conquest/devlog#world-streaming" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">CHAPTER 03</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>소행성 1,150 풀 &amp; 월드 스트리밍</h3>
-          <p>Chaos 최대 48개 제한 2-Tier 물리, 구형 셸(shell) 영역 C=[A,B], <code>RuntimeSizeScale</code> 0ms 스케일링, 단일 흡수 진입점</p>
-        </a>
-
-        <a href="/learn/projects/fungal-space-conquest/devlog#optimization" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">CHAPTER 04</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>최적화 &amp; Windows 이식</h3>
-          <p>천구 <code>MPC</code>, M4 16GB <code>21.4GB → 7.93GB</code>, MSVC C2397 수정 &amp; 1.08 MB 공개 리포지토리</p>
-        </a>
-
-        <a href="/learn/projects/fungal-space-conquest/devlog#pipeline" class="milestone-card">
-          <div class="m-top">
-            <span class="m-num">APPENDIX</span>
-            <span class="m-arrow">➔</span>
-          </div>
-          <h3>부록: 개발 파이프라인</h3>
-          <p><code>ue-on/off</code> 격리, UE 5.9 공식 MCP 베타 검증, <code>ARCHITECTURE.md</code> 멀티 에이전트 규약</p>
-        </a>
-      </div>
-
       <div class="showcase-footer">
         <div class="footer-note">
-          "구현은 AI가, 설계는 인간이" — 모든 코드 스니펫은 공개 리포지토리의 최신 UE 5.9 C++ 소스와 동일합니다.
+          "구현은 AI가, 설계는 인간이" — 기획서와 UE 5.9 C++ 포트폴리오를 프로젝트 홈에서 선택해 볼 수 있습니다.
         </div>
         <div class="footer-actions">
           <a href="https://github.com/pargame/FungalSpaceConquest" class="cta-btn secondary" target="_blank" rel="noopener noreferrer">
             GitHub ↗
           </a>
-          <a href="/learn/projects/fungal-space-conquest/gdd" class="cta-btn secondary">
-            기획서 보기
-          </a>
-          <a href="/learn/projects/fungal-space-conquest/devlog" class="cta-btn">
-            포트폴리오 보기 →
+          <a href="/learn/projects/fungal-space-conquest" class="cta-btn">
+            프로젝트 보기 →
           </a>
         </div>
       </div>

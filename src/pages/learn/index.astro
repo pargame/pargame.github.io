@@ -23,16 +23,29 @@ import tracks from '../../data/tracks.json';
 
         <div class="topics-grid">
           {track.topics.map((topic) => (
-            <a href={`/learn/${track.id}/${topic.id}`} class="topic-box">
-              <div class="topic-header">
-                <h3>{topic.name}</h3>
-                <span class="topic-arrow">→</span>
+            topic.ready ? (
+              <a href={`/learn/${track.id}/${topic.id}`} class="topic-box">
+                <div class="topic-header">
+                  <h3>{topic.name}</h3>
+                  <span class="topic-arrow">→</span>
+                </div>
+                <p class="topic-summary">{topic.summary}</p>
+                <div class="topic-meta">
+                  <span class="status-ready">{track.id === 'projects' ? '프로젝트 보기 →' : '노트 보기 →'}</span>
+                </div>
+              </a>
+            ) : (
+              <div class="topic-box is-soon" aria-disabled="true">
+                <div class="topic-header">
+                  <h3>{topic.name}</h3>
+                  <span class="topic-arrow soon-badge">SOON</span>
+                </div>
+                <p class="topic-summary">{topic.summary}</p>
+                <div class="topic-meta">
+                  <span class="status-soon">준비 중</span>
+                </div>
               </div>
-              <p class="topic-summary">{topic.summary}</p>
-              <div class="topic-meta">
-                <span class="status-ready">노트 보기 →</span>
-              </div>
-            </a>
+            )
           ))}
         </div>
       </div>
@@ -153,6 +166,27 @@ import tracks from '../../data/tracks.json';
     display: flex;
     align-items: center;
     gap: 0.4rem;
+  }
+  .topic-box.is-soon {
+    opacity: 0.65;
+    cursor: default;
+  }
+  .topic-box.is-soon:hover {
+    border-color: var(--border);
+    transform: none;
+    box-shadow: none;
+  }
+  .soon-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-3);
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+  }
+  .status-soon {
+    color: var(--text-3);
   }
 
   @media (max-width: 900px) {

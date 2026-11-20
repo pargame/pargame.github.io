@@ -2,7 +2,7 @@
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
 import { Code } from 'astro:components';
 
-const codeVictoryLoop = `// SpaceDrifterPawn.cpp — 포식자 10마리 처치 승리 판정 · V2(2마리)/V3(5마리) 처치 해금
+const codeVictoryLoop = `// SpaceDrifterPawn.cpp — 규칙 주도(UDeveloperSettings) 승리 판정 · V2(2마리)/V3(3마리) 처치 해금
 
 void ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer()
 {
@@ -193,7 +193,7 @@ void AEnemyMoldManager::UpdateAttackTickets(const ASpaceDrifterPawn* PlayerPawn,
 		AttackTicketHolders.Add(NewEntry);
 	}
 
-	// 5. 만석 시 히스테리시스 기반 교체 (V2 둔화 중인 보유자는 교체 대상에서 보호, 둔화 해제 시 즉시 복귀)
+	// 5. 만석 시 히스테리시스 기반 교체 (V2 영구 둔화 중인 보유자는 교체 대상에서 보호)
 	while (CandidateCursor < Candidates.Num())
 	{
 		int32 FarthestSwappableIdx = INDEX_NONE;
@@ -310,7 +310,7 @@ else
 }
 `;
 
-const codeSpawnRespawn = `// EnemyMoldManager.cpp — 최대 도달 크기 기준 스폰 · 빈 필드 2초 리스폰 · 단일 진실 위협 판정
+const codeSpawnRespawn = `// EnemyMoldManager.cpp — 최대 도달 크기 기준 스폰 · 빈 슬롯 비례 동적 리스폰 · 단일 진실 위협 판정
 
 // TrySpawnOneEnemy 발췌: 현재 크기가 아닌 MaxReachedBodyRadiusCm 기준으로 포식자 크기를 산출
 
@@ -830,7 +830,7 @@ int32 ASpaceDrifterPawn::ComputeLongTendrilBranchCount() const
 	return LongTendrilAbility ? LongTendrilAbility->ComputeCurrentBranchCount() : 0;
 }`;
 
-const codeNetWeb = `// SpaceTendrilAbility.cpp (UNetTendrilAbility::OnActiveTick 발췌) — 광역 원뿔 내 포식자 2.5초 둔화 + 영구 축소
+const codeNetWeb = `// SpaceTendrilAbility.cpp (UNetTendrilAbility::OnActiveTick 발췌) — 원뿔 캐스트-넷 포식자 영구 둔화(×0.85 누적·20% 하한) + 영구 축소
 
 if (FVector::DistSquared(EnemyLoc, FunnelCenter) <= FMath::Square(EffectiveHitRadius))
 {
@@ -1805,7 +1805,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
     </div>
 
     <p class="exec-loop">
-      <strong>게임 루프</strong> — 플레이어는 소행성을 V1 긴 촉수로 전염·폭발시켜 미네랄을 흡수하고 몸집을 키웁니다. 처음엔 사냥감이던 플레이어가 포식자보다 커지는 순간 관계가 역전되어, <strong>포식자 10마리 처치 시 클리어 타임이 기록</strong>되고 로컬 <strong>TOP 5 리더보드</strong>에 저장됩니다. 처치 2마리에 <strong>V2 광역 그물</strong>, 5마리에 <strong>V3 긴급 탈출</strong>이 해금되며, 포식자는 <strong>공격 티켓(최대 2마리 돌진)</strong>과 <strong>포위 링 선회</strong>로 압박합니다.
+      <strong>게임 루프</strong> — 플레이어는 소행성을 V1 긴 촉수로 전염·폭발시켜 미네랄을 흡수하고 몸집을 키웁니다. 처음엔 사냥감이던 플레이어가 포식자보다 커지는 순간 관계가 역전되어, <strong>규칙 주도 클리어 조건(기본: 포식자 6마리 처치 AND 미네랄 200개, <code>UDeveloperSettings</code> 조립)</strong> 달성 시 클리어 타임이 기록되고 로컬 <strong>TOP 5 리더보드</strong>에 저장됩니다. 처치 2마리에 <strong>V2 광역 그물</strong>, 3마리에 <strong>V3 긴급 탈출</strong>이 해금되며, 포식자는 <strong>공격 티켓(최대 2마리 돌진)</strong>과 <strong>포위 링 선회</strong>로 압박합니다.
     </p>
 
     <div class="achievement-grid">
@@ -1822,7 +1822,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
       <div class="achievement-card">
         <span class="ach-label">GAMEPLAY AI</span>
         <span class="ach-value">Attack Ticket AI · 10-Hunt</span>
-        <span class="ach-desc">최대 2마리 돌진 티켓 · 히스테리시스 교체 · 포위 링 · 최대 도달 크기 스폰 · 빈 필드 2초 리스폰</span>
+        <span class="ach-desc">최대 2마리 돌진 티켓 · 히스테리시스 교체 · 포위 링 · 최대 도달 크기 스폰 · 빈 슬롯 비례 동적 리스폰 · 거리 가속</span>
       </div>
       <div class="achievement-card">
         <span class="ach-label">OPTIMIZATION &amp; PIPELINE</span>
@@ -2109,13 +2109,13 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <div class="perspective-row">
             <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              <code>ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer</code> 한 곳에서 처치 수를 집계해 <strong>10마리 처치 = 승리 · 클리어 타임 기록 · 처치 수 기반 V2/V3 해금</strong>을 함께 판정합니다. 판정 지점을 하나로 모아 승리·해금·HUD 연출이 같은 카운터를 공유합니다.
+              언리얼 내장 <code>UDeveloperSettings</code>(<code>USpaceDrifterGameRulesSettings</code>)를 도입해 <strong>Project Settings &gt; Game &gt; Fungal Space Rules</strong>(<code>DefaultGame.ini</code> 저장)에서 클리어 조건 그룹(<code>FSpaceClearConditionGroup</code> AND/OR 조합, 기본: 포식자 6마리 처치 AND 미네랄 200개)과 리더보드 다중 정렬 키를 코드 수정 없이 조립하도록 확장했습니다. 처치 집계와 V2(2킬)·V3(3킬) 해금 역시 <code>ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer</code> 한 곳에서 일괄 판정합니다.
             </div>
           </div>
           <div class="perspective-row">
             <span class="p-label result">결과 / 검증</span>
             <div class="p-text">
-              10마리 도달 시 <code>EndRun(ESpaceRunState::Victory)</code>로 클리어 타임이 확정되고, 처치 2/5마리 해금 배너가 다음 목표를 안내해 "버티기" 대신 기록 경쟁 루프가 성립했습니다.
+              규칙 조건 충족 시 <code>EndRun(ESpaceRunState::Victory)</code>로 클리어 타임이 확정되고, 처치 2/3마리 해금 배너가 다음 목표를 안내해 "버티기" 대신 규칙 조립형 기록 경쟁 루프가 성립했습니다.
             </div>
           </div>
         </div>
@@ -2133,8 +2133,8 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
               <div class="perspective-row">
                 <span class="p-label decision">구현 상세</span>
                 <div class="p-text">
-                  1) <strong><code>TargetVictoryEnemyCount = 10</code> 승리 판정</strong>: <code>ASpaceDrifterPawn::NotifyEnemyDefeatedByPlayer</code>가 처치 수를 올리고 10마리 도달 시 <code>EndRun(ESpaceRunState::Victory)</code>로 종료합니다. 생체량이 임계치 아래로 떨어지면 <code>GameOver</code>입니다.<br />
-                  2) <strong>처치 기반 점진 해금</strong>: 처치 2마리(<code>V2UnlockDefeatedEnemyCount</code>)에 V2 광역 그물, 5마리(<code>V3UnlockDefeatedEnemyCount</code>)에 V3 긴급 탈출이 열립니다. 잠긴 능력을 선택하면 "포식자 처치 n/m 달성 시 해금" 배너로 다음 목표를 안내합니다.<br />
+                  1) <strong><code>UDeveloperSettings</code> 규칙 주도 승리 판정</strong>: <code>USpaceDrifterGameRulesSettings</code>가 <code>FSpaceClearConditionGroup</code>(처치·미네랄·반지름·시간 지표의 AND/OR 조합, 기본 6킬 AND 200미네랄, 기존 <code>TargetVictoryEnemyCount</code> 호환)을 평가해 충족 시 <code>EndRun(ESpaceRunState::Victory)</code>로 종료합니다. 생체량이 임계치 아래로 떨어지면 <code>GameOver</code>입니다.<br />
+                  2) <strong>처치 기반 점진 해금</strong>: 처치 2마리(<code>V2UnlockDefeatedEnemyCount</code>)에 V2 광역 그물, 3마리(<code>V3UnlockDefeatedEnemyCount</code>)에 V3 긴급 탈출이 열립니다. 잠긴 능력을 선택하면 "포식자 처치 n/m 달성 시 해금" 배너로 다음 목표를 안내합니다.<br />
                   3) <strong>역포식 전환</strong>: 포식자의 전염 필요 생체량이 플레이어 가용 생체량보다 작아지는 순간 위협이 아닌 사냥감으로 바뀌고, 포식자 표면 림 라이트가 전환되어 공수 역전을 시각적으로 알립니다.
                 </div>
               </div>
@@ -2252,7 +2252,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
               <text x="820" y="308" text-anchor="middle" class="s-glyph">신규</text>
               <text x="785" y="374" text-anchor="middle" class="s-text">MaxReachedBodyRadiusCm × 배율</text>
               <text x="785" y="396" text-anchor="middle" class="s-small">활성 수: 90s · 미네랄 50개 중 큰 쪽 (최대 6)</text>
-              <text x="785" y="414" text-anchor="middle" class="s-small">빈 필드 → 2초 리스폰</text>
+              <text x="785" y="414" text-anchor="middle" class="s-small">빈 슬롯 비례 동적 리스폰</text>
             </svg>
           </div>
           <figcaption><strong>포식자 AI 공간 배치도</strong> — 티켓 보유 2마리만 돌진하고, 나머지는 포위 링에서 최소 이격을 유지하며 선회합니다. (개념도 · 비례 아님)</figcaption>
@@ -2312,7 +2312,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
                   <tr>
                     <td><strong>리스폰</strong></td>
                     <td><code>DefeatRespawnCooldownSeconds = 10</code> · <code>EmptyFieldRespawnCooldownSeconds = 2</code></td>
-                    <td>빈 필드 공백 시간 최소화</td>
+                    <td>빈 슬롯 비례 동적 리스폰 · 원거리 추격 가속</td>
                   </tr>
                   <tr>
                     <td><strong>카메라 침투 방지</strong></td>
@@ -2377,7 +2377,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <div class="perspective-row">
             <span class="p-label result">결과 / 검증</span>
             <div class="p-text">
-              바이너리 위젯 에셋 0개로 타이틀·인게임 HUD·TOP 5 리더보드를 구성했고, 시작 키(<code>SPACE</code>)가 V1 발사로 관통되던 오발을 입력 억제 가드로 제거했습니다.
+              바이너리 위젯 에셋 0개로 타이틀·인게임 HUD·ESC 일시정지/옵션 메뉴·2×2 결과 화면·TOP 5 리더보드를 구성했고, macOS Cocoa IME 동기 재진입 크래시와 <code>IMC_Default</code> 스페이스바 우선순위 충돌까지 함께 해결했습니다.
             </div>
           </div>
         </div>
@@ -2386,7 +2386,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <summary class="drawer-summary">
             <span class="drawer-title-group">
               <span class="drawer-tag">DETAIL + CODE</span>
-              <span>상세 보기: 구현 상세 · EndRun 리더보드 등록 &amp; SortEntries 정렬 규칙</span>
+              <span>상세 보기: 구현 상세 · EndRun 리더보드 등록 &amp; 다중 정렬 키 규칙</span>
             </span>
             <span class="drawer-chevron">▸</span>
           </summary>
@@ -2395,9 +2395,9 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
               <div class="perspective-row">
                 <span class="p-label decision">구현 상세</span>
                 <div class="p-text">
-                  1) <strong>순수 Slate <code>USpaceDrifterHUDWidget</code></strong>: <code>UUserWidget::RebuildWidget</code>에서 <code>SNew</code> 트리로 타이틀(이름 입력 자동 포커스·TOP 5·초기화 버튼), 인게임 이중 세그먼트 생체량 바, 4면 피격 비네트, 포식자별 개별 마커 풀(최대 8개), V1~V3 쿨타임 슬롯을 모두 구성합니다.<br />
-                  2) <strong><code>USpaceDrifterLeaderboardSave</code> 정렬 규칙</strong>: 10마리 완주 기록이 항상 상위이며 완주끼리는 클리어 타임 오름차순, 미완주는 처치 수 → 흡수 미네랄 → 최대 반지름 순입니다. 타이틀 화면에는 상위 5개만 노출합니다.<br />
-                  3) <strong>입력 관통 가드</strong>: 이름 입력 Enter 확정 → <code>SPACE</code> 전용 시작으로 분리하고, 시작 직후 <code>SPACE</code>를 뗄 때까지 촉수 발사를 억제(<code>IsSuppressingTendrilUntilSpaceRelease</code>)해 시작 키가 V1 발사로 관통되지 않게 했습니다.
+                  1) <strong>순수 Slate <code>USpaceDrifterHUDWidget</code></strong>: <code>UUserWidget::RebuildWidget</code>에서 <code>SNew</code> 트리로 타이틀(이름 입력 자동 포커스·TOP 5·초기화 버튼), 인게임 이중 세그먼트 생체량 바, 4면 피격 비네트, 포식자별 개별 마커 풀(최대 8개), V1~V3 쿨타임 슬롯, ESC 일시정지/옵션 메뉴, 2×2 결과 화면을 모두 구성합니다.<br />
+                  2) <strong><code>USpaceDrifterLeaderboardSave</code> 다중 키 정렬</strong>: 고정 하드코딩 대신 <code>USpaceDrifterGameRulesSettings::LeaderboardSortKeys</code>(기본: 클리어 우선 → 클리어 시간 → 처치 수 → 미네랄 → 최대 반지름) 배열 순서대로 비교하며 타이틀 화면에는 상위 5개만 노출합니다.<br />
+                  3) <strong>입력 관통 가드</strong>: 이름 입력 후 <code>SPACE</code> 시작 시 <code>FlushPressedKeys()</code>와 포커스 전환을 수행해 시작 키가 V1 발사로 관통되지 않게 했습니다.
                 </div>
               </div>
             </div>
@@ -2411,6 +2411,44 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
                 </div>
               </div>
               <Code code={codeLeaderboard} lang="cpp" themes={{ light: 'github-light', dark: 'tokyo-night' }} />
+            </div>
+          </div>
+        </details>
+
+        <details class="tech-drawer">
+          <summary class="drawer-summary">
+            <span class="drawer-title-group">
+              <span class="drawer-tag">TROUBLESHOOTING</span>
+              <span>트러블슈팅: macOS Cocoa IME <code>setMarkedText</code> 동기 재진입 크래시 &amp; <code>SpaceBar</code> 입력 우선순위 충돌</span>
+            </span>
+            <span class="drawer-chevron">▸</span>
+          </summary>
+          <div class="drawer-body">
+            <div class="perspective-card" style="margin-top: 0;">
+              <div class="perspective-row">
+                <span class="p-label issue">문제 1: 한글 IME 조합 중 스페이스 시작 시 <code>SharedPointer::IsValid()</code> 크래시</span>
+                <div class="p-text">
+                  macOS PIE에서 타이틀 이름 칸(<code>SEditableTextBox</code>)에 한글 IME 조합 중 스페이스바를 누르면 <code>FCocoaTextView::setMarkedText</code> 블록 내부에서 <code>Assertion failed: IsValid()</code> 크래시가 발생했습니다. 엔진 소스(<code>CocoaTextView.cpp</code>, <code>MacTextInputMethodSystem.cpp</code>)를 추적한 결과, <code>setMarkedText</code>가 <code>IMMContext.IsValid()</code>를 1회 검사한 뒤 <code>SetTextInRange → OnNameTextChanged → StartGameplayFromTitle → ClearKeyboardFocus → deactivateInputMethod</code> 순으로 <strong>동기 재진입</strong>이 일어나며 <code>IMMContext = NULL</code>이 되고, 직후 <code>IMMContext-&gt;UpdateCompositionRange</code>를 역참조해 크래시가 났습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">해결 1: <code>OnNameTextChanged</code> 플래그 기록 + <code>NativeTick</code> 지연 처리</span>
+                <div class="p-text">
+                  <code>OnNameTextChanged</code> 내부에서는 <code>SetText</code>와 <code>StartGameplayFromTitle()</code>을 절대 동기 호출하지 않고 <code>bPendingSanitizeNameInput</code> / <code>bPendingTitleStartFromSpace</code> 플래그만 세운 뒤, Cocoa 블록 밖이 보장되는 <code>NativeTick</code>에서 공백 제거와 포커스 해제를 실행하도록 분리해 크래시를 원천 차단했습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label issue">문제 2: 게임 시작 직후 <code>SpaceBar</code> 먹통 및 쿨타임 배너 오출력</span>
+                <div class="p-text">
+                  <code>PlayerController::BindKey(SpaceBar)</code>의 인게임 촉수 호출과 <code>Pawn</code>의 <code>EnhancedInput</code>이 같은 프레임에 이중 발화하거나, 템플릿 <code>IMC_Default</code>의 <code>IA_Jump</code>(<code>SpaceBar</code>)가 <code>IMC_MiniProject</code>보다 높은 우선순위로 소비하는 충돌이 겹쳐 있었습니다.
+                </div>
+              </div>
+              <div class="perspective-row">
+                <span class="p-label decision">해결 2: <code>EnhancedInput</code> 단일화 &amp; <code>HighPriorityMappingContext</code>(Priority 100)</span>
+                <div class="p-text">
+                  <code>PlayerController</code>의 인게임 촉수 중복 호출을 제거해 <code>BindKey</code>는 타이틀/게임오버 전환 전용으로 한정하고, <code>UPROPERTY</code>로 노출한 <code>HighPriorityMappingContext</code>(기본 <code>IMC_MiniProject</code>)에 <code>Priority = 100</code>을 부여해 에셋 배열 순서와 무관하게 <code>IA_ExtendTendril</code>이 최우선 평가되도록 정리했습니다.
+                </div>
+              </div>
             </div>
           </div>
         </details>
@@ -2630,12 +2668,12 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
                   <tr>
                     <td><code>UNetTendrilAbility</code></td>
                     <td>V2 (단발 · 2킬 해금)</td>
-                    <td>광역 원뿔 포식자 2.5초 35% 둔화 + 반지름 -15% 영구 축소 (50% 하한), 쿨타임 6초</td>
+                    <td>원뿔 캐스트-넷 포식자 영구 둔화(재적중 ×0.85 누적·20% 하한·보라색 림) + 반지름 -15% 영구 축소 (50% 하한), 쿨타임 7.8초</td>
                   </tr>
                   <tr>
                     <td><code>UJetTendrilAbility</code></td>
-                    <td>V3 (단발 · 5킬 해금)</td>
-                    <td>가용 생체량 8% 소모 + 전방 <code>1400 cm/s</code> 임펄스 탈출, 쿨타임 6초</td>
+                    <td>V3 (단발 · 3킬 해금)</td>
+                    <td>가용 생체량 8% 소모 + 전방 <code>1400 cm/s</code> 임펄스 탈출, 쿨타임 1.0초</td>
                   </tr>
                 </tbody>
               </table>
@@ -2781,13 +2819,13 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
           <div class="perspective-row">
             <span class="p-label decision">설계 결정</span>
             <div class="p-text">
-              V2·V3를 포식자 처치 보상(2·5마리)으로 해금되는 전투 능력으로 재정의하고, V3 분사는 수동 C++ 대신 내장 Niagara <code>bLocalSpace</code> + <code>MeshRenderer</code>로 렌더링했습니다.
+              V2·V3를 포식자 처치 보상(2·3마리)으로 해금되는 전투 능력으로 재정의하고, V2는 중앙 조준 원뿔 캐스트-넷 프로시저럴 메시로, V3 분사는 수동 C++ 대신 내장 Niagara <code>bLocalSpace</code> + <code>MeshRenderer</code>로 렌더링했습니다.
             </div>
           </div>
           <div class="perspective-row">
             <span class="p-label result">결과 / 검증</span>
             <div class="p-text">
-              V2는 원뿔 안의 포식자를 <code>2.5초</code> <code>35%</code> 둔화 + 반지름 <code>-15%</code> 영구 축소해 "위협 → 사냥감" 전환을 직접 만들고, V3 분사는 240줄 수동 메시 풀링 대신 머티리얼 플래그 1개(<code>bUsedWithNiagaraMeshParticles</code>)로 동작합니다.
+              V2는 원뿔 안의 포식자를 영구 둔화(재적중 시 <code>×0.85</code> 누적·하한 <code>20%</code>, 전염 녹색과 구분되는 보라색 림 틴트) + 반지름 <code>-15%</code> 영구 축소해 "위협 → 사냥감" 전환을 직접 만들고, V3 분사는 240줄 수동 메시 풀링 대신 머티리얼 플래그 1개(<code>bUsedWithNiagaraMeshParticles</code>)로 동작합니다.
             </div>
           </div>
         </div>
@@ -2816,8 +2854,8 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
               <div class="perspective-row">
                 <span class="p-label decision">구현 상세</span>
                 <div class="p-text">
-                  1) <strong>V2 광역 그물(2킬 해금, 쿨타임 6초)</strong>: 깔때기 기하(<code>EvaluateFunnelCenter</code>, <code>EvaluateFunnelRadiusCm</code>)와 본체 크기 비례 광역 반경으로 원뿔 안의 모든 포식자를 <code>2.5초</code> 동안 <code>35%</code> 속도로 둔화하고, 반지름을 <code>-15%</code> 영구 축소합니다. 생체량은 성장 역지수(<code>2.5</code>)로 함께 줄어 "위협 → 사냥감" 전환을 직접 만들어 냅니다(초기 크기 50% 하한).<br />
-                  2) <strong>V3 긴급 탈출(5킬 해금, 쿨타임 6초)</strong>: 가용 생체량의 <code>8%</code>(최소값 보장)를 지불하고 전방으로 <code>1400 cm/s</code> 단발 임펄스를 줍니다. 비용이 감당되지 않으면 <code>CanActivateAbility</code>에서 차단되어 위기 탈출에 대가가 따릅니다.<br />
+                  1) <strong>V2 광역 그물(2킬 해금, 쿨타임 7.8초)</strong>: 중앙 조준 원뿔 캐스트-넷 프로시저럴 메시와 본체 크기 비례 광역 반경으로 원뿔 안의 모든 포식자를 영구 둔화(재적중 시 <code>×0.85</code> 누적·하한 <code>20%</code>, 전염 녹색과 구분되는 보라색 림 틴트)하고, 반지름을 <code>-15%</code> 영구 축소합니다. 생체량은 성장 역지수(<code>2.5</code>)로 함께 줄어 "위협 → 사냥감" 전환을 직접 만들어 냅니다(초기 크기 50% 하한).<br />
+                  2) <strong>V3 긴급 탈출(3킬 해금, 쿨타임 1.0초)</strong>: 가용 생체량의 <code>8%</code>(최소값 보장)를 지불하고 전방으로 <code>1400 cm/s</code> 단발 임펄스를 줍니다. 비용이 감당되지 않으면 <code>CanActivateAbility</code>에서 차단되어 위기 탈출에 대가가 따릅니다.<br />
                   3) <strong>내장 나이아가라 분사</strong>: V3 분사는 <code>NS_Tendril_SporeJet</code>의 <code>bLocalSpace = true</code> + <code>NiagaraMeshRendererProperties</code>(본체와 동일한 <code>SM_DustPuffSphere</code> + <code>MI_DustPuff</code>)로 렌더링해, 본체 일부가 떨어져 나가는 일체감을 C++ 보간 없이 얻었습니다.
                 </div>
               </div>
@@ -3666,7 +3704,7 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
               <div class="perspective-row">
                 <span class="p-label decision">구현 상세</span>
                 <div class="p-text">
-                  개발용 로컬 프로젝트에서 내장 MCP 서버(포트 <code>8000</code>, Streamable HTTP)와 에디터 툴셋(<code>AllToolsets</code>)을 활성화해, 런타임 프로퍼티 반영(<code>SetProperties</code>), 나이아가라 모듈/렌더러 조립, 머티리얼 리컴파일, 에디터 콘솔 및 Python 스크립팅을 에이전트가 직접 수행하도록 했습니다. 본문의 수치 튜닝·PIE 캡처·메모리 실측 대부분이 이 경로로 검증되었습니다. 퍼블릭 배포본에서는 재현성을 위해 MCP 플러그인을 제외했습니다.
+                  개발용 로컬 프로젝트에서 내장 MCP 서버(포트 <code>8000</code>, Streamable HTTP)와 에디터 툴셋(<code>AllToolsets</code>, 그리고 <code>UEStudy.uproject</code>에 <code>EditorToolset</code>·<code>LiveCodingToolset</code> 추가)을 활성화해, 런타임 프로퍼티 반영(<code>SetProperties</code>), 나이아가라 모듈/렌더러 조립, 머티리얼 리컴파일, 에디터 콘솔 및 Live Coding을 에이전트가 직접 수행하도록 했습니다. 본문의 수치 튜닝·PIE 캡처·메모리 실측 대부분이 이 경로로 검증되었습니다.
                 </div>
               </div>
             </div>

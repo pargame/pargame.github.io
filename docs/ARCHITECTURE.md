@@ -44,11 +44,11 @@ pargame.github.io/
 
 지식 아카이브는 **Track(대분류) → Topic(중분류) → Post(포스트)** 3단 계층을 엄격히 준수합니다.
 
-### 4대 기본 트랙
+### Study Notes 3대 스터디 트랙 + 독립 Projects 섹션
 1. **Foundations (기반 공학)**: Modern C++, Core CS (운영체제, 컴퓨터구조, 알고리즘)
 2. **Systems (시스템 엔지니어링)**: Concurrency (동시성/Lock-free), Network (소켓/epoll), Database & SQL
 3. **Game Engine (게임 엔진)**: Unreal Engine (UObject, 블루프린트 연동, 라이프사이클)
-4. **Projects (프로젝트)**: 개별 리포지토리 단위 토픽 (`waxppu-dungeon`, `fungal-space-conquest`, `nung-lang`, `whynode` 등 → 포스트: 설계·개발 기록/포트폴리오)
+- **Projects (상단 헤더 독립 섹션)**: 대(Projects) → 중(개별 프로젝트 홈: `waxppu-dungeon`, `fungal-space-conquest`) → 소(기획서 / 포트폴리오)
 
 ### 확장 절차 (Extension Guide)
 * **새 토픽 추가**: `src/content/learn/[track]/[new-topic]/` 폴더 생성 및 마크다운 추가. `src/data/tracks.json`의 해당 트랙 `topics` 배열에 id/name 추가.

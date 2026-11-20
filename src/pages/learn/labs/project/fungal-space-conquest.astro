@@ -1971,99 +1971,115 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
         </p>
       </div>
 
-      <figure class="arch-figure">
-        <div class="arch-scroll">
-          <svg class="arch-svg" viewBox="0 0 1040 500" role="img" aria-labelledby="svgArchTitle svgArchDesc">
-            <title id="svgArchTitle">UE 5 클라이언트 전체 아키텍처</title>
-            <desc id="svgArchDesc">한 프레임 실행 순서: TG_PrePhysics 매니저가 껍질 스폰·티어 결정·Kinematic 적분·공격 티켓을 일괄 처리하고, TG_DuringPhysics에서 엔진 Chaos가 근거리 강체 48개 이하만 적분하며, TG_PostPhysics에서 ASpaceDrifterPawn이 카메라·촉수 좌표를 확정한 뒤 AddTickPrerequisiteActor로 TG_PostUpdateWork Niagara 3종의 같은 프레임 렌더를 보장합니다. 하단은 ASpaceDrifterPawn의 ActiveTendrilAbility 조건부 틱과 ISpaceTendrilHostInterface·ISpaceColonizableTarget 의존성 역전 계약입니다.</desc>
-            <defs>
-              <marker id="arrArch" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" class="s-fill-accent" />
-              </marker>
-              <marker id="arrArch2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                <path d="M0 0 L10 5 L0 10 z" class="s-hollow-head" />
-              </marker>
-            </defs>
+      <figure class="arch-figure" aria-labelledby="archFlowTitle">
+        <div class="arch-diagram">
+          <div id="archFlowTitle" class="arch-section-label">한 프레임 데이터 흐름 (TickGroup 실행 순서)</div>
+          <div class="arch-flow-grid">
+            <div class="arch-card">
+              <div class="arch-card-stage">TG_PrePhysics</div>
+              <div class="arch-card-title">매니저 일괄 틱 (0-Tick 개체 제어)</div>
+              <ul class="arch-card-list">
+                <li><strong>입력</strong> 폰 위치 · 최대 반경</li>
+                <li><strong>처리</strong> 껍질 스폰 · 티어 전환</li>
+                <li><strong>처리</strong> Kinematic 적분 · AI 티켓</li>
+                <li class="arch-out"><strong>출력</strong> 물리 티어 · 0-Tick 상태 주입</li>
+              </ul>
+              <div class="arch-card-foot">AEnemyMoldManager · AAsteroidFieldManager</div>
+            </div>
 
-            <text x="16" y="26" class="s-label">한 프레임 데이터 흐름 (TickGroup 실행 순서)</text>
+            <div class="arch-flow-conn" aria-hidden="true">
+              <span class="arch-conn-label">티어·속도</span>
+              <span class="arch-conn-arrow">→</span>
+            </div>
 
-            <rect x="16" y="42" width="212" height="196" rx="10" class="s-box" />
-            <text x="32" y="68" class="s-title s-accent">TG_PrePhysics</text>
-            <text x="32" y="92" class="s-text-strong">매니저 일괄 틱 (0-Tick 개체 제어)</text>
-            <text x="32" y="120" class="s-small">입력: 폰 위치 · 최대 반경</text>
-            <text x="32" y="142" class="s-small">처리: 껍질 스폰 · 티어 전환</text>
-            <text x="32" y="164" class="s-small">처리: Kinematic 적분 · AI 티켓</text>
-            <text x="32" y="192" class="s-small s-accent2">출력: 물리 티어 · 0-Tick 상태 주입</text>
-            <text x="32" y="216" class="s-small">AEnemyMoldManager · FieldMgr</text>
+            <div class="arch-card">
+              <div class="arch-card-stage">TG_DuringPhysics</div>
+              <div class="arch-card-title">엔진 Chaos 솔버</div>
+              <ul class="arch-card-list">
+                <li><strong>입력</strong> 근거리 강체 ≤ 48</li>
+                <li><strong>처리</strong> 강체 충돌 · 관성 적분</li>
+                <li><strong>제외</strong> 원거리 Kinematic</li>
+                <li class="arch-out"><strong>출력</strong> 물리 위치 · 속도 확정</li>
+              </ul>
+              <div class="arch-card-foot">솔버 캡 초과 시 Kinematic 강등</div>
+            </div>
 
-            <rect x="282" y="42" width="196" height="196" rx="10" class="s-box" />
-            <text x="298" y="68" class="s-title s-accent">TG_DuringPhysics</text>
-            <text x="298" y="92" class="s-text-strong">엔진 Chaos 솔버</text>
-            <text x="298" y="120" class="s-small">입력: 근거리 강체 ≤ 48</text>
-            <text x="298" y="142" class="s-small">처리: 강체 충돌 · 관성 적분</text>
-            <text x="298" y="164" class="s-small">제외: 원거리 Kinematic</text>
-            <text x="298" y="192" class="s-small s-accent2">출력: 물리 위치 · 속도 확정</text>
-            <text x="298" y="216" class="s-small">(솔버 캡 초과 시 강등)</text>
+            <div class="arch-flow-conn" aria-hidden="true">
+              <span class="arch-conn-label">물리 위치</span>
+              <span class="arch-conn-arrow">→</span>
+            </div>
 
-            <rect x="532" y="42" width="212" height="196" rx="10" class="s-box" />
-            <text x="548" y="68" class="s-title s-accent">TG_PostPhysics</text>
-            <text x="548" y="92" class="s-text-strong">ASpaceDrifterPawn</text>
-            <text x="548" y="120" class="s-small">입력: 확정된 본체/타겟 위치</text>
-            <text x="548" y="142" class="s-small">처리: FQuat 카메라 · Active 능력</text>
-            <text x="548" y="164" class="s-small">보장: AddTickPrerequisiteActor</text>
-            <text x="548" y="192" class="s-small s-accent2">출력: Start/End · User.* 푸시</text>
-            <text x="548" y="216" class="s-small">(FX 선행 실행 보장)</text>
+            <div class="arch-card">
+              <div class="arch-card-stage">TG_PostPhysics</div>
+              <div class="arch-card-title">ASpaceDrifterPawn</div>
+              <ul class="arch-card-list">
+                <li><strong>입력</strong> 확정된 본체/타겟 위치</li>
+                <li><strong>처리</strong> FQuat 카메라 · Active 능력</li>
+                <li><strong>보장</strong> AddTickPrerequisiteActor</li>
+                <li class="arch-out"><strong>출력</strong> Start/End · User.* 푸시</li>
+              </ul>
+              <div class="arch-card-foot">FX 선행 실행 보장</div>
+            </div>
 
-            <rect x="798" y="42" width="226" height="196" rx="10" class="s-box" />
-            <text x="814" y="68" class="s-title s-accent">TG_PostUpdateWork</text>
-            <text x="814" y="92" class="s-text-strong">Niagara 3종 촉수 FX</text>
-            <text x="814" y="120" class="s-small">입력: 같은 프레임 User.*</text>
-            <text x="814" y="142" class="s-small">처리: V1 · V2 · V3 이펙트</text>
-            <text x="814" y="164" class="s-small">특징: V3 LocalSpace + Mesh</text>
-            <text x="814" y="192" class="s-small s-accent2">출력: 지연 0프레임 렌더</text>
-            <text x="814" y="216" class="s-small">(1프레임 밀림 원천 차단)</text>
+            <div class="arch-flow-conn" aria-hidden="true">
+              <span class="arch-conn-label">User.*</span>
+              <span class="arch-conn-arrow">→</span>
+            </div>
 
-            <path d="M229 140 L280 140" class="s-arrow" marker-end="url(#arrArch)" />
-            <text x="255" y="128" text-anchor="middle" class="s-small">티어·속도</text>
-            <path d="M479 140 L530 140" class="s-arrow" marker-end="url(#arrArch)" />
-            <text x="505" y="128" text-anchor="middle" class="s-small">물리 위치</text>
-            <path d="M745 140 L796 140" class="s-arrow" marker-end="url(#arrArch)" />
-            <text x="771" y="128" text-anchor="middle" class="s-small">User.*</text>
+            <div class="arch-card">
+              <div class="arch-card-stage">TG_PostUpdateWork</div>
+              <div class="arch-card-title">Niagara 3종 촉수 FX</div>
+              <ul class="arch-card-list">
+                <li><strong>입력</strong> 같은 프레임 User.*</li>
+                <li><strong>처리</strong> V1 · V2 · V3 이펙트</li>
+                <li><strong>특징</strong> V3 LocalSpace + Mesh</li>
+                <li class="arch-out"><strong>출력</strong> 지연 0프레임 렌더</li>
+              </ul>
+              <div class="arch-card-foot">1프레임 밀림 원천 차단</div>
+            </div>
+          </div>
 
-            <text x="16" y="276" class="s-label">의존성 역전 (UINTERFACE 계약) · 조건부 0-Tick 능력</text>
+          <div class="arch-section-label arch-section-label-sub">의존성 역전 (UINTERFACE 계약) · 조건부 0-Tick 능력</div>
+          <div class="arch-dip-grid">
+            <div class="arch-dip-col">
+              <div class="arch-card arch-card-compact">
+                <div class="arch-card-stereo">«interface»</div>
+                <div class="arch-card-title">ISpaceTendrilHostInterface</div>
+                <div class="arch-card-foot">계약: 시점 · 물리 루트 · 생체량 · FX</div>
+              </div>
+              <div class="arch-dip-rel">↑ ⇢ 구현 (realize)</div>
+              <div class="arch-card arch-card-compact">
+                <div class="arch-card-title">ASpaceDrifterPawn</div>
+                <div class="arch-card-foot">ActiveTendrilAbility 보유 · 조건부 틱</div>
+              </div>
+            </div>
 
-            <rect x="30" y="294" width="270" height="72" rx="8" class="s-box" />
-            <text x="165" y="316" text-anchor="middle" class="s-small">«interface»</text>
-            <text x="165" y="336" text-anchor="middle" class="s-text-strong">ISpaceTendrilHostInterface</text>
-            <text x="165" y="356" text-anchor="middle" class="s-small">계약: 시점 · 물리 루트 · 생체량 · FX</text>
+            <div class="arch-dip-mid">
+              <div class="arch-dip-arrows">
+                <span>← 의존 (Host)</span>
+                <span>의존 (Target) →</span>
+              </div>
+              <div class="arch-card arch-card-compact">
+                <div class="arch-card-title">USpaceTendrilAbility</div>
+                <div class="arch-card-foot">EditInlineNew UObject · V1 / V2 / V3</div>
+                <div class="arch-card-note">IsAbilityTickActive()일 때만 틱 · FTimerManager</div>
+              </div>
+              <div class="arch-dip-call">↑ IsAbilityTickActive() → TickActiveAbility</div>
+            </div>
 
-            <rect x="30" y="412" width="270" height="62" rx="8" class="s-box" />
-            <text x="165" y="436" text-anchor="middle" class="s-text-strong">ASpaceDrifterPawn</text>
-            <text x="165" y="458" text-anchor="middle" class="s-small">ActiveTendrilAbility 보유 · 조건부 틱</text>
-            <path d="M165 411 L165 369" class="s-line s-dash" marker-end="url(#arrArch2)" />
-
-            <rect x="380" y="302" width="280" height="84" rx="10" class="s-box" />
-            <text x="520" y="328" text-anchor="middle" class="s-text-strong">USpaceTendrilAbility</text>
-            <text x="520" y="350" text-anchor="middle" class="s-small">EditInlineNew UObject · V1 / V2 / V3</text>
-            <text x="520" y="372" text-anchor="middle" class="s-small s-accent2">IsAbilityTickActive()일 때만 틱 · FTimerManager</text>
-
-            <path d="M379 330 L303 330" class="s-arrow" marker-end="url(#arrArch)" />
-            <path d="M661 330 L737 330" class="s-arrow" marker-end="url(#arrArch)" />
-            <path d="M301 443 L520 443 L520 388" class="s-arrow2" marker-end="url(#arrArch)" />
-            <text x="415" y="434" text-anchor="middle" class="s-small">IsAbilityTickActive() → TickActiveAbility</text>
-
-            <rect x="740" y="294" width="270" height="72" rx="8" class="s-box" />
-            <text x="875" y="316" text-anchor="middle" class="s-small">«interface»</text>
-            <text x="875" y="336" text-anchor="middle" class="s-text-strong">ISpaceColonizableTarget</text>
-            <text x="875" y="356" text-anchor="middle" class="s-small">계약: 전염 가능 · 요구 생체량 · 폭발</text>
-
-            <rect x="740" y="412" width="270" height="62" rx="8" class="s-box" />
-            <text x="875" y="436" text-anchor="middle" class="s-text-strong">ASpaceAsteroid · ASpaceEnemyMold</text>
-            <text x="875" y="458" text-anchor="middle" class="s-small">0-Tick 타겟 · 배양 타이머 무장</text>
-            <path d="M875 411 L875 369" class="s-line s-dash" marker-end="url(#arrArch2)" />
-
-            <text x="16" y="492" class="s-small">→ 의존 · 호출   ⇢ 구현(realize)</text>
-          </svg>
+            <div class="arch-dip-col">
+              <div class="arch-card arch-card-compact">
+                <div class="arch-card-stereo">«interface»</div>
+                <div class="arch-card-title">ISpaceColonizableTarget</div>
+                <div class="arch-card-foot">계약: 전염 가능 · 요구 생체량 · 폭발</div>
+              </div>
+              <div class="arch-dip-rel">↑ ⇢ 구현 (realize)</div>
+              <div class="arch-card arch-card-compact">
+                <div class="arch-card-title">ASpaceAsteroid · ASpaceEnemyMold</div>
+                <div class="arch-card-foot">0-Tick 타겟 · 배양 타이머 무장</div>
+              </div>
+            </div>
+          </div>
         </div>
         <figcaption><strong>UE 5 클라이언트 아키텍처</strong> — PrePhysics(매니저 일괄·Kinematic 적분) → DuringPhysics(Chaos ≤48 캡) → PostPhysics(폰·카메라·촉수) → PostUpdateWork(Niagara 0프레임 렌더) 순서를 TickGroup으로 고정하고, 능력은 두 인터페이스 계약에만 의존하는 조건부 0-Tick 객체로 분리했습니다.</figcaption>
       </figure>
@@ -4456,6 +4472,156 @@ const codeUprojectMcp = `// UEStudy.uproject (개발용 로컬 프로젝트) —
   }
   .arch-figure figcaption strong {
     color: var(--text-1);
+  }
+  .arch-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.25rem 0.15rem 0.35rem;
+  }
+  .arch-section-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-1);
+    letter-spacing: 0.02em;
+  }
+  .arch-section-label-sub {
+    margin-top: 0.5rem;
+  }
+  .arch-flow-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 0.45rem;
+    align-items: stretch;
+  }
+  .arch-flow-conn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0 0.1rem;
+  }
+  .arch-conn-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+  .arch-conn-arrow {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .arch-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.38rem;
+    min-width: 0;
+    padding: 0.75rem 0.85rem;
+    background: var(--surface-2);
+    border: 1.2px solid var(--border);
+    border-radius: 10px;
+    overflow-wrap: anywhere;
+  }
+  .arch-card-compact {
+    text-align: center;
+    justify-content: center;
+  }
+  .arch-card-stage {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .arch-card-stereo {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-2);
+  }
+  .arch-card-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-1);
+    line-height: 1.35;
+  }
+  .arch-card-list {
+    list-style: none;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.74rem;
+    line-height: 1.4;
+    color: var(--text-2);
+  }
+  .arch-card-list strong {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-1);
+    margin-right: 0.2rem;
+  }
+  .arch-card-list li.arch-out,
+  .arch-card-note {
+    color: var(--accent-2);
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .arch-card-foot {
+    margin-top: auto;
+    padding-top: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    line-height: 1.4;
+    color: var(--text-2);
+  }
+  .arch-dip-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .arch-dip-col,
+  .arch-dip-mid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+  .arch-dip-rel,
+  .arch-dip-call {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-2);
+  }
+  .arch-dip-arrows {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 0 0.2rem;
+  }
+  @media (max-width: 960px) {
+    .arch-flow-grid {
+      grid-template-columns: 1fr;
+    }
+    .arch-flow-conn {
+      flex-direction: row;
+      padding: 0.1rem 0;
+    }
+    .arch-conn-arrow {
+      transform: rotate(90deg);
+    }
+    .arch-dip-grid {
+      grid-template-columns: 1fr;
+    }
   }
   .arch-svg .s-box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.2; }
   .arch-svg .s-title { fill: var(--text-1); font-size: 15px; font-weight: 700; }

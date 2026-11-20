@@ -1,7 +1,7 @@
 ---
 layout: ../../layouts/BaseLayout.astro
-title: "내 로그 6,300턴 관찰기: Gemini 3.8 Flash에서 Gemini 4(Argon · Hydrogen · Neon)까지의 에이전트 작업 리듬 변화"
-description: "UE 5.9 곰팡이 프로젝트와 블로그 개발에 쌓인 로컬 에이전트 로그 102개(6,367턴)를 시각화해, Gemini 3.8 Flash와 Gemini 4 계열의 병렬 도구 호출 배치율·1스텝 왕복 시간·도구 구성을 한눈에 비교한 관찰기"
+title: "Gemini 3.8 Flash → 4, 내 로그 6,300턴에서 달라진 작업 리듬"
+description: "로컬 에이전트 로그 6,300여 턴으로 본 Gemini 3.8 Flash와 Gemini 4(Argon · Hydrogen · Neon)의 차이 — 병렬 도구 호출 1% → 40%, 그리고 꼬리 지연"
 ---
 
 import KpiCards from '../../components/charts/KpiCards.astro';
@@ -9,28 +9,28 @@ import BatchBarChart from '../../components/charts/BatchBarChart.astro';
 import LatencyRangeChart from '../../components/charts/LatencyRangeChart.astro';
 import ToolMixChart from '../../components/charts/ToolMixChart.astro';
 
-# 내 로그 6,300턴 관찰기: Gemini 3.8 Flash에서 Gemini 4(Argon · Hydrogen · Neon)까지의 에이전트 작업 리듬 변화
+# Gemini 3.8 Flash → 4, 내 로그 6,300턴에서 달라진 작업 리듬
 
 **2026. 11. 20** · `#Gemini4` `#AgenticWorkflow` `#LogAnalysis` `#UE5_9`
 
 최근 UE 5.9 곰팡이 프로젝트([곰팡이 우주 정복 대작전](/learn/projects/fungal-space-conquest))를 마무리하고 블로그를 개편하면서 **Gemini 3.8 Flash**에서 <strong>Gemini 4 계열(Argon · Hydrogen · Neon)</strong>로 작업 환경이 넘어왔습니다.
 
-로컬에 쌓인 실제 에이전트 로그(`transcript.jsonl`) 102개, 총 **6,367개 응답 턴**에서 유의미한 실측 기준 3가지(**병렬 도구 호출 배치율**, **파일 읽기·편집 1스텝 중앙값–P90 범위**, **도구 구성 비중**)를 추려 한눈에 비교할 수 있도록 시각화했습니다.
+스텝 중앙값은 3.8 Flash가 가장 짧았는데, 왜 Gemini 4 쪽이 덜 기다린다고 느껴졌을까요? 로컬에 쌓인 에이전트 로그(`transcript.jsonl`) 102개, 총 **6,367턴**에서 세 가지를 비교했습니다: **한 번에 묶어 부른 도구 수**, **파일 작업 한 스텝의 소요 시간**, **모델별로 맡은 작업 종류**.
 
 <KpiCards
   items={[
-    { label: 'ANALYZED LOGS', value: '6,367턴', sub: '로컬 102개 세션 (미상 762턴 분리)', accent: 'cyan' },
-    { label: 'MAX PARALLEL BATCH', value: '40.3%', sub: 'Gemini 4 Neon · 하네스 변화 포함', accent: 'violet' },
-    { label: 'TIGHTEST P90 TAIL', value: '6s – 11s', sub: '4 Hydrogen 파일 읽기·편집 (단일 세션 92%)', accent: 'green' },
-    { label: 'AVG TOOLS / CALL', value: '2.08개', sub: '4 Neon (vs 3.8 Flash 1.00~1.01개)', accent: 'amber' },
+    { label: '분석 로그', value: '6,367턴', sub: '로컬 102개 세션 (미상 762턴 제외)', accent: 'cyan' },
+    { label: '최대 병렬 호출', value: '40.3%', sub: 'Gemini 4 Neon · 하네스 변화 포함', accent: 'violet' },
+    { label: '가장 좁은 왕복 구간', value: '6s – 11s', sub: '4 Hydrogen 파일 작업 (단일 세션 92%)', accent: 'green' },
+    { label: '호출 턴당 평균 도구 수', value: '2.08개', sub: '4 Neon (vs 3.8 Flash 1.00~1.01개)', accent: 'amber' },
   ]}
 />
 
 ---
 
-## 1. 병렬 도구 호출 배치율: 1턴 1도구에서 다중 배치로
+## 1. 한 번에 몇 개씩 처리하나? (병렬 호출 1% → 40%)
 
-도구 실행 시간이나 네트워크 편차에 영향을 받지 않고 **턴 구조 자체에서 그대로 드러나는 가장 견고한 지표**입니다. 도구를 호출한 턴 중 2개 이상을 한 번에 묶어 호출한 비율을 0% 기준으로 비교했습니다.
+도구 실행 시간이나 네트워크 편차에 덜 흔들리고 **턴 구조 자체에서 그대로 드러나는 지표**입니다. 도구를 호출한 턴 중 2개 이상을 한 번에 묶어 호출한 비율을 비교했습니다. 막대는 0%에서 시작합니다.
 
 <BatchBarChart
   title="도구 호출 턴 중 병렬 배치율 (≥2개 동시 호출)"
@@ -46,19 +46,21 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
   ]}
 />
 
-* **3.8 Flash**는 `High`·`Medium` 모두 **1턴 1도구(평균 1.00~1.01개)** 순차 처리에 머물렀습니다.
-* **Gemini 4 계열**에서는 4개 조합 모두 20% 이상으로 올라섰고, 특히 `4 Neon`은 <strong>40.3%(평균 2.08개)</strong>로 여러 파일을 동시에 읽고 고치는 편집 작업에서 왕복 턴 수가 크게 줄었습니다.
+* **3.8 Flash**는 `High`·`Medium` 모두 **1턴 1도구(평균 1.00~1.01개)** 순차 호출에 머물렀습니다.
+* **Gemini 4 계열**에서는 4개 조합 모두 20%를 넘겼고, `4 Neon`은 <strong>40.3%</strong>로 한 턴에 평균 **2.08개** 도구를 묶어 불렀습니다.
 
 ---
 
-## 2. 파일 읽기·편집 1스텝 왕복 시간 (중앙값 – P90 범위)
+## 2. 파일 작업 한 스텝은 얼마나 걸리나? (중앙값과 P90)
 
-로그의 `PLANNER_RESPONSE.created_at`은 생성 시작 시각이므로, 다음 스텝까지의 간격은 순수 추론 시간이 아니라 **생성(thinking 포함) + 도구 실행이 합쳐진 1스텝 왕복 시간**입니다. 빌드나 테스트 실행 시간 편차가 큰 `run_command`와 사용자 대기가 섞이는 `ask_question`을 제외하고, <strong>파일 읽기·편집 전용 스텝(<code>read_file</code> / <code>edit_file</code> / <code>write_file</code>)</strong>만 0~40초 동일 선형 축에 올렸습니다.
+로그의 `PLANNER_RESPONSE.created_at`은 생성 시작 시각입니다. 따라서 다음 스텝까지의 간격은 순수 추론 시간이 아니라 **생성(thinking 포함) + 도구 실행이 합쳐진 1스텝 왕복 시간**입니다.
+
+실행 시간 편차가 큰 `run_command`와 사용자 대기가 섞이는 `ask_question`은 제외했습니다. <strong>파일 읽기·편집 전용 스텝(<code>read_file</code> / <code>edit_file</code> / <code>write_file</code>)</strong>만 0~40초 같은 선형 축에 올렸습니다.
 
 <LatencyRangeChart
   title="파일 읽기·편집 전용 스텝 왕복 시간 (중앙값 ● ~ P90 ◆)"
-  subtitle="0s~40s 동일 선형 축 · 왼쪽 점 = 중앙값, 오른쪽 마름모 = 상위 90%(꼬리 지연)"
-  footnote="※ 타임스탬프 해상도가 1초 단위이므로 중앙값 5초와 6초의 1초 차이는 사실상 오차 범위입니다. 주목할 지점은 중앙값 자체보다 P90 꼬리 길이(11s vs 24s~35s)의 차이입니다."
+  subtitle="0s~40s 동일 선형 축 · 왼쪽 점 = 중앙값, 오른쪽 마름모 = P90 (느린 쪽 10% 경계)"
+  footnote="※ 타임스탬프 해상도가 1초 단위이므로 중앙값 5초와 6초의 1초 차이는 사실상 오차 범위입니다. 주목할 지점은 중앙값 자체보다 P90 꼬리 길이(11초 vs 24~35초)의 차이입니다."
   maxSec={40}
   rows={[
     { model: 'Gemini 3.8 Flash (High)', family: 'flash', n: 775, sessions: 30, median: 5, p90: 15 },
@@ -70,16 +72,16 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
   ]}
 />
 
-* <strong><code>4 Hydrogen (Medium)</code></strong>은 중앙값 **6초**에 P90 **11초**로 꼬리 구간이 가장 짧고 균일했습니다.
+* <strong><code>4 Hydrogen (Medium)</code></strong>은 중앙값 **6초**, P90 **11초**로 꼬리 구간이 가장 짧고 균일했습니다.
 * <strong><code>3.8 Flash (Medium)</code></strong>은 중앙값은 5초로 빠르지만 P90이 **24초**까지 벌어졌습니다.
-* <strong><code>4 Neon (Medium)</code></strong>은 중앙값 8초 / P90 17초로 `3.8 Flash (High)`(5초 / 15초)보다 턴당 2~3초 더 걸리지만, 위 차트 1의 병렬 배치(평균 2.08개)가 이를 상쇄합니다.
-* <strong><code>4 Argon</code></strong>은 `Medium`(10s–35s)과 `High`(11.5s–31s) 모두 왕복 구간이 가장 길었습니다.
+* <strong><code>4 Neon (Medium)</code></strong>은 중앙값 8초, P90 17초로 `3.8 Flash (High)`(중앙값 5초, P90 15초)보다 턴당 2~3초 길지만, 병렬 배치(평균 2.08개)로 상쇄될 여지가 있습니다.
+* <strong><code>4 Argon</code></strong>은 `Medium`(중앙값 10초, P90 35초)과 `High`(중앙값 11.5초, P90 31초) 모두 왕복 구간이 가장 길었습니다.
 
 ---
 
-## 3. 모델별 도구 구성 비중 (100% 누적 막대)
+## 3. 각 모델은 어떤 작업을 맡았나?
 
-왕복 시간 차이를 해석할 때 빠뜨릴 수 없는 배경이 **각 모델이 실제로 맡았던 작업의 성격**입니다. 원본 로그의 전체 도구 호출을 4개 범주(셸 명령 / 읽기·탐색 / 편집·작성 / MCP·기타)로 나눠 100% 누적 막대로 비교했습니다.
+왕복 시간 차이를 읽을 때 빠뜨릴 수 없는 배경이 **각 모델이 실제로 맡았던 작업의 성격**입니다. 원본 로그의 전체 도구 호출을 4개 범주(셸 명령 / 읽기·탐색 / 편집·작성 / MCP·기타)로 나눠 100% 누적 막대로 비교했습니다.
 
 <ToolMixChart
   title="모델별 전체 도구 호출 구성 비중 (100% 기준)"
@@ -97,7 +99,7 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
 
 ---
 
-## 4. 해석 시 반드시 감안해야 할 한계
+## 4. 이 숫자를 읽을 때 주의할 점
 
 <div class="callout" data-type="warning">
   <p><strong>통제된 벤치마크가 아닌 개인 작업 로그 관찰기입니다.</strong></p>
@@ -110,11 +112,13 @@ import ToolMixChart from '../../components/charts/ToolMixChart.astro';
 
 ---
 
-## 5. 실전 작업 리듬 요약
+## 5. 결론: 모델별 체감 정리
 
-세 차트를 함께 놓고 보면 "한 턴의 속도"보다 **병렬 배치 × 꼬리 지연 안정성**이 체감 작업 속도를 좌우한다는 점이 분명하게 드러납니다.
+세 차트를 함께 보면 "한 턴의 속도"보다 **병렬 배치와 꼬리 지연 안정성**이 체감 속도에 더 크게 작용한 것으로 보입니다.
 
-* **짧고 균일한 템포의 장시간 구현**: `4 Hydrogen (Medium)` — 6s–11s의 좁은 왕복 구간과 24.9% 병렬 배치.
-* **다중 파일 리팩터링 · 문서/MCP 일괄 처리**: `4 Neon (Medium)` — 40.3% 병렬 배치(평균 2.08개/턴)로 왕복 횟수 최소화.
-* **단순 즉답 · 1턴 1명령 점검**: `3.8 Flash` — 5초 중앙값의 가벼운 반응, 단 순차 호출 위주.
-* **긴 호흡의 초기 조사 · 심층 검토**: `4 Argon` — 10~11.5s 중앙값, P90 31~35s의 묵직한 스텝.
+이번 로그에서 각 모델이 주로 맡았던 작업과 관찰된 리듬을 정리하면 다음과 같습니다.
+
+* <strong><code>4 Hydrogen (Medium)</code></strong> — 곰팡이 프로젝트 C++ 구현과 문서 작성. 중앙값 6초 · P90 11초의 좁은 왕복 구간과 24.9% 병렬 배치.
+* <strong><code>4 Neon (Medium)</code></strong> — 블로그 3단 구조 리팩터링과 Notion MCP 연동. 40.3% 병렬 배치(평균 2.08개/턴)로 다중 파일 편집을 묶어 처리.
+* <strong><code>3.8 Flash</code></strong> — 초기 터미널 점검·빌드와 단발성 조사. 중앙값 5초로 빠르지만 1턴 1도구 순차 호출 위주.
+* <strong><code>4 Argon</code></strong> — UE 5.9 호환성·툴체인 심층 조사. 중앙값 10~11.5초, P90 31~35초로 스텝당 호흡이 가장 길었음.

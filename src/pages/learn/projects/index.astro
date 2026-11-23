@@ -1,7 +1,49 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 
-const completedProjects = [
+const unrealProjects = [
+  {
+    slug: 'fungal-space-conquest',
+    title: '곰팡이 우주 정복 대작전',
+    status: 'COMPLETED · UE 5.9 (macOS / Windows)',
+    path: 'C++ · 6-Kill & 200-Mineral Time Attack',
+    date: 'Updated 2026. 11. 20',
+    accent: 'var(--success)',
+    tagColor: 'var(--accent-2)',
+    cta: 'var(--accent)',
+    ctaText: 'var(--text-inverse)',
+    summary:
+      '무중력 6-DoF 환경에서 <strong>포식자 6마리 처치 &amp; 미네랄 200개 타임어택</strong>을 구현한 UE 5.9 C++ 게임 클라이언트. <strong>TickGroup 실행 순서 고정</strong>, <strong>UInterface 기반 0-Tick 능력 객체</strong>, <strong>공격 티켓 · 포위 링 AI</strong>, <strong>1,150 소행성 2-Tier 물리 스트리밍</strong>, <strong>M4 16GB 통합 메모리 실측 최적화</strong>를 각 섹션마다 설계 배경 · 결정 · 검증 순으로 정리했습니다.',
+    tags: ['#UE5_9', '#AttackTicketAI', '#ZeroTickAbilityOOP', '#UInterface', '#TwoTierChaosPhysics', '#M4_16GB_Optimization'],
+    image: {
+      src: '/images/projects/fungal-space-conquest/blog-pie-idle.png',
+      alt: 'UE 5.9 Lvl_Main 우주 공간에서 부유 중인 곰팡이 우주 정복 대작전 BP_SpaceDrifterPawn PIE 뷰포트',
+    },
+    caption: 'PIE Capture (1920×1080) · Lvl_Main + BP_SpaceDrifterPawn',
+    note: '"구현은 AI가, 설계는 인간이" — 기획서와 UE 5.9 C++ 포트폴리오를 프로젝트 홈에서 선택해 볼 수 있습니다.',
+    github: 'https://github.com/pargame/FungalSpaceConquest',
+  },
+  {
+    slug: 'waxppu-dungeon',
+    title: '왁뿌던전 탈출 (가제)',
+    status: 'PLANNING · UE 5.9',
+    path: 'Chaos Solver · ACharacter · 20 Waves',
+    date: 'Created 2026. 11. 20',
+    accent: '#ff5e9c',
+    tagColor: '#ff9f43',
+    cta: 'linear-gradient(135deg, #ff5e9c, #ff8a3d)',
+    ctaText: '#ffffff',
+    summary:
+      '언리얼 엔진 내장 <strong>Chaos 물리 솔버</strong>와 <strong>ACharacter</strong>를 적극 활용하는 3D 물리 파괴 웨이브 디펜스. 플레이어가 가한 힘에 따라 실시간으로 부서지는 왁뿌볼 몬스터를 처치하며 <strong>20라운드와 거대 왁뿌볼 보스</strong>를 돌파해 던전에서 탈출합니다.',
+    tags: ['#UE5_9', '#ChaosSolver', '#ACharacter', '#20WaveDefense', '#WaxPpuDungeon'],
+    image: null,
+    caption: 'Project Outline · 20 Waves + Giant Wax-Ppu Boss',
+    note: '기획 큰 틀 정리 완료 — 프로젝트 홈에서 기획서를 확인할 수 있습니다 (포트폴리오 추가 예정)',
+    github: null,
+  },
+];
+
+const otherProjects = [
   {
     slug: 'metal-cube',
     title: 'Metal Cube (3D Rotating Cube)',
@@ -24,9 +66,6 @@ const completedProjects = [
     github: 'https://github.com/pargame/pocopia',
     live: 'https://pokoclouds.com',
   },
-];
-
-const designProjects = [
   {
     slug: 'nung-lang',
     title: 'nung_lang (눙 언어)',
@@ -35,6 +74,8 @@ const designProjects = [
     summary:
       '언어가 막을 수 있는 문제는 모두 막고 초고속 실행을 지향하는 자체 프로그래밍 언어 및 추상 머신 설계 프로젝트.',
     tags: ['#LanguageDesign', '#AbstractMachine', '#TypeSystem', '#StaticSafety'],
+    github: null,
+    live: null,
   },
   {
     slug: 'whynode',
@@ -44,6 +85,8 @@ const designProjects = [
     summary:
       '소크라테스식 재귀 질문을 무한 캔버스 위 지식 트리로 확장하는 macOS · iPadOS 네이티브 마인드맵 앱 설계 프로젝트.',
     tags: ['#SwiftUI', '#macOS', '#iPadOS', '#Canvas', '#ForceDirectedGraph'],
+    github: null,
+    live: null,
   },
   {
     slug: 'biz-agent-sim',
@@ -53,6 +96,8 @@ const designProjects = [
     summary:
       '비즈니스 업무 자동화 AI 에이전트를 가상 시뮬레이션 환경에서 사전 검증하는 이산 사건 시뮬레이션(DES) 테스트베드 설계 프로젝트.',
     tags: ['#AIAgents', '#DES', '#MultiAgent', '#ReliabilityTesting'],
+    github: null,
+    live: null,
   },
 ];
 ---
@@ -77,172 +122,92 @@ const designProjects = [
 
   <section class="projects-section">
     <div class="section-title-wrap">
-      <span class="badge planning-badge">NEW PROJECT // PLANNING</span>
-      <h2>기획 · 진행 중 프로젝트</h2>
-      <p>새롭게 설계 중인 UE 5.9 물리 파괴 액션 프로젝트입니다.</p>
+      <span class="badge">UNREAL ENGINE PROJECTS</span>
+      <h2>언리얼 엔진 프로젝트</h2>
+      <p>UE 5.9 기반 게임 프로젝트입니다. 프로젝트 홈에서 기획서와 포트폴리오를 볼 수 있습니다.</p>
     </div>
 
-    <article class="project-showcase waxppu-showcase">
-      <div class="showcase-top">
-        <div class="showcase-badges">
-          <span class="status-pill planning">
-            <span class="pulse-dot planning-dot"></span>
-            PLANNING · UE 5.9
-          </span>
-          <span class="path-pill">Chaos Solver · ACharacter · 20 Waves</span>
-        </div>
-        <span class="updated-meta">Created 2026. 11. 20</span>
-      </div>
-
-      <div class="showcase-body">
-        <div class="showcase-copy">
-          <h2>
-            <a href="/learn/projects/waxppu-dungeon">
-              왁뿌던전 탈출 (가제)
-            </a>
-          </h2>
-          <p class="project-subtitle">
-            언리얼 엔진 내장 <strong>Chaos 물리 솔버</strong>와 <strong>ACharacter</strong>를 적극 활용하는 3D 물리 파괴 웨이브 디펜스. 플레이어가 가한 힘에 따라 실시간으로 부서지는 왁뿌볼 몬스터를 처치하며 <strong>20라운드와 거대 왁뿌볼 보스</strong>를 돌파해 던전에서 탈출합니다.
-          </p>
-
-          <div class="stack-tags">
-            <span class="stack-tag wax-tag">#UE5_9</span>
-            <span class="stack-tag wax-tag">#ChaosSolver</span>
-            <span class="stack-tag wax-tag">#ACharacter</span>
-            <span class="stack-tag wax-tag">#20WaveDefense</span>
-            <span class="stack-tag wax-tag">#WaxPpuDungeon</span>
-          </div>
-        </div>
-
-        <a
-          href="/learn/projects/waxppu-dungeon"
-          class="showcase-preview waxppu-preview"
-          aria-label="왁뿌던전 탈출 프로젝트 홈 열기"
+    <div class="showcase-list">
+      {unrealProjects.map((project) => (
+        <article
+          class="project-showcase"
+          style={`--sc-accent: ${project.accent}; --sc-tag: ${project.tagColor}; --sc-cta: ${project.cta}; --sc-cta-text: ${project.ctaText}`}
         >
-          <div class="waxppu-art">
-            <span class="wax-orb"></span>
-            <span class="wax-art-label">CHAOS × ACHARACTER</span>
+          <div class="showcase-top">
+            <div class="showcase-badges">
+              <span class="status-pill">
+                <span class="pulse-dot"></span>
+                {project.status}
+              </span>
+              <span class="path-pill">{project.path}</span>
+            </div>
+            <span class="updated-meta">{project.date}</span>
           </div>
-          <span class="preview-caption">Project Outline · 20 Waves + Giant Wax-Ppu Boss</span>
-        </a>
-      </div>
 
-      <div class="showcase-footer">
-        <div class="footer-note">
-          기획 큰 틀 정리 완료 — 프로젝트 홈에서 기획서를 확인할 수 있습니다 (포트폴리오 추가 예정)
-        </div>
-        <div class="footer-actions">
-          <a href="/learn/projects/waxppu-dungeon" class="cta-btn wax-cta">
-            프로젝트 보기 →
-          </a>
-        </div>
-      </div>
-    </article>
+          <div class="showcase-body">
+            <div class="showcase-copy">
+              <h2>
+                <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
+              </h2>
+              <p class="project-subtitle" set:html={project.summary} />
+              <div class="stack-tags">
+                {project.tags.map((tag) => (
+                  <span class="stack-tag showcase-tag">{tag}</span>
+                ))}
+              </div>
+            </div>
+
+            <a
+              href={`/learn/projects/${project.slug}`}
+              class="showcase-preview"
+              aria-label={`${project.title} 프로젝트 홈 열기`}
+            >
+              {project.image ? (
+                <img src={project.image.src} alt={project.image.alt} loading="eager" />
+              ) : (
+                <div class="waxppu-art">
+                  <span class="wax-orb"></span>
+                  <span class="wax-art-label">CHAOS × ACHARACTER</span>
+                </div>
+              )}
+              <span class="preview-caption">{project.caption}</span>
+            </a>
+          </div>
+
+          <div class="showcase-footer">
+            <div class="footer-note">{project.note}</div>
+            <div class="footer-actions">
+              {project.github && (
+                <a href={project.github} class="cta-btn secondary" target="_blank" rel="noopener noreferrer">
+                  GitHub ↗
+                </a>
+              )}
+              <a href={`/learn/projects/${project.slug}`} class="cta-btn">
+                프로젝트 보기 →
+              </a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
   </section>
 
   <section class="projects-section">
     <div class="section-title-wrap">
-      <span class="badge">FEATURED PROJECT</span>
-      <h2>완성 프로젝트</h2>
-      <p>프로젝트 홈에서 기획서와 포트폴리오 중 원하는 문서를 선택해 볼 수 있습니다.</p>
+      <span class="badge">OTHER PROJECTS</span>
+      <h2>기타 프로젝트</h2>
+      <p>3D 그래픽스, 웹 플랫폼, 자체 언어, 네이티브 앱, AI 시뮬레이션 프로젝트입니다. PRIVATE 표시는 비공개 리포지토리입니다.</p>
     </div>
 
-    <article class="project-showcase">
-      <div class="showcase-top">
-        <div class="showcase-badges">
-          <span class="status-pill completed">
-            <span class="pulse-dot"></span>
-            COMPLETED · UE 5.9 (macOS / Windows)
-          </span>
-          <span class="path-pill">C++ · 6-Kill &amp; 200-Mineral Time Attack</span>
-        </div>
-        <span class="updated-meta">Updated 2026. 11. 20</span>
-      </div>
-
-      <div class="showcase-body">
-        <div class="showcase-copy">
-          <h2>
-            <a href="/learn/projects/fungal-space-conquest">
-              곰팡이 우주 정복 대작전
-            </a>
-          </h2>
-          <p class="project-subtitle">
-            무중력 6-DoF 환경에서 <strong>포식자 6마리 처치 &amp; 미네랄 200개 타임어택</strong>을 구현한 UE 5.9 C++ 게임 클라이언트. <strong>TickGroup 실행 순서 고정</strong>, <strong>UInterface 기반 0-Tick 능력 객체</strong>, <strong>공격 티켓 · 포위 링 AI</strong>, <strong>1,150 소행성 2-Tier 물리 스트리밍</strong>, <strong>M4 16GB 통합 메모리 실측 최적화</strong>를 각 섹션마다 설계 배경 · 결정 · 검증 순으로 정리했습니다.
-          </p>
-
-          <div class="metrics-strip">
-            <div class="metric-item">
-              <span class="metric-label">ARCHITECTURE</span>
-              <span class="metric-value">0-Tick OOP</span>
-              <span class="metric-desc">UInterface 의존성 역전 · EditInlineNew 능력 객체</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">WORLD STREAMING</span>
-              <span class="metric-value">1,150 Asteroids · 2-Tier</span>
-              <span class="metric-desc">근거리 48 Chaos / 원거리 Kinematic · 크기 비례 0ms 스케일링</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">GAMEPLAY AI</span>
-              <span class="metric-value">Attack Ticket AI · 6-Kill &amp; 200</span>
-              <span class="metric-desc">최대 2마리 돌진 · 포위 링 · 최대 도달 크기 스폰</span>
-            </div>
-            <div class="metric-item">
-              <span class="metric-label">OPTIMIZATION &amp; PIPELINE</span>
-              <span class="metric-value">M4 21.4GB → 7.93GB · UE 5.9 MCP</span>
-              <span class="metric-desc">공식 MCP 베타 실제 검증 · 멀티 에이전트 가드레일</span>
-            </div>
-          </div>
-
-          <div class="stack-tags">
-            <span class="stack-tag">#UE5_9</span>
-            <span class="stack-tag">#AttackTicketAI</span>
-            <span class="stack-tag">#ZeroTickAbilityOOP</span>
-            <span class="stack-tag">#UInterface</span>
-            <span class="stack-tag">#TwoTierChaosPhysics</span>
-            <span class="stack-tag">#RuntimeSizeScale</span>
-            <span class="stack-tag">#PureSlateHUD</span>
-            <span class="stack-tag">#M4_16GB_Optimization</span>
-            <span class="stack-tag">#UE59_OfficialMCP</span>
-          </div>
-        </div>
-
-        <a
-          href="/learn/projects/fungal-space-conquest"
-          class="showcase-preview"
-          aria-label="곰팡이 우주 정복 대작전 프로젝트 홈 열기"
-        >
-          <img
-            src="/images/projects/fungal-space-conquest/blog-pie-idle.png"
-            alt="UE 5.9 Lvl_Main 우주 공간에서 부유 중인 곰팡이 우주 정복 대작전 BP_SpaceDrifterPawn PIE 뷰포트"
-            loading="eager"
-          />
-          <span class="preview-caption">PIE Capture (1920×1080) · Lvl_Main + BP_SpaceDrifterPawn</span>
-        </a>
-      </div>
-
-      <div class="showcase-footer">
-        <div class="footer-note">
-          "구현은 AI가, 설계는 인간이" — 기획서와 UE 5.9 C++ 포트폴리오를 프로젝트 홈에서 선택해 볼 수 있습니다.
-        </div>
-        <div class="footer-actions">
-          <a href="https://github.com/pargame/FungalSpaceConquest" class="cta-btn secondary" target="_blank" rel="noopener noreferrer">
-            GitHub ↗
-          </a>
-          <a href="/learn/projects/fungal-space-conquest" class="cta-btn">
-            프로젝트 보기 →
-          </a>
-        </div>
-      </div>
-    </article>
-
     <div class="compact-grid">
-      {completedProjects.map((project) => (
+      {otherProjects.map((project) => (
         <article class="compact-card" style={`--card-accent: ${project.accent}`}>
           <div class="compact-top">
             <span class="compact-status">
               <span class="compact-dot"></span>
               {project.status}
             </span>
+            {!project.github && <span class="private-pill">PRIVATE</span>}
           </div>
           <h3>
             <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
@@ -262,45 +227,11 @@ const designProjects = [
                 Live ↗
               </a>
             )}
-            <a href={project.github} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
-              GitHub ↗
-            </a>
-          </div>
-        </article>
-      ))}
-    </div>
-  </section>
-
-  <section class="projects-section">
-    <div class="section-title-wrap">
-      <span class="badge design-badge">DESIGN // PRIVATE REPOS</span>
-      <h2>설계 중 프로젝트</h2>
-      <p>비공개 리포지토리에서 아키텍처와 명세를 설계 중인 프로젝트입니다. 각 프로젝트 홈에서 개요를 확인할 수 있습니다.</p>
-    </div>
-
-    <div class="compact-grid three-col">
-      {designProjects.map((project) => (
-        <article class="compact-card design-card" style={`--card-accent: ${project.accent}`}>
-          <div class="compact-top">
-            <span class="compact-status design-status">
-              <span class="compact-dot"></span>
-              {project.status}
-            </span>
-            <span class="private-pill">PRIVATE</span>
-          </div>
-          <h3>
-            <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
-          </h3>
-          <p class="compact-summary">{project.summary}</p>
-          <div class="stack-tags">
-            {project.tags.map((tag) => (
-              <span class="stack-tag compact-tag">{tag}</span>
-            ))}
-          </div>
-          <div class="compact-actions">
-            <a href={`/learn/projects/${project.slug}`} class="compact-btn secondary">
-              프로젝트 홈 →
-            </a>
+            {project.github && (
+              <a href={project.github} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
+                GitHub ↗
+              </a>
+            )}
           </div>
         </article>
       ))}
@@ -374,9 +305,18 @@ const designProjects = [
     margin: 0;
   }
 
+  .showcase-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
   .project-showcase {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
+    border-color: color-mix(in srgb, var(--sc-accent) 32%, var(--border));
+    background:
+      radial-gradient(circle at 92% 14%, color-mix(in srgb, var(--sc-accent) 10%, transparent), transparent 42%),
+      var(--surface-1);
+    border-width: 1px;
+    border-style: solid;
     border-radius: var(--radius-lg);
     padding: 2rem;
     box-shadow: var(--shadow-1);
@@ -400,7 +340,6 @@ const designProjects = [
     align-items: center;
   }
   .status-pill,
-  .engine-pill,
   .path-pill {
     font-family: var(--font-mono);
     font-size: 0.74rem;
@@ -409,25 +348,20 @@ const designProjects = [
     border-radius: 999px;
     border: 1px solid var(--border-subtle);
   }
-  .status-pill.completed {
+  .status-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    color: var(--success);
-    background: color-mix(in srgb, var(--success) 12%, transparent);
-    border-color: color-mix(in srgb, var(--success) 35%, transparent);
+    color: var(--sc-accent);
+    background: color-mix(in srgb, var(--sc-accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--sc-accent) 35%, transparent);
   }
   .pulse-dot {
     width: 0.45rem;
     height: 0.45rem;
     border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 8px var(--success);
-  }
-  .engine-pill {
-    color: var(--accent);
-    background: var(--accent-muted);
-    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    background: var(--sc-accent);
+    box-shadow: 0 0 8px var(--sc-accent);
   }
   .path-pill {
     color: var(--text-2);
@@ -465,40 +399,6 @@ const designProjects = [
     color: var(--text-1);
   }
 
-  .metrics-strip {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin-bottom: 1.3rem;
-  }
-  .metric-item {
-    background: var(--surface-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 0.65rem 0.9rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-  .metric-label {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--text-3);
-    letter-spacing: 0.05em;
-  }
-  .metric-value {
-    font-family: var(--font-mono);
-    font-size: 0.86rem;
-    font-weight: 600;
-    color: var(--text-1);
-  }
-  .metric-desc {
-    font-size: 0.76rem;
-    color: var(--text-3);
-    line-height: 1.45;
-  }
-
   .stack-tags {
     display: flex;
     flex-wrap: wrap;
@@ -513,6 +413,10 @@ const designProjects = [
     border: 1px solid var(--border-subtle);
     color: var(--accent-2);
   }
+  .showcase-tag {
+    color: var(--sc-tag);
+    border-color: color-mix(in srgb, var(--sc-tag) 28%, var(--border-subtle));
+  }
 
   .showcase-preview {
     display: block;
@@ -526,8 +430,8 @@ const designProjects = [
   }
   .showcase-preview:hover {
     transform: translateY(-2px);
-    border-color: var(--accent);
-    box-shadow: var(--glow);
+    border-color: var(--sc-accent);
+    box-shadow: 0 10px 28px -10px color-mix(in srgb, var(--sc-accent) 45%, transparent);
   }
   .showcase-preview img {
     display: block;
@@ -543,56 +447,6 @@ const designProjects = [
     font-family: var(--font-mono);
     font-size: 0.74rem;
     color: var(--text-3);
-  }
-
-  .milestone-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1rem;
-  }
-  .milestone-card {
-    background: var(--surface-2);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius);
-    padding: 1.1rem 1.2rem;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-    transition: all var(--dur-fast);
-  }
-  .milestone-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
-  .m-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--accent);
-  }
-  .m-arrow {
-    color: var(--text-3);
-    transition: transform var(--dur-fast), color var(--dur-fast);
-  }
-  .milestone-card:hover .m-arrow {
-    color: var(--accent);
-    transform: translateX(3px);
-  }
-  .milestone-card h3 {
-    margin: 0;
-    font-size: 1rem;
-    color: var(--text-1);
-  }
-  .milestone-card p {
-    margin: 0;
-    font-size: 0.84rem;
-    color: var(--text-2);
-    line-height: 1.55;
   }
 
   .showcase-footer {
@@ -613,8 +467,8 @@ const designProjects = [
     align-items: center;
     padding: 0.7rem 1.35rem;
     border-radius: var(--radius-sm);
-    background: var(--accent);
-    color: var(--text-inverse);
+    background: var(--sc-cta);
+    color: var(--sc-cta-text);
     font-weight: 700;
     font-size: 0.92rem;
     text-decoration: none;
@@ -632,45 +486,18 @@ const designProjects = [
   }
   .cta-btn.secondary:hover {
     background: var(--surface-2);
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--sc-accent);
+    color: var(--sc-accent);
     box-shadow: none;
+    filter: none;
   }
   .cta-btn:hover {
-    background: var(--accent-strong);
-    color: var(--text-inverse);
+    background: var(--sc-cta);
+    color: var(--sc-cta-text);
+    filter: brightness(1.08);
     box-shadow: var(--glow);
   }
 
-  .planning-badge {
-    color: #ff5e9c !important;
-  }
-  .waxppu-showcase {
-    border-color: color-mix(in srgb, #ff5e9c 32%, var(--border));
-    background:
-      radial-gradient(circle at 92% 14%, rgba(255, 94, 156, 0.12), transparent 42%),
-      var(--surface-1);
-  }
-  .status-pill.planning {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    color: #ff5e9c;
-    background: rgba(255, 94, 156, 0.12);
-    border-color: rgba(255, 94, 156, 0.35);
-  }
-  .planning-dot {
-    background: #ff5e9c;
-    box-shadow: 0 0 8px #ff5e9c;
-  }
-  .wax-tag {
-    color: #ff9f43;
-    border-color: rgba(255, 159, 67, 0.28);
-  }
-  .waxppu-preview:hover {
-    border-color: #ff5e9c;
-    box-shadow: 0 0 0 1px rgba(255, 94, 156, 0.25), 0 10px 28px -10px rgba(255, 94, 156, 0.35);
-  }
   .waxppu-art {
     aspect-ratio: 16 / 10;
     display: flex;
@@ -700,28 +527,10 @@ const designProjects = [
     letter-spacing: 0.08em;
     color: #ff5e9c;
   }
-  .wax-cta {
-    background: linear-gradient(135deg, #ff5e9c, #ff8a3d);
-    color: #ffffff;
-  }
-  .wax-cta:hover {
-    background: linear-gradient(135deg, #ff478d, #ff7a24);
-    color: #ffffff;
-    box-shadow: 0 8px 24px -8px rgba(255, 94, 156, 0.5);
-  }
-
-  .design-badge {
-    color: #a78bfa !important;
-  }
   .compact-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.35rem;
-    margin-top: 1.5rem;
-  }
-  .compact-grid.three-col {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    margin-top: 0;
+    gap: 1.35rem;
   }
   .compact-card {
     background: var(--surface-1);
@@ -837,23 +646,19 @@ const designProjects = [
   }
 
   @media (max-width: 960px) {
-    .compact-grid.three-col {
+    .compact-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   @media (max-width: 900px) {
     .showcase-body,
-    .compact-grid,
-    .compact-grid.three-col {
+    .compact-grid {
       grid-template-columns: 1fr;
     }
   }
   @media (max-width: 560px) {
     .project-showcase {
       padding: 1.3rem;
-    }
-    .metrics-strip {
-      grid-template-columns: 1fr;
     }
   }
 </style>

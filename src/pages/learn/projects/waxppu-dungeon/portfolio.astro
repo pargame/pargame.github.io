@@ -75,7 +75,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
 <BaseLayout
   title="왁뿌던전 탈출 — 포트폴리오 / 기술 개발기"
-  description="UE 5.9 Preview 2 C++ 프로토타입 WaxPpuLab의 시스템 아키텍처, Chaos Destruction 고정 수명 파편, 물리 기반 하이브리드 ASMR 오디오, 전략 로코모션, Subsurface 셰이딩 및 한계·개선 과제 정리"
+  description="UE 5.9 Preview 2 C++ 프로토타입 WaxPpuLab의 시스템 아키텍처, 실제 PIE 캡쳐, Chaos Destruction 고정 수명 파편, 물리 기반 하이브리드 ASMR 오디오, 전략 로코모션, Subsurface 셰이딩 및 한계·개선 과제 정리"
 >
   <div class="wp-page">
     <nav class="wp-breadcrumb" aria-label="이동 경로">
@@ -88,35 +88,52 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
     <!-- HERO -->
     <header class="wp-hero">
-      <div class="wp-hero-copy">
-        <div class="wp-pills">
-          <span class="wp-pill status">
-            <span class="wp-dot"></span>
-            PROTOTYPING · UE 5.9
-          </span>
-          <span class="wp-pill theme-tag">DOC 02 · ENGINEERING PORTFOLIO</span>
-          <span class="wp-pill wave-tag">C++ · CHAOS · METASOUND</span>
+      <div class="wp-hero-top">
+        <div class="wp-hero-copy">
+          <div class="wp-pills">
+            <span class="wp-pill status">
+              <span class="wp-dot"></span>
+              PROTOTYPING · UE 5.9
+            </span>
+            <span class="wp-pill theme-tag">DOC 02 · ENGINEERING PORTFOLIO</span>
+            <span class="wp-pill wave-tag">C++ · CHAOS · METASOUND</span>
+          </div>
+
+          <h1>WaxPpuLab: UE 5.9 C++ 기술 개발기</h1>
+          <p class="wp-lead">
+            「왁뿌던전 탈출」의 UE 5.9 Preview 2 C++ 프로토타입(<code>WaxPpuLab</code>) 엔지니어링 기록입니다.
+            <strong>시스템 아키텍처 · 설계 Trade-off · 문제 해결(원인 → 해결 → 검증) · 코드의 한계와 개선 과제</strong>를 실제 PIE 캡쳐와 함께 정리했습니다.
+          </p>
+
+          <div class="wp-hero-actions">
+            <a
+              href="https://github.com/pargame/WaxPpuLab"
+              class="wp-btn primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub · WaxPpuLab ↗
+            </a>
+            <a href="#arch" class="wp-btn ghost">시스템 구조도 ↓</a>
+            <a href="/learn/projects/waxppu-dungeon/gdd" class="wp-btn ghost">DOC 01 · 기획서 →</a>
+            <a href="/learn/projects/waxppu-dungeon" class="wp-btn ghost">← 프로젝트 홈</a>
+          </div>
         </div>
 
-        <h1>WaxPpuLab: UE 5.9 C++ 기술 개발기</h1>
-        <p class="wp-lead">
-          「왁뿌던전 탈출」의 UE 5.9 Preview 2 C++ 프로토타입(<code>WaxPpuLab</code>) 엔지니어링 기록입니다.
-          단순 기능 나열이 아니라 <strong>시스템 아키텍처 · 설계 Trade-off · 문제 해결(원인 → 해결 → 검증) · 현재 코드의 한계와 개선 과제</strong> 중심으로 정리했습니다.
-        </p>
-
-        <div class="wp-hero-actions">
-          <a
-            href="https://github.com/pargame/WaxPpuLab"
-            class="wp-btn primary"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub · WaxPpuLab ↗
-          </a>
-          <a href="#arch" class="wp-btn ghost">시스템 구조도 ↓</a>
-          <a href="/learn/projects/waxppu-dungeon/gdd" class="wp-btn ghost">DOC 01 · 기획서 →</a>
-          <a href="/learn/projects/waxppu-dungeon" class="wp-btn ghost">← 프로젝트 홈</a>
-        </div>
+        <figure class="media-card hero-shot">
+          <img
+            src="/images/projects/waxppu-dungeon/01-monsters-lineup.png"
+            alt="UE 5.9 PIE에서 나란히 배치된 BP_WaxBall_Basic(구형)과 BP_WaxButter(직육면체) 몬스터 — 노란 Subsurface 밀랍 질감과 BodyPivot 고정 눈알"
+            width="1280"
+            height="528"
+            class="zoomable-img"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <figcaption>
+            <strong>PIE Capture · Flat 1-Level 몬스터 라인업</strong> — <code>BP_WaxBall_Basic</code>(구형)과 <code>BP_WaxButter</code>(직육면체)의 노란 Subsurface 밀랍 질감 및 <code>BodyPivot</code> 고정 눈알
+          </figcaption>
+        </figure>
       </div>
 
       <div class="wp-exec-grid" aria-label="핵심 엔지니어링 요약">
@@ -132,7 +149,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
         </div>
         <div class="exec-card mint">
           <span class="exec-k">DATA-DRIVEN OOP</span>
-          <strong class="exec-v">0 Hardcoded · BROKEN=0</strong>
+          <strong class="exec-v">0 Hardcoded · BROKEN_TOTAL=0</strong>
           <span class="exec-d">Flat 1-Level 상속 · 전략 로코모션 · 리다이렉터 무결성 0건</span>
         </div>
         <div class="exec-card coral">
@@ -264,17 +281,31 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
         <h2>국소 크레이터 파괴와 Dataflow RemoveOnBreak 고정 수명 전환</h2>
       </div>
 
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/waxppu-dungeon/03-waxball-shatter-core.png"
+          alt="UWaxDestructibleComponent 실시간 Chaos 파괴로 왁스 파편이 떨어지며 안쪽 러프 핑크 코어(M_JellyCore)가 노출되는 PIE 캡쳐"
+          width="1280"
+          height="528"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>PIE Capture · 국소 Chaos 파괴 및 코어 노출</strong> — 조준 반경 내부만 <code>Dynamic</code> 전환 후 <code>ExternalClusterStrain</code>을 인가해 왁스를 깎아내고, 안쪽 무광 핑크 코어(<code>M_JellyCore</code>)가 드러나는 장면
+        </figcaption>
+      </figure>
+
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">DESIGN INTENT &amp; TRADE-OFF</span>
           <h3>Kinematic 앵커링 + 국소 Dynamic 전환</h3>
           <p>
-            초기화 시 전체 껍질을 <code>Chaos_Object_Kinematic</code>으로 고정하되, 컴포넌트의 <code>ObjectType</code>은 <code>Dynamic</code>을 유지합니다.
-            타격 시 <code>URadialFalloff</code>와 <code>UCullingField</code>로 조준 구체 내부만 <code>Dynamic</code>으로 전환하고 <code>ExternalClusterStrain</code>을 인가해 원하는 부위만 깎아냅니다.
+            전체 껍질을 <code>Chaos_Object_Kinematic</code>으로 고정하되 컴포넌트 <code>ObjectType</code>은 <code>Dynamic</code>을 유지합니다.
+            타격 시 <code>URadialFalloff</code> + <code>UCullingField</code>로 조준 구체 내부만 <code>Dynamic</code> 전환 후 <code>ExternalClusterStrain</code>을 인가해 원하는 부위만 정밀하게 깎아냅니다.
           </p>
           <ul class="wp-bullet-list">
-            <li><strong>리프 파괴율 기반 붕괴</strong>: GeometryCollection 리프 노드 인덱스를 캐싱해 잔여율이 <code>CollapseRemainingRatio</code>(<code>0.30</code>) 이하가 되면 잔여 껍질을 일괄 붕괴시키고 <code>AWaxMonsterCore</code>를 탄성 물리(<code>PM_JellyBounce</code>)로 방출합니다.</li>
-            <li><strong>파편 발차기 (DebrisKick)</strong>: 수평 이동 속도가 <code>25 cm/s</code> 이상일 때 발밑 <code>ECC_PhysicsBody</code>를 감지해 <code>Chaos_LinearVelocity</code> 필드로 파편을 밀어냅니다.</li>
+            <li><strong>리프 파괴율 붕괴</strong>: 잔여 리프가 <code>0.30</code> 이하가 되면 잔여 껍질을 일괄 붕괴시키고 <code>AWaxMonsterCore</code>를 <code>PM_JellyBounce</code> 물리로 방출합니다.</li>
+            <li><strong>이동 중 파편 발차기</strong>: 수평 이동 속도 <code>≥ 25 cm/s</code>일 때 발밑 <code>ECC_PhysicsBody</code>에 <code>Chaos_LinearVelocity</code> 필드를 인가합니다.</li>
           </ul>
         </article>
 
@@ -283,29 +314,27 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
             <h3>RemoveOnMaxSleep 파편의 바닥 잔류 소음</h3>
             <p>
-              초기 <code>bAllowRemovalOnSleep = true</code> 방식에서는 떨어져 나온 왁스 파편이 바닥에서 미세하게 구르거나 캐릭터의 <code>DebrisKick</code>에 반복적으로 차여 Sleep 상태에 진입하지 못했습니다.
-              이로 인해 파편이 영구 잔류하며 불필요한 충돌음과 물리 연산을 계속 유발했습니다.
+              <code>bAllowRemovalOnSleep = true</code> 방식에서는 파편이 바닥에서 미세하게 구르거나 발차기에 반복 피격되어 Sleep에 진입하지 못했습니다. 그 결과 파편이 잔류하며 지속적인 충돌음과 물리 부하를 유발했습니다.
             </p>
           </div>
           <div class="ts-step solution">
             <span class="ts-tag">SOLUTION &amp; VERIFICATION</span>
-            <h3>Dataflow FRemoveOnBreakDataflowNode 고정 수명 전환</h3>
+            <h3>Dataflow RemoveOnBreak 고정 수명 축소 삭제</h3>
             <p>
-              <code>DF_WaxOrb</code>, <code>DF_WaxButter</code>, <code>DF_MonsterEye</code> Dataflow 그래프에 <code>FRemoveOnBreakDataflowNode</code>를 삽입하고,
-              C++에서는 <code>bAllowRemovalOnSleep = false</code>, <code>bAllowRemovalOnBreak = true</code>로 전환해 파편이 구르는 여부와 무관하게 일정 시간 뒤 축소 삭제되도록 고정했습니다.
+              <code>DF_WaxOrb</code> · <code>DF_WaxButter</code> · <code>DF_MonsterEye</code>에 <code>FRemoveOnBreakDataflowNode</code>를 삽입하고 C++에서 <code>bAllowRemovalOnSleep = false</code>, <code>bAllowRemovalOnBreak = true</code>로 전환해 구름 여부와 무관하게 일정 시간 뒤 축소 삭제되도록 고정했습니다.
             </p>
             <div class="wp-param-strip">
-              <span><code>PostBreakTimer</code> 1.5 ~ 2.0s</span>
-              <span><code>RemovalTimer</code> 0.35 ~ 0.45s</span>
+              <span><code>PostBreakTimer</code> 1.5~2.0s</span>
+              <span><code>RemovalTimer</code> 0.35~0.45s</span>
               <span><code>ScaleOnRemoval</code> True</span>
-              <span>검증: <code>bShowDebugCounters</code> HUD + PIE 육안 확인 (Insights 계측 예정)</span>
+              <span>검증: <code>bShowDebugCounters</code> + PIE 확인 (Insights 예정)</span>
             </div>
           </div>
         </article>
       </div>
 
       <details class="wp-code-details">
-        <summary>핵심 C++ 발췌 — <code>UWaxDestructibleComponent::ApplyWaxImpact</code> (국소 Dynamic + Strain 필드)</summary>
+        <summary>세부 구현 &amp; C++ 코드 보기 — <code>UWaxDestructibleComponent::ApplyWaxImpact</code></summary>
         <div class="code-wrap">
           <Code code={codeChaosImpact} lang="cpp" theme="github-dark" />
         </div>
@@ -316,40 +345,36 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     <section class="wp-section" id="case-02">
       <div class="wp-section-head">
         <span class="wp-eyebrow">CASE 02 // PHYSICS-BASED HYBRID ASMR AUDIO</span>
-        <h2>다중 그레인 클리핑 방지 · 물리 에너지 Fechner 로그 압축 · Poisson 쿨다운</h2>
+        <h2>다중 그레인 클리핑 방지 · Fechner식 로그 압축 · Poisson 쿨다운</h2>
       </div>
 
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">ARCHITECTURE &amp; SYNTHESIS</span>
-          <h3>MetaSound 프리셋 + 물리량 매핑 파이프라인</h3>
+          <h3>MetaSound 프리셋 + Chaos 물리량 매핑</h3>
           <p>
-            <code>MS_WaxCrackASMR</code> MetaSound 그래프와 <code>FWaxAudioProfile</code> / <code>FWaxCollisionVariant</code> 구조체로
-            파괴음과 낙하 파편 충돌음을 Chaos 물리 이벤트의 질량·속도·충격량에 실시간 매핑했습니다.
+            <code>MS_WaxCrackASMR</code>와 <code>FWaxAudioProfile</code> / <code>FWaxCollisionVariant</code>로 파괴음과 파편 충돌음을 질량·속도·충격량에 실시간 매핑했습니다.
           </p>
           <ul class="wp-bullet-list">
-            <li><strong>파괴음 클리핑 방지</strong>: 대기열 크기 <code>N</code>에 따라 <code>QueueDensityScale = 1 / Pow(N, 0.22)</code>로 감쇠하고, 붕괴 시에는 <code>CollapseGrainSpreadMaxSec · U²</code>로 그레인을 시간 분산 재생합니다.</li>
-            <li><strong>방어적 에너지 계산 폴백</strong>: <code>AccumulatedImpulse</code>가 유효하면 <code>½ · |Impulse| · NormalSpeed</code>를 쓰고, 엔진 이벤트 임펄스가 0에 가까우면 <code>½ · Mass · NormalSpeed²</code>로 폴백합니다.</li>
-            <li><strong>Poisson식 지수분포 쿨다운</strong>: 다음 충돌음 간격을 <code>-ln(U) · MinInterval</code>(<code>0.5x~3.0x</code> 클램프)로 샘플링해 기계적인 등간격 반복음을 방지했습니다.</li>
-            <li><strong>조건부 Tick</strong>: <code>RefreshTickEnabled()</code>로 대기 그레인이 없고 디버그 카운터가 불필요할 때 컴포넌트 Tick을 자동 비활성화합니다.</li>
+            <li><strong>클리핑 방지</strong>: 대기열 크기 <code>N</code>에 따라 <code>QueueDensityScale = 1 / Pow(N, 0.22)</code> 적용, 붕괴 시 <code>CollapseGrainSpreadMaxSec · U²</code> 시간 분산.</li>
+            <li><strong>에너지 폴백</strong>: <code>AccumulatedImpulse</code> 유효 시 <code>½|J|v</code>, 누락 시 <code>½mv²</code>로 방어 계산.</li>
+            <li><strong>Poisson 지수 쿨다운</strong>: <code>-ln(U)·MinInterval</code>(<code>0.5x~3.0x</code>) 샘플링으로 기계적 반복음 제거 + <code>RefreshTickEnabled()</code> 조건부 Tick.</li>
           </ul>
         </article>
 
         <article class="case-card troubleshoot">
           <div class="ts-step problem">
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>충돌음의 비선형 라우드니스 왜곡 및 이중 감쇠</h3>
+            <h3>선형 속도 매핑의 질량 무시 및 이중 감쇠</h3>
             <p>
-              단순 속도 선형 매핑(<code>NormalSpeed / 320</code>)은 작은 파편과 큰 파편의 질량 차이를 반영하지 못했고,
-              여기에 <code>DensityGain</code>(<code>1/√N</code>), <code>Collision*Scale</code>, <code>PlayOneShotCrack</code>의 하한 클램프(<code>0.08</code>)가 겹치며 작은 낙하음이 뭉개지거나 이중 감쇠되는 현상이 발생했습니다.
+              기존 <code>NormalSpeed / 320</code> 선형 매핑은 파편 질량 차이를 무시했고, <code>DensityGain</code>(<code>1/√N</code>)과 <code>PlayOneShotCrack</code> 하한(<code>0.08</code>)이 겹치며 미세 낙하음이 뭉개지거나 이중 감쇠되었습니다.
             </p>
           </div>
           <div class="ts-step solution">
             <span class="ts-tag">SOLUTION &amp; HYBRID PRESETS</span>
             <h3>√E 기반 Fechner식 로그 압축 &amp; 감쇠 계수 정규화</h3>
             <p>
-              충격 에너지의 제곱근(음향 압력 <code>P = √E</code>)을 정규화한 뒤 <code>ln(1 + 5·P<sub>norm</sub>) / ln(6)</code> 로그 압축을 적용했습니다.
-              동시에 <code>DensityGain</code>을 <code>Max(0.65, N<sup>-0.35</sup>)</code>로 완화하고 <code>Collision*Scale = 1.0</code>, 최소 <code>FinalIntensity</code> 하한을 <code>0.08 → 0.02</code>로 낮춰 약한 낙하음의 미세 디테일을 복원했습니다.
+              음향 압력 <code>P = √E</code>에 <code>ln(1 + 5·P<sub>norm</sub>) / ln(6)</code> 로그 압축을 적용하고, <code>DensityGain ≥ 0.65</code>, <code>Collision*Scale = 1.0</code>, <code>FinalIntensity</code> 하한을 <code>0.08 → 0.02</code>로 완화해 다이내믹 레인지를 복원했습니다.
             </p>
             <div class="wp-preset-mini">
               <div><strong>KEY 1 (기본)</strong>: <code>WoodPlank</code> + <code>Heavy</code> / <code>BambooClick</code> 랜덤</div>
@@ -360,7 +385,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
       </div>
 
       <details class="wp-code-details">
-        <summary>핵심 C++ 발췌 — <code>UWaxDestructibleComponent::HandleChaosCollisionEvent</code> (에너지 폴백 · 로그 압축 · 지수 쿨다운)</summary>
+        <summary>세부 구현 &amp; C++ 코드 보기 — <code>UWaxDestructibleComponent::HandleChaosCollisionEvent</code></summary>
         <div class="code-wrap">
           <Code code={codeHybridAudio} lang="cpp" theme="github-dark" />
         </div>
@@ -379,8 +404,8 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           <span class="case-badge">STRATEGY PATTERN</span>
           <h3>UWaxLocomotionComponent 교체 구조</h3>
           <p>
-            몬스터 이동 로직을 <code>AWaxMonsterBase</code>에서 분리해 DataAsset의 <code>LocomotionClass</code> 지정만으로 이동 방식을 교체합니다.
-            <code>BP_WaxBall_Basic</code>의 <code>UWaxRollingLocomotionComponent</code>는 매 프레임 실제 월드 변위(<code>Δp</code>)와 바닥 법선을 외적해 <code>RollRadius</code>에 정확히 연동되는 구름 회전을 생성합니다.
+            DataAsset의 <code>LocomotionClass</code> 지정만으로 이동 전략을 교체합니다.
+            <code>BP_WaxBall_Basic</code>은 실제 변위(<code>Δp</code>)와 바닥 법선의 외적으로 <code>RollRadius</code>에 연동되는 구름 회전을 생성하고, <code>BP_WaxButter</code>는 자체 4단계 텀블링 FSM을 구동합니다.
           </p>
           <div class="wp-fsm-bar">
             <span>HopAlign</span>
@@ -391,34 +416,35 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <i>→</i>
             <span>StandUp</span>
           </div>
-          <p class="sub-note">
-            <code>UWaxButterLocomotionComponent</code>는 <code>ShouldApplyDefaultMovement() = false</code>로 기본 <code>CharacterMovement</code> 이동을 끄고,
-            직육면체 치수(<code>HalfX/Y/Z</code>)와 각가속도(<code>DriveAngularAccel</code>)·스텝 바운스 보존율(<code>StepBounceRetention</code>)로 자체 텀블링 물리를 구동합니다.
-          </p>
+          <div class="wp-param-strip">
+            <span><code>DriveAngularAccel</code></span>
+            <span><code>InitialStepOmega</code></span>
+            <span><code>StepBounceRetention</code></span>
+            <span><code>EffectiveGravity</code></span>
+          </div>
         </article>
 
         <article class="case-card troubleshoot">
           <div class="ts-step problem">
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>직육면체 회전 시 비효율적 선회와 공중 뜸/바닥 파고듦</h3>
+            <h3>비효율적 180° 선회 및 캡슐 높이 변경 시 공중 뜸/관통</h3>
             <p>
-              직육면체 버터 기둥이 플레이어가 등 뒤에 있을 때 항상 앞면 기준으로 180° 회전하려 하면 호핑 정렬 시간이 과도하게 길어졌습니다.
-              또한 기둥이 눕고 일어설 때 캡슐 반높이(<code>HalfZ ↔ HalfY</code>)를 단순 변경하면 중심 기준 축소·확장으로 바닥에서 뜨거나 파고드는 문제가 발생했습니다.
+              직육면체 버터가 등 뒤의 플레이어를 향해 항상 앞면 기준으로 180° 회전하면 정렬 시간이 과도해졌고, 눕기/일어서기 시 캡슐 반높이(<code>HalfZ ↔ HalfY</code>)를 단순 변경하면 중심 기준 축소로 바닥에서 뜨거나 파고들었습니다.
             </p>
           </div>
           <div class="ts-step solution">
-            <span class="ts-tag">SOLUTION &amp; TUNING</span>
+            <span class="ts-tag">SOLUTION</span>
             <h3>양방향 최단각 텀블링 + 바닥 고정 캡슐 보정</h3>
             <p>
-              <code>TickHopAlign</code>에서 앞면(<code>DeltaFwd</code>)과 뒷면(<code>DeltaBack</code>) 각도 차를 비교해 더 가까운 면으로 정렬한 뒤 <code>TumbleDirectionSign</code>으로 양방향 돌진을 수행합니다.
-              상태 전환 시에는 <code>SetCapsuleHalfHeightKeepFloor</code>로 캡슐 반높이 변화량(<code>DeltaZ</code>)만큼 액터를 올리고 <code>BodyPivot</code>을 반대 방향으로 보정해 바닥 접지를 유지했습니다.
+              <code>TickHopAlign</code>에서 앞/뒷면 각도 차(<code>DeltaFwd</code> vs <code>DeltaBack</code>)를 비교해 가까운 면으로 정렬 후 <code>TumbleDirectionSign</code>으로 양방향 돌진합니다.
+              전환 시 <code>SetCapsuleHalfHeightKeepFloor</code>로 변화량(<code>DeltaZ</code>)만큼 액터와 <code>BodyPivot</code>을 상쇄 보정해 바닥 접지를 유지했습니다.
             </p>
           </div>
         </article>
       </div>
 
       <details class="wp-code-details">
-        <summary>핵심 C++ 발췌 — <code>UWaxButterLocomotionComponent</code> (양방향 최단각 선택 &amp; KeepFloor 보정)</summary>
+        <summary>세부 구현 &amp; C++ 코드 보기 — <code>UWaxButterLocomotionComponent</code> (양방향 선택 &amp; KeepFloor)</summary>
         <div class="code-wrap">
           <Code code={codeButterLoco} lang="cpp" theme="github-dark" />
         </div>
@@ -432,22 +458,36 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
         <h2>Flat 1-Level 몬스터 계층 · 하드코딩 0건 · 에셋 리다이렉터 무결성</h2>
       </div>
 
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/waxppu-dungeon/04-butter-tumble-shatter.png"
+          alt="BP_WaxButter의 왁스 껍질(ShellCollection)과 BodyPivot 고정 눈알(EyeLeftGC, EyeRightGC)이 각각 독립적으로 Chaos 파괴되는 PIE 캡쳐"
+          width="1280"
+          height="528"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>PIE Capture · 버터 껍질 &amp; 눈알(<code>EyeLeftGC / EyeRightGC</code>) 독립 파괴</strong> — <code>BodyPivot</code>에 고정된 <code>ShellCollection</code>과 <code>GC_MonsterEye</code>가 개별 강도·내구도로 각각 조각나는 구조
+        </figcaption>
+      </figure>
+
       <div class="wp-grid-3">
         <article class="wp-card">
           <span class="wp-card-tag">FLAT 1-LEVEL HIERARCHY</span>
           <h3>상속 깊이 1단계 제한</h3>
           <p>
             <code>AWaxMonsterBase</code>(<code>ACharacter</code>) 아래 직계 블루프린트 자식(<code>BP_WaxBall_Basic</code>, <code>BP_WaxButter</code>)만 허용합니다.
-            눈알(<code>EyeLeftGC</code>, <code>EyeRightGC</code>)은 <code>BodyPivot</code>에 고정되어 바디와 일체로 회전·이동하면서도 독립 강도·내구도로 개별 파괴가 가능합니다.
+            눈알(<code>EyeLeftGC</code>, <code>EyeRightGC</code>)은 <code>BodyPivot</code>에 고정되어 바디와 함께 움직이면서도 개별 파괴됩니다.
           </p>
         </article>
 
         <article class="wp-card">
           <span class="wp-card-tag">ZERO HARDCODED PATHS</span>
-          <h3>DataAsset &amp; Property Matrix 튜닝</h3>
+          <h3>DataAsset &amp; Property Matrix</h3>
           <p>
-            <code>Source/WaxPpuLab/</code> 내 하드코딩된 <code>/Game/</code> 경로는 <strong>0건</strong>입니다.
-            모든 스펙을 <code>UWaxMonsterDataAsset</code>과 <code>UPROPERTY(EditAnywhere)</code>로 노출해 재컴파일 없이 Property Matrix에서 몬스터 간 스펙을 일괄 비교·조정합니다.
+            <code>Source/WaxPpuLab/</code> 내 하드코딩 <code>/Game/</code> 경로는 <strong>0건</strong>입니다.
+            모든 스펙을 <code>UWaxMonsterDataAsset</code>과 <code>UPROPERTY(EditAnywhere)</code>로 노출해 Property Matrix에서 일괄 비교·튜닝합니다.
           </p>
         </article>
 
@@ -455,7 +495,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           <span class="wp-card-tag">UE 5.9 ASSET INTEGRITY</span>
           <h3>에셋 재정리 &amp; BROKEN_TOTAL=0</h3>
           <p>
-            프로토타입 초기 <code>/Game/Demo/</code>에 흩어져 있던 에셋을 <code>{'/Game/WaxPpu/{Audio,Blueprints,Data,Destruction,Materials,Physics}'}</code>로 재구성하고,
+            <code>/Game/Demo/</code> 에셋을 <code>{'/Game/WaxPpu/{Audio,Blueprints,Data,Destruction,Materials,Physics}'}</code>로 재구성하고,
             리다이렉터 정리 후 참조 무결성 검증에서 <strong><code>BROKEN_TOTAL=0</code></strong>을 확보했습니다.
           </p>
         </article>
@@ -469,37 +509,51 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
         <h2>Subsurface 왁스 셰이딩과 순수 발광 타겟 하이라이트 (MPC_WaxTargeting)</h2>
       </div>
 
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/waxppu-dungeon/02-targeting-highlight.png"
+          alt="MPC_WaxTargeting 기반 부유 타겟 구체 하이라이트 — 왁스 껍질(M_WaxButter)의 타겟 영역 내부 BaseColor와 SubsurfaceColor를 0으로 차단하고 순수 EmissiveColor를 출력하는 PIE 캡쳐"
+          width="1280"
+          height="528"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>PIE Capture · 순수 발광 타겟 하이라이트</strong> — <code>MPC_WaxTargeting</code> 구체 영역 내부의 <code>BaseColor</code>/<code>SubsurfaceColor</code>를 0으로 차단하고 <code>TargetDecalColor(1.0, 0.01, 0.01) × EmissiveBoost(8.0)</code>를 다이렉트 출력한 장면
+        </figcaption>
+      </figure>
+
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">MATERIAL CONTRAST</span>
           <h3>광택 Subsurface 껍질 vs 무광 핑크 코어</h3>
           <ul class="wp-bullet-list">
-            <li><strong>겉 왁스 (<code>M_WaxButter</code>)</strong>: <code>Default Lit</code> → <code>Subsurface</code> 셰이딩 모델로 전환. 따뜻한 노란 밀랍 베이스에 <code>Roughness 0.18</code>, <code>Specular 0.60</code>의 반짝이는 광택과 호박빛 내부 산란을 적용했습니다.</li>
-            <li><strong>내부 코어 (<code>M_ButterCore</code>, <code>M_JellyCore</code>)</strong>: 노란 겉 왁스가 깨졌을 때 코어 노출을 즉각 인지할 수 있도록 핑크/로즈 색상에 <code>Roughness 0.84</code>, <code>Specular 0.12</code>의 러프·무반사 질감으로 대비를 통일했습니다.</li>
+            <li><strong>겉 왁스 (<code>M_WaxButter</code>, 왁스 껍질 공용)</strong>: <code>Default Lit</code> → <code>Subsurface</code> 전환. 노란 밀랍 베이스 + 광택(<code>Roughness 0.18</code>, <code>Specular 0.60</code>) + 호박빛 내부 산란.</li>
+            <li><strong>내부 코어 (<code>M_ButterCore</code>, <code>M_JellyCore</code>)</strong>: 껍질 파괴 시 코어 노출을 즉각 인지하도록 핑크/로즈 색상 + 무반사 질감(<code>Roughness 0.84</code>, <code>Specular 0.12</code>)으로 통일.</li>
           </ul>
         </article>
 
         <article class="case-card troubleshoot">
           <div class="ts-step problem">
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>Subsurface 산란과 타겟 마커 색상의 탁한 혼합</h3>
+            <h3>Subsurface 산란과 타겟 마커의 경계 흐림·혼색</h3>
             <p>
-              카메라 전방 부유 타겟 구체 영역을 왁스 표면에 표시할 때, 단순 발광 가산만 적용하면 노란 <code>BaseColor</code>와 호박빛 <code>SubsurfaceColor</code>가 겹쳐 타겟 마커가 탁한 주황색으로 변색되었습니다.
+              부유 타겟 구체 영역에 단순 발광 가산만 적용하면 노란 <code>BaseColor</code>와 호박빛 <code>SubsurfaceColor</code>가 뒤섞여 조준 영역의 대비와 발색이 탁하게 흐려졌습니다.
             </p>
           </div>
           <div class="ts-step solution">
             <span class="ts-tag">SOLUTION</span>
-            <h3>타겟 구체 내부 Base/SSS 0 마스킹 + 순수 발광 출력</h3>
+            <h3>구체 내부 Base/SSS 0 마스킹 + 순수 Emissive 출력</h3>
             <p>
-              <code>MPC_WaxTargeting</code>의 <code>TargetSphereCenter</code>·<code>TargetSphereRadius</code>로 계산한 구체 마스크 내부에서
-              <code>BaseColor</code>와 <code>SubsurfaceColor</code>를 <strong>0으로 차단</strong>하고 <code>MarkerColor × EmissiveBoost</code>만 다이렉트 출력해 어떤 왁스 색 위에서도 균일하고 선명한 조준 표시를 확보했습니다.
+              <code>MPC_WaxTargeting</code> 구체 마스크 내부에서 <code>BaseColor</code>와 <code>SubsurfaceColor</code>를 <strong>0으로 차단</strong>하고
+              <code>MarkerColor × EmissiveBoost</code>만 다이렉트 출력해 바탕 왁스 색과 무관하게 일관된 발광 조준 표시를 확보했습니다.
             </p>
           </div>
         </article>
       </div>
 
       <details class="wp-code-details">
-        <summary>핵심 C++ 발췌 — <code>AWaxPpuLabCharacter::Tick</code> (MPC_WaxTargeting 파라미터 푸시)</summary>
+        <summary>세부 구현 &amp; C++ 코드 보기 — <code>AWaxPpuLabCharacter::Tick</code> (MPC 파라미터 푸시)</summary>
         <div class="code-wrap">
           <Code code={codeTargetingMPC} lang="cpp" theme="github-dark" />
         </div>
@@ -554,7 +608,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
       </div>
 
       <p class="wp-section-lead">
-        프로토타입 검증 속도를 우선하며 의도적으로 단순화한 지점들과, 본편(20웨이브 다수 몬스터 동시 파괴) 단계에서 반드시 해소해야 할 병목·안정성 과제를 코드 기준으로 식별해 두었습니다.
+        프로토타입 검증 속도를 우선하며 단순화한 지점들과, 본편(20웨이브 다수 몬스터 동시 파괴) 단계에서 해소할 병목·안정성 과제를 코드 기준으로 식별해 두었습니다.
       </p>
 
       <div class="limit-grid">
@@ -565,10 +619,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
           <h3>그레인 재생마다 <code>NewObject&lt;UAudioComponent&gt;</code> 할당</h3>
           <p>
-            현재 <code>PlayOneShotCrack</code>은 매 파괴·충돌 그레인마다 <code>NewObject</code> + <code>RegisterComponent</code>를 호출합니다. 다수 몬스터 동시 붕괴 시 UObject 할당과 GC 스파이크 위험이 있습니다.
+            다수 몬스터 동시 붕괴 시 매 그레인마다 <code>NewObject</code> + <code>RegisterComponent</code> 호출로 UObject 할당과 GC 스파이크 위험이 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 고정 크기 <code>UAudioComponent</code> 링 풀링 또는 <code>SoundConcurrency</code> 에셋 + <code>SpawnSoundAtLocation</code>(파라미터 팩) 전환 비교 후 적용.
+            <strong>개선안</strong>: 고정 크기 <code>UAudioComponent</code> 링 풀링 또는 <code>SoundConcurrency</code> + <code>SpawnSoundAtLocation</code> 비교 후 전환.
           </div>
         </article>
 
@@ -579,10 +633,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
           <h3><code>MPC_WaxTargeting</code> 6개 파라미터 매 Tick 푸시</h3>
           <p>
-            매 프레임 실제로 변하는 값은 <code>TargetSphereCenter</code> 하나뿐이지만, 반경·색상·발광 배율 등 정적 파라미터 5개도 매 <code>Tick</code>마다 중복 푸시하고 있습니다.
+            매 프레임 변하는 값은 <code>TargetSphereCenter</code> 하나뿐이지만 정적 파라미터 5개도 매 <code>Tick</code>마다 중복 푸시하고 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 정적 5개 파라미터는 <code>BeginPlay</code> 및 <code>PostEditChangeProperty</code>/런타임 세터 호출 시점에만 푸시하도록 분리.
+            <strong>개선안</strong>: 정적 5개는 <code>BeginPlay</code> 및 값 변경 시점에만 푸시하도록 분리.
           </div>
         </article>
 
@@ -593,10 +647,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
           <h3>공간 셀 쿨다운 맵 128 초과 시 전체 <code>Reset()</code></h3>
           <p>
-            <code>CollisionCellNextTime</code>이 128개 셀을 넘기면 맵을 통째로 비우기 때문에, 직전 프레임에 등록된 활성 셀의 쿨다운까지 초기화되어 순간 연타음이 발생할 수 있습니다.
+            128개 셀 초과 시 맵 전체를 비우면 직전 등록된 활성 셀의 쿨다운까지 초기화되어 순간 연타음이 발생할 수 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 만료된 엔트리(<code>Now &gt;= NextTime</code>)만 조건부 제거하거나 고정 크기 링 버퍼로 교체.
+            <strong>개선안</strong>: 만료 엔트리(<code>Now &gt;= NextTime</code>)만 조건부 제거하거나 고정 크기 링 버퍼로 교체.
           </div>
         </article>
 
@@ -607,10 +661,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
           <h3>캡슐 높이 보정 시 <code>bSweep = false</code> 오프셋</h3>
           <p>
-            <code>SetCapsuleHalfHeightKeepFloor</code>가 <code>AddActorWorldOffset(..., false)</code>를 사용해, 천장이 낮은 지형에서 버터가 일어설 때 상단 지오메트리를 관통할 가능성이 있습니다.
+            <code>AddActorWorldOffset(..., false)</code>를 사용해 천장이 낮은 지형에서 버터가 일어설 때 상단 지오메트리를 관통할 가능성이 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: <code>StandUp</code> 진입 전 상단 천장 Sweep 체크를 추가하고, 공간 부족 시 텀블 유지 또는 안전 위치로 슬라이드 보정.
+            <strong>개선안</strong>: <code>StandUp</code> 진입 전 상단 Sweep 체크 추가, 공간 부족 시 텀블 유지 또는 슬라이드 보정.
           </div>
         </article>
 
@@ -621,10 +675,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
           <h3><code>ECC_Visibility</code> 오버랩 &amp; <code>FindComponentByClass</code></h3>
           <p>
-            공격 판정이 범용 <code>ECC_Visibility</code> 채널을 조회하고 적중 액터마다 <code>FindComponentByClass</code>를 호출합니다. 웨이브 오브젝트가 늘어나면 불필요한 후보 순회가 증가합니다.
+            범용 <code>ECC_Visibility</code> 채널 조회와 액터별 <code>FindComponentByClass</code> 호출은 오브젝트 증가 시 불필요한 후보 순회를 유발합니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 전용 <code>WaxDamageable</code> Object/Trace Channel을 정의하고 <code>IWaxDamageableInterface</code>로 직접 디스패치.
+            <strong>개선안</strong>: 전용 <code>WaxDamageable</code> Trace Channel + <code>IWaxDamageableInterface</code> 직접 디스패치.
           </div>
         </article>
 
@@ -635,10 +689,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
           <h3>정량적 프레임·메모리 프로파일링 미계측</h3>
           <p>
-            현재 검증은 <code>bShowDebugCounters</code> HUD, <code>DrawDebugSphere</code>, PIE 수동 플레이 및 에셋 무결성(<code>BROKEN_TOTAL=0</code>) 확인 수준에 머물러 있습니다.
+            현재 검증은 <code>bShowDebugCounters</code> HUD, <code>DrawDebugSphere</code>, PIE 수동 플레이 및 <code>BROKEN_TOTAL=0</code> 확인 수준입니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: <code>TRACE_CPUPROFILER_EVENT_SCOPE</code> 계측 삽입 후 20웨이브 스트레스 씬에서 Unreal Insights · <code>stat unit</code> 실측치 확보.
+            <strong>개선안</strong>: <code>TRACE_CPUPROFILER_EVENT_SCOPE</code> 삽입 후 20웨이브 스트레스 씬에서 Unreal Insights · <code>stat unit</code> 실측.
           </div>
         </article>
       </div>
@@ -695,6 +749,59 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
       </footer>
     </section>
   </div>
+
+  <!-- Lightbox Modal for PIE Captures -->
+  <div class="wp-lightbox" id="wp-lightbox" aria-hidden="true" role="dialog" aria-label="이미지 확대 보기">
+    <button type="button" class="wp-lightbox-close" id="wp-lightbox-close" aria-label="닫기">×</button>
+    <img id="wp-lightbox-img" src="" alt="" />
+    <p id="wp-lightbox-cap"></p>
+  </div>
+
+  <script>
+    const lightbox = document.getElementById('wp-lightbox');
+    const lbImg = document.getElementById('wp-lightbox-img') as HTMLImageElement | null;
+    const lbCap = document.getElementById('wp-lightbox-cap');
+    const lbClose = document.getElementById('wp-lightbox-close') as HTMLButtonElement | null;
+    let lastFocused: HTMLElement | null = null;
+
+    document.querySelectorAll<HTMLImageElement>('.zoomable-img').forEach((img) => {
+      img.tabIndex = 0;
+      const openImage = () => {
+        if (!lightbox || !lbImg) return;
+        lastFocused = document.activeElement as HTMLElement | null;
+        lbImg.src = img.src;
+        lbImg.alt = img.alt;
+        if (lbCap) {
+          lbCap.textContent = img.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ?? img.alt;
+        }
+        lightbox.classList.add('open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        lbClose?.focus();
+      };
+      img.addEventListener('click', openImage);
+      img.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openImage();
+        }
+      });
+    });
+
+    const closeLightbox = () => {
+      if (!lightbox?.classList.contains('open')) return;
+      lightbox.classList.remove('open');
+      lightbox.setAttribute('aria-hidden', 'true');
+      lastFocused?.focus();
+    };
+
+    lbClose?.addEventListener('click', closeLightbox);
+    lightbox?.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
 </BaseLayout>
 
 <style>
@@ -742,11 +849,12 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     font-weight: 600;
   }
 
+  /* HERO */
   .wp-hero {
     display: flex;
     flex-direction: column;
-    gap: 1.8rem;
-    padding: 2.3rem;
+    gap: 1.7rem;
+    padding: 2.2rem;
     border-radius: 24px;
     border: 1px solid var(--wp-border);
     background:
@@ -755,12 +863,18 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
       var(--wp-surface);
     box-shadow: var(--wp-glow);
   }
+  .wp-hero-top {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1.8rem;
+    align-items: center;
+  }
 
   .wp-pills {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.95rem;
   }
   .wp-pill {
     font-family: var(--font-mono);
@@ -799,7 +913,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
   .wp-hero h1 {
     margin: 0 0 0.85rem;
-    font-size: clamp(1.9rem, 1.45rem + 1.8vw, 2.75rem);
+    font-size: clamp(1.85rem, 1.4rem + 1.6vw, 2.55rem);
     line-height: 1.18;
     background: linear-gradient(125deg, var(--wp-coral), var(--wp-peach) 62%, var(--wp-mint));
     -webkit-background-clip: text;
@@ -809,10 +923,9 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
   .wp-lead {
     color: var(--text-2);
-    font-size: 1rem;
-    line-height: 1.75;
-    margin: 0 0 1.3rem;
-    max-width: 74ch;
+    font-size: 0.98rem;
+    line-height: 1.72;
+    margin: 0 0 1.25rem;
   }
   .wp-lead strong {
     color: var(--text-1);
@@ -821,15 +934,15 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   .wp-hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
+    gap: 0.55rem;
   }
   .wp-btn {
     display: inline-flex;
     align-items: center;
-    padding: 0.56rem 1.02rem;
+    padding: 0.54rem 0.98rem;
     border-radius: var(--radius-sm);
     font-family: var(--font-mono);
-    font-size: 0.81rem;
+    font-size: 0.8rem;
     font-weight: 700;
     text-decoration: none;
     transition: all var(--dur-fast);
@@ -853,6 +966,43 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     color: var(--wp-coral);
   }
 
+  /* MEDIA CARD (PIE CAPTURES) */
+  .media-card {
+    margin: 0;
+    min-width: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-1);
+  }
+  .media-card.case-shot {
+    margin-bottom: 1.2rem;
+  }
+  .media-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: zoom-in;
+    transition: transform var(--dur);
+  }
+  .media-card img:hover {
+    transform: scale(1.015);
+  }
+  .media-card figcaption {
+    padding: 0.72rem 0.95rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+  .media-card figcaption strong {
+    color: var(--text-1);
+  }
+
   .wp-exec-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -862,30 +1012,30 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--surface-1);
     border: 1px solid var(--border-subtle);
     border-radius: 14px;
-    padding: 1rem;
+    padding: 0.95rem;
     display: flex;
     flex-direction: column;
-    gap: 0.28rem;
+    gap: 0.25rem;
   }
   .exec-card.coral { border-top: 3px solid var(--wp-coral); }
   .exec-card.peach { border-top: 3px solid var(--wp-peach); }
   .exec-card.mint { border-top: 3px solid var(--wp-mint); }
   .exec-k {
     font-family: var(--font-mono);
-    font-size: 0.67rem;
+    font-size: 0.66rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--text-3);
   }
   .exec-v {
     font-family: var(--font-mono);
-    font-size: 0.96rem;
+    font-size: 0.94rem;
     color: var(--text-1);
   }
   .exec-d {
-    font-size: 0.79rem;
+    font-size: 0.78rem;
     color: var(--text-2);
-    line-height: 1.48;
+    line-height: 1.46;
   }
 
   .wp-section-head {
@@ -905,10 +1055,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     font-size: clamp(1.32rem, 1.12rem + 0.75vw, 1.8rem);
   }
   .wp-section-lead {
-    margin: 0 0 1.3rem;
+    margin: 0 0 1.25rem;
     color: var(--text-2);
     line-height: 1.72;
-    font-size: 0.95rem;
+    font-size: 0.94rem;
     max-width: 78ch;
   }
 
@@ -917,7 +1067,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     margin: 0 0 1.3rem;
   }
   .arch-diagram {
-    padding: 1.5rem;
+    padding: 1.45rem;
     border-radius: 20px;
     background: var(--surface-1);
     border: 1px solid var(--wp-border);
@@ -933,8 +1083,8 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     color: var(--wp-coral);
   }
   .arch-row-label.sub {
-    margin-top: 0.5rem;
-    padding-top: 1rem;
+    margin-top: 0.45rem;
+    padding-top: 0.95rem;
     border-top: 1px dashed var(--border);
     color: var(--wp-peach);
   }
@@ -948,41 +1098,41 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 0.95rem 0.95rem;
+    padding: 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.32rem;
   }
   .arch-node.accent-coral { border-top: 3px solid var(--wp-coral); }
   .arch-node.accent-peach { border-top: 3px solid var(--wp-peach); }
   .arch-node.accent-mint { border-top: 3px solid var(--wp-mint); }
   .node-tag {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     color: var(--text-3);
   }
   .node-title {
     font-family: var(--font-mono);
-    font-size: 0.88rem;
+    font-size: 0.87rem;
     font-weight: 700;
     color: var(--text-1);
     word-break: break-word;
   }
   .node-list {
-    margin: 0.2rem 0 0;
+    margin: 0.18rem 0 0;
     padding-left: 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.78rem;
+    gap: 0.24rem;
+    font-size: 0.77rem;
     color: var(--text-2);
     line-height: 1.45;
   }
   .node-desc {
-    margin: 0.15rem 0 0;
-    font-size: 0.8rem;
+    margin: 0.12rem 0 0;
+    font-size: 0.79rem;
     color: var(--text-2);
     line-height: 1.5;
   }
@@ -997,7 +1147,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   }
   .conn-fn {
     font-family: var(--font-mono);
-    font-size: 0.64rem;
+    font-size: 0.63rem;
     color: var(--wp-mint);
     white-space: nowrap;
   }
@@ -1056,17 +1206,17 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   .case-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.2rem;
+    gap: 1.15rem;
     margin-bottom: 1rem;
   }
   .case-card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 18px;
-    padding: 1.45rem;
+    padding: 1.4rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.7rem;
   }
   .case-card.intent {
     border-top: 3px solid var(--wp-peach);
@@ -1080,16 +1230,13 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   }
   .case-card h3 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.08rem;
   }
   .case-card p {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.89rem;
     color: var(--text-2);
-    line-height: 1.68;
-  }
-  .sub-note {
-    font-size: 0.86rem !important;
+    line-height: 1.66;
   }
   .case-card.troubleshoot {
     padding: 0;
@@ -1101,10 +1248,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 1.3rem;
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.42rem;
     flex: 1;
   }
   .ts-step.problem { border-left: 3px solid var(--wp-coral); }
@@ -1119,13 +1266,13 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   .ts-step.solution .ts-tag { color: var(--wp-mint); }
   .ts-step h3 {
     margin: 0;
-    font-size: 1.04rem;
+    font-size: 1.02rem;
   }
   .ts-step p {
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.87rem;
     color: var(--text-2);
-    line-height: 1.65;
+    line-height: 1.64;
   }
 
   .wp-bullet-list {
@@ -1133,10 +1280,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     padding-left: 1.15rem;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
-    font-size: 0.88rem;
+    gap: 0.5rem;
+    font-size: 0.87rem;
     color: var(--text-2);
-    line-height: 1.62;
+    line-height: 1.6;
   }
   .wp-bullet-list strong {
     color: var(--text-1);
@@ -1145,35 +1292,35 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   .wp-param-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
-    margin-top: 0.35rem;
+    gap: 0.42rem;
+    margin-top: 0.3rem;
   }
   .wp-param-strip span {
     font-family: var(--font-mono);
-    font-size: 0.74rem;
+    font-size: 0.73rem;
     color: var(--text-2);
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
-    padding: 0.22rem 0.55rem;
+    padding: 0.22rem 0.52rem;
     border-radius: 8px;
   }
 
   .wp-preset-mini {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-    margin-top: 0.35rem;
-    padding: 0.7rem 0.85rem;
+    gap: 0.32rem;
+    margin-top: 0.3rem;
+    padding: 0.68rem 0.85rem;
     border-radius: 10px;
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
-    font-size: 0.82rem;
+    font-size: 0.81rem;
     color: var(--text-2);
   }
   .wp-preset-mini strong {
     color: var(--wp-coral);
     font-family: var(--font-mono);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
   }
 
   .wp-fsm-bar {
@@ -1181,12 +1328,12 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     flex-wrap: wrap;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.6rem 0.85rem;
+    padding: 0.58rem 0.82rem;
     border-radius: 12px;
     background: var(--surface-2);
     border: 1px solid var(--border-subtle);
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.77rem;
   }
   .wp-fsm-bar span {
     color: var(--wp-peach);
@@ -1197,7 +1344,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     color: var(--text-3);
   }
 
-  /* CODE DETAILS */
+  /* CODE DETAILS (ALL CODE COLLAPSED BY DEFAULT) */
   .wp-code-details {
     background: var(--surface-1);
     border: 1px solid var(--border);
@@ -1206,9 +1353,9 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   }
   .wp-code-details summary {
     cursor: pointer;
-    padding: 0.85rem 1.15rem;
+    padding: 0.82rem 1.15rem;
     font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.79rem;
     font-weight: 600;
     color: var(--text-2);
     list-style: none;
@@ -1248,10 +1395,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 1.35rem;
+    padding: 1.3rem;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.52rem;
   }
   .wp-card-tag {
     font-family: var(--font-mono);
@@ -1262,13 +1409,13 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   }
   .wp-card h3 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.03rem;
   }
   .wp-card p {
     margin: 0;
-    font-size: 0.88rem;
+    font-size: 0.87rem;
     color: var(--text-2);
-    line-height: 1.65;
+    line-height: 1.64;
   }
   .wp-card p strong {
     color: var(--text-1);
@@ -1279,23 +1426,23 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--wp-surface-soft);
     border: 1px solid var(--wp-border);
     border-radius: 18px;
-    padding: 1.4rem;
+    padding: 1.35rem;
     display: flex;
     flex-direction: column;
-    gap: 1.1rem;
+    gap: 1.05rem;
   }
   .env-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem 1.3rem;
-    font-size: 0.84rem;
+    gap: 0.55rem 1.25rem;
+    font-size: 0.83rem;
     color: var(--text-2);
-    padding-bottom: 0.9rem;
+    padding-bottom: 0.85rem;
     border-bottom: 1px solid var(--border-subtle);
   }
   .env-meta strong {
     font-family: var(--font-mono);
-    font-size: 0.74rem;
+    font-size: 0.73rem;
     color: var(--wp-coral);
     margin-right: 0.3rem;
   }
@@ -1308,16 +1455,16 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 1.15rem;
+    padding: 1.1rem;
   }
   .env-col.keep { border-top: 3px solid var(--wp-mint); }
   .env-col.disable { border-top: 3px solid var(--wp-coral); }
   .env-col-head {
     font-family: var(--font-mono);
-    font-size: 0.71rem;
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.7rem;
   }
   .env-col-head.mint { color: var(--wp-mint); }
   .env-col-head.coral { color: var(--wp-coral); }
@@ -1327,15 +1474,15 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.42rem;
   }
   .env-col li {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     gap: 0.6rem;
-    font-size: 0.8rem;
-    padding-bottom: 0.4rem;
+    font-size: 0.79rem;
+    padding-bottom: 0.38rem;
     border-bottom: 1px solid var(--border-subtle);
   }
   .env-col li:last-child {
@@ -1343,31 +1490,31 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     padding-bottom: 0;
   }
   .env-col code {
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     color: var(--text-1);
     word-break: break-all;
   }
   .env-col span {
     color: var(--text-3);
     white-space: nowrap;
-    font-size: 0.77rem;
+    font-size: 0.76rem;
   }
 
   /* KNOWN LIMITATIONS */
   .limit-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.1rem;
+    gap: 1.05rem;
   }
   .limit-card {
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-left: 3px solid var(--wp-peach);
     border-radius: 16px;
-    padding: 1.25rem;
+    padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.48rem;
   }
   .limit-head {
     display: flex;
@@ -1378,37 +1525,37 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   }
   .limit-tag {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: 0.67rem;
     font-weight: 700;
     color: var(--wp-peach);
     letter-spacing: 0.05em;
   }
   .limit-head code {
-    font-size: 0.72rem;
+    font-size: 0.71rem;
     color: var(--text-3);
   }
   .limit-card h3 {
     margin: 0;
-    font-size: 0.98rem;
+    font-size: 0.97rem;
   }
   .limit-card p {
     margin: 0;
-    font-size: 0.86rem;
+    font-size: 0.85rem;
     color: var(--text-2);
-    line-height: 1.6;
+    line-height: 1.58;
   }
   .limit-fix {
     margin-top: auto;
-    padding-top: 0.55rem;
+    padding-top: 0.5rem;
     border-top: 1px dashed var(--border-subtle);
-    font-size: 0.83rem;
+    font-size: 0.82rem;
     color: var(--text-2);
-    line-height: 1.55;
+    line-height: 1.52;
   }
   .limit-fix strong {
     color: var(--wp-mint);
     font-family: var(--font-mono);
-    font-size: 0.76rem;
+    font-size: 0.75rem;
   }
 
   /* ROADMAP */
@@ -1424,10 +1571,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     background: var(--surface-1);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 1.15rem 1rem;
+    padding: 1.1rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.45rem;
+    gap: 0.42rem;
   }
   .wp-roadmap-steps li.final-step {
     border-color: color-mix(in srgb, var(--wp-mint) 48%, var(--border));
@@ -1435,20 +1582,20 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
   }
   .rm-idx {
     font-family: var(--font-mono);
-    font-size: 0.71rem;
+    font-size: 0.7rem;
     font-weight: 700;
     color: var(--wp-coral);
   }
   .final-step .rm-idx { color: var(--wp-mint); }
   .wp-roadmap-steps h3 {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.94rem;
   }
   .wp-roadmap-steps p {
     margin: 0;
-    font-size: 0.82rem;
+    font-size: 0.81rem;
     color: var(--text-2);
-    line-height: 1.55;
+    line-height: 1.54;
   }
 
   .wp-bottom-nav {
@@ -1466,7 +1613,60 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     gap: 0.65rem;
   }
 
+  /* LIGHTBOX */
+  .wp-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(8, 10, 18, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(6px);
+  }
+  .wp-lightbox.open {
+    display: flex;
+  }
+  .wp-lightbox img {
+    max-width: min(1180px, 94vw);
+    max-height: 80vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  }
+  .wp-lightbox p {
+    margin: 0;
+    max-width: 78ch;
+    text-align: center;
+    font-size: 0.86rem;
+    color: #e2e8f0;
+  }
+  .wp-lightbox-close {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.4rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .wp-lightbox-close:hover {
+    background: rgba(255, 94, 156, 0.35);
+    border-color: var(--wp-coral);
+  }
+
   @media (max-width: 1024px) {
+    .wp-hero-top {
+      grid-template-columns: 1fr;
+    }
     .wp-exec-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }

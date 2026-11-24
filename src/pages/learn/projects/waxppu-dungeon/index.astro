@@ -18,18 +18,26 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <div class="wp-pills">
           <span class="wp-pill status">
             <span class="wp-dot"></span>
-            PLANNING · UE 5.9
+            PROTOTYPING · UE 5.9
           </span>
-          <span class="wp-pill meta">Chaos Solver · ACharacter · 20 Waves</span>
+          <span class="wp-pill meta">Chaos Solver · ACharacter · MetaSound · 20 Waves</span>
         </div>
 
-        <h1>왁뿌던전 탈출 (가제)</h1>
+        <h1>왁뿌던전 탈출 (WaxPpuLab)</h1>
         <p class="wp-desc">
           언리얼 엔진 내장 <strong>Chaos 물리 솔버</strong>와 <strong>ACharacter</strong>를 적극 활용하는 3D 물리 파괴 웨이브 디펜스입니다.
-          플레이어가 가한 힘에 따라 실시간으로 부서지는 왁뿌볼 몬스터를 처치하며 <strong>20라운드와 거대 왁뿌볼 보스</strong>를 돌파해 던전에서 탈출합니다.
+          플레이어가 가한 힘에 따라 실시간으로 부서지는 왁뿌볼·왁스버터 몬스터를 처치하며 <strong>20라운드와 거대 왁뿌볼 보스</strong>를 돌파해 던전에서 탈출합니다.
         </p>
 
         <div class="wp-actions">
+          <a
+            href="https://github.com/pargame/WaxPpuLab"
+            class="wp-link-btn primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub · WaxPpuLab ↗
+          </a>
           <a href="/learn/projects" class="wp-link-btn ghost">
             ← 프로젝트 목록
           </a>
@@ -37,15 +45,15 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       </div>
 
       <a
-        href="/learn/projects/waxppu-dungeon/gdd"
+        href="/learn/projects/waxppu-dungeon/portfolio"
         class="wp-thumb"
-        aria-label="왁뿌던전 탈출 기획서 열기"
+        aria-label="왁뿌던전 탈출 포트폴리오 및 기술 개발기 열기"
       >
         <div class="wp-thumb-art">
           <span class="wp-thumb-orb"></span>
           <span class="wp-thumb-label">CHAOS × ACHARACTER</span>
         </div>
-        <span class="wp-thumb-cap">UE 5.9 Planning · 20 Waves + Giant Wax-Ppu Boss</span>
+        <span class="wp-thumb-cap">UE 5.9 Prototype · Chaos Destruction + Hybrid ASMR</span>
       </a>
     </header>
 
@@ -53,7 +61,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       <div class="section-head">
         <span class="eyebrow">DOCUMENTS IN THIS PROJECT</span>
         <h2>프로젝트 문서</h2>
-        <p>기획서와 추후 구현될 포트폴리오를 문서별로 분리해 관리합니다.</p>
+        <p>게임 기획서(GDD)와 C++ 프로토타입 기술 개발기(포트폴리오)를 문서별로 분리해 관리합니다.</p>
       </div>
 
       <div class="post-cards">
@@ -74,21 +82,22 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
           </div>
         </a>
 
-        <div class="post-card portfolio-card is-soon" aria-disabled="true">
+        <a href="/learn/projects/waxppu-dungeon/portfolio" class="post-card portfolio-card">
           <div class="post-top">
-            <span class="post-type">DOC 02 · 포트폴리오</span>
-            <span class="soon-badge">SOON</span>
+            <span class="post-type">DOC 02 · 포트폴리오 / 기술 개발기</span>
+            <span class="post-arrow">→</span>
           </div>
-          <h3>포트폴리오 (준비 중)</h3>
+          <h3>포트폴리오 · WaxPpuLab 기술 개발기</h3>
           <p>
-            프로토타입 착수 후 Chaos 파괴 실험, <code>ACharacter</code> 액션 구조, 20라운드 웨이브·보스 구현과 최적화 기록이 이곳에 추가될 예정입니다.
+            UE 5.9 C++ 프로토타입의 Flat 1-Level + DataAsset 설계, <code>RemoveOnBreak</code> 파편 수명 제어, 버터 양방향 텀블링, Weber-Fechner 하이브리드 ASMR 오디오, Subsurface 왁스 셰이딩 및 M4 16GB 최적화 기록을 담았습니다.
           </p>
           <div class="post-tags">
-            <span>#준비중</span>
             <span>#UE5_9</span>
             <span>#ChaosDestruction</span>
+            <span>#MetaSound</span>
+            <span>#M4_16GB</span>
           </div>
-        </div>
+        </a>
       </div>
     </section>
   </div>
@@ -209,6 +218,16 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     text-decoration: none;
     transition: all var(--dur-fast);
   }
+  .wp-link-btn.primary {
+    background: linear-gradient(135deg, var(--wp-coral), var(--wp-peach));
+    border-color: transparent;
+    color: #ffffff;
+  }
+  .wp-link-btn.primary:hover {
+    filter: brightness(1.08);
+    color: #ffffff;
+    border-color: transparent;
+  }
   .wp-link-btn:hover {
     border-color: var(--wp-coral);
     color: var(--wp-coral);
@@ -316,9 +335,10 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
   .post-card.portfolio-card {
     border-top: 3px solid var(--wp-peach);
   }
-  .post-card.is-soon {
-    opacity: 0.68;
-    cursor: default;
+  .post-card.portfolio-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--wp-peach);
+    box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--wp-peach) 35%, transparent);
   }
   .post-top {
     display: flex;
@@ -343,13 +363,9 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     color: var(--wp-coral);
     transform: translateX(4px);
   }
-  .soon-badge {
-    font-size: 0.68rem;
-    padding: 0.12rem 0.48rem;
-    border-radius: 999px;
-    color: var(--text-3);
-    border: 1px solid var(--border-subtle);
-    background: var(--surface-2);
+  .portfolio-card:hover .post-arrow {
+    color: var(--wp-peach);
+    transform: translateX(4px);
   }
   .post-card h3 {
     margin: 0;

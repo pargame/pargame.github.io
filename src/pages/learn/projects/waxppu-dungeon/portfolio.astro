@@ -1,0 +1,1509 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { Code } from 'astro:components';
+
+const codeChaosImpact = `// WaxDestructibleComponent.cpp — 국소 Dynamic 전환 + ExternalClusterStrain 인가
+ImpactMaskFalloff->SetRadialFalloff(
+	1.0f, 0.0f, 1.0f, 0.0f, Radius, WorldImpactPoint, EFieldFalloffType::Field_FallOff_None);
+ImpactDynamicState->SetUniformInteger(
+	static_cast<int32>(EObjectStateTypeEnum::Chaos_Object_Dynamic));
+ImpactLocalDynamic->SetCullingField(
+	ImpactMaskFalloff, ImpactDynamicState, EFieldCullingOperationType::Field_Culling_Outside);
+ShellCollection->ApplyPhysicsField(
+	true, EGeometryCollectionPhysicsTypeEnum::Chaos_DynamicState, nullptr, ImpactLocalDynamic);
+
+ImpactStrainFalloff->SetRadialFalloff(
+	EffectiveStrain, 0.85f, 1.0f, 0.0f, Radius, WorldImpactPoint, EFieldFalloffType::Field_Falloff_Linear);
+ShellCollection->ApplyPhysicsField(
+	true, EGeometryCollectionPhysicsTypeEnum::Chaos_ExternalClusterStrain, nullptr, ImpactStrainFalloff);`;
+
+const codeHybridAudio = `// WaxDestructibleComponent.cpp — 에너지 폴백 · Fechner식 로그 압축 · Poisson 지수 쿨다운
+const float DensityGain = FMath::Max(0.65f,
+	1.0f / FMath::Pow(static_cast<float>(FMath::Max(1, RecentCollisionTimes.Num())), 0.35f));
+
+const float Mass = FMath::Max(0.2f, CollisionInfo.Mass);
+const float ImpulseMag = CollisionInfo.AccumulatedImpulse.Size();
+const float ImpactEnergy = (ImpulseMag > KINDA_SMALL_NUMBER)
+	? (0.5f * ImpulseMag * NormalSpeed)
+	: (0.5f * Mass * NormalSpeed * NormalSpeed); // 임펄스 누락 시 운동에너지 폴백
+
+const float Pressure = FMath::Sqrt(FMath::Max(0.0f, ImpactEnergy));
+const float NormPressure = FMath::Clamp((Pressure - 40.0f) / 700.0f, 0.0f, 1.5f);
+const float LoudnessAlpha = FMath::Clamp(
+	FMath::Loge(1.0f + 5.0f * NormPressure) / FMath::Loge(6.0f), 0.0f, 1.0f);
+
+const float Intensity = FMath::Lerp(0.06f, 0.36f, LoudnessAlpha) * FMath::FRandRange(0.88f, 1.10f) * DensityGain;
+const float ExpDelay = -FMath::Loge(FMath::Max(0.05f, FMath::FRand())) * MinCollisionAudioInterval;
+NextAllowedCollisionSoundTime = Now + FMath::Clamp(
+	ExpDelay, MinCollisionAudioInterval * 0.5f, MinCollisionAudioInterval * 3.0f);`;
+
+const codeButterLoco = `// WaxLocomotionComponent.cpp — 양방향 최단각 선택(HopAlign) & 바닥 접지 캡슐 보정
+const float CurrentYaw = OwnerMonster->GetActorRotation().Yaw;
+const float DesiredYaw = DirToPlayer.Rotation().Yaw;
+const float DeltaFwd  = FMath::FindDeltaAngleDegrees(CurrentYaw, DesiredYaw);
+const float DeltaBack = FMath::FindDeltaAngleDegrees(CurrentYaw, DesiredYaw + 180.0f);
+const bool bUseBackFace = FMath::Abs(DeltaBack) < FMath::Abs(DeltaFwd);
+const float DeltaYaw = bUseBackFace ? DeltaBack : DeltaFwd;
+
+void UWaxButterLocomotionComponent::SetCapsuleHalfHeightKeepFloor(float NewHalfHeight)
+{
+	if (UCapsuleComponent* Capsule = OwnerMonster->GetCapsuleComponent())
+	{
+		const float OldHalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+		if (!FMath::IsNearlyEqual(OldHalfHeight, NewHalfHeight, 0.25f))
+		{
+			const float DeltaZ = NewHalfHeight - OldHalfHeight;
+			Capsule->SetCapsuleHalfHeight(NewHalfHeight, true);
+			OwnerMonster->AddActorWorldOffset(FVector(0.0f, 0.0f, DeltaZ), false);
+			if (BodyPivot) { BodyPivot->AddRelativeLocation(FVector(0.0f, 0.0f, -DeltaZ)); }
+		}
+	}
+}`;
+
+const codeTargetingMPC = `// WaxPpuLabCharacter.cpp — 부유 타겟 구체 중심 계산 & MPC 파라미터 푸시
+const FVector SphereCenter = GetFloatingTargetSphereCenter();
+if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterCollectionInstance(TargetingMPC))
+{
+	MPCInst->SetVectorParameterValue(TEXT("TargetSphereCenter"), FLinearColor(SphereCenter.X, SphereCenter.Y, SphereCenter.Z, 1.0f));
+	MPCInst->SetScalarParameterValue(TEXT("TargetSphereRadius"), WaxImpactRadius);
+	MPCInst->SetVectorParameterValue(TEXT("MarkerColor"), TargetDecalColor);
+	MPCInst->SetScalarParameterValue(TEXT("EmissiveBoost"), TargetDecalEmissiveBoost);
+	MPCInst->SetScalarParameterValue(TEXT("MarkerOpacity"), TargetDecalOpacity);
+	MPCInst->SetScalarParameterValue(TEXT("EdgeSoftness"), TargetDecalEdgeSoftness);
+}`;
+---
+
+<BaseLayout
+  title="왁뿌던전 탈출 — 포트폴리오 / 기술 개발기"
+  description="UE 5.9 Preview 2 C++ 프로토타입 WaxPpuLab의 시스템 아키텍처, Chaos Destruction 고정 수명 파편, 물리 기반 하이브리드 ASMR 오디오, 전략 로코모션, Subsurface 셰이딩 및 한계·개선 과제 정리"
+>
+  <div class="wp-page">
+    <nav class="wp-breadcrumb" aria-label="이동 경로">
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <a href="/learn/projects/waxppu-dungeon">왁뿌던전 탈출</a>
+      <span>/</span>
+      <span class="current">포트폴리오 · 기술 개발기</span>
+    </nav>
+
+    <!-- HERO -->
+    <header class="wp-hero">
+      <div class="wp-hero-copy">
+        <div class="wp-pills">
+          <span class="wp-pill status">
+            <span class="wp-dot"></span>
+            PROTOTYPING · UE 5.9
+          </span>
+          <span class="wp-pill theme-tag">DOC 02 · ENGINEERING PORTFOLIO</span>
+          <span class="wp-pill wave-tag">C++ · CHAOS · METASOUND</span>
+        </div>
+
+        <h1>WaxPpuLab: UE 5.9 C++ 기술 개발기</h1>
+        <p class="wp-lead">
+          「왁뿌던전 탈출」의 UE 5.9 Preview 2 C++ 프로토타입(<code>WaxPpuLab</code>) 엔지니어링 기록입니다.
+          단순 기능 나열이 아니라 <strong>시스템 아키텍처 · 설계 Trade-off · 문제 해결(원인 → 해결 → 검증) · 현재 코드의 한계와 개선 과제</strong> 중심으로 정리했습니다.
+        </p>
+
+        <div class="wp-hero-actions">
+          <a
+            href="https://github.com/pargame/WaxPpuLab"
+            class="wp-btn primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub · WaxPpuLab ↗
+          </a>
+          <a href="#arch" class="wp-btn ghost">시스템 구조도 ↓</a>
+          <a href="/learn/projects/waxppu-dungeon/gdd" class="wp-btn ghost">DOC 01 · 기획서 →</a>
+          <a href="/learn/projects/waxppu-dungeon" class="wp-btn ghost">← 프로젝트 홈</a>
+        </div>
+      </div>
+
+      <div class="wp-exec-grid" aria-label="핵심 엔지니어링 요약">
+        <div class="exec-card coral">
+          <span class="exec-k">CHAOS DESTRUCTION</span>
+          <strong class="exec-v">RemoveOnBreak · 0.30</strong>
+          <span class="exec-d">국소 CullingField 파괴 + Dataflow 고정 수명(1.5~2.0s) 축소 삭제</span>
+        </div>
+        <div class="exec-card peach">
+          <span class="exec-k">HYBRID ASMR AUDIO</span>
+          <strong class="exec-v">Fechner Log · Poisson</strong>
+          <span class="exec-d">QueueDensityScale(N<sup>-0.22</sup>) · 임펄스/½mv² 폴백 · 2버전 실시간 전환</span>
+        </div>
+        <div class="exec-card mint">
+          <span class="exec-k">DATA-DRIVEN OOP</span>
+          <strong class="exec-v">0 Hardcoded · BROKEN=0</strong>
+          <span class="exec-d">Flat 1-Level 상속 · 전략 로코모션 · 리다이렉터 무결성 0건</span>
+        </div>
+        <div class="exec-card coral">
+          <span class="exec-k">SHADING &amp; BUDGET</span>
+          <strong class="exec-v">Subsurface · Pure Emissive</strong>
+          <span class="exec-d">Base/SSS 0 마스킹 타겟 + M4 16GB용 RT/PT CVar 5종 비활성화</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 00. SYSTEM ARCHITECTURE DIAGRAM -->
+    <section class="wp-section" id="arch">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">00 // SYSTEM ARCHITECTURE &amp; DATA FLOW</span>
+        <h2>전체 시스템 아키텍처 구조도</h2>
+      </div>
+
+      <figure class="arch-figure" aria-labelledby="archDiagramTitle">
+        <div class="arch-diagram">
+          <div id="archDiagramTitle" class="arch-row-label">RUNTIME INTERACTION PIPELINE (플레이어 입력 → 파괴 · 물리 · 오디오)</div>
+          <div class="arch-pipeline">
+            <div class="arch-node accent-coral">
+              <div class="node-tag">PLAYER · ACharacter</div>
+              <div class="node-title">AWaxPpuLabCharacter</div>
+              <ul class="node-list">
+                <li><code>DoWaxCrackTrace()</code> 스피어 오버랩</li>
+                <li><code>UpdateDebrisKick()</code> 발차기</li>
+                <li><code>Tick()</code> 타겟 구체 중심 계산</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">ApplyEyeImpact()</span>
+              <span class="conn-fn">ApplyWaxImpact()</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-mint">
+              <div class="node-tag">MONSTER · Flat 1-Level</div>
+              <div class="node-title">AWaxMonsterBase</div>
+              <ul class="node-list">
+                <li><code>BodyPivot</code> (Shell · Core · Eyes 고정)</li>
+                <li><code>EyeLeftGC</code> / <code>EyeRightGC</code> 독립 파괴</li>
+                <li>붕괴 시 <code>AWaxMonsterCore</code> 방출</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">Field / Strain</span>
+              <span class="conn-fn">OnCollapse</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-peach">
+              <div class="node-tag">DESTRUCTION · UActorComponent</div>
+              <div class="node-title">UWaxDestructibleComponent</div>
+              <ul class="node-list">
+                <li><code>URadialFalloff</code> + <code>UCullingField</code></li>
+                <li>리프 파괴율 추적 (<code>≤ 0.30</code> 붕괴)</li>
+                <li>조건부 Tick (<code>RefreshTickEnabled</code>)</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">OnBreak / OnCollision</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-coral">
+              <div class="node-tag">SOLVER &amp; SYNTHESIS</div>
+              <div class="node-title">Chaos Dataflow &amp; MetaSound</div>
+              <ul class="node-list">
+                <li><code>RemoveOnBreak</code> 고정 수명 축소</li>
+                <li><code>MS_WaxCrackASMR</code> 하이브리드 합성</li>
+                <li><code>1/2</code> 키 실시간 프리셋 전환</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-row-label sub">DECOUPLED CONTRACTS (데이터 주입 · 전략 로코모션 · 셰이딩 마스킹)</div>
+          <div class="arch-bottom-grid">
+            <div class="arch-node compact accent-mint">
+              <div class="node-tag">DATA CONTRACT · 0 HARDCODED PATHS</div>
+              <div class="node-title">UWaxMonsterDataAsset</div>
+              <p class="node-desc">
+                <code>DA_WaxBall_Basic</code> · <code>DA_WaxButter</code> → <code>InitializeFromData()</code>로 껍질·코어·눈·로코모션·오디오 프로파일 일괄 주입
+              </p>
+            </div>
+
+            <div class="arch-node compact accent-peach">
+              <div class="node-tag">STRATEGY PATTERN · LOCOMOTION</div>
+              <div class="node-title">UWaxLocomotionComponent</div>
+              <p class="node-desc">
+                <code>UWaxRollingLocomotion</code> (Δp×Normal 구르기) ↔ <code>UWaxButterLocomotion</code> (4-State 양방향 텀블링 FSM)
+              </p>
+            </div>
+
+            <div class="arch-node compact accent-coral">
+              <div class="node-tag">SHADING BRIDGE · MPC PUSH</div>
+              <div class="node-title">MPC_WaxTargeting</div>
+              <p class="node-desc">
+                <code>AWaxPpuLabCharacter::Tick</code> → <code>M_WaxButter</code>(Subsurface) 내부 Base/SSS 0 차단 + 순수 Emissive 출력
+              </p>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <strong>WaxPpuLab 아키텍처</strong> — 캐릭터는 <code>ApplyWaxImpact</code> / <code>ApplyEyeImpact</code>와 <code>MPC_WaxTargeting</code> 푸시만 담당하고, 몬스터는 Flat 1-Level 계층 아래 DataAsset·전략 로코모션·파괴 컴포넌트를 조립해 책임을 분리했습니다.
+        </figcaption>
+      </figure>
+
+      <!-- Quick TOC -->
+      <nav class="wp-toc" aria-label="문서 목차">
+        <a href="#case-01"><span>01</span> Chaos 파괴 &amp; RemoveOnBreak</a>
+        <a href="#case-02"><span>02</span> 하이브리드 ASMR 오디오</a>
+        <a href="#case-03"><span>03</span> 전략 로코모션 &amp; 버터 FSM</a>
+        <a href="#case-04"><span>04</span> Flat 1-Level &amp; DataAsset</a>
+        <a href="#case-05"><span>05</span> Subsurface &amp; 순수 발광 타겟</a>
+        <a href="#env-budget"><span>06</span> M4 16GB 렌더링 예산</a>
+        <a href="#limitations"><span>07</span> 한계와 개선 과제</a>
+        <a href="#roadmap"><span>08</span> 다음 마일스톤</a>
+      </nav>
+    </section>
+
+    <!-- CASE 01: CHAOS DESTRUCTION & REMOVEONBREAK -->
+    <section class="wp-section" id="case-01">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 01 // CHAOS DESTRUCTION &amp; DEBRIS LIFETIME</span>
+        <h2>국소 크레이터 파괴와 Dataflow RemoveOnBreak 고정 수명 전환</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">DESIGN INTENT &amp; TRADE-OFF</span>
+          <h3>Kinematic 앵커링 + 국소 Dynamic 전환</h3>
+          <p>
+            초기화 시 전체 껍질을 <code>Chaos_Object_Kinematic</code>으로 고정하되, 컴포넌트의 <code>ObjectType</code>은 <code>Dynamic</code>을 유지합니다.
+            타격 시 <code>URadialFalloff</code>와 <code>UCullingField</code>로 조준 구체 내부만 <code>Dynamic</code>으로 전환하고 <code>ExternalClusterStrain</code>을 인가해 원하는 부위만 깎아냅니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>리프 파괴율 기반 붕괴</strong>: GeometryCollection 리프 노드 인덱스를 캐싱해 잔여율이 <code>CollapseRemainingRatio</code>(<code>0.30</code>) 이하가 되면 잔여 껍질을 일괄 붕괴시키고 <code>AWaxMonsterCore</code>를 탄성 물리(<code>PM_JellyBounce</code>)로 방출합니다.</li>
+            <li><strong>파편 발차기 (DebrisKick)</strong>: 수평 이동 속도가 <code>25 cm/s</code> 이상일 때 발밑 <code>ECC_PhysicsBody</code>를 감지해 <code>Chaos_LinearVelocity</code> 필드로 파편을 밀어냅니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>RemoveOnMaxSleep 파편의 바닥 잔류 소음</h3>
+            <p>
+              초기 <code>bAllowRemovalOnSleep = true</code> 방식에서는 떨어져 나온 왁스 파편이 바닥에서 미세하게 구르거나 캐릭터의 <code>DebrisKick</code>에 반복적으로 차여 Sleep 상태에 진입하지 못했습니다.
+              이로 인해 파편이 영구 잔류하며 불필요한 충돌음과 물리 연산을 계속 유발했습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION &amp; VERIFICATION</span>
+            <h3>Dataflow FRemoveOnBreakDataflowNode 고정 수명 전환</h3>
+            <p>
+              <code>DF_WaxOrb</code>, <code>DF_WaxButter</code>, <code>DF_MonsterEye</code> Dataflow 그래프에 <code>FRemoveOnBreakDataflowNode</code>를 삽입하고,
+              C++에서는 <code>bAllowRemovalOnSleep = false</code>, <code>bAllowRemovalOnBreak = true</code>로 전환해 파편이 구르는 여부와 무관하게 일정 시간 뒤 축소 삭제되도록 고정했습니다.
+            </p>
+            <div class="wp-param-strip">
+              <span><code>PostBreakTimer</code> 1.5 ~ 2.0s</span>
+              <span><code>RemovalTimer</code> 0.35 ~ 0.45s</span>
+              <span><code>ScaleOnRemoval</code> True</span>
+              <span>검증: <code>bShowDebugCounters</code> HUD + PIE 육안 확인 (Insights 계측 예정)</span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>핵심 C++ 발췌 — <code>UWaxDestructibleComponent::ApplyWaxImpact</code> (국소 Dynamic + Strain 필드)</summary>
+        <div class="code-wrap">
+          <Code code={codeChaosImpact} lang="cpp" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 02: HYBRID ASMR AUDIO -->
+    <section class="wp-section" id="case-02">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 02 // PHYSICS-BASED HYBRID ASMR AUDIO</span>
+        <h2>다중 그레인 클리핑 방지 · 물리 에너지 Fechner 로그 압축 · Poisson 쿨다운</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">ARCHITECTURE &amp; SYNTHESIS</span>
+          <h3>MetaSound 프리셋 + 물리량 매핑 파이프라인</h3>
+          <p>
+            <code>MS_WaxCrackASMR</code> MetaSound 그래프와 <code>FWaxAudioProfile</code> / <code>FWaxCollisionVariant</code> 구조체로
+            파괴음과 낙하 파편 충돌음을 Chaos 물리 이벤트의 질량·속도·충격량에 실시간 매핑했습니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>파괴음 클리핑 방지</strong>: 대기열 크기 <code>N</code>에 따라 <code>QueueDensityScale = 1 / Pow(N, 0.22)</code>로 감쇠하고, 붕괴 시에는 <code>CollapseGrainSpreadMaxSec · U²</code>로 그레인을 시간 분산 재생합니다.</li>
+            <li><strong>방어적 에너지 계산 폴백</strong>: <code>AccumulatedImpulse</code>가 유효하면 <code>½ · |Impulse| · NormalSpeed</code>를 쓰고, 엔진 이벤트 임펄스가 0에 가까우면 <code>½ · Mass · NormalSpeed²</code>로 폴백합니다.</li>
+            <li><strong>Poisson식 지수분포 쿨다운</strong>: 다음 충돌음 간격을 <code>-ln(U) · MinInterval</code>(<code>0.5x~3.0x</code> 클램프)로 샘플링해 기계적인 등간격 반복음을 방지했습니다.</li>
+            <li><strong>조건부 Tick</strong>: <code>RefreshTickEnabled()</code>로 대기 그레인이 없고 디버그 카운터가 불필요할 때 컴포넌트 Tick을 자동 비활성화합니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>충돌음의 비선형 라우드니스 왜곡 및 이중 감쇠</h3>
+            <p>
+              단순 속도 선형 매핑(<code>NormalSpeed / 320</code>)은 작은 파편과 큰 파편의 질량 차이를 반영하지 못했고,
+              여기에 <code>DensityGain</code>(<code>1/√N</code>), <code>Collision*Scale</code>, <code>PlayOneShotCrack</code>의 하한 클램프(<code>0.08</code>)가 겹치며 작은 낙하음이 뭉개지거나 이중 감쇠되는 현상이 발생했습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION &amp; HYBRID PRESETS</span>
+            <h3>√E 기반 Fechner식 로그 압축 &amp; 감쇠 계수 정규화</h3>
+            <p>
+              충격 에너지의 제곱근(음향 압력 <code>P = √E</code>)을 정규화한 뒤 <code>ln(1 + 5·P<sub>norm</sub>) / ln(6)</code> 로그 압축을 적용했습니다.
+              동시에 <code>DensityGain</code>을 <code>Max(0.65, N<sup>-0.35</sup>)</code>로 완화하고 <code>Collision*Scale = 1.0</code>, 최소 <code>FinalIntensity</code> 하한을 <code>0.08 → 0.02</code>로 낮춰 약한 낙하음의 미세 디테일을 복원했습니다.
+            </p>
+            <div class="wp-preset-mini">
+              <div><strong>KEY 1 (기본)</strong>: <code>WoodPlank</code> + <code>Heavy</code> / <code>BambooClick</code> 랜덤</div>
+              <div><strong>KEY 2 (대안)</strong>: <code>HardBlock</code> + <code>JadeMarble</code> / <code>SoftWaxTap</code> 랜덤</div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>핵심 C++ 발췌 — <code>UWaxDestructibleComponent::HandleChaosCollisionEvent</code> (에너지 폴백 · 로그 압축 · 지수 쿨다운)</summary>
+        <div class="code-wrap">
+          <Code code={codeHybridAudio} lang="cpp" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 03: PHYSICS-DRIVEN LOCOMOTION -->
+    <section class="wp-section" id="case-03">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 03 // STRATEGY LOCOMOTION &amp; BUTTER 4-STATE FSM</span>
+        <h2>전략 로코모션: 물리 변위 구르기 vs 버터 직육면체 양방향 텀블링</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">STRATEGY PATTERN</span>
+          <h3>UWaxLocomotionComponent 교체 구조</h3>
+          <p>
+            몬스터 이동 로직을 <code>AWaxMonsterBase</code>에서 분리해 DataAsset의 <code>LocomotionClass</code> 지정만으로 이동 방식을 교체합니다.
+            <code>BP_WaxBall_Basic</code>의 <code>UWaxRollingLocomotionComponent</code>는 매 프레임 실제 월드 변위(<code>Δp</code>)와 바닥 법선을 외적해 <code>RollRadius</code>에 정확히 연동되는 구름 회전을 생성합니다.
+          </p>
+          <div class="wp-fsm-bar">
+            <span>HopAlign</span>
+            <i>→</i>
+            <span>LayDown</span>
+            <i>→</i>
+            <span>TumbleCharge</span>
+            <i>→</i>
+            <span>StandUp</span>
+          </div>
+          <p class="sub-note">
+            <code>UWaxButterLocomotionComponent</code>는 <code>ShouldApplyDefaultMovement() = false</code>로 기본 <code>CharacterMovement</code> 이동을 끄고,
+            직육면체 치수(<code>HalfX/Y/Z</code>)와 각가속도(<code>DriveAngularAccel</code>)·스텝 바운스 보존율(<code>StepBounceRetention</code>)로 자체 텀블링 물리를 구동합니다.
+          </p>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>직육면체 회전 시 비효율적 선회와 공중 뜸/바닥 파고듦</h3>
+            <p>
+              직육면체 버터 기둥이 플레이어가 등 뒤에 있을 때 항상 앞면 기준으로 180° 회전하려 하면 호핑 정렬 시간이 과도하게 길어졌습니다.
+              또한 기둥이 눕고 일어설 때 캡슐 반높이(<code>HalfZ ↔ HalfY</code>)를 단순 변경하면 중심 기준 축소·확장으로 바닥에서 뜨거나 파고드는 문제가 발생했습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION &amp; TUNING</span>
+            <h3>양방향 최단각 텀블링 + 바닥 고정 캡슐 보정</h3>
+            <p>
+              <code>TickHopAlign</code>에서 앞면(<code>DeltaFwd</code>)과 뒷면(<code>DeltaBack</code>) 각도 차를 비교해 더 가까운 면으로 정렬한 뒤 <code>TumbleDirectionSign</code>으로 양방향 돌진을 수행합니다.
+              상태 전환 시에는 <code>SetCapsuleHalfHeightKeepFloor</code>로 캡슐 반높이 변화량(<code>DeltaZ</code>)만큼 액터를 올리고 <code>BodyPivot</code>을 반대 방향으로 보정해 바닥 접지를 유지했습니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>핵심 C++ 발췌 — <code>UWaxButterLocomotionComponent</code> (양방향 최단각 선택 &amp; KeepFloor 보정)</summary>
+        <div class="code-wrap">
+          <Code code={codeButterLoco} lang="cpp" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 04: FLAT 1-LEVEL + DATAASSET + REDIRECTOR INTEGRITY -->
+    <section class="wp-section" id="case-04">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 04 // DATA-DRIVEN ARCHITECTURE &amp; ASSET INTEGRITY</span>
+        <h2>Flat 1-Level 몬스터 계층 · 하드코딩 0건 · 에셋 리다이렉터 무결성</h2>
+      </div>
+
+      <div class="wp-grid-3">
+        <article class="wp-card">
+          <span class="wp-card-tag">FLAT 1-LEVEL HIERARCHY</span>
+          <h3>상속 깊이 1단계 제한</h3>
+          <p>
+            <code>AWaxMonsterBase</code>(<code>ACharacter</code>) 아래 직계 블루프린트 자식(<code>BP_WaxBall_Basic</code>, <code>BP_WaxButter</code>)만 허용합니다.
+            눈알(<code>EyeLeftGC</code>, <code>EyeRightGC</code>)은 <code>BodyPivot</code>에 고정되어 바디와 일체로 회전·이동하면서도 독립 강도·내구도로 개별 파괴가 가능합니다.
+          </p>
+        </article>
+
+        <article class="wp-card">
+          <span class="wp-card-tag">ZERO HARDCODED PATHS</span>
+          <h3>DataAsset &amp; Property Matrix 튜닝</h3>
+          <p>
+            <code>Source/WaxPpuLab/</code> 내 하드코딩된 <code>/Game/</code> 경로는 <strong>0건</strong>입니다.
+            모든 스펙을 <code>UWaxMonsterDataAsset</code>과 <code>UPROPERTY(EditAnywhere)</code>로 노출해 재컴파일 없이 Property Matrix에서 몬스터 간 스펙을 일괄 비교·조정합니다.
+          </p>
+        </article>
+
+        <article class="wp-card">
+          <span class="wp-card-tag">UE 5.9 ASSET INTEGRITY</span>
+          <h3>에셋 재정리 &amp; BROKEN_TOTAL=0</h3>
+          <p>
+            프로토타입 초기 <code>/Game/Demo/</code>에 흩어져 있던 에셋을 <code>{'/Game/WaxPpu/{Audio,Blueprints,Data,Destruction,Materials,Physics}'}</code>로 재구성하고,
+            리다이렉터 정리 후 참조 무결성 검증에서 <strong><code>BROKEN_TOTAL=0</code></strong>을 확보했습니다.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- CASE 05: SUBSURFACE WAX & PURE EMISSIVE TARGETING -->
+    <section class="wp-section" id="case-05">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 05 // SUBSURFACE SHADING &amp; PURE EMISSIVE TARGETING</span>
+        <h2>Subsurface 왁스 셰이딩과 순수 발광 타겟 하이라이트 (MPC_WaxTargeting)</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">MATERIAL CONTRAST</span>
+          <h3>광택 Subsurface 껍질 vs 무광 핑크 코어</h3>
+          <ul class="wp-bullet-list">
+            <li><strong>겉 왁스 (<code>M_WaxButter</code>)</strong>: <code>Default Lit</code> → <code>Subsurface</code> 셰이딩 모델로 전환. 따뜻한 노란 밀랍 베이스에 <code>Roughness 0.18</code>, <code>Specular 0.60</code>의 반짝이는 광택과 호박빛 내부 산란을 적용했습니다.</li>
+            <li><strong>내부 코어 (<code>M_ButterCore</code>, <code>M_JellyCore</code>)</strong>: 노란 겉 왁스가 깨졌을 때 코어 노출을 즉각 인지할 수 있도록 핑크/로즈 색상에 <code>Roughness 0.84</code>, <code>Specular 0.12</code>의 러프·무반사 질감으로 대비를 통일했습니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>Subsurface 산란과 타겟 마커 색상의 탁한 혼합</h3>
+            <p>
+              카메라 전방 부유 타겟 구체 영역을 왁스 표면에 표시할 때, 단순 발광 가산만 적용하면 노란 <code>BaseColor</code>와 호박빛 <code>SubsurfaceColor</code>가 겹쳐 타겟 마커가 탁한 주황색으로 변색되었습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION</span>
+            <h3>타겟 구체 내부 Base/SSS 0 마스킹 + 순수 발광 출력</h3>
+            <p>
+              <code>MPC_WaxTargeting</code>의 <code>TargetSphereCenter</code>·<code>TargetSphereRadius</code>로 계산한 구체 마스크 내부에서
+              <code>BaseColor</code>와 <code>SubsurfaceColor</code>를 <strong>0으로 차단</strong>하고 <code>MarkerColor × EmissiveBoost</code>만 다이렉트 출력해 어떤 왁스 색 위에서도 균일하고 선명한 조준 표시를 확보했습니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>핵심 C++ 발췌 — <code>AWaxPpuLabCharacter::Tick</code> (MPC_WaxTargeting 파라미터 푸시)</summary>
+        <div class="code-wrap">
+          <Code code={codeTargetingMPC} lang="cpp" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- 06. ENVIRONMENT & M4 16GB RENDERING BUDGET -->
+    <section class="wp-section" id="env-budget">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">06 // DEV ENVIRONMENT &amp; M4 16GB RENDERING BUDGET</span>
+        <h2>개발 환경 및 Apple M4 16GB 통합 메모리 렌더러 구성</h2>
+      </div>
+
+      <div class="env-box">
+        <div class="env-meta">
+          <span><strong>Engine</strong> UE 5.9 Preview 2 (C++)</span>
+          <span><strong>Hardware</strong> Apple M4 MacBook Air (10-Core · 16 GB Unified · arm64)</span>
+          <span><strong>OS</strong> macOS 27.3</span>
+          <span><strong>Profiling</strong> <code>stat unit</code> · Unreal Insights 계측 예정</span>
+        </div>
+
+        <div class="wp-split-2">
+          <div class="env-col keep">
+            <div class="env-col-head mint">KEPT ENABLED · 핵심 비주얼 유지</div>
+            <ul>
+              <li><code>r.DynamicGlobalIlluminationMethod=1</code> <span>Lumen SW GI</span></li>
+              <li><code>r.ReflectionMethod=1</code> <span>Lumen SW Reflections</span></li>
+              <li><code>r.Shadow.Virtual.Enable=1</code> <span>Virtual Shadow Maps</span></li>
+              <li><code>r.Nanite.ProjectEnabled=True</code> <span>Nanite</span></li>
+              <li><code>r.Substrate=True</code> <span>Substrate</span></li>
+            </ul>
+          </div>
+          <div class="env-col disable">
+            <div class="env-col-head coral">DISABLED · 통합 메모리 압박 해소 (5 CVars)</div>
+            <ul>
+              <li><code>r.Lumen.HardwareRayTracing=False</code> <span>HW RT Lumen 차단</span></li>
+              <li><code>r.RayTracing=False</code> <span>전역 RT BVH 절감</span></li>
+              <li><code>r.RayTracing.Shadows=False</code> <span>RT 그림자 비활성화</span></li>
+              <li><code>r.RayTracing.RayTracingProxies.ProjectEnabled=False</code> <span>RT 프록시 비활성화</span></li>
+              <li><code>r.PathTracing=False</code> <span>Path Tracer 비활성화</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07. KNOWN LIMITATIONS & ENGINEERING TRADE-OFFS -->
+    <section class="wp-section" id="limitations">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">07 // KNOWN LIMITATIONS &amp; IMPROVEMENT PLAN</span>
+        <h2>현재 코드의 한계와 구조적 개선 과제</h2>
+      </div>
+
+      <p class="wp-section-lead">
+        프로토타입 검증 속도를 우선하며 의도적으로 단순화한 지점들과, 본편(20웨이브 다수 몬스터 동시 파괴) 단계에서 반드시 해소해야 할 병목·안정성 과제를 코드 기준으로 식별해 두었습니다.
+      </p>
+
+      <div class="limit-grid">
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">GC &amp; ALLOCATION</span>
+            <code>WaxDestructibleComponent.cpp:506-516</code>
+          </div>
+          <h3>그레인 재생마다 <code>NewObject&lt;UAudioComponent&gt;</code> 할당</h3>
+          <p>
+            현재 <code>PlayOneShotCrack</code>은 매 파괴·충돌 그레인마다 <code>NewObject</code> + <code>RegisterComponent</code>를 호출합니다. 다수 몬스터 동시 붕괴 시 UObject 할당과 GC 스파이크 위험이 있습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 고정 크기 <code>UAudioComponent</code> 링 풀링 또는 <code>SoundConcurrency</code> 에셋 + <code>SpawnSoundAtLocation</code>(파라미터 팩) 전환 비교 후 적용.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">TICK OVERHEAD</span>
+            <code>WaxPpuLabCharacter.cpp:245-253</code>
+          </div>
+          <h3><code>MPC_WaxTargeting</code> 6개 파라미터 매 Tick 푸시</h3>
+          <p>
+            매 프레임 실제로 변하는 값은 <code>TargetSphereCenter</code> 하나뿐이지만, 반경·색상·발광 배율 등 정적 파라미터 5개도 매 <code>Tick</code>마다 중복 푸시하고 있습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 정적 5개 파라미터는 <code>BeginPlay</code> 및 <code>PostEditChangeProperty</code>/런타임 세터 호출 시점에만 푸시하도록 분리.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">SPATIAL MAP</span>
+            <code>WaxDestructibleComponent.cpp:406-409</code>
+          </div>
+          <h3>공간 셀 쿨다운 맵 128 초과 시 전체 <code>Reset()</code></h3>
+          <p>
+            <code>CollisionCellNextTime</code>이 128개 셀을 넘기면 맵을 통째로 비우기 때문에, 직전 프레임에 등록된 활성 셀의 쿨다운까지 초기화되어 순간 연타음이 발생할 수 있습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 만료된 엔트리(<code>Now &gt;= NextTime</code>)만 조건부 제거하거나 고정 크기 링 버퍼로 교체.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">COLLISION SWEEP</span>
+            <code>WaxLocomotionComponent.cpp:254</code>
+          </div>
+          <h3>캡슐 높이 보정 시 <code>bSweep = false</code> 오프셋</h3>
+          <p>
+            <code>SetCapsuleHalfHeightKeepFloor</code>가 <code>AddActorWorldOffset(..., false)</code>를 사용해, 천장이 낮은 지형에서 버터가 일어설 때 상단 지오메트리를 관통할 가능성이 있습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: <code>StandUp</code> 진입 전 상단 천장 Sweep 체크를 추가하고, 공간 부족 시 텀블 유지 또는 안전 위치로 슬라이드 보정.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">TRACE COUPLING</span>
+            <code>WaxPpuLabCharacter.cpp:275,292</code>
+          </div>
+          <h3><code>ECC_Visibility</code> 오버랩 &amp; <code>FindComponentByClass</code></h3>
+          <p>
+            공격 판정이 범용 <code>ECC_Visibility</code> 채널을 조회하고 적중 액터마다 <code>FindComponentByClass</code>를 호출합니다. 웨이브 오브젝트가 늘어나면 불필요한 후보 순회가 증가합니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 전용 <code>WaxDamageable</code> Object/Trace Channel을 정의하고 <code>IWaxDamageableInterface</code>로 직접 디스패치.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">PROFILING</span>
+            <code>Manual HUD → Unreal Insights</code>
+          </div>
+          <h3>정량적 프레임·메모리 프로파일링 미계측</h3>
+          <p>
+            현재 검증은 <code>bShowDebugCounters</code> HUD, <code>DrawDebugSphere</code>, PIE 수동 플레이 및 에셋 무결성(<code>BROKEN_TOTAL=0</code>) 확인 수준에 머물러 있습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: <code>TRACE_CPUPROFILER_EVENT_SCOPE</code> 계측 삽입 후 20웨이브 스트레스 씬에서 Unreal Insights · <code>stat unit</code> 실측치 확보.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 08. NEXT MILESTONES -->
+    <section class="wp-section" id="roadmap">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">08 // NEXT MILESTONES</span>
+        <h2>다음 개발 마일스톤</h2>
+      </div>
+
+      <ol class="wp-roadmap-steps">
+        <li>
+          <span class="rm-idx">STEP 01</span>
+          <h3>1인칭 모션 &amp; 무기 습득</h3>
+          <p>타격 애니메이션과 근접/도구 무기 습득·장착 파이프라인을 <code>AWaxPpuLabCharacter</code>에 통합합니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 02</span>
+          <h3>코어 처치 / 부활 루프</h3>
+          <p>노출된 <code>AWaxMonsterCore</code>를 제한 시간 내 처치하지 못하면 껍질이 재생되는 리스크-리워드 루프를 완성합니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 03</span>
+          <h3>몬스터 공격 패턴</h3>
+          <p>근접 돌진·충돌 판정과 플레이어 피격 피드백을 각 로코모션 상태 머신과 연결합니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 04</span>
+          <h3>눈 파괴 디버프</h3>
+          <p><code>EyeLeftGC</code> / <code>EyeRightGC</code> 파괴 수에 따라 시야·추적 정확도 저하 등 전략적 약점 디버프를 부여합니다.</p>
+        </li>
+        <li class="final-step">
+          <span class="rm-idx">STEP 05</span>
+          <h3>20웨이브 디펜스 매니저</h3>
+          <p>라운드별 몬스터 스폰 테이블, 난이도 곡선, 최종 20라운드 거대 왁뿌볼 보스전과 탈출 루프를 구축합니다.</p>
+        </li>
+      </ol>
+
+      <footer class="wp-bottom-nav">
+        <a href="/learn/projects/waxppu-dungeon" class="wp-btn ghost">← 프로젝트 홈</a>
+        <div class="wp-bottom-right">
+          <a href="/learn/projects/waxppu-dungeon/gdd" class="wp-btn ghost">DOC 01 · 게임 기획서</a>
+          <a
+            href="https://github.com/pargame/WaxPpuLab"
+            class="wp-btn primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub 저장소 보기 ↗
+          </a>
+        </div>
+      </footer>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .wp-page {
+    --wp-coral: #ff5e9c;
+    --wp-peach: #ff9f43;
+    --wp-mint: #2ce6b8;
+    --wp-surface: color-mix(in srgb, var(--surface-1) 92%, #ff5e9c 8%);
+    --wp-surface-soft: color-mix(in srgb, var(--surface-2) 90%, #ff9f43 10%);
+    --wp-border: color-mix(in srgb, var(--wp-coral) 26%, var(--border));
+    --wp-glow: 0 18px 44px -18px rgba(255, 94, 156, 0.34);
+    display: flex;
+    flex-direction: column;
+    gap: 3.4rem;
+  }
+
+  :global([data-theme="light"]) .wp-page {
+    --wp-coral: #e12d78;
+    --wp-peach: #e07016;
+    --wp-mint: #0e9f7d;
+    --wp-surface: #fff9fb;
+    --wp-surface-soft: #fff4ec;
+    --wp-border: rgba(225, 45, 120, 0.22);
+    --wp-glow: 0 16px 36px -18px rgba(225, 45, 120, 0.24);
+  }
+
+  .wp-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.6rem;
+  }
+  .wp-breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .wp-breadcrumb a:hover {
+    color: var(--wp-coral);
+  }
+  .wp-breadcrumb .current {
+    color: var(--wp-peach);
+    font-weight: 600;
+  }
+
+  .wp-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+    padding: 2.3rem;
+    border-radius: 24px;
+    border: 1px solid var(--wp-border);
+    background:
+      radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--wp-peach) 16%, transparent), transparent 46%),
+      radial-gradient(circle at 12% 92%, color-mix(in srgb, var(--wp-coral) 16%, transparent), transparent 44%),
+      var(--wp-surface);
+    box-shadow: var(--wp-glow);
+  }
+
+  .wp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .wp-pill {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .wp-pill.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    color: var(--wp-coral);
+    background: color-mix(in srgb, var(--wp-coral) 14%, transparent);
+    border-color: color-mix(in srgb, var(--wp-coral) 38%, transparent);
+  }
+  .wp-dot {
+    width: 0.46rem;
+    height: 0.46rem;
+    border-radius: 50%;
+    background: var(--wp-coral);
+    box-shadow: 0 0 8px var(--wp-coral);
+  }
+  .wp-pill.theme-tag {
+    color: var(--wp-peach);
+    background: color-mix(in srgb, var(--wp-peach) 13%, transparent);
+    border-color: color-mix(in srgb, var(--wp-peach) 35%, transparent);
+  }
+  .wp-pill.wave-tag {
+    color: var(--wp-mint);
+    background: color-mix(in srgb, var(--wp-mint) 12%, transparent);
+    border-color: color-mix(in srgb, var(--wp-mint) 32%, transparent);
+  }
+
+  .wp-hero h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.9rem, 1.45rem + 1.8vw, 2.75rem);
+    line-height: 1.18;
+    background: linear-gradient(125deg, var(--wp-coral), var(--wp-peach) 62%, var(--wp-mint));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .wp-lead {
+    color: var(--text-2);
+    font-size: 1rem;
+    line-height: 1.75;
+    margin: 0 0 1.3rem;
+    max-width: 74ch;
+  }
+  .wp-lead strong {
+    color: var(--text-1);
+  }
+
+  .wp-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+  .wp-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.56rem 1.02rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.81rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-btn.primary {
+    background: linear-gradient(135deg, var(--wp-coral), var(--wp-peach));
+    color: #ffffff;
+    border: 1px solid transparent;
+  }
+  .wp-btn.primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .wp-btn.ghost {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+  }
+  .wp-btn.ghost:hover {
+    border-color: var(--wp-coral);
+    color: var(--wp-coral);
+  }
+
+  .wp-exec-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+  .exec-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+  }
+  .exec-card.coral { border-top: 3px solid var(--wp-coral); }
+  .exec-card.peach { border-top: 3px solid var(--wp-peach); }
+  .exec-card.mint { border-top: 3px solid var(--wp-mint); }
+  .exec-k {
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+  }
+  .exec-v {
+    font-family: var(--font-mono);
+    font-size: 0.96rem;
+    color: var(--text-1);
+  }
+  .exec-d {
+    font-size: 0.79rem;
+    color: var(--text-2);
+    line-height: 1.48;
+  }
+
+  .wp-section-head {
+    margin-bottom: 1.1rem;
+  }
+  .wp-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--wp-coral);
+    margin-bottom: 0.3rem;
+  }
+  .wp-section-head h2 {
+    margin: 0;
+    font-size: clamp(1.32rem, 1.12rem + 0.75vw, 1.8rem);
+  }
+  .wp-section-lead {
+    margin: 0 0 1.3rem;
+    color: var(--text-2);
+    line-height: 1.72;
+    font-size: 0.95rem;
+    max-width: 78ch;
+  }
+
+  /* SYSTEM ARCHITECTURE DIAGRAM */
+  .arch-figure {
+    margin: 0 0 1.3rem;
+  }
+  .arch-diagram {
+    padding: 1.5rem;
+    border-radius: 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--wp-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .arch-row-label {
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--wp-coral);
+  }
+  .arch-row-label.sub {
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border);
+    color: var(--wp-peach);
+  }
+  .arch-pipeline {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+  .arch-node {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.95rem 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .arch-node.accent-coral { border-top: 3px solid var(--wp-coral); }
+  .arch-node.accent-peach { border-top: 3px solid var(--wp-peach); }
+  .arch-node.accent-mint { border-top: 3px solid var(--wp-mint); }
+  .node-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+  }
+  .node-title {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-1);
+    word-break: break-word;
+  }
+  .node-list {
+    margin: 0.2rem 0 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+    color: var(--text-2);
+    line-height: 1.45;
+  }
+  .node-desc {
+    margin: 0.15rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .arch-conn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0 0.1rem;
+    text-align: center;
+  }
+  .conn-fn {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    color: var(--wp-mint);
+    white-space: nowrap;
+  }
+  .conn-arrow {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-3);
+  }
+  .arch-bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .arch-figure figcaption {
+    margin-top: 0.7rem;
+    font-size: 0.84rem;
+    color: var(--text-3);
+    line-height: 1.6;
+  }
+  .arch-figure figcaption strong {
+    color: var(--text-2);
+  }
+
+  /* QUICK TOC */
+  .wp-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .wp-toc a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-toc a span {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+  }
+  .wp-toc a:hover {
+    border-color: var(--wp-coral);
+    color: var(--text-1);
+  }
+
+  /* CASE STUDY GRID */
+  .case-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  .case-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.45rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .case-card.intent {
+    border-top: 3px solid var(--wp-peach);
+  }
+  .case-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--wp-peach);
+  }
+  .case-card h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  .case-card p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-2);
+    line-height: 1.68;
+  }
+  .sub-note {
+    font-size: 0.86rem !important;
+  }
+  .case-card.troubleshoot {
+    padding: 0;
+    background: transparent;
+    border: none;
+    gap: 0.85rem;
+  }
+  .ts-step {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    flex: 1;
+  }
+  .ts-step.problem { border-left: 3px solid var(--wp-coral); }
+  .ts-step.solution { border-left: 3px solid var(--wp-mint); }
+  .ts-tag {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .ts-step.problem .ts-tag { color: var(--wp-coral); }
+  .ts-step.solution .ts-tag { color: var(--wp-mint); }
+  .ts-step h3 {
+    margin: 0;
+    font-size: 1.04rem;
+  }
+  .ts-step p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+
+  .wp-bullet-list {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.62;
+  }
+  .wp-bullet-list strong {
+    color: var(--text-1);
+  }
+
+  .wp-param-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+  }
+  .wp-param-strip span {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.22rem 0.55rem;
+    border-radius: 8px;
+  }
+
+  .wp-preset-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-2);
+  }
+  .wp-preset-mini strong {
+    color: var(--wp-coral);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+  }
+
+  .wp-fsm-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+  .wp-fsm-bar span {
+    color: var(--wp-peach);
+    font-weight: 700;
+  }
+  .wp-fsm-bar i {
+    font-style: normal;
+    color: var(--text-3);
+  }
+
+  /* CODE DETAILS */
+  .wp-code-details {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .wp-code-details summary {
+    cursor: pointer;
+    padding: 0.85rem 1.15rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-2);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .wp-code-details summary::before {
+    content: '▸';
+    color: var(--wp-coral);
+    transition: transform var(--dur-fast);
+  }
+  .wp-code-details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  .wp-code-details summary:hover {
+    color: var(--text-1);
+  }
+  .code-wrap {
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    overflow-x: auto;
+  }
+  .code-wrap :global(pre) {
+    margin: 0 !important;
+    padding: 1rem 1.15rem !important;
+    border-radius: 0 !important;
+  }
+
+  /* 3-COL GRID */
+  .wp-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+  .wp-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+  .wp-card-tag {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-weight: 700;
+    color: var(--wp-mint);
+    letter-spacing: 0.06em;
+  }
+  .wp-card h3 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+  .wp-card p {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+  .wp-card p strong {
+    color: var(--text-1);
+  }
+
+  /* ENV & BUDGET BOX */
+  .env-box {
+    background: var(--wp-surface-soft);
+    border: 1px solid var(--wp-border);
+    border-radius: 18px;
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .env-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.3rem;
+    font-size: 0.84rem;
+    color: var(--text-2);
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .env-meta strong {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--wp-coral);
+    margin-right: 0.3rem;
+  }
+  .wp-split-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .env-col {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.15rem;
+  }
+  .env-col.keep { border-top: 3px solid var(--wp-mint); }
+  .env-col.disable { border-top: 3px solid var(--wp-coral); }
+  .env-col-head {
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+  .env-col-head.mint { color: var(--wp-mint); }
+  .env-col-head.coral { color: var(--wp-coral); }
+  .env-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .env-col li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .env-col li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .env-col code {
+    font-size: 0.75rem;
+    color: var(--text-1);
+    word-break: break-all;
+  }
+  .env-col span {
+    color: var(--text-3);
+    white-space: nowrap;
+    font-size: 0.77rem;
+  }
+
+  /* KNOWN LIMITATIONS */
+  .limit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+  .limit-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--wp-peach);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .limit-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .limit-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--wp-peach);
+    letter-spacing: 0.05em;
+  }
+  .limit-head code {
+    font-size: 0.72rem;
+    color: var(--text-3);
+  }
+  .limit-card h3 {
+    margin: 0;
+    font-size: 0.98rem;
+  }
+  .limit-card p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .limit-fix {
+    margin-top: auto;
+    padding-top: 0.55rem;
+    border-top: 1px dashed var(--border-subtle);
+    font-size: 0.83rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+  .limit-fix strong {
+    color: var(--wp-mint);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+  }
+
+  /* ROADMAP */
+  .wp-roadmap-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .wp-roadmap-steps li {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.15rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .wp-roadmap-steps li.final-step {
+    border-color: color-mix(in srgb, var(--wp-mint) 48%, var(--border));
+    background: color-mix(in srgb, var(--surface-1) 90%, var(--wp-mint) 10%);
+  }
+  .rm-idx {
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+  }
+  .final-step .rm-idx { color: var(--wp-mint); }
+  .wp-roadmap-steps h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+  .wp-roadmap-steps p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+
+  .wp-bottom-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .wp-bottom-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  @media (max-width: 1024px) {
+    .wp-exec-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .arch-pipeline {
+      grid-template-columns: 1fr;
+    }
+    .arch-conn {
+      flex-direction: row;
+      padding: 0.15rem 0;
+    }
+    .conn-arrow {
+      transform: rotate(90deg);
+    }
+  }
+  @media (max-width: 960px) {
+    .case-grid,
+    .wp-grid-3,
+    .arch-bottom-grid,
+    .wp-split-2,
+    .limit-grid {
+      grid-template-columns: 1fr;
+    }
+    .wp-roadmap-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .wp-hero {
+      padding: 1.4rem;
+    }
+    .wp-exec-grid,
+    .wp-roadmap-steps {
+      grid-template-columns: 1fr;
+    }
+    .env-col li {
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+  }
+</style>

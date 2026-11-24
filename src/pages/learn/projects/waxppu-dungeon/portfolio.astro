@@ -75,7 +75,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
 <BaseLayout
   title="왁뿌던전 탈출 — 포트폴리오 / 기술 개발기"
-  description="UE 5.9 Preview 2 C++ 프로토타입 WaxPpuLab의 시스템 아키텍처, 실제 PIE 캡쳐, Chaos Destruction 고정 수명 파편, 물리 기반 하이브리드 ASMR 오디오, 전략 로코모션, Subsurface 셰이딩 및 한계·개선 과제 정리"
+  description="Unreal Engine 5.9 C++ 프로토타입 WaxPpuLab의 시스템 아키텍처, 실제 플레이 캡쳐, 국소 파괴와 파편 수명, 물리 기반 ASMR 오디오, 몬스터별 이동 방식, 밀랍 셰이딩과 남은 개선 과제"
 >
   <div class="wp-page">
     <nav class="wp-breadcrumb" aria-label="이동 경로">
@@ -101,8 +101,9 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
           <h1>WaxPpuLab: UE 5.9 C++ 기술 개발기</h1>
           <p class="wp-lead">
-            「왁뿌던전 탈출」의 UE 5.9 Preview 2 C++ 프로토타입(<code>WaxPpuLab</code>) 엔지니어링 기록입니다.
-            <strong>시스템 아키텍처 · 설계 Trade-off · 문제 해결(원인 → 해결 → 검증) · 코드의 한계와 개선 과제</strong>를 실제 PIE 캡쳐와 함께 정리했습니다.
+            「왁뿌던전 탈출」을 Unreal Engine 5.9 Preview 2와 C++로 먼저 만들어 본 프로토타입 WaxPpuLab의 엔지니어링 기록입니다.
+            <strong>무엇을 왜 이렇게 설계했는지, 어떤 문제를 어떤 원리로 풀었는지, 그리고 아직 남은 한계</strong>를 실제 플레이 캡쳐와 함께 정리했습니다.
+            구체적인 코드와 수치는 각 섹션의 접힌 상세 보기에 담았습니다.
           </p>
 
           <div class="wp-hero-actions">
@@ -123,7 +124,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
         <figure class="media-card hero-shot">
           <img
             src="/images/projects/waxppu-dungeon/01-monsters-lineup.png"
-            alt="UE 5.9 PIE에서 나란히 배치된 BP_WaxBall_Basic(구형)과 BP_WaxButter(직육면체) 몬스터 — 노란 Subsurface 밀랍 질감과 BodyPivot 고정 눈알"
+            alt="나란히 선 공 모양 왁스 몬스터와 직육면체 버터 몬스터. 반투명한 노란 밀랍 질감과 몸에 붙은 두 눈알이 보인다"
             width="1280"
             height="528"
             class="zoomable-img"
@@ -131,7 +132,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             fetchpriority="high"
           />
           <figcaption>
-            <strong>PIE Capture · Flat 1-Level 몬스터 라인업</strong> — <code>BP_WaxBall_Basic</code>(구형)과 <code>BP_WaxButter</code>(직육면체)의 노란 Subsurface 밀랍 질감 및 <code>BodyPivot</code> 고정 눈알
+            <strong>PIE Capture · 몬스터 라인업</strong> — 공 모양 왁스볼과 직육면체 버터 몬스터. 빛이 살짝 스며드는 노란 밀랍 껍질과, 몸을 따라 움직이는 두 눈알이 특징입니다.
           </figcaption>
         </figure>
       </div>
@@ -139,23 +140,23 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
       <div class="wp-exec-grid" aria-label="핵심 엔지니어링 요약">
         <div class="exec-card coral">
           <span class="exec-k">CHAOS DESTRUCTION</span>
-          <strong class="exec-v">RemoveOnBreak · 0.30</strong>
-          <span class="exec-d">국소 CullingField 파괴 + Dataflow 고정 수명(1.5~2.0s) 축소 삭제</span>
+          <strong class="exec-v">맞은 곳만 부수기</strong>
+          <span class="exec-d">조준한 부위만 정밀하게 깎아 내고, 부서진 파편은 정해진 시간이 지나면 스스로 사라집니다.</span>
         </div>
         <div class="exec-card peach">
           <span class="exec-k">HYBRID ASMR AUDIO</span>
-          <strong class="exec-v">Fechner Log · Poisson</strong>
-          <span class="exec-d">QueueDensityScale(N<sup>-0.22</sup>) · 임펄스/½mv² 폴백 · 2버전 실시간 전환</span>
+          <strong class="exec-v">물리로 만드는 소리</strong>
+          <span class="exec-d">파편의 무게·속도·충격을 소리 크기로 옮기고, 소리 겹침과 기계적인 반복감을 자동으로 다스립니다.</span>
         </div>
         <div class="exec-card mint">
-          <span class="exec-k">DATA-DRIVEN OOP</span>
-          <strong class="exec-v">0 Hardcoded · BROKEN_TOTAL=0</strong>
-          <span class="exec-d">Flat 1-Level 상속 · 전략 로코모션 · 리다이렉터 무결성 0건</span>
+          <span class="exec-k">DATA-DRIVEN DESIGN</span>
+          <strong class="exec-v">스펙은 코드 밖에</strong>
+          <span class="exec-d">얕은 상속과 갈아 끼우는 이동 부품으로 만들었고, 코드에 박아 둔 에셋 경로도 끊어진 참조도 없습니다.</span>
         </div>
         <div class="exec-card coral">
           <span class="exec-k">SHADING &amp; BUDGET</span>
-          <strong class="exec-v">Subsurface · Pure Emissive</strong>
-          <span class="exec-d">Base/SSS 0 마스킹 타겟 + M4 16GB용 RT/PT CVar 5종 비활성화</span>
+          <strong class="exec-v">밀랍 질감 · M4 최적화</strong>
+          <span class="exec-d">반투명 왁스 위에서도 조준 표시가 선명하고, 렌더러는 16GB 통합 메모리에 맞춰 덜어 냈습니다.</span>
         </div>
       </div>
     </header>
@@ -169,391 +170,471 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
 
       <figure class="arch-figure" aria-labelledby="archDiagramTitle">
         <div class="arch-diagram">
-          <div id="archDiagramTitle" class="arch-row-label">RUNTIME INTERACTION PIPELINE (플레이어 입력 → 파괴 · 물리 · 오디오)</div>
+          <div id="archDiagramTitle" class="arch-row-label">RUNTIME FLOW (플레이어의 한 번의 타격이 파괴 · 물리 · 소리로 이어지는 흐름)</div>
           <div class="arch-pipeline">
             <div class="arch-node accent-coral">
-              <div class="node-tag">PLAYER · ACharacter</div>
-              <div class="node-title">AWaxPpuLabCharacter</div>
+              <div class="node-tag">PLAYER</div>
+              <div class="node-title">플레이어 입력 · 타게팅</div>
               <ul class="node-list">
-                <li><code>DoWaxCrackTrace()</code> 스피어 오버랩</li>
-                <li><code>UpdateDebrisKick()</code> 발차기</li>
-                <li><code>Tick()</code> 타겟 구체 중심 계산</li>
+                <li>조준 지점 주변을 구체 범위로 훑어 타격 대상을 찾음</li>
+                <li>걸어가며 발밑 파편을 걷어참</li>
+                <li>매 프레임 조준 위치를 계산해 셰이더에 전달</li>
               </ul>
             </div>
 
             <div class="arch-conn" aria-hidden="true">
-              <span class="conn-fn">ApplyEyeImpact()</span>
-              <span class="conn-fn">ApplyWaxImpact()</span>
+              <span class="conn-fn">타격 전달</span>
               <span class="conn-arrow">→</span>
             </div>
 
             <div class="arch-node accent-mint">
-              <div class="node-tag">MONSTER · Flat 1-Level</div>
-              <div class="node-title">AWaxMonsterBase</div>
+              <div class="node-tag">MONSTER</div>
+              <div class="node-title">몬스터 본체 (껍질 · 코어 · 눈알)</div>
               <ul class="node-list">
-                <li><code>BodyPivot</code> (Shell · Core · Eyes 고정)</li>
-                <li><code>EyeLeftGC</code> / <code>EyeRightGC</code> 독립 파괴</li>
-                <li>붕괴 시 <code>AWaxMonsterCore</code> 방출</li>
+                <li>껍질·코어·눈알이 하나의 몸체 기준점에 묶여 함께 움직임</li>
+                <li>두 눈알은 껍질과 따로 부서짐</li>
+                <li>껍질이 무너지면 안쪽 코어가 튀어나옴</li>
               </ul>
             </div>
 
             <div class="arch-conn" aria-hidden="true">
-              <span class="conn-fn">Field / Strain</span>
-              <span class="conn-fn">OnCollapse</span>
+              <span class="conn-fn">파괴 범위 · 힘</span>
+              <span class="conn-fn">붕괴 신호</span>
               <span class="conn-arrow">→</span>
             </div>
 
             <div class="arch-node accent-peach">
-              <div class="node-tag">DESTRUCTION · UActorComponent</div>
-              <div class="node-title">UWaxDestructibleComponent</div>
+              <div class="node-tag">DESTRUCTION</div>
+              <div class="node-title">국소 파괴 제어</div>
               <ul class="node-list">
-                <li><code>URadialFalloff</code> + <code>UCullingField</code></li>
-                <li>리프 파괴율 추적 (<code>≤ 0.30</code> 붕괴)</li>
-                <li>조건부 Tick (<code>RefreshTickEnabled</code>)</li>
+                <li>조준 범위 안쪽 조각만 골라 부숨</li>
+                <li>껍질이 일정 비율 이상 깎이면 전체를 무너뜨림</li>
+                <li>할 일이 있을 때만 갱신 루프를 켜 CPU 낭비를 줄임</li>
               </ul>
             </div>
 
             <div class="arch-conn" aria-hidden="true">
-              <span class="conn-fn">OnBreak / OnCollision</span>
+              <span class="conn-fn">깨짐 · 충돌 이벤트</span>
               <span class="conn-arrow">→</span>
             </div>
 
             <div class="arch-node accent-coral">
-              <div class="node-tag">SOLVER &amp; SYNTHESIS</div>
-              <div class="node-title">Chaos Dataflow &amp; MetaSound</div>
+              <div class="node-tag">PHYSICS &amp; SOUND</div>
+              <div class="node-title">Chaos 파편 수명 &amp; MetaSound 오디오</div>
               <ul class="node-list">
-                <li><code>RemoveOnBreak</code> 고정 수명 축소</li>
-                <li><code>MS_WaxCrackASMR</code> 하이브리드 합성</li>
-                <li><code>1/2</code> 키 실시간 프리셋 전환</li>
+                <li>부서진 파편은 정해진 시간 뒤 작아지며 사라짐</li>
+                <li>충돌 세기에 맞춰 왁스 깨지는 소리를 실시간 합성</li>
+                <li>플레이 중 키 하나로 두 사운드 프리셋을 바로 비교</li>
               </ul>
             </div>
           </div>
 
-          <div class="arch-row-label sub">DECOUPLED CONTRACTS (데이터 주입 · 전략 로코모션 · 셰이딩 마스킹)</div>
+          <div class="arch-row-label sub">SUPPORTING DESIGN (데이터 주입 · 교체형 이동 · 조준 셰이딩)</div>
           <div class="arch-bottom-grid">
             <div class="arch-node compact accent-mint">
-              <div class="node-tag">DATA CONTRACT · 0 HARDCODED PATHS</div>
-              <div class="node-title">UWaxMonsterDataAsset</div>
+              <div class="node-tag">DATA-DRIVEN SPEC</div>
+              <div class="node-title">몬스터 데이터 시트</div>
               <p class="node-desc">
-                <code>DA_WaxBall_Basic</code> · <code>DA_WaxButter</code> → <code>InitializeFromData()</code>로 껍질·코어·눈·로코모션·오디오 프로파일 일괄 주입
+                껍질·코어·눈·이동 방식·사운드 설정을 몬스터마다 데이터 파일 하나에 묶어 생성 시점에 주입합니다. 코드에 에셋 경로를 직접 적지 않습니다.
               </p>
             </div>
 
             <div class="arch-node compact accent-peach">
-              <div class="node-tag">STRATEGY PATTERN · LOCOMOTION</div>
-              <div class="node-title">UWaxLocomotionComponent</div>
+              <div class="node-tag">SWAPPABLE LOCOMOTION</div>
+              <div class="node-title">갈아 끼우는 이동 방식</div>
               <p class="node-desc">
-                <code>UWaxRollingLocomotion</code> (Δp×Normal 구르기) ↔ <code>UWaxButterLocomotion</code> (4-State 양방향 텀블링 FSM)
+                공 몬스터는 실제 움직인 만큼 굴러가고, 버터 몬스터는 넘어졌다 일어서는 4단계 텀블링으로 다가옵니다. 데이터 설정 하나로 바꿀 수 있습니다.
               </p>
             </div>
 
             <div class="arch-node compact accent-coral">
-              <div class="node-tag">SHADING BRIDGE · MPC PUSH</div>
-              <div class="node-title">MPC_WaxTargeting</div>
+              <div class="node-tag">SHADING BRIDGE</div>
+              <div class="node-title">조준 하이라이트 전달</div>
               <p class="node-desc">
-                <code>AWaxPpuLabCharacter::Tick</code> → <code>M_WaxButter</code>(Subsurface) 내부 Base/SSS 0 차단 + 순수 Emissive 출력
+                캐릭터가 조준 위치를 머티리얼 공용 파라미터로 넘기면, 왁스 셰이더가 그 구역만 순수한 발광색으로 칠합니다.
               </p>
             </div>
           </div>
         </div>
         <figcaption>
-          <strong>WaxPpuLab 아키텍처</strong> — 캐릭터는 <code>ApplyWaxImpact</code> / <code>ApplyEyeImpact</code>와 <code>MPC_WaxTargeting</code> 푸시만 담당하고, 몬스터는 Flat 1-Level 계층 아래 DataAsset·전략 로코모션·파괴 컴포넌트를 조립해 책임을 분리했습니다.
+          <strong>WaxPpuLab 아키텍처</strong> — 플레이어는 "어디를 때렸는가"만 전달하고, 무엇이 어떻게 부서지고 어떤 소리가 나는지는 몬스터와 파괴 시스템이 각자 책임집니다. 몬스터마다 다른 점은 상속 대신 데이터와 교체 가능한 부품으로 표현했습니다.
         </figcaption>
       </figure>
 
+      <details class="wp-code-details">
+        <summary>구현 매핑 보기 — 구조도 각 블록의 C++ 클래스 · 함수 · 에셋</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>플레이어 입력 · 타게팅</strong> → <code>AWaxPpuLabCharacter</code> — <code>DoWaxCrackTrace()</code> 스피어 오버랩, <code>UpdateDebrisKick()</code>, <code>Tick()</code>의 <code>GetFloatingTargetSphereCenter()</code></li>
+            <li><strong>타격 전달</strong> → <code>ApplyWaxImpact()</code> / <code>ApplyEyeImpact()</code></li>
+            <li><strong>몬스터 본체</strong> → <code>AWaxMonsterBase</code> (<code>ACharacter</code>, Flat 1-Level) — <code>BodyPivot</code>, <code>ShellCollection</code>, <code>EyeLeftGC</code> / <code>EyeRightGC</code>, 붕괴 시 <code>AWaxMonsterCore</code> 방출</li>
+            <li><strong>국소 파괴 제어</strong> → <code>UWaxDestructibleComponent</code> — <code>URadialFalloff</code> + <code>UCullingField</code>, 리프 잔존율 <code>≤ 0.30</code>이면 붕괴, <code>RefreshTickEnabled()</code> 조건부 Tick</li>
+            <li><strong>파편 수명 &amp; 오디오</strong> → Dataflow <code>FRemoveOnBreakDataflowNode</code>, MetaSound <code>MS_WaxCrackASMR</code>, <code>1</code> / <code>2</code> 키 프리셋 전환</li>
+            <li><strong>몬스터 데이터 시트</strong> → <code>UWaxMonsterDataAsset</code> (<code>DA_WaxBall_Basic</code>, <code>DA_WaxButter</code>) → <code>InitializeFromData()</code></li>
+            <li><strong>이동 방식</strong> → <code>UWaxLocomotionComponent</code> 기반 — <code>UWaxRollingLocomotion</code> (Δp × Normal 구르기) / <code>UWaxButterLocomotionComponent</code> (4-State 텀블링 FSM)</li>
+            <li><strong>조준 하이라이트</strong> → <code>MPC_WaxTargeting</code> → <code>M_WaxButter</code> (Subsurface)</li>
+          </ul>
+        </div>
+      </details>
+
       <!-- Quick TOC -->
       <nav class="wp-toc" aria-label="문서 목차">
-        <a href="#case-01"><span>01</span> Chaos 파괴 &amp; RemoveOnBreak</a>
-        <a href="#case-02"><span>02</span> 하이브리드 ASMR 오디오</a>
-        <a href="#case-03"><span>03</span> 전략 로코모션 &amp; 버터 FSM</a>
-        <a href="#case-04"><span>04</span> Flat 1-Level &amp; DataAsset</a>
-        <a href="#case-05"><span>05</span> Subsurface &amp; 순수 발광 타겟</a>
-        <a href="#env-budget"><span>06</span> M4 16GB 렌더링 예산</a>
+        <a href="#case-01"><span>01</span> 국소 파괴 &amp; 파편 수명</a>
+        <a href="#case-02"><span>02</span> 물리 기반 ASMR 오디오</a>
+        <a href="#case-03"><span>03</span> 몬스터별 이동 방식</a>
+        <a href="#case-04"><span>04</span> 데이터 중심 구조</a>
+        <a href="#case-05"><span>05</span> 밀랍 셰이딩 &amp; 조준 표시</a>
+        <a href="#env-budget"><span>06</span> M4 16GB 렌더링 구성</a>
         <a href="#limitations"><span>07</span> 한계와 개선 과제</a>
         <a href="#roadmap"><span>08</span> 다음 마일스톤</a>
       </nav>
     </section>
 
-    <!-- CASE 01: CHAOS DESTRUCTION & REMOVEONBREAK -->
+    <!-- CASE 01 -->
     <section class="wp-section" id="case-01">
       <div class="wp-section-head">
         <span class="wp-eyebrow">CASE 01 // CHAOS DESTRUCTION &amp; DEBRIS LIFETIME</span>
-        <h2>국소 크레이터 파괴와 Dataflow RemoveOnBreak 고정 수명 전환</h2>
+        <h2>원하는 부위만 깎아 내는 국소 파괴, 바닥에 남지 않는 파편</h2>
       </div>
 
       <figure class="media-card case-shot">
         <img
           src="/images/projects/waxppu-dungeon/03-waxball-shatter-core.png"
-          alt="UWaxDestructibleComponent 실시간 Chaos 파괴로 왁스 파편이 떨어지며 안쪽 러프 핑크 코어(M_JellyCore)가 노출되는 PIE 캡쳐"
+          alt="조준한 부위의 왁스 껍질이 조각나 떨어지며 안쪽의 무광 핑크 코어가 드러나는 장면"
           width="1280"
           height="528"
           class="zoomable-img"
           loading="lazy"
         />
         <figcaption>
-          <strong>PIE Capture · 국소 Chaos 파괴 및 코어 노출</strong> — 조준 반경 내부만 <code>Dynamic</code> 전환 후 <code>ExternalClusterStrain</code>을 인가해 왁스를 깎아내고, 안쪽 무광 핑크 코어(<code>M_JellyCore</code>)가 드러나는 장면
+          <strong>PIE Capture · 국소 파괴와 코어 노출</strong> — 조준한 자리의 왁스만 떨어져 나가고, 그 안에 숨어 있던 무광 핑크 코어가 드러나는 순간입니다.
         </figcaption>
       </figure>
 
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">DESIGN INTENT &amp; TRADE-OFF</span>
-          <h3>Kinematic 앵커링 + 국소 Dynamic 전환</h3>
+          <h3>평소엔 단단히 고정, 맞은 곳만 풀어 주기</h3>
           <p>
-            전체 껍질을 <code>Chaos_Object_Kinematic</code>으로 고정하되 컴포넌트 <code>ObjectType</code>은 <code>Dynamic</code>을 유지합니다.
-            타격 시 <code>URadialFalloff</code> + <code>UCullingField</code>로 조준 구체 내부만 <code>Dynamic</code> 전환 후 <code>ExternalClusterStrain</code>을 인가해 원하는 부위만 정밀하게 깎아냅니다.
+            왁스 껍질은 평소 한 덩어리로 고정해 둡니다. 타격을 받으면 조준한 구체 범위 안쪽 조각만 물리 시뮬레이션으로 풀어 주고 쪼개는 힘을 가합니다.
+            그래서 몸통이 통째로 무너지지 않고 때린 자리만 크레이터처럼 정확하게 파입니다.
           </p>
           <ul class="wp-bullet-list">
-            <li><strong>리프 파괴율 붕괴</strong>: 잔여 리프가 <code>0.30</code> 이하가 되면 잔여 껍질을 일괄 붕괴시키고 <code>AWaxMonsterCore</code>를 <code>PM_JellyBounce</code> 물리로 방출합니다.</li>
-            <li><strong>이동 중 파편 발차기</strong>: 수평 이동 속도 <code>≥ 25 cm/s</code>일 때 발밑 <code>ECC_PhysicsBody</code>에 <code>Chaos_LinearVelocity</code> 필드를 인가합니다.</li>
+            <li><strong>임계 붕괴</strong>: 껍질이 일정 비율 이상 깎이면 남은 부분을 한 번에 무너뜨리고, 탱탱하게 튀는 젤리 코어를 밖으로 내보냅니다.</li>
+            <li><strong>파편 걷어차기</strong>: 플레이어가 걸어갈 때 발밑 파편이 이동 방향으로 자연스럽게 밀려납니다.</li>
           </ul>
         </article>
 
         <article class="case-card troubleshoot">
           <div class="ts-step problem">
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>RemoveOnMaxSleep 파편의 바닥 잔류 소음</h3>
+            <h3>멈추지 못한 파편이 계속 구르며 소리를 냄</h3>
             <p>
-              <code>bAllowRemovalOnSleep = true</code> 방식에서는 파편이 바닥에서 미세하게 구르거나 발차기에 반복 피격되어 Sleep에 진입하지 못했습니다. 그 결과 파편이 잔류하며 지속적인 충돌음과 물리 부하를 유발했습니다.
+              처음에는 파편이 완전히 멈춰 '잠든' 상태가 되면 지우는 방식을 썼습니다. 그런데 파편이 바닥에서 미세하게 계속 구르거나 플레이어 발에 거듭 차이면서 끝내 멈추지 못했습니다.
+              바닥에 남은 파편들은 충돌음과 물리 연산 부담을 쉬지 않고 만들어 냈습니다.
             </p>
           </div>
           <div class="ts-step solution">
             <span class="ts-tag">SOLUTION &amp; VERIFICATION</span>
-            <h3>Dataflow RemoveOnBreak 고정 수명 축소 삭제</h3>
+            <h3>'멈췄는가' 대신 '깨진 뒤 얼마나 지났는가'로 정리</h3>
             <p>
-              <code>DF_WaxOrb</code> · <code>DF_WaxButter</code> · <code>DF_MonsterEye</code>에 <code>FRemoveOnBreakDataflowNode</code>를 삽입하고 C++에서 <code>bAllowRemovalOnSleep = false</code>, <code>bAllowRemovalOnBreak = true</code>로 전환해 구름 여부와 무관하게 일정 시간 뒤 축소 삭제되도록 고정했습니다.
+              삭제 기준을 정지 여부에서 경과 시간으로 바꿨습니다. 모든 파편은 깨진 순간부터 짧은 수명을 갖고, 수명이 다하면 서서히 작아지며 사라집니다. 그래서 구르든 차이든 바닥에 쌓이지 않습니다.
+              지금은 화면 디버그 카운터와 직접 플레이로 확인했고, 정량 측정은 Unreal Insights로 이어 갈 계획입니다.
             </p>
-            <div class="wp-param-strip">
-              <span><code>PostBreakTimer</code> 1.5~2.0s</span>
-              <span><code>RemovalTimer</code> 0.35~0.45s</span>
-              <span><code>ScaleOnRemoval</code> True</span>
-              <span>검증: <code>bShowDebugCounters</code> + PIE 확인 (Insights 예정)</span>
-            </div>
           </div>
         </article>
       </div>
 
       <details class="wp-code-details">
-        <summary>세부 구현 &amp; C++ 코드 보기 — <code>UWaxDestructibleComponent::ApplyWaxImpact</code></summary>
+        <summary>구현 디테일 보기 — 국소 파괴 필드 · 파편 수명 설정 · C++ 발췌</summary>
+        <div class="detail-body">
+          <h4>국소 파괴</h4>
+          <ul>
+            <li>껍질 전체를 <code>Chaos_Object_Kinematic</code>으로 앵커링하고, 컴포넌트 <code>ObjectType</code>은 <code>Dynamic</code>으로 유지</li>
+            <li>타격 시 <code>URadialFalloff</code> + <code>UCullingField</code>(<code>Field_Culling_Outside</code>)로 구체 내부만 <code>Chaos_Object_Dynamic</code> 전환 → <code>Chaos_ExternalClusterStrain</code> 인가</li>
+            <li>리프 잔존율 <code>≤ 0.30</code>이면 일괄 붕괴, <code>AWaxMonsterCore</code>를 <code>PM_JellyBounce</code> 물리 머티리얼로 방출</li>
+            <li>파편 발차기: 수평 속도 <code>≥ 25 cm/s</code>일 때 발밑 <code>ECC_PhysicsBody</code>에 <code>Chaos_LinearVelocity</code> 필드 인가</li>
+          </ul>
+          <h4>파편 수명 (RemoveOnMaxSleep → RemoveOnBreak)</h4>
+          <ul>
+            <li><code>DF_WaxOrb</code> · <code>DF_WaxButter</code> · <code>DF_MonsterEye</code>에 <code>FRemoveOnBreakDataflowNode</code> 삽입</li>
+            <li>C++: <code>bAllowRemovalOnSleep = false</code>, <code>bAllowRemovalOnBreak = true</code></li>
+          </ul>
+          <div class="wp-param-strip">
+            <span><code>PostBreakTimer</code> 1.5~2.0s</span>
+            <span><code>RemovalTimer</code> 0.35~0.45s</span>
+            <span><code>ScaleOnRemoval</code> True</span>
+            <span>검증: <code>bShowDebugCounters</code> + PIE</span>
+          </div>
+        </div>
         <div class="code-wrap">
           <Code code={codeChaosImpact} lang="cpp" theme="github-dark" />
         </div>
       </details>
     </section>
 
-    <!-- CASE 02: HYBRID ASMR AUDIO -->
+    <!-- CASE 02 -->
     <section class="wp-section" id="case-02">
       <div class="wp-section-head">
         <span class="wp-eyebrow">CASE 02 // PHYSICS-BASED HYBRID ASMR AUDIO</span>
-        <h2>다중 그레인 클리핑 방지 · Fechner식 로그 압축 · Poisson 쿨다운</h2>
+        <h2>물리량으로 빚는 왁스 깨짐 ASMR — 뭉개지지도, 기계적이지도 않게</h2>
       </div>
 
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">ARCHITECTURE &amp; SYNTHESIS</span>
-          <h3>MetaSound 프리셋 + Chaos 물리량 매핑</h3>
+          <h3>충돌의 무게와 속도를 소리로 옮기기</h3>
           <p>
-            <code>MS_WaxCrackASMR</code>와 <code>FWaxAudioProfile</code> / <code>FWaxCollisionVariant</code>로 파괴음과 파편 충돌음을 질량·속도·충격량에 실시간 매핑했습니다.
+            MetaSound로 만든 왁스 깨짐 사운드에 Chaos의 충돌 정보, 곧 파편의 무게와 부딪힌 속도, 충격의 세기를 실시간으로 연결했습니다.
+            큰 덩어리는 묵직하게, 작은 부스러기는 가볍게 들리게 하는 것이 목표였습니다.
           </p>
           <ul class="wp-bullet-list">
-            <li><strong>클리핑 방지</strong>: 대기열 크기 <code>N</code>에 따라 <code>QueueDensityScale = 1 / Pow(N, 0.22)</code> 적용, 붕괴 시 <code>CollapseGrainSpreadMaxSec · U²</code> 시간 분산.</li>
-            <li><strong>에너지 폴백</strong>: <code>AccumulatedImpulse</code> 유효 시 <code>½|J|v</code>, 누락 시 <code>½mv²</code>로 방어 계산.</li>
-            <li><strong>Poisson 지수 쿨다운</strong>: <code>-ln(U)·MinInterval</code>(<code>0.5x~3.0x</code>) 샘플링으로 기계적 반복음 제거 + <code>RefreshTickEnabled()</code> 조건부 Tick.</li>
+            <li><strong>겹침 제어</strong>: 동시에 울리는 소리가 많을수록 하나하나를 조금씩 낮춥니다. 큰 붕괴가 일어날 때는 소리들을 짧은 시간에 흩뿌려, 한꺼번에 터지며 찢어지는 소리를 막습니다.</li>
+            <li><strong>정보 누락 대비</strong>: 엔진이 충격 정보를 넘겨주지 못한 충돌도 무게와 속도로 에너지를 추정해, 소리가 빠지지 않게 했습니다.</li>
+            <li><strong>자연스러운 간격</strong>: 다음 소리까지의 대기 시간을 매번 무작위로 뽑아 일정한 박자의 기계적인 반복감을 없앴습니다. 들려줄 소리가 없을 때는 갱신 루프도 꺼 둡니다.</li>
           </ul>
         </article>
 
         <article class="case-card troubleshoot">
           <div class="ts-step problem">
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>선형 속도 매핑의 질량 무시 및 이중 감쇠</h3>
+            <h3>무게를 무시한 매핑과 겹쳐 버린 감쇠</h3>
             <p>
-              기존 <code>NormalSpeed / 320</code> 선형 매핑은 파편 질량 차이를 무시했고, <code>DensityGain</code>(<code>1/√N</code>)과 <code>PlayOneShotCrack</code> 하한(<code>0.08</code>)이 겹치며 미세 낙하음이 뭉개지거나 이중 감쇠되었습니다.
+              초기에는 부딪힌 속도만으로 소리 크기를 정해서, 무거운 파편과 가벼운 파편이 같은 소리를 냈습니다.
+              게다가 소리를 줄이는 장치 두 개가 동시에 작동해, 작은 파편이 떨어지는 섬세한 소리는 거의 들리지 않을 만큼 눌려 버렸습니다.
             </p>
           </div>
           <div class="ts-step solution">
             <span class="ts-tag">SOLUTION &amp; HYBRID PRESETS</span>
-            <h3>√E 기반 Fechner식 로그 압축 &amp; 감쇠 계수 정규화</h3>
+            <h3>사람 귀처럼 듣기: 에너지 기반 로그 압축</h3>
             <p>
-              음향 압력 <code>P = √E</code>에 <code>ln(1 + 5·P<sub>norm</sub>) / ln(6)</code> 로그 압축을 적용하고, <code>DensityGain ≥ 0.65</code>, <code>Collision*Scale = 1.0</code>, <code>FinalIntensity</code> 하한을 <code>0.08 → 0.02</code>로 완화해 다이내믹 레인지를 복원했습니다.
+              충돌 에너지로 소리 세기를 구하고, 사람이 소리 크기를 로그 단위로 느낀다는 점(Fechner 법칙)을 반영해 작은 소리는 살리고 큰 소리는 부드럽게 눌렀습니다.
+              겹쳐 있던 감쇠 장치들의 기준도 다시 맞춰, 미세한 부스러기 소리부터 큰 붕괴음까지 폭넓은 표현을 되찾았습니다.
             </p>
             <div class="wp-preset-mini">
-              <div><strong>KEY 1 (기본)</strong>: <code>WoodPlank</code> + <code>Heavy</code> / <code>BambooClick</code> 랜덤</div>
-              <div><strong>KEY 2 (대안)</strong>: <code>HardBlock</code> + <code>JadeMarble</code> / <code>SoftWaxTap</code> 랜덤</div>
+              <div><strong>KEY 1 (기본)</strong>: 나무판을 쪼개는 듯한 묵직한 질감에, 대나무 클릭처럼 가벼운 충돌음을 섞음</div>
+              <div><strong>KEY 2 (대안)</strong>: 단단한 블록 질감에, 옥·대리석 소리와 부드러운 왁스 탭 소리를 섞음</div>
             </div>
           </div>
         </article>
       </div>
 
       <details class="wp-code-details">
-        <summary>세부 구현 &amp; C++ 코드 보기 — <code>UWaxDestructibleComponent::HandleChaosCollisionEvent</code></summary>
+        <summary>구현 디테일 보기 — 에너지 계산 · 로그 압축 · 무작위 쿨다운 · C++ 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>사운드 구성: <code>MS_WaxCrackASMR</code> + <code>FWaxAudioProfile</code> / <code>FWaxCollisionVariant</code></li>
+            <li>겹침 제어: 대기열 크기 <code>N</code>에 대해 <code>QueueDensityScale = 1 / Pow(N, 0.22)</code>, 붕괴 시 <code>CollapseGrainSpreadMaxSec · U²</code>로 시간 분산</li>
+            <li>에너지: <code>AccumulatedImpulse</code>가 유효하면 <code>½|J|v</code>, 없으면 <code>½mv²</code>로 폴백</li>
+            <li>로그 압축: <code>P = √E</code>, <code>ln(1 + 5·P<sub>norm</sub>) / ln(6)</code></li>
+            <li>Poisson 지수 쿨다운: <code>-ln(U) · MinInterval</code>을 <code>0.5x~3.0x</code>로 클램프, <code>RefreshTickEnabled()</code> 조건부 Tick</li>
+            <li>이전 문제: <code>NormalSpeed / 320</code> 선형 매핑, <code>DensityGain = 1/√N</code>과 <code>PlayOneShotCrack</code> 하한 <code>0.08</code>이 겹쳐 이중 감쇠</li>
+            <li>수정: <code>DensityGain ≥ 0.65</code>, <code>Collision*Scale = 1.0</code>, <code>FinalIntensity</code> 하한 <code>0.08 → 0.02</code></li>
+            <li>프리셋: KEY 1 <code>WoodPlank</code> + <code>Heavy</code> / <code>BambooClick</code> 랜덤 · KEY 2 <code>HardBlock</code> + <code>JadeMarble</code> / <code>SoftWaxTap</code> 랜덤</li>
+          </ul>
+        </div>
         <div class="code-wrap">
           <Code code={codeHybridAudio} lang="cpp" theme="github-dark" />
         </div>
       </details>
     </section>
 
-    <!-- CASE 03: PHYSICS-DRIVEN LOCOMOTION -->
+    <!-- CASE 03 -->
     <section class="wp-section" id="case-03">
       <div class="wp-section-head">
         <span class="wp-eyebrow">CASE 03 // STRATEGY LOCOMOTION &amp; BUTTER 4-STATE FSM</span>
-        <h2>전략 로코모션: 물리 변위 구르기 vs 버터 직육면체 양방향 텀블링</h2>
+        <h2>몬스터마다 다른 걸음걸이: 굴러가는 공, 넘어지며 다가오는 버터</h2>
       </div>
 
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">STRATEGY PATTERN</span>
-          <h3>UWaxLocomotionComponent 교체 구조</h3>
+          <h3>이동 방식을 부품처럼 갈아 끼우기</h3>
           <p>
-            DataAsset의 <code>LocomotionClass</code> 지정만으로 이동 전략을 교체합니다.
-            <code>BP_WaxBall_Basic</code>은 실제 변위(<code>Δp</code>)와 바닥 법선의 외적으로 <code>RollRadius</code>에 연동되는 구름 회전을 생성하고, <code>BP_WaxButter</code>는 자체 4단계 텀블링 FSM을 구동합니다.
+            이동 로직을 몬스터 본체에서 떼어 내 교체 가능한 부품으로 만들고, 데이터 설정 하나로 어떤 방식을 쓸지 고르게 했습니다.
+            공 몬스터는 실제로 움직인 거리와 바닥 방향에 맞춰 미끄러짐 없이 굴러가고, 직육면체 버터 몬스터는 아래 네 단계를 반복하며 텀블링합니다.
           </p>
           <div class="wp-fsm-bar">
-            <span>HopAlign</span>
+            <span>방향 맞추기</span>
             <i>→</i>
-            <span>LayDown</span>
+            <span>눕기</span>
             <i>→</i>
-            <span>TumbleCharge</span>
+            <span>굴러 돌진</span>
             <i>→</i>
-            <span>StandUp</span>
+            <span>일어서기</span>
           </div>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>뒤돌기에 허비되는 시간, 몸을 눕힐 때 뜨거나 파묻힘</h3>
+            <p>
+              버터는 등 뒤의 플레이어를 쫓을 때도 늘 앞면을 기준으로 반 바퀴를 돌아, 방향을 맞추는 데 시간이 너무 걸렸습니다.
+              또 눕고 일어설 때 충돌 캡슐 높이만 바꾸면 중심을 기준으로 줄어들기 때문에, 몸이 공중에 뜨거나 바닥에 파묻혔습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION</span>
+            <h3>가까운 면으로 돌진, 바닥 기준으로 높이 보정</h3>
+            <p>
+              직육면체는 앞뒤가 대칭이라는 점에 착안해, 앞면과 뒷면 가운데 덜 돌아도 되는 면을 골라 그쪽으로 굴러가게 했습니다.
+              캡슐 높이를 바꿀 때는 달라진 만큼 몸 위치를 함께 옮기고 겉모습은 반대 방향으로 되돌려, 바닥에 늘 붙어 있도록 했습니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>구현 디테일 보기 — 상태 이름 · 튜닝 파라미터 · 최단각 선택 &amp; 바닥 고정 C++ 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>교체 구조: DataAsset의 <code>LocomotionClass</code>로 <code>UWaxLocomotionComponent</code> 하위 전략 선택</li>
+            <li>공(<code>BP_WaxBall_Basic</code>): 변위 <code>Δp</code>와 바닥 법선의 외적으로 회전축을 구하고 <code>RollRadius</code>에 연동</li>
+            <li>버터(<code>BP_WaxButter</code>) FSM: <code>HopAlign</code> → <code>LayDown</code> → <code>TumbleCharge</code> → <code>StandUp</code></li>
+            <li>최단각: <code>TickHopAlign</code>에서 <code>DeltaFwd</code>와 <code>DeltaBack</code>을 비교하고, <code>TumbleDirectionSign</code>으로 양방향 돌진</li>
+            <li>바닥 고정: <code>SetCapsuleHalfHeightKeepFloor</code>가 <code>HalfZ ↔ HalfY</code> 전환 시 <code>DeltaZ</code>만큼 액터와 <code>BodyPivot</code>을 상쇄 보정</li>
+          </ul>
           <div class="wp-param-strip">
             <span><code>DriveAngularAccel</code></span>
             <span><code>InitialStepOmega</code></span>
             <span><code>StepBounceRetention</code></span>
             <span><code>EffectiveGravity</code></span>
           </div>
-        </article>
-
-        <article class="case-card troubleshoot">
-          <div class="ts-step problem">
-            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>비효율적 180° 선회 및 캡슐 높이 변경 시 공중 뜸/관통</h3>
-            <p>
-              직육면체 버터가 등 뒤의 플레이어를 향해 항상 앞면 기준으로 180° 회전하면 정렬 시간이 과도해졌고, 눕기/일어서기 시 캡슐 반높이(<code>HalfZ ↔ HalfY</code>)를 단순 변경하면 중심 기준 축소로 바닥에서 뜨거나 파고들었습니다.
-            </p>
-          </div>
-          <div class="ts-step solution">
-            <span class="ts-tag">SOLUTION</span>
-            <h3>양방향 최단각 텀블링 + 바닥 고정 캡슐 보정</h3>
-            <p>
-              <code>TickHopAlign</code>에서 앞/뒷면 각도 차(<code>DeltaFwd</code> vs <code>DeltaBack</code>)를 비교해 가까운 면으로 정렬 후 <code>TumbleDirectionSign</code>으로 양방향 돌진합니다.
-              전환 시 <code>SetCapsuleHalfHeightKeepFloor</code>로 변화량(<code>DeltaZ</code>)만큼 액터와 <code>BodyPivot</code>을 상쇄 보정해 바닥 접지를 유지했습니다.
-            </p>
-          </div>
-        </article>
-      </div>
-
-      <details class="wp-code-details">
-        <summary>세부 구현 &amp; C++ 코드 보기 — <code>UWaxButterLocomotionComponent</code> (양방향 선택 &amp; KeepFloor)</summary>
+        </div>
         <div class="code-wrap">
           <Code code={codeButterLoco} lang="cpp" theme="github-dark" />
         </div>
       </details>
     </section>
 
-    <!-- CASE 04: FLAT 1-LEVEL + DATAASSET + REDIRECTOR INTEGRITY -->
+    <!-- CASE 04 -->
     <section class="wp-section" id="case-04">
       <div class="wp-section-head">
         <span class="wp-eyebrow">CASE 04 // DATA-DRIVEN ARCHITECTURE &amp; ASSET INTEGRITY</span>
-        <h2>Flat 1-Level 몬스터 계층 · 하드코딩 0건 · 에셋 리다이렉터 무결성</h2>
+        <h2>단순한 몬스터 계층, 코드 밖으로 뺀 스펙, 깨끗한 에셋 참조</h2>
       </div>
 
       <figure class="media-card case-shot">
         <img
           src="/images/projects/waxppu-dungeon/04-butter-tumble-shatter.png"
-          alt="BP_WaxButter의 왁스 껍질(ShellCollection)과 BodyPivot 고정 눈알(EyeLeftGC, EyeRightGC)이 각각 독립적으로 Chaos 파괴되는 PIE 캡쳐"
+          alt="버터 몬스터의 왁스 껍질과 두 눈알이 각각 따로 조각나는 장면"
           width="1280"
           height="528"
           class="zoomable-img"
           loading="lazy"
         />
         <figcaption>
-          <strong>PIE Capture · 버터 껍질 &amp; 눈알(<code>EyeLeftGC / EyeRightGC</code>) 독립 파괴</strong> — <code>BodyPivot</code>에 고정된 <code>ShellCollection</code>과 <code>GC_MonsterEye</code>가 개별 강도·내구도로 각각 조각나는 구조
+          <strong>PIE Capture · 껍질과 눈알의 독립 파괴</strong> — 버터 몬스터의 왁스 껍질과 두 눈알은 몸을 따라 함께 움직이지만, 부서질 때는 각자 다른 단단함으로 따로 조각납니다.
         </figcaption>
       </figure>
 
       <div class="wp-grid-3">
         <article class="wp-card">
-          <span class="wp-card-tag">FLAT 1-LEVEL HIERARCHY</span>
-          <h3>상속 깊이 1단계 제한</h3>
+          <span class="wp-card-tag">FLAT HIERARCHY</span>
+          <h3>상속은 한 단계까지만</h3>
           <p>
-            <code>AWaxMonsterBase</code>(<code>ACharacter</code>) 아래 직계 블루프린트 자식(<code>BP_WaxBall_Basic</code>, <code>BP_WaxButter</code>)만 허용합니다.
-            눈알(<code>EyeLeftGC</code>, <code>EyeRightGC</code>)은 <code>BodyPivot</code>에 고정되어 바디와 함께 움직이면서도 개별 파괴됩니다.
+            모든 몬스터는 공통 기반 클래스를 바로 물려받는 블루프린트로만 만들고, 중간 계층은 두지 않았습니다.
+            몬스터 간 차이는 상속 대신 데이터와 교체 부품으로 표현해 구조가 한눈에 들어오고, 눈알처럼 몸에 붙은 부위도 몸통과 함께 움직이면서 따로 부서집니다.
           </p>
         </article>
 
         <article class="wp-card">
           <span class="wp-card-tag">ZERO HARDCODED PATHS</span>
-          <h3>DataAsset &amp; Property Matrix</h3>
+          <h3>스펙은 전부 데이터로</h3>
           <p>
-            <code>Source/WaxPpuLab/</code> 내 하드코딩 <code>/Game/</code> 경로는 <strong>0건</strong>입니다.
-            모든 스펙을 <code>UWaxMonsterDataAsset</code>과 <code>UPROPERTY(EditAnywhere)</code>로 노출해 Property Matrix에서 일괄 비교·튜닝합니다.
+            C++ 코드 안에 에셋 경로를 직접 적어 둔 곳은 한 군데도 없습니다.
+            몬스터의 수치와 에셋 참조를 모두 DataAsset과 에디터 노출 속성으로 빼 두어서, 여러 몬스터를 한 표에 나란히 놓고 비교하며 조정할 수 있습니다.
           </p>
         </article>
 
         <article class="wp-card">
-          <span class="wp-card-tag">UE 5.9 ASSET INTEGRITY</span>
-          <h3>에셋 재정리 &amp; BROKEN_TOTAL=0</h3>
+          <span class="wp-card-tag">ASSET INTEGRITY</span>
+          <h3>에셋 재정리 후 끊긴 참조 없음</h3>
           <p>
-            <code>/Game/Demo/</code> 에셋을 <code>{'/Game/WaxPpu/{Audio,Blueprints,Data,Destruction,Materials,Physics}'}</code>로 재구성하고,
-            리다이렉터 정리 후 참조 무결성 검증에서 <strong><code>BROKEN_TOTAL=0</code></strong>을 확보했습니다.
+            데모용으로 흩어져 있던 에셋을 오디오·블루프린트·데이터·파괴·머티리얼·물리로 나눠 다시 정리했습니다.
+            옮긴 흔적(리다이렉터)을 정리한 뒤 참조 검사를 돌려 끊어진 링크가 하나도 없음을 확인했습니다.
           </p>
         </article>
       </div>
+
+      <details class="wp-code-details spaced">
+        <summary>구현 디테일 보기 — 클래스 계층 · 데이터 노출 · 폴더 구조와 검증 결과</summary>
+        <div class="detail-body">
+          <ul>
+            <li>계층: <code>AWaxMonsterBase</code>(<code>ACharacter</code>) → 직계 자식 <code>BP_WaxBall_Basic</code>, <code>BP_WaxButter</code>만 허용</li>
+            <li>부위: <code>EyeLeftGC</code> / <code>EyeRightGC</code>(<code>GC_MonsterEye</code>)와 <code>ShellCollection</code>을 모두 <code>BodyPivot</code>에 부착, 강도·내구도는 개별 설정</li>
+            <li>데이터: <code>UWaxMonsterDataAsset</code> + <code>UPROPERTY(EditAnywhere)</code> 노출, Property Matrix로 일괄 비교</li>
+            <li>하드코딩: <code>Source/WaxPpuLab/</code> 안의 <code>/Game/</code> 경로 <strong>0건</strong></li>
+            <li>재구성: <code>/Game/Demo/</code> → <code>{'/Game/WaxPpu/{Audio,Blueprints,Data,Destruction,Materials,Physics}'}</code></li>
+            <li>검증: 리다이렉터 정리 후 참조 무결성 <strong><code>BROKEN_TOTAL=0</code></strong></li>
+          </ul>
+        </div>
+      </details>
     </section>
 
-    <!-- CASE 05: SUBSURFACE WAX & PURE EMISSIVE TARGETING -->
+    <!-- CASE 05 -->
     <section class="wp-section" id="case-05">
       <div class="wp-section-head">
         <span class="wp-eyebrow">CASE 05 // SUBSURFACE SHADING &amp; PURE EMISSIVE TARGETING</span>
-        <h2>Subsurface 왁스 셰이딩과 순수 발광 타겟 하이라이트 (MPC_WaxTargeting)</h2>
+        <h2>반투명한 밀랍 질감, 그 위에서도 선명한 조준 표시</h2>
       </div>
 
       <figure class="media-card case-shot">
         <img
           src="/images/projects/waxppu-dungeon/02-targeting-highlight.png"
-          alt="MPC_WaxTargeting 기반 부유 타겟 구체 하이라이트 — 왁스 껍질(M_WaxButter)의 타겟 영역 내부 BaseColor와 SubsurfaceColor를 0으로 차단하고 순수 EmissiveColor를 출력하는 PIE 캡쳐"
+          alt="왁스 몬스터 표면의 조준 구역만 밀랍 고유의 색을 지우고 선명한 빨간 빛으로 표시한 장면"
           width="1280"
           height="528"
           class="zoomable-img"
           loading="lazy"
         />
         <figcaption>
-          <strong>PIE Capture · 순수 발광 타겟 하이라이트</strong> — <code>MPC_WaxTargeting</code> 구체 영역 내부의 <code>BaseColor</code>/<code>SubsurfaceColor</code>를 0으로 차단하고 <code>TargetDecalColor(1.0, 0.01, 0.01) × EmissiveBoost(8.0)</code>를 다이렉트 출력한 장면
+          <strong>PIE Capture · 조준 하이라이트</strong> — 왁스 표면에서 조준한 구역만 밀랍 고유의 색과 산란을 지우고, 또렷한 빨간 빛으로 표시한 장면입니다.
         </figcaption>
       </figure>
 
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">MATERIAL CONTRAST</span>
-          <h3>광택 Subsurface 껍질 vs 무광 핑크 코어</h3>
+          <h3>윤기 나는 반투명 껍질 vs 무광 핑크 코어</h3>
           <ul class="wp-bullet-list">
-            <li><strong>겉 왁스 (<code>M_WaxButter</code>, 왁스 껍질 공용)</strong>: <code>Default Lit</code> → <code>Subsurface</code> 전환. 노란 밀랍 베이스 + 광택(<code>Roughness 0.18</code>, <code>Specular 0.60</code>) + 호박빛 내부 산란.</li>
-            <li><strong>내부 코어 (<code>M_ButterCore</code>, <code>M_JellyCore</code>)</strong>: 껍질 파괴 시 코어 노출을 즉각 인지하도록 핑크/로즈 색상 + 무반사 질감(<code>Roughness 0.84</code>, <code>Specular 0.12</code>)으로 통일.</li>
+            <li><strong>겉 왁스</strong>: 빛이 표면 아래로 스며들어 퍼지는 Subsurface 셰이딩으로 바꿔, 노란 밀랍 바탕에 윤기와 호박빛 투과감을 냈습니다.</li>
+            <li><strong>속 코어</strong>: 껍질이 깨져 코어가 드러난 순간을 바로 알아볼 수 있도록, 반사가 거의 없는 핑크·로즈 계열 무광 질감으로 통일했습니다.</li>
           </ul>
         </article>
 
         <article class="case-card troubleshoot">
           <div class="ts-step problem">
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
-            <h3>Subsurface 산란과 타겟 마커의 경계 흐림·혼색</h3>
+            <h3>산란광에 섞여 탁해지는 조준 표시</h3>
             <p>
-              부유 타겟 구체 영역에 단순 발광 가산만 적용하면 노란 <code>BaseColor</code>와 호박빛 <code>SubsurfaceColor</code>가 뒤섞여 조준 영역의 대비와 발색이 탁하게 흐려졌습니다.
+              조준 구역에 빛을 더하기만 하면 왁스의 노란 바탕색과 호박빛 산란이 함께 섞여, 표시가 흐리고 탁해졌습니다.
+              반투명 재질이라 경계까지 번져 보였습니다.
             </p>
           </div>
           <div class="ts-step solution">
             <span class="ts-tag">SOLUTION</span>
-            <h3>구체 내부 Base/SSS 0 마스킹 + 순수 Emissive 출력</h3>
+            <h3>조준 구역만 원래 색을 지우고 순수한 빛으로</h3>
             <p>
-              <code>MPC_WaxTargeting</code> 구체 마스크 내부에서 <code>BaseColor</code>와 <code>SubsurfaceColor</code>를 <strong>0으로 차단</strong>하고
-              <code>MarkerColor × EmissiveBoost</code>만 다이렉트 출력해 바탕 왁스 색과 무관하게 일관된 발광 조준 표시를 확보했습니다.
+              조준 구체 안쪽에서는 왁스의 바탕색과 산란색을 완전히 끄고, 지정한 표시 색의 발광만 남겼습니다.
+              그래서 밑바탕 왁스 색이 무엇이든 조준 위치가 언제나 같은 선명도로 보입니다.
             </p>
           </div>
         </article>
       </div>
 
       <details class="wp-code-details">
-        <summary>세부 구현 &amp; C++ 코드 보기 — <code>AWaxPpuLabCharacter::Tick</code> (MPC 파라미터 푸시)</summary>
+        <summary>구현 디테일 보기 — 머티리얼 수치 · 마스킹 방식 · 파라미터 전달 C++ 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>겉 왁스 <code>M_WaxButter</code>(껍질 공용): <code>Default Lit</code> → <code>Subsurface</code>, <code>Roughness 0.18</code>, <code>Specular 0.60</code></li>
+            <li>속 코어 <code>M_ButterCore</code>, <code>M_JellyCore</code>: <code>Roughness 0.84</code>, <code>Specular 0.12</code></li>
+            <li>마스킹: <code>MPC_WaxTargeting</code> 구체 마스크 안에서 <code>BaseColor</code> · <code>SubsurfaceColor</code> = 0, <code>MarkerColor × EmissiveBoost</code>만 출력</li>
+            <li>캡쳐 설정값: <code>TargetDecalColor (1.0, 0.01, 0.01)</code> × <code>EmissiveBoost 8.0</code></li>
+            <li>전달: <code>AWaxPpuLabCharacter::Tick</code>에서 MPC 파라미터 6개 푸시</li>
+          </ul>
+        </div>
         <div class="code-wrap">
           <Code code={codeTargetingMPC} lang="cpp" theme="github-dark" />
         </div>
@@ -564,43 +645,66 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     <section class="wp-section" id="env-budget">
       <div class="wp-section-head">
         <span class="wp-eyebrow">06 // DEV ENVIRONMENT &amp; M4 16GB RENDERING BUDGET</span>
-        <h2>개발 환경 및 Apple M4 16GB 통합 메모리 렌더러 구성</h2>
+        <h2>개발 환경과 Apple M4 16GB에 맞춘 렌더링 구성</h2>
       </div>
+
+      <p class="wp-section-lead">
+        통합 메모리 16GB 노트북에서 에디터와 PIE를 쾌적하게 돌리기 위해, 화면 인상을 좌우하는 기능은 남기고 메모리를 많이 쓰는 레이 트레이싱 계열은 모두 껐습니다.
+      </p>
 
       <div class="env-box">
         <div class="env-meta">
-          <span><strong>Engine</strong> UE 5.9 Preview 2 (C++)</span>
-          <span><strong>Hardware</strong> Apple M4 MacBook Air (10-Core · 16 GB Unified · arm64)</span>
+          <span><strong>Engine</strong> Unreal Engine 5.9 Preview 2 (C++)</span>
+          <span><strong>Hardware</strong> Apple M4 MacBook Air (16GB 통합 메모리)</span>
           <span><strong>OS</strong> macOS 27.3</span>
-          <span><strong>Profiling</strong> <code>stat unit</code> · Unreal Insights 계측 예정</span>
+          <span><strong>Profiling</strong> 기본 프레임 통계로 확인 · Unreal Insights 계측 예정</span>
         </div>
 
         <div class="wp-split-2">
           <div class="env-col keep">
-            <div class="env-col-head mint">KEPT ENABLED · 핵심 비주얼 유지</div>
+            <div class="env-col-head mint">KEPT · 화면 인상을 좌우하는 기능 유지</div>
             <ul>
-              <li><code>r.DynamicGlobalIlluminationMethod=1</code> <span>Lumen SW GI</span></li>
-              <li><code>r.ReflectionMethod=1</code> <span>Lumen SW Reflections</span></li>
-              <li><code>r.Shadow.Virtual.Enable=1</code> <span>Virtual Shadow Maps</span></li>
-              <li><code>r.Nanite.ProjectEnabled=True</code> <span>Nanite</span></li>
-              <li><code>r.Substrate=True</code> <span>Substrate</span></li>
+              <li>Lumen 소프트웨어 GI <span>실시간 간접광</span></li>
+              <li>Lumen 소프트웨어 반사 <span>반사 품질</span></li>
+              <li>Virtual Shadow Maps <span>선명한 그림자</span></li>
+              <li>Nanite <span>고밀도 지오메트리</span></li>
+              <li>Substrate <span>차세대 머티리얼</span></li>
             </ul>
           </div>
           <div class="env-col disable">
-            <div class="env-col-head coral">DISABLED · 통합 메모리 압박 해소 (5 CVars)</div>
+            <div class="env-col-head coral">DISABLED · 통합 메모리 부담 해소</div>
             <ul>
-              <li><code>r.Lumen.HardwareRayTracing=False</code> <span>HW RT Lumen 차단</span></li>
-              <li><code>r.RayTracing=False</code> <span>전역 RT BVH 절감</span></li>
-              <li><code>r.RayTracing.Shadows=False</code> <span>RT 그림자 비활성화</span></li>
-              <li><code>r.RayTracing.RayTracingProxies.ProjectEnabled=False</code> <span>RT 프록시 비활성화</span></li>
-              <li><code>r.PathTracing=False</code> <span>Path Tracer 비활성화</span></li>
+              <li>하드웨어 레이 트레이싱 Lumen <span>차단</span></li>
+              <li>전역 레이 트레이싱 <span>가속 구조 메모리 절감</span></li>
+              <li>레이 트레이싱 그림자 <span>비활성화</span></li>
+              <li>레이 트레이싱 프록시 <span>비활성화</span></li>
+              <li>패스 트레이서 <span>비활성화</span></li>
             </ul>
           </div>
         </div>
       </div>
+
+      <details class="wp-code-details spaced">
+        <summary>구현 디테일 보기 — 프로젝트 렌더링 CVar 설정값</summary>
+        <div class="detail-body">
+          <h4>유지</h4>
+          <ul>
+            <li><code>r.DynamicGlobalIlluminationMethod=1</code> · <code>r.ReflectionMethod=1</code></li>
+            <li><code>r.Shadow.Virtual.Enable=1</code> · <code>r.Nanite.ProjectEnabled=True</code> · <code>r.Substrate=True</code></li>
+          </ul>
+          <h4>비활성화 (5종)</h4>
+          <ul>
+            <li><code>r.Lumen.HardwareRayTracing=False</code></li>
+            <li><code>r.RayTracing=False</code> · <code>r.RayTracing.Shadows=False</code></li>
+            <li><code>r.RayTracing.RayTracingProxies.ProjectEnabled=False</code></li>
+            <li><code>r.PathTracing=False</code></li>
+          </ul>
+          <p>하드웨어: Apple M4 10코어 CPU · 16GB Unified · arm64 / 프로파일링: <code>stat unit</code></p>
+        </div>
+      </details>
     </section>
 
-    <!-- 07. KNOWN LIMITATIONS & ENGINEERING TRADE-OFFS -->
+    <!-- 07. KNOWN LIMITATIONS -->
     <section class="wp-section" id="limitations">
       <div class="wp-section-head">
         <span class="wp-eyebrow">07 // KNOWN LIMITATIONS &amp; IMPROVEMENT PLAN</span>
@@ -608,94 +712,102 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
       </div>
 
       <p class="wp-section-lead">
-        프로토타입 검증 속도를 우선하며 단순화한 지점들과, 본편(20웨이브 다수 몬스터 동시 파괴) 단계에서 해소할 병목·안정성 과제를 코드 기준으로 식별해 두었습니다.
+        프로토타입은 검증 속도를 우선해 일부를 단순하게 만들었습니다. 본편처럼 20웨이브 동안 여러 몬스터가 동시에 부서지는 상황에서 병목이나 불안정 요인이 될 지점을 미리 짚어 두었습니다.
       </p>
 
       <div class="limit-grid">
         <article class="limit-card">
           <div class="limit-head">
             <span class="limit-tag">GC &amp; ALLOCATION</span>
-            <code>WaxDestructibleComponent.cpp:506-516</code>
           </div>
-          <h3>그레인 재생마다 <code>NewObject&lt;UAudioComponent&gt;</code> 할당</h3>
+          <h3>소리 하나마다 새 오디오 객체를 만드는 구조</h3>
           <p>
-            다수 몬스터 동시 붕괴 시 매 그레인마다 <code>NewObject</code> + <code>RegisterComponent</code> 호출로 UObject 할당과 GC 스파이크 위험이 있습니다.
+            지금은 소리 조각을 재생할 때마다 오디오 컴포넌트를 새로 만들어 등록합니다. 여러 몬스터가 한꺼번에 무너지면 객체 생성과 가비지 컬렉션이 몰려 프레임이 튈 수 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 고정 크기 <code>UAudioComponent</code> 링 풀링 또는 <code>SoundConcurrency</code> + <code>SpawnSoundAtLocation</code> 비교 후 전환.
+            <strong>개선안</strong>: 오디오 컴포넌트를 미리 일정 개수 만들어 돌려 쓰는 풀링으로 바꿉니다. 엔진의 동시 재생 제한 기능과 비교해 본 뒤 전환합니다.
           </div>
         </article>
 
         <article class="limit-card">
           <div class="limit-head">
             <span class="limit-tag">TICK OVERHEAD</span>
-            <code>WaxPpuLabCharacter.cpp:245-253</code>
           </div>
-          <h3><code>MPC_WaxTargeting</code> 6개 파라미터 매 Tick 푸시</h3>
+          <h3>변하지 않는 값까지 매 프레임 전달</h3>
           <p>
-            매 프레임 변하는 값은 <code>TargetSphereCenter</code> 하나뿐이지만 정적 파라미터 5개도 매 <code>Tick</code>마다 중복 푸시하고 있습니다.
+            조준 하이라이트에 필요한 값 중 매 프레임 바뀌는 것은 조준 위치 하나뿐인데, 색과 밝기 같은 고정값까지 매 프레임 다시 보내고 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 정적 5개는 <code>BeginPlay</code> 및 값 변경 시점에만 푸시하도록 분리.
+            <strong>개선안</strong>: 고정값은 시작할 때와 값이 바뀔 때만 보내도록 분리합니다.
           </div>
         </article>
 
         <article class="limit-card">
           <div class="limit-head">
             <span class="limit-tag">SPATIAL MAP</span>
-            <code>WaxDestructibleComponent.cpp:406-409</code>
           </div>
-          <h3>공간 셀 쿨다운 맵 128 초과 시 전체 <code>Reset()</code></h3>
+          <h3>쿨다운 기록이 가득 차면 통째로 비움</h3>
           <p>
-            128개 셀 초과 시 맵 전체를 비우면 직전 등록된 활성 셀의 쿨다운까지 초기화되어 순간 연타음이 발생할 수 있습니다.
+            같은 자리에서 소리가 연달아 나지 않게 위치별 쿨다운을 기록하는데, 기록이 상한을 넘으면 전부 지웁니다. 이때 방금 소리 난 자리의 쿨다운까지 사라져 순간적으로 소리가 연타될 수 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 만료 엔트리(<code>Now &gt;= NextTime</code>)만 조건부 제거하거나 고정 크기 링 버퍼로 교체.
+            <strong>개선안</strong>: 만료된 기록만 골라 지우거나, 고정 크기의 순환 버퍼로 바꿉니다.
           </div>
         </article>
 
         <article class="limit-card">
           <div class="limit-head">
             <span class="limit-tag">COLLISION SWEEP</span>
-            <code>WaxLocomotionComponent.cpp:254</code>
           </div>
-          <h3>캡슐 높이 보정 시 <code>bSweep = false</code> 오프셋</h3>
+          <h3>일어설 때 머리 위 공간을 확인하지 않음</h3>
           <p>
-            <code>AddActorWorldOffset(..., false)</code>를 사용해 천장이 낮은 지형에서 버터가 일어설 때 상단 지오메트리를 관통할 가능성이 있습니다.
+            버터가 일어서며 높이를 보정할 때 충돌 검사 없이 위치를 옮깁니다. 그래서 천장이 낮은 곳에서는 위쪽 지형을 뚫고 들어갈 수 있습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: <code>StandUp</code> 진입 전 상단 Sweep 체크 추가, 공간 부족 시 텀블 유지 또는 슬라이드 보정.
+            <strong>개선안</strong>: 일어서기 전에 머리 위 공간부터 검사합니다. 공간이 모자라면 누운 채로 계속 이동하거나 옆으로 비켜 보정합니다.
           </div>
         </article>
 
         <article class="limit-card">
           <div class="limit-head">
             <span class="limit-tag">TRACE COUPLING</span>
-            <code>WaxPpuLabCharacter.cpp:275,292</code>
           </div>
-          <h3><code>ECC_Visibility</code> 오버랩 &amp; <code>FindComponentByClass</code></h3>
+          <h3>타격 대상을 범용 방식으로 탐색</h3>
           <p>
-            범용 <code>ECC_Visibility</code> 채널 조회와 액터별 <code>FindComponentByClass</code> 호출은 오브젝트 증가 시 불필요한 후보 순회를 유발합니다.
+            타격 판정이 모든 물체가 함께 쓰는 범용 충돌 채널을 사용하고, 찾은 물체마다 파괴 기능이 있는지 다시 뒤져 봅니다. 장면에 물체가 늘수록 쓸데없는 후보 검사도 늘어납니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: 전용 <code>WaxDamageable</code> Trace Channel + <code>IWaxDamageableInterface</code> 직접 디스패치.
+            <strong>개선안</strong>: 타격 전용 충돌 채널과 공통 인터페이스를 두어, 맞을 수 있는 대상에게만 바로 신호를 보냅니다.
           </div>
         </article>
 
         <article class="limit-card">
           <div class="limit-head">
             <span class="limit-tag">PROFILING</span>
-            <code>Manual HUD → Unreal Insights</code>
           </div>
-          <h3>정량적 프레임·메모리 프로파일링 미계측</h3>
+          <h3>아직 수치로 재 보지 않은 성능</h3>
           <p>
-            현재 검증은 <code>bShowDebugCounters</code> HUD, <code>DrawDebugSphere</code>, PIE 수동 플레이 및 <code>BROKEN_TOTAL=0</code> 확인 수준입니다.
+            지금까지는 화면 디버그 카운터, 범위 시각화, 직접 플레이, 에셋 참조 검사로 검증했습니다. 프레임 시간과 메모리를 숫자로 측정한 적은 아직 없습니다.
           </p>
           <div class="limit-fix">
-            <strong>개선안</strong>: <code>TRACE_CPUPROFILER_EVENT_SCOPE</code> 삽입 후 20웨이브 스트레스 씬에서 Unreal Insights · <code>stat unit</code> 실측.
+            <strong>개선안</strong>: 주요 함수에 계측 구간을 넣고, 20웨이브 규모의 스트레스 장면에서 Unreal Insights로 실측합니다.
           </div>
         </article>
       </div>
+
+      <details class="wp-code-details spaced">
+        <summary>구현 디테일 보기 — 각 한계의 코드 위치와 구체 개선안</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>GC &amp; ALLOCATION</strong> · <code>WaxDestructibleComponent.cpp:506-516</code> — 그레인마다 <code>NewObject&lt;UAudioComponent&gt;</code> + <code>RegisterComponent</code> → 고정 크기 링 풀링, 또는 <code>SoundConcurrency</code> + <code>SpawnSoundAtLocation</code> 비교</li>
+            <li><strong>TICK OVERHEAD</strong> · <code>WaxPpuLabCharacter.cpp:245-253</code> — <code>MPC_WaxTargeting</code> 파라미터 6개를 매 <code>Tick</code> 푸시(변하는 값은 <code>TargetSphereCenter</code>뿐) → 정적 5개는 <code>BeginPlay</code>와 값 변경 시점으로 분리</li>
+            <li><strong>SPATIAL MAP</strong> · <code>WaxDestructibleComponent.cpp:406-409</code> — 셀 128개 초과 시 <code>Reset()</code> → <code>Now &gt;= NextTime</code>인 항목만 제거하거나 링 버퍼로 교체</li>
+            <li><strong>COLLISION SWEEP</strong> · <code>WaxLocomotionComponent.cpp:254</code> — <code>AddActorWorldOffset(..., false)</code> (<code>bSweep = false</code>) → <code>StandUp</code> 진입 전 상단 Sweep</li>
+            <li><strong>TRACE COUPLING</strong> · <code>WaxPpuLabCharacter.cpp:275,292</code> — <code>ECC_Visibility</code> 오버랩 + <code>FindComponentByClass</code> → 전용 <code>WaxDamageable</code> 채널 + <code>IWaxDamageableInterface</code></li>
+            <li><strong>PROFILING</strong> · 현재 <code>bShowDebugCounters</code>, <code>DrawDebugSphere</code>, <code>BROKEN_TOTAL=0</code> 확인 → <code>TRACE_CPUPROFILER_EVENT_SCOPE</code> + Unreal Insights · <code>stat unit</code></li>
+          </ul>
+        </div>
+      </details>
     </section>
 
     <!-- 08. NEXT MILESTONES -->
@@ -709,27 +821,27 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
         <li>
           <span class="rm-idx">STEP 01</span>
           <h3>1인칭 모션 &amp; 무기 습득</h3>
-          <p>타격 애니메이션과 근접/도구 무기 습득·장착 파이프라인을 <code>AWaxPpuLabCharacter</code>에 통합합니다.</p>
+          <p>타격 애니메이션, 그리고 근접·도구 무기를 줍고 장착하는 흐름을 플레이어 캐릭터에 통합합니다.</p>
         </li>
         <li>
           <span class="rm-idx">STEP 02</span>
           <h3>코어 처치 / 부활 루프</h3>
-          <p>노출된 <code>AWaxMonsterCore</code>를 제한 시간 내 처치하지 못하면 껍질이 재생되는 리스크-리워드 루프를 완성합니다.</p>
+          <p>드러난 코어를 제한 시간 안에 처치하지 못하면 껍질이 다시 자라나는 리스크-리워드 루프를 완성합니다.</p>
         </li>
         <li>
           <span class="rm-idx">STEP 03</span>
           <h3>몬스터 공격 패턴</h3>
-          <p>근접 돌진·충돌 판정과 플레이어 피격 피드백을 각 로코모션 상태 머신과 연결합니다.</p>
+          <p>근접 돌진, 충돌 판정, 플레이어 피격 피드백을 몬스터별 이동 상태와 연결합니다.</p>
         </li>
         <li>
           <span class="rm-idx">STEP 04</span>
           <h3>눈 파괴 디버프</h3>
-          <p><code>EyeLeftGC</code> / <code>EyeRightGC</code> 파괴 수에 따라 시야·추적 정확도 저하 등 전략적 약점 디버프를 부여합니다.</p>
+          <p>눈알이 몇 개 부서졌는지에 따라 시야와 추적 정확도가 떨어지는 등, 전략적으로 노릴 만한 약점을 만듭니다.</p>
         </li>
         <li class="final-step">
           <span class="rm-idx">STEP 05</span>
           <h3>20웨이브 디펜스 매니저</h3>
-          <p>라운드별 몬스터 스폰 테이블, 난이도 곡선, 최종 20라운드 거대 왁뿌볼 보스전과 탈출 루프를 구축합니다.</p>
+          <p>라운드별 몬스터 스폰 테이블과 난이도 곡선, 마지막 20라운드의 거대 왁뿌볼 보스전, 그리고 탈출 루프를 구축합니다.</p>
         </li>
       </ol>
 
@@ -1383,6 +1495,40 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
     margin: 0 !important;
     padding: 1rem 1.15rem !important;
     border-radius: 0 !important;
+  }
+
+  .detail-body {
+    border-top: 1px solid var(--border-subtle);
+    padding: 0.95rem 1.15rem 1.05rem;
+    font-size: 0.84rem;
+    color: var(--text-2);
+    line-height: 1.62;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .detail-body h4 {
+    margin: 0.2rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    color: var(--wp-peach);
+  }
+  .detail-body ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .detail-body p {
+    margin: 0;
+  }
+  .wp-code-details.spaced {
+    margin-top: 1rem;
+  }
+  .arch-figure + .wp-code-details {
+    margin: -0.4rem 0 1.3rem;
   }
 
   /* 3-COL GRID */

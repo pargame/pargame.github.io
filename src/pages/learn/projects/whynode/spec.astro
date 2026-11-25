@@ -205,6 +205,20 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <h2>핵심 인터랙션</h2>
       </div>
 
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/04-style-panel.png"
+          alt="노드 편집 패널. 크기 조절 버튼, 노드 색과 글자 색 프리셋, 가지 접기·원래대로·삭제 버튼이 배치되어 있으며 오른쪽에 사용자 지정 색상 격자가 펼쳐져 있다."
+          width="1316"
+          height="550"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · 노드 편집 패널</strong> — 노드를 우클릭하면 크기, 배경색과 글자색, 가지 접기, 원래대로, 삭제 기능을 한 패널에서 조작할 수 있습니다. 패널이 열린 동안의 연속 편집은 단일 실행 취소(Undo) 단위로 묶입니다.
+        </figcaption>
+      </figure>
+
       <div class="wp-grid-3">
         <article class="wp-card">
           <span class="wp-card-tag">FOCUS DIMMING</span>
@@ -238,21 +252,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         </article>
       </div>
 
-      <figure class="media-card case-shot">
-        <img
-          src="/images/projects/whynode/04-style-panel.png"
-          alt="노드 편집 패널. 크기 조절 버튼, 노드 색과 글자 색 프리셋, 가지 접기·원래대로·삭제 버튼이 배치되어 있으며 오른쪽에 사용자 지정 색상 격자가 펼쳐져 있다."
-          width="1316"
-          height="550"
-          class="zoomable-img"
-          loading="lazy"
-        />
-        <figcaption>
-          <strong>App Snapshot · 노드 편집 패널</strong> — 노드를 우클릭하면 크기, 배경색과 글자색, 가지 접기, 원래대로, 삭제 기능을 한 패널에서 조작할 수 있습니다. 패널이 열린 동안의 연속 편집은 단일 실행 취소(Undo) 단위로 묶입니다.
-        </figcaption>
-      </figure>
-
-      <details class="wp-code-details">
+      <details class="wp-code-details spaced">
         <summary>상세 보기 — 캔버스 조작 · 시뮬레이션 · 단축키</summary>
         <div class="detail-body">
           <ul>
@@ -309,8 +309,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <li><code>pending</code>: 답변 대기 상태, 원형 노드 내부에 진행 인디케이터 표시</li>
             <li><code>done</code>: 답변 · 한 줄 요약 · 추가 질문이 채워진 상태</li>
             <li><code>error</code>: 요청 실패 또는 앱 종료로 중단된 상태, 사유 표시와 재시도 지원. 대기 상태로 저장된 노드는 다음에 열 때 중단으로 간주해 오류 상태로 전환</li>
-            <li>답변 다시 받기: 대기 중과 실패 시 모두 이전 답변 · 요약 · 추가 질문 · 참조 · 생성 정보 보존, 성공 시 새 값으로 교체</li>
-            <li>대기 중 제약: 답변 대기 중에는 해당 문서의 실행 취소와 요청 중인 노드가 포함된 가지의 삭제를 차단(중단된 요청은 사용 토큰 집계 불가)</li>
+            <li><strong>답변 다시 받기</strong>: 대기 중과 실패 시 모두 이전 답변 · 요약 · 추가 질문 · 참조 · 생성 정보 보존, 성공 시 새 값으로 교체</li>
+            <li><strong>대기 중 제약</strong>: 답변 대기 중에는 해당 문서의 실행 취소와 요청 중인 노드가 포함된 가지의 삭제를 차단(중단된 요청은 사용 토큰 집계 불가)</li>
           </ul>
         </div>
       </details>
@@ -506,7 +506,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
           <h3>연쇄 탐구</h3>
           <p>새 노드에는 답변에 등장한 관측, 중첩, 코펜하겐 해석에서 파생된 추가 질문이 다시 제안됩니다.</p>
         </li>
-        <li class="final-step">
+        <li>
           <span class="rm-idx">STEP 04</span>
           <h3>직접 질문과 연결</h3>
           <p>"슈뢰딩거의 고양이는 결국 살아 있는 걸까?"를 직접 입력하면, AI가 앞서 생성된 중첩 노드의 설명을 이어 부연하고 두 노드를 점선 참조선으로 연결합니다.</p>
@@ -1378,7 +1378,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     padding: 0;
     margin: 0 0 1.8rem;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.9rem;
   }
   .wp-roadmap-steps li {
@@ -1390,17 +1390,12 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     flex-direction: column;
     gap: 0.42rem;
   }
-  .wp-roadmap-steps li.final-step {
-    border-color: color-mix(in srgb, var(--wp-mint) 48%, var(--border));
-    background: color-mix(in srgb, var(--surface-1) 90%, var(--wp-mint) 10%);
-  }
   .rm-idx {
     font-family: var(--font-mono);
     font-size: 0.7rem;
     font-weight: 700;
     color: var(--wp-coral);
   }
-  .final-step .rm-idx { color: var(--wp-mint); }
   .wp-roadmap-steps h3 {
     margin: 0;
     font-size: 0.94rem;

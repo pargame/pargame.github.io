@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>404 — Page Not Found</title>
+  <script>
+    (function () {
+      var p = location.pathname;
+      if (p === '/MyBlog' || p.indexOf('/MyBlog/') === 0) {
+        var next = p.replace(/^\/MyBlog(\/|$)/, '/MyBlog-legacy$1') + location.search + location.hash;
+        location.replace(location.origin + next);
+      }
+    })();
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #0f172a;
+      color: #e2e8f0;
+      text-align: center;
+    }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>404</h1>
+    <p>요청하신 페이지를 찾을 수 없습니다.</p>
+    <p><a href="/">홈으로 돌아가기 (pargame.github.io)</a></p>
+  </div>
+</body>
+</html>

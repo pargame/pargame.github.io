@@ -100,6 +100,27 @@ const otherProjects = [
     live: null,
   },
 ];
+
+// 완료된 프로젝트를 위층, 진행 중인 프로젝트를 아래층에 둔다. 상태 문자열이 COMPLETED로 시작하면 완료다.
+const isCompleted = (project: { status: string }) => project.status.startsWith('COMPLETED');
+const tiers = [
+  {
+    id: 'completed',
+    badge: 'COMPLETED',
+    title: '완료된 프로젝트',
+    desc: '구현과 검증을 마친 프로젝트입니다. 프로젝트 홈에서 문서와 저장소를 볼 수 있습니다.',
+    unreal: unrealProjects.filter(isCompleted),
+    other: otherProjects.filter(isCompleted),
+  },
+  {
+    id: 'in-progress',
+    badge: 'IN PROGRESS',
+    title: '진행 중인 프로젝트',
+    desc: '설계 또는 프로토타입 단계의 프로젝트입니다. PRIVATE 표시는 비공개 리포지토리입니다.',
+    unreal: unrealProjects.filter((p) => !isCompleted(p)),
+    other: otherProjects.filter((p) => !isCompleted(p)),
+  },
+];
 ---
 
 <BaseLayout
@@ -120,126 +141,127 @@ const otherProjects = [
     </p>
   </div>
 
-  <section class="projects-section">
-    <div class="section-title-wrap">
-      <span class="badge">UNREAL ENGINE PROJECTS</span>
-      <h2>언리얼 엔진 프로젝트</h2>
-      <p>UE 5.9 기반 게임 프로젝트입니다. 프로젝트 홈에서 기획서와 포트폴리오를 볼 수 있습니다.</p>
-    </div>
+  {tiers.map((tier) => (
+    <section class="projects-section" id={tier.id}>
+      <div class="section-title-wrap">
+        <span class="badge">{tier.badge}</span>
+        <h2>{tier.title}</h2>
+        <p>{tier.desc}</p>
+      </div>
 
-    <div class="showcase-list">
-      {unrealProjects.map((project) => (
-        <article
-          class="project-showcase"
-          style={`--sc-accent: ${project.accent}; --sc-tag: ${project.tagColor}; --sc-cta: ${project.cta}; --sc-cta-text: ${project.ctaText}`}
-        >
-          <div class="showcase-top">
-            <div class="showcase-badges">
-              <span class="status-pill">
-                <span class="pulse-dot"></span>
-                {project.status}
-              </span>
-              <span class="path-pill">{project.path}</span>
-            </div>
-            <span class="updated-meta">{project.date}</span>
-          </div>
+      {tier.unreal.length > 0 && (
+        <div class="showcase-list">
+          {tier.unreal.map((project) => (
+            <article
+              class="project-showcase"
+              style={`--sc-accent: ${project.accent}; --sc-tag: ${project.tagColor}; --sc-cta: ${project.cta}; --sc-cta-text: ${project.ctaText}`}
+            >
+              <div class="showcase-top">
+                <div class="showcase-badges">
+                  <span class="status-pill">
+                    <span class="pulse-dot"></span>
+                    {project.status}
+                  </span>
+                  <span class="path-pill">{project.path}</span>
+                </div>
+                <span class="updated-meta">{project.date}</span>
+              </div>
 
-          <div class="showcase-body">
-            <div class="showcase-copy">
-              <h2>
+              <div class="showcase-body">
+                <div class="showcase-copy">
+                  <h2>
+                    <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
+                  </h2>
+                  <p class="project-subtitle" set:html={project.summary} />
+                  <div class="stack-tags">
+                    {project.tags.map((tag) => (
+                      <span class="stack-tag showcase-tag">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <a
+                  href={`/learn/projects/${project.slug}`}
+                  class="showcase-preview"
+                  aria-label={`${project.title} 프로젝트 홈 열기`}
+                >
+                  {project.image ? (
+                    <img src={project.image.src} alt={project.image.alt} loading="eager" />
+                  ) : (
+                    <div class="waxppu-art">
+                      <span class="wax-orb"></span>
+                      <span class="wax-art-label">CHAOS × ACHARACTER</span>
+                    </div>
+                  )}
+                  <span class="preview-caption">{project.caption}</span>
+                </a>
+              </div>
+
+              <div class="showcase-footer">
+                <div class="footer-note">{project.note}</div>
+                <div class="footer-actions">
+                  {project.github && (
+                    <a href={project.github} class="cta-btn secondary" target="_blank" rel="noopener noreferrer">
+                      GitHub ↗
+                    </a>
+                  )}
+                  <a href={`/learn/projects/${project.slug}`} class="cta-btn">
+                    프로젝트 보기 →
+                  </a>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {tier.other.length > 0 && (
+        <div class={`compact-grid${tier.unreal.length > 0 ? ' after-showcase' : ''}`}>
+          {tier.other.map((project) => (
+            <article class="compact-card" style={`--card-accent: ${project.accent}`}>
+              <div class="compact-top">
+                <span class="compact-status">
+                  <span class="compact-dot"></span>
+                  {project.status}
+                </span>
+                {!project.github && <span class="private-pill">PRIVATE</span>}
+              </div>
+              <h3>
                 <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
-              </h2>
-              <p class="project-subtitle" set:html={project.summary} />
+              </h3>
+              <p class="compact-summary">{project.summary}</p>
               <div class="stack-tags">
                 {project.tags.map((tag) => (
-                  <span class="stack-tag showcase-tag">{tag}</span>
+                  <span class="stack-tag compact-tag">{tag}</span>
                 ))}
               </div>
-            </div>
-
-            <a
-              href={`/learn/projects/${project.slug}`}
-              class="showcase-preview"
-              aria-label={`${project.title} 프로젝트 홈 열기`}
-            >
-              {project.image ? (
-                <img src={project.image.src} alt={project.image.alt} loading="eager" />
-              ) : (
-                <div class="waxppu-art">
-                  <span class="wax-orb"></span>
-                  <span class="wax-art-label">CHAOS × ACHARACTER</span>
-                </div>
-              )}
-              <span class="preview-caption">{project.caption}</span>
-            </a>
-          </div>
-
-          <div class="showcase-footer">
-            <div class="footer-note">{project.note}</div>
-            <div class="footer-actions">
-              {project.github && (
-                <a href={project.github} class="cta-btn secondary" target="_blank" rel="noopener noreferrer">
-                  GitHub ↗
+              <div class="compact-actions">
+                <a href={`/learn/projects/${project.slug}`} class="compact-btn primary">
+                  프로젝트 보기 →
                 </a>
-              )}
-              <a href={`/learn/projects/${project.slug}`} class="cta-btn">
-                프로젝트 보기 →
-              </a>
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
-  </section>
-
-  <section class="projects-section">
-    <div class="section-title-wrap">
-      <span class="badge">OTHER PROJECTS</span>
-      <h2>기타 프로젝트</h2>
-      <p>3D 그래픽스, 웹 플랫폼, 자체 언어, 네이티브 앱, AI 시뮬레이션 프로젝트입니다. PRIVATE 표시는 비공개 리포지토리입니다.</p>
-    </div>
-
-    <div class="compact-grid">
-      {otherProjects.map((project) => (
-        <article class="compact-card" style={`--card-accent: ${project.accent}`}>
-          <div class="compact-top">
-            <span class="compact-status">
-              <span class="compact-dot"></span>
-              {project.status}
-            </span>
-            {!project.github && <span class="private-pill">PRIVATE</span>}
-          </div>
-          <h3>
-            <a href={`/learn/projects/${project.slug}`}>{project.title}</a>
-          </h3>
-          <p class="compact-summary">{project.summary}</p>
-          <div class="stack-tags">
-            {project.tags.map((tag) => (
-              <span class="stack-tag compact-tag">{tag}</span>
-            ))}
-          </div>
-          <div class="compact-actions">
-            <a href={`/learn/projects/${project.slug}`} class="compact-btn primary">
-              프로젝트 보기 →
-            </a>
-            {project.live && (
-              <a href={project.live} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
-                Live ↗
-              </a>
-            )}
-            {project.github && (
-              <a href={project.github} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
-                GitHub ↗
-              </a>
-            )}
-          </div>
-        </article>
-      ))}
-    </div>
-  </section>
+                {project.live && (
+                  <a href={project.live} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
+                    Live ↗
+                  </a>
+                )}
+                {project.github && (
+                  <a href={project.github} class="compact-btn secondary" target="_blank" rel="noopener noreferrer">
+                    GitHub ↗
+                  </a>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  ))}
 </BaseLayout>
 
 <style>
+  .compact-grid.after-showcase {
+    margin-top: 1.5rem;
+  }
   .note-header {
     padding-bottom: 2rem;
     border-bottom: 1px solid var(--border-subtle);

@@ -30,9 +30,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
 
           <h1>WhyNode 기능 명세</h1>
           <p class="wp-lead">
-            궁금한 주제를 입력하면 AI가 짧은 핵심 답변과 함께 다음에 던질 만한 질문을 제안하고, 사용자가 질문을 고르거나 직접 던지며
-            <strong>질문과 답변이 짝을 이룬 노드로 지식 지도를 넓혀 가는</strong> 탐구형 마인드맵의 기획과 기능 명세입니다.
-            사용자 흐름, 노드 상태 모델, AI 연결 방식과 메시지 규격, 저장 형식을 정리했으며 세부 규칙은 각 섹션의 접힌 상세 보기에 수록했습니다.
+            주제를 입력하면 AI가 핵심 답변과 후속 질문을 제안하고, 사용자가 질문을 선택하거나 직접 입력하며 <strong>질문과 답변이 쌍을 이루는 노드로 지식 지도를 확장하는</strong> 탐구형 마인드맵의 기능 명세입니다.
+            사용자 흐름, 노드 상태 모델, AI 연결 방식과 메시지 규격, 저장 형식을 정리했으며, 세부 규칙은 각 섹션 하단의 상세 보기(접기)에 수록했습니다.
           </p>
 
           <div class="wp-hero-actions">
@@ -53,7 +52,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <figure class="media-card hero-shot">
           <img
             src="/images/projects/whynode/01-node-card.png"
-            alt="포커스되어 둥근 카드로 펼쳐진 노드. 질문 제목 아래에 서식화된 AI 답변이 표시된다"
+            alt="포커스되어 확장된 노드 카드. 질문 제목 아래에 서식이 적용된 AI 답변이 표시되어 있다."
             width="1080"
             height="576"
             class="zoomable-img"
@@ -61,7 +60,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             fetchpriority="high"
           />
           <figcaption>
-            <strong>App Snapshot · 질문 하나와 답변 하나</strong> — 노드는 질문과 그에 대한 3~4문장의 핵심 답변이 짝을 이룬 지식 조각입니다.
+            <strong>App Snapshot · 질문 하나와 답변 하나</strong> — 노드는 하나의 질문과 3~4문장의 핵심 답변이 쌍을 이루는 지식 단위입니다.
           </figcaption>
         </figure>
       </div>
@@ -70,22 +69,22 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <div class="exec-card coral">
           <span class="exec-k">ACTIVE LEARNING</span>
           <strong class="exec-v">요약 대신 질문 선택</strong>
-          <span class="exec-d">긴 요약을 읽는 대신 답변 속 개념에서 뻗어 나온 질문을 직접 고르며, 그 선택의 흔적이 지식 지도가 됩니다.</span>
+          <span class="exec-d">긴 요약을 수동적으로 읽는 대신 답변 속 개념에서 파생된 질문을 직접 선택하며, 그 탐구 경로가 지식 지도로 쌓입니다.</span>
         </div>
         <div class="exec-card peach">
           <span class="exec-k">MINIMAL CANVAS</span>
           <strong class="exec-v">미니멀 화이트보드</strong>
-          <span class="exec-d">도구 모음을 최소화한 무한 캔버스에서 한 번에 하나의 노드만 펼쳐 탐구 경로에 집중하게 합니다.</span>
+          <span class="exec-d">도구 모음을 최소화한 무한 캔버스에서 한 번에 하나의 노드만 펼쳐 탐구 흐름에 집중할 수 있습니다.</span>
         </div>
         <div class="exec-card mint">
           <span class="exec-k">BRING YOUR OWN AI</span>
-          <strong class="exec-v">원하는 AI 연결</strong>
-          <span class="exec-d">API 키 또는 Mac에 로그인된 공식 CLI로 연결해, 특정 AI 회사에 묶이지 않고 기존 구독을 그대로 활용합니다.</span>
+          <strong class="exec-v">유연한 AI 프로바이더 연결</strong>
+          <span class="exec-d">API 키 또는 Mac에 로그인된 공식 CLI로 연결해, 특정 제공사에 종속되지 않고 기존 구독을 그대로 활용합니다.</span>
         </div>
         <div class="exec-card coral">
           <span class="exec-k">OPEN FILE FORMAT</span>
-          <strong class="exec-v">사람이 읽는 JSON 문서</strong>
-          <span class="exec-d">프로젝트 하나가 파일 하나이며, 버전 정보를 담은 JSON으로 저장해 이전 스키마 버전의 파일도 열 때 자동으로 마이그레이션합니다.</span>
+          <strong class="exec-v">텍스트 기반 JSON 문서</strong>
+          <span class="exec-d">프로젝트 하나를 단일 JSON 파일로 저장하며, 스키마 버전을 명시해 이전 버전 파일도 열 때 자동으로 마이그레이션합니다.</span>
         </div>
       </div>
     </header>
@@ -98,8 +97,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       </div>
 
       <p class="wp-section-lead">
-        챗봇에게 개념 정리를 부탁하면 수십 줄의 요약을 바로 받을 수 있지만, 남이 정리한 요약을 훑는 것만으로는 개념이 서로 연결되지 않아 쉽게 잊힙니다.
-        WhyNode는 소크라테스식 문답법에서 출발해 짧은 핵심 답변 하나와 그 답변에서 파생된 다음 질문들을 함께 보여 주고, 사용자가 질문을 직접 고르며 탐구를 이어 가도록 설계했습니다.
+        일반 챗봇은 수십 줄의 요약을 즉시 생성하지만, 타인이 정리한 글을 수동적으로 읽는 것만으로는 개념 간 연결이 형성되지 않아 기억에 남기 어렵습니다. WhyNode는 소크라테스식 문답법에서 출발해 짧은 핵심 답변과 그로부터 파생된 후속 질문을 함께 제시하고, 사용자가 질문을 직접 선택하며 탐구를 이어 가도록 설계했습니다.
       </p>
 
       <figure class="arch-figure" aria-labelledby="flowTitle">
@@ -152,14 +150,14 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
               <div class="node-tag">04 · EXPAND</div>
               <div class="node-title">새 노드로 확장</div>
               <ul class="node-list">
-                <li>고른 질문이 자식 노드가 되어 선으로 연결</li>
+                <li>선택한 질문이 자식 노드로 생성되어 간선으로 연결</li>
                 <li>직접 질문 입력 · 다른 질문 3개 받기</li>
               </ul>
             </div>
           </div>
         </div>
         <figcaption>
-          <strong>탐구 루프</strong> — 새로 만들어진 노드에서도 추가 질문이 다시 제안되어 3단계로 돌아갑니다. 선택하지 않은 질문은 원래 노드에 남아 있어 나중에 다른 갈래로 탐구를 넓힐 수 있습니다.
+          <strong>탐구 루프</strong> — 새로 생성된 노드에서도 추가 질문이 제안되어 3단계로 순환합니다. 선택하지 않은 질문은 부모 노드에 남아 추후 다른 갈래로 탐구를 확장할 수 있습니다.
         </figcaption>
       </figure>
 
@@ -168,10 +166,10 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <div class="detail-body">
           <ul>
             <li><strong>프로젝트</strong>: 시작 화면에서 새 프로젝트 생성 또는 저장 폴더의 프로젝트 카드 열기. 새 프로젝트는 저장 폴더에 즉시 생성 후 자동 저장, 루트 주제 입력 시 파일 이름을 주제로 변경</li>
-            <li><strong>노드 생성</strong>: 추가 질문 칩 선택 또는 직접 질문 입력 시 자식 노드를 즉시 생성하고 답변 대기 상태로 전환. 새 노드 주변만 자동 정리해 형제와의 겹침 해소</li>
+            <li><strong>노드 생성</strong>: 추가 질문 칩 선택 또는 직접 질문 입력 시 자식 노드를 즉시 생성하고 답변 대기 상태로 전환. 새 노드 주변만 자동 정리해 형제 노드와의 겹침 해소</li>
             <li><strong>포커스 유지</strong>: 자식 노드를 만들어도 포커스는 부모에 유지되어 남은 추가 질문을 연속 선택 가능</li>
-            <li><strong>추가 질문 관리</strong>: 미사용 질문은 최대 12개까지 누적, 6개 초과 시 목록 스크롤. 사용한 질문은 칩에서 숨기고, 해당 자식 노드 삭제 시 다시 선택 가능 상태로 복원</li>
-            <li><strong>답변 다시 받기</strong>: 펼친 카드 하단 버튼으로 재요청, 대기 중과 실패 시 모두 이전 답변 유지</li>
+            <li><strong>추가 질문 관리</strong>: 미사용 질문은 최대 12개까지 누적, 6개 초과 시 목록 스크롤. 사용한 질문은 칩 목록에서 숨기며, 해당 자식 노드 삭제 시 다시 선택 가능하도록 복원</li>
+            <li><strong>답변 다시 받기</strong>: 확장 카드 하단 버튼으로 재요청하며, 대기 중이거나 실패하더라도 이전 답변 유지</li>
           </ul>
         </div>
       </details>
@@ -197,31 +195,31 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <article class="wp-card">
           <span class="wp-card-tag">FOCUS DIMMING</span>
           <h3>포커스 흐림</h3>
-          <p>노드를 펼치면 나머지 노드를 반투명하게 흐려, 방금 나타난 답변과 추가 질문에 시선이 머물게 합니다.</p>
+          <p>노드를 펼치면 나머지 노드를 반투명하게 처리해 현재 답변과 추가 질문에 집중할 수 있도록 합니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">PERSISTENT SUGGESTIONS</span>
-          <h3>남아 있는 추가 질문</h3>
-          <p>추가 질문 하나를 골라도 나머지는 그 노드에 남습니다. 한 갈래를 끝까지 탐구한 뒤 돌아와 다른 질문으로 지도를 넓힐 수 있습니다.</p>
+          <h3>미선택 추가 질문 유지</h3>
+          <p>추가 질문 하나를 선택해도 나머지 제안은 해당 노드에 유지됩니다. 한 갈래를 깊이 탐구한 뒤 돌아와 다른 질문으로 지도를 확장할 수 있습니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">EXPANDING NODE</span>
-          <h3>제자리에서 펼쳐지는 노드</h3>
-          <p>평소에는 질문만 담은 원으로 보이고, 누르면 질문은 제자리에 둔 채 원이 아래로 넓어지는 카드가 되며 답변이 이어집니다. 한 번에 하나만 펼칩니다.</p>
+          <h3>제자리 노드 확장</h3>
+          <p>평소에는 질문만 담긴 원형 노드로 표시되며, 클릭하면 질문 위치를 유지한 채 아래로 확장 카드를 펼쳐 답변을 보여 줍니다. 한 번에 하나의 노드만 펼칠 수 있습니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">NO DUPLICATES · CROSS LINKS</span>
-          <h3>중복 방지와 참조선</h3>
-          <p>탐구 흐름을 맥락으로 전달해 이미 다룬 질문이 반복되지 않게 하고, 다른 가지의 관련 노드는 점선으로 잇습니다. 맵 전체를 다시 검토해 놓친 연결을 더하는 기능도 제공합니다.</p>
+          <h3>질문 중복 방지와 참조선</h3>
+          <p>탐구 흐름을 맥락으로 전달해 이미 다룬 질문이 중복되지 않게 하며, 다른 가지의 관련 노드는 점선 참조선으로 연결합니다. 맵 전체를 재검토해 누락된 참조선을 찾아내는 기능도 제공합니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">BRING YOUR OWN AI</span>
-          <h3>원하는 AI 연결</h3>
-          <p>API 키 또는 Mac에 로그인된 공식 CLI로 연결합니다. 사용 중인 모델과 프로젝트 누적 토큰을 캔버스 아래 상태 막대에 표시합니다.</p>
+          <h3>유연한 AI 프로바이더 연결</h3>
+          <p>API 키 또는 Mac에 로그인된 공식 CLI로 연결합니다. 사용 중인 모델과 프로젝트 누적 토큰을 캔버스 하단 상태 바에 표시합니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">ZOOM CLUSTERING · PLANNED</span>
-          <h3>가지 묶음 (예정)</h3>
+          <h3>줌 레벨별 가지 묶음 (예정)</h3>
           <p>화면을 축소하면 가지를 하나의 묶음으로 합쳐 시작 질문과 노드 수만 보여 주는 기능으로, 명세를 마치고 구현을 앞두고 있습니다.</p>
         </article>
       </div>
@@ -229,14 +227,14 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       <figure class="media-card case-shot">
         <img
           src="/images/projects/whynode/04-style-panel.png"
-          alt="노드 편집 패널. 노드 크기 조절 버튼, 노드 색과 글자 색 프리셋, 가지 접기와 원래대로, 삭제 버튼이 있고 오른쪽에 사용자 지정 색 격자가 펼쳐져 있다"
+          alt="노드 편집 패널. 크기 조절 버튼, 노드 색과 글자 색 프리셋, 가지 접기·원래대로·삭제 버튼이 배치되어 있으며 오른쪽에 사용자 지정 색상 격자가 펼쳐져 있다."
           width="1316"
           height="550"
           class="zoomable-img"
           loading="lazy"
         />
         <figcaption>
-          <strong>App Snapshot · 노드 편집 패널</strong> — 노드를 우클릭하면 노드 크기, 노드 색과 글자 색, 가지 접기, 원래대로, 삭제를 한곳에서 조절합니다. 패널이 열린 동안의 연속 편집은 실행 취소 한 번으로 묶입니다.
+          <strong>App Snapshot · 노드 편집 패널</strong> — 노드를 우클릭하면 크기, 배경색과 글자색, 가지 접기, 원래대로, 삭제 기능을 한 패널에서 조작할 수 있습니다. 패널이 열린 동안의 연속 편집은 단일 실행 취소(Undo) 단위로 묶입니다.
         </figcaption>
       </figure>
 
@@ -244,10 +242,10 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <summary>상세 보기 — 캔버스 조작 · 시뮬레이션 · 단축키</summary>
         <div class="detail-body">
           <ul>
-            <li><strong>캔버스</strong>: 빈 곳 끌기 · 두 손가락 스크롤로 이동, 핀치로 확대 · 축소. 배율과 무관하게 선과 테두리 굵기를 화면 기준으로 고정</li>
-            <li><strong>호버 빛</strong>: 마우스를 올린 노드와 바로 이어진 노드에 테두리 빛 표시. 트리 선 이웃은 실선 빛, 참조선 이웃은 점선 빛</li>
-            <li><strong>글자 크기</strong>: 사용자 조절 없이 원 안 질문을 길이에 맞춰 들어가는 가장 큰 크기로 자동 표시, 루트 노드는 기본 1.3배 크기</li>
-            <li><strong>시뮬레이션</strong>: 오른쪽 아래 버튼 또는 스페이스로 겹친 노드 정리. 반발력과 장력 두 값을 0~10 눈금으로 조절하며, 루트는 고정된 기준점</li>
+            <li><strong>캔버스</strong>: 빈 영역 드래그 · 두 손가락 스크롤로 이동, 핀치로 확대 · 축소. 배율과 무관하게 간선과 테두리 굵기를 화면 픽셀 기준으로 고정</li>
+            <li><strong>호버 글로우</strong>: 마우스를 올린 노드와 직접 연결된 이웃 노드에 테두리 글로우 표시. 트리 간선 이웃은 실선 글로우, 참조선 이웃은 점선 글로우 적용</li>
+            <li><strong>글자 크기</strong>: 별도 설정 없이 원형 노드 내부에 수용되는 최대 글자 크기를 질문 길이에 맞춰 자동 계산, 루트 노드는 기본 1.3배 크기 적용</li>
+            <li><strong>시뮬레이션</strong>: 오른쪽 하단 버튼 또는 스페이스바로 겹친 노드 정리. 반발력과 장력을 0~10 단계로 조절하며, 루트 노드는 고정 기준점으로 동작</li>
             <li><strong>단축키</strong>: <code>⌘N</code> 새 프로젝트, <code>⇧⌘O</code> 프로젝트 보기, <code>Space</code> 시뮬레이션 시작, <code>⌫</code> 포커스 노드 삭제, <code>Esc</code> 패널 닫기, <code>⌘?</code> 도움말</li>
           </ul>
         </div>
@@ -266,8 +264,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
           <span class="case-badge">STATE MACHINE</span>
           <h3>네 가지 노드 상태</h3>
           <p>
-            노드는 질문이 없는 빈 상태, 답변을 기다리는 대기 상태, 답변이 채워진 완료 상태, 요청이 실패했거나 중단된 오류 상태 중 하나를 가집니다.
-            완료와 오류 노드는 답변 다시 받기로 다시 대기 상태가 될 수 있으며, 이때도 자식 노드와 이전 답변은 유지합니다.
+            노드는 빈 상태(empty), 대기(pending), 완료(done), 오류(error) 중 하나의 상태를 가집니다. 완료·오류 상태의 노드는 답변 다시 받기로 대기 상태로 전환할 수 있으며, 이 과정에서도 자식 노드와 이전 답변을 보존합니다.
           </p>
           <div class="wp-fsm-bar">
             <span>empty</span>
@@ -285,7 +282,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
           <h3>편집과 실행 취소</h3>
           <p>
             노드를 삭제하면 그 아래 가지 전체가 함께 삭제되고, 삭제된 노드를 가리키던 참조선도 사라집니다. 루트 노드는 삭제할 수 없습니다.
-            노드 생성, 삭제, 끌어서 옮기기, 가지 접기, 꾸미기는 모두 실행 취소할 수 있으며, AI가 자동으로 채운 답변과 주변 자동 배치는 실행 취소 단계로 쌓지 않으며, 사용자가 직접 요청한 추가 질문 다시 받기와 참조선 다시 찾기 결과는 실행 취소할 수 있습니다.
+            노드 생성·삭제, 드래그 이동, 가지 접기, 스타일 편집은 모두 실행 취소(Undo)를 지원합니다. AI가 자동으로 채운 답변과 주변 자동 배치는 실행 취소 이력에 쌓지 않으나, 사용자가 직접 요청한 추가 질문 다시 받기와 참조선 다시 찾기 결과는 실행 취소할 수 있습니다.
           </p>
         </article>
       </div>
@@ -295,11 +292,11 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <div class="detail-body">
           <ul>
             <li><code>empty</code>: 질문이 없는 상태, 새 프로젝트의 루트 노드 전용</li>
-            <li><code>pending</code>: 답변 대기 상태, 원 안에 진행 표시</li>
+            <li><code>pending</code>: 답변 대기 상태, 원형 노드 내부에 진행 인디케이터 표시</li>
             <li><code>done</code>: 답변 · 한 줄 요약 · 추가 질문이 채워진 상태</li>
             <li><code>error</code>: 요청 실패 또는 앱 종료로 중단된 상태, 사유 표시와 재시도 지원. 대기 상태로 저장된 노드는 다음에 열 때 중단으로 간주해 오류 상태로 전환</li>
             <li>답변 다시 받기: 대기 중과 실패 시 모두 이전 답변 · 요약 · 추가 질문 · 참조 · 생성 정보 보존, 성공 시 새 값으로 교체</li>
-            <li>대기 중 제약: 답변 대기 중에는 해당 문서의 실행 취소와, 요청 중인 노드가 포함된 가지의 삭제를 차단(도중에 끊긴 요청은 사용 토큰 집계 불가)</li>
+            <li>대기 중 제약: 답변 대기 중에는 해당 문서의 실행 취소와 요청 중인 노드가 포함된 가지의 삭제를 차단(중단된 요청은 사용 토큰 집계 불가)</li>
           </ul>
         </div>
       </details>
@@ -313,23 +310,23 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       </div>
 
       <p class="wp-section-lead">
-        AI 회사(Google Gemini, Anthropic Claude, OpenAI)와 연결 방식을 따로 고릅니다. 앱은 어떤 경우에도 구독 로그인 토큰을 직접 읽거나 재사용하지 않으며, 인증은 각 회사가 공식으로 제공하는 수단에 위임합니다.
+        AI 제공사(Google Gemini, Anthropic Claude, OpenAI)와 연결 방식을 독립적으로 선택합니다. 앱은 어떤 경우에도 구독 로그인 토큰을 직접 읽거나 재사용하지 않으며, 인증은 각 제공사의 공식 수단에 위임합니다.
       </p>
 
       <div class="wp-grid-3">
         <article class="wp-card">
           <span class="wp-card-tag">① API KEY</span>
           <h3>API 키</h3>
-          <p>각 회사에서 발급한 키를 붙여 넣어 연결합니다. 키는 이 기기의 키체인에만 저장하며, 모델 목록을 불러와 고를 수 있습니다.</p>
+          <p>각 제공사에서 발급한 API 키를 입력해 연결합니다. 키는 로컬 기기의 키체인에만 저장되며, 사용 가능한 모델 목록을 불러와 선택할 수 있습니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">② OFFICIAL SIGN-IN · PLANNED</span>
           <h3>공식 로그인 (예정)</h3>
-          <p>AI 회사가 외부 앱에 공식 로그인을 허용하면 지원할 예정입니다. 회사별 앱 등록과 허용이 필요해 현재는 준비 중으로 표시합니다.</p>
+          <p>AI 제공사가 외부 앱 대상 공식 로그인을 지원할 때 연동할 예정입니다. 제공사별 앱 등록과 승인이 필요해 현재는 준비 중으로 표시합니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">③ BACKGROUND CLI · macOS</span>
-          <h3>백그라운드 CLI</h3>
+          <h3>로컬 CLI (백그라운드 실행)</h3>
           <p>Mac에 설치하고 로그인한 공식 CLI(Claude Code, Antigravity CLI)를 백그라운드에서 실행해, 사용 중인 구독 요금제로 답변을 받습니다.</p>
         </article>
       </div>
@@ -338,8 +335,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <summary>상세 보기 — 연결 테스트 · 설치 안내 · 요청 한도</summary>
         <div class="detail-body">
           <ul>
-            <li><strong>첫 실행</strong>: AI 연결 화면에서 회사와 연결 방식을 고르고, 실제 추가 질문 요청으로 연결 테스트 통과 후 시작. 설정 변경 시에도 테스트 통과 후 저장</li>
-            <li><strong>CLI 설치 안내</strong>: CLI 미발견 시 회사별 공식 설치 명령 · 복사 버튼 · 로그인 방법 안내, 도움말에도 동일 내용 수록</li>
+            <li><strong>첫 실행</strong>: AI 연결 화면에서 제공사와 연결 방식을 선택하고, 실제 추가 질문 요청으로 연결 테스트를 통과한 뒤 시작. 설정 변경 시에도 테스트 통과 후 저장</li>
+            <li><strong>CLI 설치 안내</strong>: CLI 미탐지 시 제공사별 공식 설치 명령 · 복사 버튼 · 로그인 방법 안내, 도움말에도 동일 내용 수록</li>
             <li><strong>CLI 탐색</strong>: GUI 앱은 셸 실행 경로를 상속하지 않으므로 주요 설치 위치와 로그인 셸의 실행 경로에서 탐색</li>
             <li><strong>동시 요청 한도</strong>: 연결 방식별 한도(CLI 2 · agy 상시 연결 3 · API 4), 여러 창이 하나의 대기열 공유</li>
           </ul>
@@ -357,14 +354,14 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       <div class="case-grid">
         <article class="case-card intent">
           <span class="case-badge">CONTEXT PACKAGE</span>
-          <h3>매 요청 다시 조립하는 맥락 패키지</h3>
+          <h3>요청별 동적 맥락 패키지 조립</h3>
           <p>
             대화 기록을 이어 보내는 대신, 요청마다 트리에서 맥락을 새로 조립합니다.
-            전체 주제, 루트부터 현재 위치까지의 경로, 직전 답변 전문, 형제 질문, 프로젝트 전체 노드 색인을 담되 답변 전문은 직전 답변에만 쓰고 나머지는 한 줄 요약으로 대신해, 트리가 커져도 토큰 사용량이 비례해 늘지 않게 했습니다.
+            전체 주제, 루트부터 현재 위치까지의 경로, 직전 답변 전문, 형제 질문, 프로젝트 전체 노드 색인을 담습니다. 답변 전문은 직전 노드에 한해 포함하고 나머지는 한 줄 요약으로 대체해, 트리가 커져도 토큰 사용량이 노드 수에 비례해 늘지 않도록 설계했습니다.
           </p>
           <ul class="wp-bullet-list">
             <li><strong>요청 종류</strong>: 답변 요청, 추가 질문 다시 받기, 참조선 다시 찾기 세 가지입니다.</li>
-            <li><strong>예산 초과 시</strong>: 경로, 형제와 자식, 트리 거리가 가까운 노드 순으로 남기고 나머지는 질문만 남기거나 생략합니다.</li>
+            <li><strong>예산 초과 시</strong>: 현재 경로, 형제·자식 노드, 트리 거리가 가까운 노드 순으로 우선 수록하고 나머지는 질문만 남기거나 생략합니다.</li>
           </ul>
         </article>
 
@@ -372,8 +369,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
           <span class="case-badge">RESPONSE &amp; FORMAT</span>
           <h3>구조화 응답과 제한된 답변 서식</h3>
           <p>
-            응답은 답변, 한 줄 요약, 추가 질문 3~4개, 참조 노드로 이루어진 JSON이며, 스키마 전달을 지원하는 프로바이더(Claude API·CLI)에는 구조화 출력을 강제하고, JSON 모드나 일반 텍스트만 지원하는 프로바이더(Gemini·OpenAI API, agy 상시 연결)는 앱 측 JSON 추출과 재요청으로 형식을 보장합니다.
-            답변은 노드 카드에서 잘 보이는 최소한의 서식만 허용합니다. 짧은 문단, 굵게, 인라인 코드, 목록 하나, 텍스트 다이어그램 하나로 제한하고, 나머지는 앱이 일반 텍스트로 정리합니다.
+            응답은 답변, 한 줄 요약, 추가 질문 3~4개, 참조 노드로 구성된 JSON 형식입니다. 스키마 전달을 지원하는 프로바이더(Claude API·CLI)에는 구조화 출력을 강제하며, JSON 모드나 일반 텍스트만 지원하는 프로바이더(Gemini·OpenAI API, agy 상시 연결)는 앱 측 JSON 추출과 재요청으로 형식을 보장합니다.
+            답변은 확장 카드의 가독성을 위해 최소한의 서식만 허용합니다. 짧은 문단, 굵게, 인라인 코드, 단일 목록, 단일 텍스트 다이어그램으로 제한하며, 그 외 서식은 앱에서 일반 텍스트로 정규화합니다.
           </p>
           <ul class="wp-bullet-list">
             <li><strong>답변 언어</strong>: 지시문은 영어로 작성하고, 답변은 사용자의 질문 언어를 따릅니다.</li>
@@ -418,14 +415,14 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       <figure class="media-card case-shot">
         <img
           src="/images/projects/whynode/05-launcher-cards.png"
-          alt="시작 화면의 프로젝트 카드 세 장. 각 카드에 루트 주제, 노드 수, 마지막 수정 시각이 표시되어 있다"
+          alt="시작 화면의 프로젝트 카드 세 장. 각 카드에 루트 주제, 노드 수, 마지막 수정 시각이 표시되어 있다."
           width="1384"
           height="428"
           class="zoomable-img"
           loading="lazy"
         />
         <figcaption>
-          <strong>App Snapshot · 프로젝트 카드</strong> — 프로젝트 하나가 <code>.whynode</code> 파일 하나이며, 시작 화면은 저장 폴더의 파일을 카드로 보여 줍니다.
+          <strong>App Snapshot · 프로젝트 카드</strong> — 프로젝트 하나를 단일 <code>.whynode</code> 파일로 저장하며, 시작 화면에서 저장 폴더 내 파일을 카드 형태로 목록화합니다.
         </figcaption>
       </figure>
 
@@ -433,17 +430,17 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <article class="wp-card">
           <span class="wp-card-tag">.WHYNODE · JSON</span>
           <h3>평면 노드 목록</h3>
-          <p>트리를 중첩 구조 대신 부모 id를 가진 노드의 평면 목록으로 저장합니다. 노드를 옮기거나 지울 때 구조 전체를 다시 쓰지 않아도 되고, 사람이 읽고 비교하기도 쉽습니다.</p>
+          <p>트리를 중첩 구조 대신 부모 id를 가진 노드의 평면 목록으로 저장합니다. 노드를 이동하거나 삭제할 때 중첩 구조 전체를 재작성할 필요가 없으며, 텍스트 diff 비교와 가독성 면에서도 유리합니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">VERSIONED SCHEMA</span>
           <h3>버전 관리와 자동 마이그레이션</h3>
-          <p>파일마다 스키마 버전을 기록하고, 이전 버전 파일은 열 때 현재 형식으로 자동 마이그레이션합니다. 더 새로운 버전의 파일은 열지 않고 앱 업데이트를 안내합니다.</p>
+          <p>파일마다 스키마 버전을 기록하고, 이전 버전 파일은 열 때 현재 형식으로 자동 마이그레이션합니다. 상위 버전의 파일은 열지 않고 앱 업데이트를 안내합니다.</p>
         </article>
         <article class="wp-card">
           <span class="wp-card-tag">OS DOCUMENT APP</span>
           <h3>OS 표준 저장</h3>
-          <p>저장 시점과 원자적 쓰기는 OS의 문서 앱 구조에 맡깁니다. 앱은 편집을 실행 취소에 등록하고 변경을 표시하며, 프로젝트의 AI 사용량도 파일에 함께 누적합니다.</p>
+          <p>저장 시점과 원자적 쓰기는 OS의 문서 기반 앱 아키텍처에 위임합니다. 앱은 편집 내역을 실행 취소에 등록하고 변경 상태만 표시하며, 프로젝트의 AI 사용량도 파일에 함께 누적합니다.</p>
         </article>
       </div>
 
@@ -455,8 +452,8 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
             <li><code>id</code> · <code>parentId</code> · <code>question</code> · <code>answer</code> · <code>summary</code> · <code>status</code> · <code>error</code></li>
             <li><code>suggestions</code>: <code>&#123;id, text, usedBy&#125;</code>, 사용한 질문은 만들어진 자식 노드 id를 <code>usedBy</code>에 기록</li>
             <li><code>refs</code>: 참조 노드 <code>&#123;nodeId, reason&#125;</code>, <code>position</code>: <code>&#123;x, y, pinned&#125;</code>, <code>collapsed</code></li>
-            <li>꾸밈: <code>sizeScale</code>(0.6~2.0), <code>fillColor</code> · <code>textColor</code>(프리셋 토큰 또는 <code>#RRGGBB</code>)</li>
-            <li><code>generation</code>: 답변을 만든 회사 · 연결 방식 · 모델 · 프롬프트 버전 · 시각</li>
+            <li>스타일: <code>sizeScale</code>(0.6~2.0), <code>fillColor</code> · <code>textColor</code>(프리셋 토큰 또는 <code>#RRGGBB</code>)</li>
+            <li><code>generation</code>: 답변을 생성한 제공사 · 연결 방식 · 모델 · 프롬프트 버전 · 시각</li>
           </ul>
           <h4>무결성 규칙 (열 때 복구)</h4>
           <ul>
@@ -476,7 +473,7 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       </div>
 
       <p class="wp-section-lead">
-        물리 비전공 대학생이 교양 시험을 앞두고 양자역학의 큰 줄기를 잡는 과정을 예로 들었습니다.
+        물리 비전공 대학생이 교양 시험을 앞두고 양자역학의 핵심 개념을 구조화하는 시나리오입니다.
       </p>
 
       <ol class="wp-roadmap-steps">
@@ -488,17 +485,17 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
         <li>
           <span class="rm-idx">STEP 02</span>
           <h3>질문 선택</h3>
-          <p>"관측하기 전까지 상태가 겹쳐 있다는 게 무슨 뜻일까?"를 고르면 새 노드가 생기고 양자 중첩에 대한 답변이 채워집니다. 고르지 않은 두 질문은 루트에 남습니다.</p>
+          <p>"관측하기 전까지 상태가 겹쳐 있다는 게 무슨 뜻일까?"를 고르면 새 노드가 생기고 양자 중첩에 대한 답변이 채워집니다. 선택하지 않은 두 질문은 루트 노드에 남습니다.</p>
         </li>
         <li>
           <span class="rm-idx">STEP 03</span>
           <h3>연쇄 탐구</h3>
-          <p>새 노드에는 방금 답변에 나온 관측, 중첩, 코펜하겐 해석에서 이어지는 추가 질문이 다시 제안됩니다.</p>
+          <p>새 노드에는 답변에 등장한 관측, 중첩, 코펜하겐 해석에서 파생된 추가 질문이 다시 제안됩니다.</p>
         </li>
         <li class="final-step">
           <span class="rm-idx">STEP 04</span>
           <h3>직접 질문과 연결</h3>
-          <p>"슈뢰딩거의 고양이는 결국 살아 있는 걸까?"를 직접 묻자, AI가 앞서 만든 중첩 노드의 설명을 이어 부연하고 두 노드를 점선으로 연결합니다.</p>
+          <p>"슈뢰딩거의 고양이는 결국 살아 있는 걸까?"를 직접 입력하면, AI가 앞서 생성된 중첩 노드의 설명을 이어 부연하고 두 노드를 점선 참조선으로 연결합니다.</p>
         </li>
       </ol>
 

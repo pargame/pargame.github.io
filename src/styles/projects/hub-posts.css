@@ -1,0 +1,70 @@
+/* 프로젝트 홈의 문서 카드 목록 공용 스타일. 카드 강조색 등 페이지 고유 변형은 각 페이지에서 새 클래스로 둔다. */
+.section-head {
+  margin-bottom: 1.3rem;
+}
+.section-head h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.45rem;
+}
+.section-head p {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.94rem;
+}
+.post-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.3rem;
+}
+.post-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.7rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all var(--dur-fast);
+}
+.post-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.post-arrow {
+  color: var(--text-3);
+  font-size: 1.05rem;
+  transition: transform var(--dur-fast), color var(--dur-fast);
+}
+.post-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-1);
+}
+.post-card p {
+  margin: 0;
+  color: var(--text-2);
+  line-height: 1.7;
+  font-size: 0.92rem;
+  flex: 1;
+}
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.4rem;
+}
+.post-tags span {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+}

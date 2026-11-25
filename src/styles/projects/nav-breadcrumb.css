@@ -1,0 +1,36 @@
+/* 공용 경로 표시(breadcrumb)와 갱신일 표시. 레이아웃(.breadcrumb 자체의 여백 등)은 페이지마다 다를 수 있다. */
+.breadcrumb a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+.breadcrumb a:hover {
+  color: var(--accent);
+}
+.breadcrumb .current {
+  color: var(--accent-2);
+}
+.updated-meta {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+.wp-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  color: var(--text-3);
+  margin-bottom: -1.6rem;
+}
+.wp-breadcrumb a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+.wp-breadcrumb a:hover {
+  color: var(--wp-coral);
+}
+.wp-breadcrumb .current {
+  color: var(--wp-coral);
+  font-weight: 600;
+}

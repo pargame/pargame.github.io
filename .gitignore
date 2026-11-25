@@ -36,7 +36,3 @@ credentials.json
 *.njsproj
 *.sln
 *.sw?
-
-# Internal design specs (local only)
-STYLE_SPEC.md
-docs/ARCHITECTURE.md

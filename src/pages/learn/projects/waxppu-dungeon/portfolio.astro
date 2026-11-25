@@ -209,7 +209,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
               <ul class="node-list">
                 <li>조준 범위 내부 조각만 선택적 Dynamic 전환</li>
                 <li>잔존 리프 비율 임계치 도달 시 일괄 붕괴</li>
-                <li>활성 작업이 있을 때만 Tick을 켜 CPU 비용 절감</li>
+                <li>활성 작업이 있을 때만 Tick을 활성화해 CPU 비용 절감</li>
               </ul>
             </div>
 
@@ -257,7 +257,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           </div>
         </div>
         <figcaption>
-          <strong>WaxPpuLab 시스템 아키텍처</strong> — 플레이어는 타격 위치와 반경만 전달하고, 파괴 연산·상태 전이·사운드 합성은 각 전담 컴포넌트가 책임지도록 결합도를 낮췄습니다. 몬스터별 개성은 깊은 상속 대신 데이터 에셋과 전략 컴포넌트로 조합합니다.
+          <strong>WaxPpuLab 시스템 아키텍처</strong> — 플레이어는 타격 위치와 반경만 전달하고, 파괴 연산·상태 전이·사운드 합성은 각 전담 컴포넌트가 책임지도록 결합도를 낮췄습니다. 몬스터별 고유 속성과 동작은 깊은 상속 대신 데이터 에셋과 전략 컴포넌트로 조합합니다.
         </figcaption>
       </figure>
 
@@ -316,7 +316,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           <span class="case-badge">DESIGN INTENT &amp; TRADE-OFF</span>
           <h3>키네마틱 앵커링과 2단계 국소 물리 필드</h3>
           <p>
-            이동 중인 몬스터의 껍질 전체를 동적 물리 상태로 두면 첫 충격에 구조 전체가 붕괴해 원하는 부위만 깎아 내는 손맛이 사라집니다.
+            이동 중인 몬스터의 껍질 전체를 동적 물리 상태로 두면 첫 충격에 구조 전체가 붕괴해 원하는 부위만 정밀하게 깎아 내는 타격감이 사라집니다.
             이를 해결하기 위해 평소에는 껍질 전체를 키네마틱 상태로 고정하고, 타격 시 조준 구체 내부 조각만 선별해 동적 상태로 전환한 뒤 클러스터 파괴 힘을 인가하는 2단계 필드 파이프라인을 구성했습니다.
           </p>
           <ul class="wp-bullet-list">
@@ -340,8 +340,8 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <h3>Dataflow 기반 고정 수명 제거 파이프라인 전환</h3>
             <p>
               파편 회수 기준을 물리 정지 여부에서 '이탈 이후 경과 시간'으로 전환했습니다.
-              모든 파괴 에셋의 Dataflow 그래프에 고정 수명 제거 노드를 삽입해, 파편이 분리된 뒤 일정 시간이 지나면 구름·충돌 여부와 무관하게 축소 페이드아웃 후 확실히 정리되도록 보장했습니다.
-              현재는 디버그 카운터와 PIE 실플레이로 파편 누적이 해소됨을 확인했으며, 대규모 웨이브 기준 정량 계측은 Unreal Insights로 이어 갈 예정입니다.
+              모든 파괴 에셋의 Dataflow 그래프에 고정 수명 제거 노드를 삽입해, 파편이 분리된 뒤 일정 시간이 지나면 구르기·충돌 여부와 무관하게 축소 페이드아웃 후 정리되도록 보장했습니다.
+              현재는 디버그 카운터와 PIE 실플레이로 파편 누적이 해소됨을 확인했으며, 대규모 웨이브 기준 정량 계측은 Unreal Insights로 진행할 예정입니다.
             </p>
           </div>
         </article>
@@ -391,7 +391,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             Chaos 물리 엔진이 전달하는 파편의 질량·충돌 법선 속도·누적 임펄스를 실시간으로 MetaSound 파라미터에 매핑해, 큰 덩어리의 묵직한 파열음부터 잔조각의 섬세한 충돌음까지 물리적으로 일관된 사운드를 합성하도록 설계했습니다.
           </p>
           <ul class="wp-bullet-list">
-            <li><strong>다중 그레인 클리핑 방지</strong>: 동시 재생 대기열이 커질수록 개별 볼륨을 비선형으로 감쇠하고, 일괄 붕괴 시에는 그레인 재생 시점을 짧은 구간에 분산해 피크 찢어짐을 방지했습니다.</li>
+            <li><strong>다중 그레인 클리핑 방지</strong>: 동시 재생 대기열이 커질수록 개별 볼륨을 비선형으로 감쇠하고, 일괄 붕괴 시에는 그레인 재생 시점을 짧은 구간에 분산해 피크 클리핑을 방지했습니다.</li>
             <li><strong>임펄스 누락 폴백</strong>: 물리 엔진이 간헐적으로 누적 임펄스를 0으로 보고하는 충돌에 대비해 질량과 속도 기반 운동에너지 추정 경로를 마련했습니다.</li>
             <li><strong>확률적 간격 및 조건부 Tick</strong>: 지수 분포 기반 무작위 쿨다운으로 기계적인 리듬 반복을 제거했으며, 재생 대기열이 비어 있을 때는 컴포넌트 Tick을 비활성화해 유휴 CPU 비용을 차단했습니다.</li>
           </ul>
@@ -403,7 +403,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <h3>속도 선형 매핑의 한계와 이중 감쇠로 인한 다이내믹 레인지 손실</h3>
             <p>
               초기 구현에서는 충돌 속도만 선형 매핑했기 때문에 질량이 다른 파편이 동일한 음량으로 재생되는 부자연스러움이 있었습니다.
-              또한 동시 충돌 밀도 감쇠와 재생 함수의 최소 볼륨 제한이 서로 겹치면서 이중 감쇠가 발생해, 바닥에 떨어지는 잔조각의 미세한 ASMR 디테일이 거의 묻혀 버리는 문제가 확인되었습니다.
+              또한 동시 충돌 밀도 감쇠와 재생 함수의 최소 볼륨 제한이 서로 겹치면서 이중 감쇠가 발생해, 바닥에 떨어지는 잔조각의 미세한 ASMR 디테일이 대부분 소실되는 문제가 확인되었습니다.
             </p>
           </div>
           <div class="ts-step solution">
@@ -411,7 +411,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <h3>음향 압력 로그 압축과 하이브리드 프리셋 체계</h3>
             <p>
               충돌 에너지의 제곱근(음향 압력)을 인간의 청각 인지 특성인 Weber-Fechner 로그 스케일로 압축해, 작은 충돌의 섬세함은 살리면서도 강한 충격의 과포화를 억제했습니다.
-              아울러 이중 감쇠를 일으키던 계수와 하한값을 재정비하고, 파괴음과 파편 충돌음을 이원화한 두 가지 하이브리드 프리셋을 런타임 키 입력으로 즉시 비교·튜닝할 수 있게 구성했습니다.
+              아울러 이중 감쇠를 일으키던 계수와 하한값을 재조정하고, 파괴음과 파편 충돌음을 이원화한 두 가지 하이브리드 프리셋을 런타임 키 입력으로 즉시 비교·튜닝할 수 있게 구성했습니다.
             </p>
             <div class="wp-preset-mini">
               <div><strong>KEY 1 (기본)</strong>: 목재 파열감의 묵직한 파괴음 + 중량감 있는 클릭 계열 충돌음 조합</div>
@@ -431,7 +431,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <li>로그 압축: <code>P = √E</code>, <code>ln(1 + 5·P<sub>norm</sub>) / ln(6)</code></li>
             <li>Poisson 지수 쿨다운: <code>-ln(U) · MinInterval</code>을 <code>0.5x~3.0x</code>로 클램프, <code>RefreshTickEnabled()</code> 조건부 Tick</li>
             <li>이전 문제: <code>NormalSpeed / 320</code> 선형 매핑, <code>DensityGain = 1/√N</code>과 <code>PlayOneShotCrack</code> 하한 <code>0.08</code>이 겹쳐 이중 감쇠</li>
-            <li>수정: <code>DensityGain ≥ 0.65</code>, <code>Collision*Scale = 1.0</code>, <code>FinalIntensity</code> 하한 <code>0.08 → 0.02</code></li>
+            <li>수정: <code>DensityGain = max(0.65, 1 / Pow(N, 0.35))</code>로 감쇠 완화 및 하한 설정, <code>Collision*Scale = 1.0</code>, <code>FinalIntensity</code> 하한 <code>0.08 → 0.02</code></li>
             <li>프리셋: KEY 1 <code>WoodPlank</code> + <code>Heavy</code> / <code>BambooClick</code> 랜덤 · KEY 2 <code>HardBlock</code> + <code>JadeMarble</code> / <code>SoftWaxTap</code> 랜덤</li>
           </ul>
         </div>
@@ -459,7 +459,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
           <div class="wp-fsm-bar">
             <span>정렬 도약</span>
             <i>→</i>
-            <span>전방 전도</span>
+            <span>측면 전도</span>
             <i>→</i>
             <span>텀블링 돌진</span>
             <i>→</i>
@@ -472,7 +472,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
             <h3>불필요한 180도 선회 지연과 캡슐 높이 전환 시 지면 이탈</h3>
             <p>
-              버터 몬스터가 플레이어를 등지고 있을 때 항상 정면 기준으로 반 바퀴를 선회하려다 보니 추적 반응성이 크게 떨어졌습니다.
+              버터 몬스터가 플레이어를 등지고 있을 때 항상 정면 기준으로 180도 선회를 수행해 추적 반응성이 크게 저하되었습니다.
               또한 눕고 일어서는 자세 전환 과정에서 충돌 캡슐의 반높이만 변경하면 캡슐 중심을 기준으로 크기가 변하기 때문에, 몬스터가 공중에 뜨거나 바닥 지형에 파묻히는 시각·물리 오차가 발생했습니다.
             </p>
           </div>
@@ -494,6 +494,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <li>교체 구조: DataAsset의 <code>LocomotionClass</code>로 <code>UWaxLocomotionComponent</code> 하위 전략 선택</li>
             <li>공(<code>BP_WaxBall_Basic</code>): 변위 <code>Δp</code>와 바닥 법선의 외적으로 회전축을 구하고 <code>RollRadius</code>에 연동</li>
             <li>버터(<code>BP_WaxButter</code>) FSM: <code>HopAlign</code> → <code>LayDown</code> → <code>TumbleCharge</code> → <code>StandUp</code></li>
+            <li>측면 전도: <code>ChooseLayDirection</code>이 좌·우 스윕으로 막히지 않은 쪽을 골라 <code>LaySign</code>을 정하고, 전방축(Roll) 기준 90° 회전으로 측면 전도</li>
             <li>최단각: <code>TickHopAlign</code>에서 <code>DeltaFwd</code>와 <code>DeltaBack</code>을 비교하고, <code>TumbleDirectionSign</code>으로 양방향 돌진</li>
             <li>바닥 고정: <code>SetCapsuleHalfHeightKeepFloor</code>가 <code>HalfZ ↔ HalfY</code> 전환 시 <code>DeltaZ</code>만큼 액터와 <code>BodyPivot</code>을 상쇄 보정</li>
           </ul>
@@ -676,6 +677,7 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <div class="env-col-head coral">DISABLED · 통합 메모리 압박 해소</div>
             <ul>
               <li>하드웨어 레이 트레이싱 Lumen <span>비활성화</span></li>
+              <li>반투명 굴절 하드웨어 레이 트레이싱 반사 <span>비활성화</span></li>
               <li>전역 레이 트레이싱 <span>BVH 가속 구조 메모리 절감</span></li>
               <li>레이 트레이싱 그림자 <span>비활성화</span></li>
               <li>레이 트레이싱 프록시 <span>비활성화</span></li>
@@ -693,9 +695,10 @@ if (UMaterialParameterCollectionInstance* MPCInst = GetWorld()->GetParameterColl
             <li><code>r.DynamicGlobalIlluminationMethod=1</code> · <code>r.ReflectionMethod=1</code></li>
             <li><code>r.Shadow.Virtual.Enable=1</code> · <code>r.Nanite.ProjectEnabled=True</code> · <code>r.Substrate=True</code></li>
           </ul>
-          <h4>비활성화 (5종)</h4>
+          <h4>비활성화 (6종)</h4>
           <ul>
             <li><code>r.Lumen.HardwareRayTracing=False</code></li>
+            <li><code>r.Lumen.Reflections.HardwareRayTracing.Translucent.Refraction.EnableForProject=False</code></li>
             <li><code>r.RayTracing=False</code> · <code>r.RayTracing.Shadows=False</code></li>
             <li><code>r.RayTracing.RayTracingProxies.ProjectEnabled=False</code></li>
             <li><code>r.PathTracing=False</code></li>

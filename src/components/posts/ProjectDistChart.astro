@@ -1,0 +1,253 @@
+---
+interface ProjectRow {
+  name: string;
+  tag: string;
+  category: 'docs' | 'engine' | 'app' | 'infra';
+  sessions: number;
+  summary: string;
+}
+
+const total = 108;
+const maxSessions = 28;
+
+const rows: ProjectRow[] = [
+  {
+    name: '블로그 (pargame.github.io)',
+    tag: '문서·설계',
+    category: 'docs',
+    sessions: 28,
+    summary: '프로젝트 포트폴리오·기획서 작성, 문체 교정, 스타일 일관성 점검',
+  },
+  {
+    name: '왁뿌랩 (UE 5.9 프로토타입)',
+    tag: '언리얼 엔진',
+    category: 'engine',
+    sessions: 20,
+    summary: '1인칭 카메라 구조, 게임 규칙 조정, 문서화 점검',
+  },
+  {
+    name: '곰팡이 우주 정복 대작전 (UE 5.9)',
+    tag: '언리얼 엔진',
+    category: 'engine',
+    sessions: 17,
+    summary: '적 AI 공격 티켓, 성장 스케일 파라미터화, 입력 버그',
+  },
+  {
+    name: '눙 언어 (언어 명세)',
+    tag: '문서·설계',
+    category: 'docs',
+    sessions: 16,
+    summary: '메모리·동시성 모델, tagged union 도입 여부',
+  },
+  {
+    name: 'WhyNode (SwiftUI 앱)',
+    tag: '앱·보안',
+    category: 'app',
+    sessions: 12,
+    summary: '플랫폼 결정, 공개 전 보안 점검',
+  },
+  {
+    name: '스킬·설정 저장소',
+    tag: '도구·인프라',
+    category: 'infra',
+    sessions: 10,
+    summary: 'collab 스킬 설계·개선, 엔진 스킬 압축',
+  },
+  {
+    name: '이력서·포트폴리오',
+    tag: '문서·설계',
+    category: 'docs',
+    sessions: 5,
+    summary: '사실관계 검증, 1페이지 이력서 재구성',
+  },
+];
+---
+
+<figure class="dist-box visual-wide" aria-label="108건 협업 세션의 프로젝트별 분포">
+  <div class="dist-head">
+    <span class="dist-eyebrow">WORKLOAD DISTRIBUTION</span>
+    <h3>프로젝트별 협업 세션 분포 (총 108건)</h3>
+    <p>문서·명세·포트폴리오 성격(49건 · 45.4%)과 언리얼 게임 구현(37건 · 34.3%)이 전체의 약 80%를 차지합니다.</p>
+  </div>
+
+  <div class="dist-legend">
+    <span><i class="dot docs"></i>문서·명세 (49건)</span>
+    <span><i class="dot engine"></i>UE 5.9 구현 (37건)</span>
+    <span><i class="dot app"></i>SwiftUI 앱 (12건)</span>
+    <span><i class="dot infra"></i>스킬·설정 (10건)</span>
+  </div>
+
+  <div class="dist-rows" role="list">
+    {rows.map((r) => {
+      const barPct = (r.sessions / maxSessions) * 100;
+      const sharePct = ((r.sessions / total) * 100).toFixed(1);
+      return (
+        <div class="dist-row" role="listitem">
+          <div class="dist-info">
+            <div class="dist-title-line">
+              <strong class="dist-name">{r.name}</strong>
+              <span class={`cat-pill ${r.category}`}>{r.tag}</span>
+            </div>
+            <p class="dist-summary">{r.summary}</p>
+          </div>
+          <div class="dist-bar-wrap">
+            <div class="dist-track">
+              <div class={`dist-fill ${r.category}`} style={`width: ${barPct}%`} />
+            </div>
+          </div>
+          <div class="dist-val">
+            <strong>{r.sessions}건</strong>
+            <span>{sharePct}%</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</figure>
+
+<style>
+  .dist-box {
+    margin-block: 2rem;
+    padding: 1.5rem 1.6rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .dist-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .dist-head h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1.12rem;
+    color: var(--text-1);
+  }
+  .dist-head p {
+    margin: 0;
+    font-size: 0.87rem;
+    color: var(--text-3);
+    line-height: 1.55;
+  }
+
+  .dist-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem 1.15rem;
+    margin: 1rem 0 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--text-3);
+  }
+  .dist-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .dot.docs, .dist-fill.docs { background: var(--accent); }
+  .dot.engine, .dist-fill.engine { background: var(--accent-2); }
+  .dot.app, .dist-fill.app { background: var(--success); }
+  .dot.infra, .dist-fill.infra { background: var(--warn); }
+
+  .dist-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .dist-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) 86px;
+    gap: 0.9rem;
+    align-items: center;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .dist-row:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .dist-title-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .dist-name {
+    font-size: 0.9rem;
+    color: var(--text-1);
+  }
+  .cat-pill {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    padding: 0.1rem 0.42rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-subtle);
+    background: var(--surface-2);
+    color: var(--text-3);
+  }
+  .cat-pill.docs { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 32%, transparent); }
+  .cat-pill.engine { color: var(--accent-2); border-color: color-mix(in srgb, var(--accent-2) 32%, transparent); }
+  .cat-pill.app { color: var(--success); border-color: color-mix(in srgb, var(--success) 32%, transparent); }
+  .cat-pill.infra { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 32%, transparent); }
+
+  .dist-summary {
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-3);
+    line-height: 1.45;
+  }
+
+  .dist-track {
+    height: 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .dist-fill {
+    height: 100%;
+    border-radius: 5px;
+  }
+
+  .dist-val {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+  }
+  .dist-val strong {
+    font-size: 0.92rem;
+    color: var(--text-1);
+  }
+  .dist-val span {
+    font-size: 0.72rem;
+    color: var(--text-3);
+  }
+
+  @media (max-width: 760px) {
+    .dist-box {
+      padding: 1.15rem;
+    }
+    .dist-row {
+      grid-template-columns: 1fr auto;
+      gap: 0.45rem 0.75rem;
+    }
+    .dist-bar-wrap {
+      grid-column: 1 / -1;
+      order: 3;
+    }
+  }
+</style>

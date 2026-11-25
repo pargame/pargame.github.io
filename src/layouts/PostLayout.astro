@@ -1,0 +1,499 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Frontmatter {
+  title: string;
+  description?: string;
+  date?: string;
+  tags?: string[];
+  readTime?: string;
+}
+
+interface Props {
+  frontmatter?: Frontmatter;
+  title?: string;
+  description?: string;
+  date?: string;
+  tags?: string[];
+  readTime?: string;
+}
+
+const fm: Frontmatter = Astro.props.frontmatter ?? {
+  title: Astro.props.title ?? 'Post',
+  description: Astro.props.description,
+  date: Astro.props.date,
+  tags: Astro.props.tags,
+  readTime: Astro.props.readTime,
+};
+
+const {
+  title,
+  description = "pargame's engineering blog",
+  date,
+  tags = [],
+  readTime,
+} = fm;
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="reading-progress" aria-hidden="true"></div>
+
+  <article class="post-article">
+    <header class="post-header">
+      <div class="post-meta-row">
+        <a href="/posts" class="post-back">← Posts</a>
+        {date && (
+          <>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <time class="post-date">{date}</time>
+          </>
+        )}
+        {readTime && (
+          <>
+            <span class="meta-sep" aria-hidden="true">·</span>
+            <span class="post-read-time">{readTime}</span>
+          </>
+        )}
+      </div>
+
+      <h1 class="post-title">{title}</h1>
+
+      {description && <p class="post-lead">{description}</p>}
+
+      {tags.length > 0 && (
+        <ul class="post-tags" aria-label="태그">
+          {tags.map((tag) => (
+            <li class="post-tag">{tag.startsWith('#') ? tag : `#${tag}`}</li>
+          ))}
+        </ul>
+      )}
+    </header>
+
+    <div class="post-body">
+      <slot />
+    </div>
+
+    <footer class="post-footer">
+      <a href="/posts" class="post-footer-back">← 모든 글 목록으로</a>
+    </footer>
+  </article>
+
+  <script>
+    const bar = document.querySelector<HTMLElement>('.reading-progress');
+    if (bar && !CSS.supports('animation-timeline: scroll()')) {
+      let ticking = false;
+      const update = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+        bar.style.transform = `scaleX(${ratio})`;
+        ticking = false;
+      };
+      window.addEventListener(
+        'scroll',
+        () => {
+          if (!ticking) {
+            requestAnimationFrame(update);
+            ticking = true;
+          }
+        },
+        { passive: true }
+      );
+      update();
+    }
+
+    document.querySelectorAll('.post-body > table').forEach((table) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'md-table-wrap';
+      table.parentNode?.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .reading-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 3px;
+    z-index: 200;
+    background: var(--accent-grad);
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    pointer-events: none;
+  }
+  @supports (animation-timeline: scroll()) {
+    .reading-progress {
+      animation: post-scroll-grow linear both;
+      animation-timeline: scroll(root);
+    }
+    @keyframes post-scroll-grow {
+      to {
+        transform: scaleX(1);
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reading-progress {
+      display: none;
+    }
+  }
+
+  .post-article {
+    --post-measure: 68ch;
+    --post-wide: min(100%, 56rem);
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .post-header {
+    max-width: var(--post-measure);
+    margin: 0.4rem auto 2.4rem;
+    padding-bottom: 1.8rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .post-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 1.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-3);
+  }
+
+  .post-back {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-muted);
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .post-back:hover {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--accent-strong);
+  }
+  .meta-sep {
+    opacity: 0.45;
+  }
+
+  .post-title {
+    margin: 0 0 0.9rem;
+    font-size: clamp(1.75rem, 1.35rem + 1.55vw, 2.45rem);
+    line-height: 1.24;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    color: var(--text-1);
+  }
+
+  .post-lead {
+    margin: 0 0 1.25rem;
+    font-size: clamp(0.98rem, 0.94rem + 0.2vw, 1.08rem);
+    line-height: 1.68;
+    color: var(--text-3);
+  }
+
+  .post-tags {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0;
+  }
+
+  .post-tag {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-2);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+  }
+
+  /* Post body rhythm & breakout */
+  .post-body > :global(*) {
+    max-width: var(--post-measure);
+    margin-inline: auto;
+  }
+  .post-body > :global(.wide),
+  .post-body > :global(.visual-wide) {
+    max-width: var(--post-wide);
+  }
+
+  .post-body > :global(p) {
+    margin-top: 1.3rem;
+    color: var(--text-2);
+    line-height: var(--lh-body);
+  }
+  .post-body > :global(p:first-child) {
+    margin-top: 0;
+  }
+
+  .post-body :global(strong) {
+    color: var(--text-1);
+    font-weight: 600;
+  }
+
+  .post-body > :global(h2) {
+    margin-top: 3rem;
+    margin-bottom: 0.9rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-subtle);
+    font-size: clamp(1.36rem, 1.18rem + 0.7vw, 1.68rem);
+    line-height: 1.32;
+    text-wrap: balance;
+  }
+  .post-body > :global(hr + h2),
+  .post-body > :global(h2:first-child) {
+    margin-top: 2rem;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .post-body > :global(h3) {
+    margin-top: 2.1rem;
+    margin-bottom: 0.65rem;
+    font-size: clamp(1.12rem, 1.04rem + 0.35vw, 1.28rem);
+    line-height: 1.36;
+  }
+
+  .post-body > :global(h4) {
+    margin-top: 1.6rem;
+    margin-bottom: 0.45rem;
+    font-size: 1.02rem;
+  }
+
+  .post-body > :global(ul),
+  .post-body > :global(ol) {
+    margin-top: 1.15rem;
+    padding-left: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    color: var(--text-2);
+  }
+  .post-body > :global(ul) :global(li::marker),
+  .post-body > :global(ol) :global(li::marker) {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+  .post-body > :global(ul) :global(p),
+  .post-body > :global(ol) :global(p) {
+    margin-top: 0.35rem;
+  }
+
+  .post-body > :global(blockquote) {
+    margin-block: 1.7rem;
+    padding: 0.95rem 1.25rem;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--surface-1);
+    color: var(--text-2);
+  }
+  .post-body > :global(blockquote) :global(p:first-child) {
+    margin-top: 0;
+  }
+
+  .post-body > :global(hr) {
+    border: none;
+    height: 1px;
+    margin-block: 2.6rem;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* Markdown tables */
+  .post-body > :global(.md-table-wrap) {
+    max-width: var(--post-wide);
+    margin-block: 1.8rem;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+    -webkit-overflow-scrolling: touch;
+  }
+  .post-body > :global(.md-table-wrap) :global(table),
+  .post-body > :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    font-variant-numeric: tabular-nums;
+  }
+  .post-body > :global(.md-table-wrap) :global(th),
+  .post-body > :global(.md-table-wrap) :global(td),
+  .post-body > :global(table) :global(th),
+  .post-body > :global(table) :global(td) {
+    padding: 0.78rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+  .post-body > :global(.md-table-wrap) :global(th),
+  .post-body > :global(table) :global(th) {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--text-3);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  .post-body > :global(.md-table-wrap) :global(tbody tr:hover),
+  .post-body > :global(table) :global(tbody tr:hover) {
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+  }
+  .post-body > :global(.md-table-wrap) :global(tbody tr:last-child td),
+  .post-body > :global(table) :global(tbody tr:last-child td) {
+    border-bottom: none;
+  }
+
+  /* Collapsible details */
+  .post-body > :global(details) {
+    margin-block: 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-1);
+    overflow: hidden;
+  }
+  .post-body > :global(details) > :global(summary) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.15rem;
+    cursor: pointer;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-1);
+    background: var(--surface-2);
+    transition: color var(--dur-fast), background var(--dur-fast);
+  }
+  .post-body > :global(details) > :global(summary::-webkit-details-marker) {
+    display: none;
+  }
+  .post-body > :global(details) > :global(summary::after) {
+    content: '+';
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--accent);
+    transition: transform var(--dur-fast) var(--ease);
+  }
+  .post-body > :global(details[open]) > :global(summary) {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .post-body > :global(details[open]) > :global(summary::after) {
+    transform: rotate(45deg);
+  }
+  .post-body > :global(details) > :global(summary:hover) {
+    color: var(--accent);
+  }
+  .post-body > :global(details) > :global(:not(summary)) {
+    padding-inline: 1.2rem;
+  }
+  .post-body > :global(details) > :global(ul),
+  .post-body > :global(details) > :global(ol) {
+    margin: 0.95rem 0 1.1rem;
+    padding-left: 2.4rem;
+    padding-right: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.48rem;
+    font-size: 0.9rem;
+  }
+  .post-body > :global(details) > :global(p) {
+    margin: 0.95rem 0;
+    font-size: 0.92rem;
+  }
+
+  /* Callouts */
+  .post-body > :global(.callout) {
+    margin-block: 1.8rem;
+    padding: 1.15rem 1.35rem;
+  }
+  .post-body > :global(.callout) :global(p:first-child) {
+    margin-top: 0;
+  }
+  .post-body > :global(.callout) :global(ul),
+  .post-body > :global(.callout) :global(ol) {
+    margin-top: 0.8rem;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .post-body > :global(.callout) :global(li::marker) {
+    color: var(--text-3);
+  }
+
+  /* Figures & images */
+  .post-body > :global(figure:not(.chart-box)) {
+    margin-block: 2rem;
+  }
+  .post-body :global(img) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .post-body > :global(figure:not(.chart-box)) :global(figcaption) {
+    margin-top: 0.65rem;
+    font-size: 0.82rem;
+    color: var(--text-3);
+    text-align: center;
+  }
+
+  .post-footer {
+    max-width: var(--post-measure);
+    margin: 3.5rem auto 0.5rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .post-footer-back {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: border-color var(--dur-fast), color var(--dur-fast);
+  }
+  .post-footer-back:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    :global(.main-wrapper) {
+      padding: 1.75rem 1rem;
+    }
+    .post-header {
+      margin-bottom: 1.8rem;
+      padding-bottom: 1.35rem;
+    }
+    .post-body > :global(h2) {
+      margin-top: 2.3rem;
+      padding-top: 1.2rem;
+    }
+    .post-body > :global(.callout) {
+      padding: 1rem 1.05rem;
+    }
+    .post-body > :global(.md-table-wrap) :global(th),
+    .post-body > :global(.md-table-wrap) :global(td) {
+      padding: 0.65rem 0.8rem;
+    }
+  }
+</style>

@@ -1,0 +1,155 @@
+---
+interface CaseItem {
+  id: string;
+  tag: string;
+  title: string;
+  beforeLabel: string;
+  before: string;
+  afterLabel: string;
+  after: string;
+  accent: 'cyan' | 'violet' | 'green';
+}
+
+const cases: CaseItem[] = [
+  {
+    id: 'CASE 01',
+    tag: '코드-문서 불일치',
+    title: '사실 오류 7건 + 구현 수치 교정',
+    beforeLabel: '초안 기재',
+    before: 'WhyNode 단위 테스트 79개·스키마 변경 5회 / 왁뿌랩 렌더링 비활성화 CVar 5종·버터 전도 전방',
+    afterLabel: '교차 검증 결과',
+    after: '오프라인 74 + 실 API 5·스키마 4회(Gemini 7건 정정) / CVar 6종(Claude)·전도 측면(Gemini)',
+    accent: 'cyan',
+  },
+  {
+    id: 'CASE 02',
+    tag: '과장된 근거 철회',
+    title: '결론은 맞지만 근거가 틀린 주장 교정',
+    beforeLabel: 'Gemini 보탠 근거',
+    before: 'WhyNode 네이티브 전환에 동의하며 "브라우저에서는 CORS 제약으로 AI API 직접 호출 불가" 추가',
+    afterLabel: 'Claude 반박 · 철회',
+    after: '주요 AI API의 브라우저 직접 호출 가능 확인 → 공식 CLI 연동 불가·Keychain 보관 불가로 정리',
+    accent: 'violet',
+  },
+  {
+    id: 'CASE 03',
+    tag: '명세 경계 조건',
+    title: '눙 언어 메모리·동시성 보완 규칙 5가지',
+    beforeLabel: '초기 명세 공백',
+    before: '동시 실행 함수로 공유 전달된 값의 가변성 경계와 작업 취소 확인 시점이 불명확',
+    afterLabel: '보완 규칙 추가',
+    after: '완료 대기 전까지 공유 값 읽기 전용, 취소 확인 지점은 반복 복귀·함수 호출 지점 등 5개 규칙 반영',
+    accent: 'green',
+  },
+];
+---
+
+<div class="case-grid visual-wide" aria-label="교차 검증으로 잡아낸 주요 오류 3가지 유형">
+  {cases.map((c) => (
+    <article class={`case-card ${c.accent}`}>
+      <div class="case-top">
+        <span class="case-id">{c.id}</span>
+        <span class="case-tag">{c.tag}</span>
+      </div>
+      <h3>{c.title}</h3>
+      <div class="diff-block before">
+        <span class="diff-label">{c.beforeLabel}</span>
+        <p>{c.before}</p>
+      </div>
+      <div class="diff-block after">
+        <span class="diff-label">{c.afterLabel}</span>
+        <p>{c.after}</p>
+      </div>
+    </article>
+  ))}
+</div>
+
+<style>
+  .case-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-block: 1.8rem 2rem;
+  }
+  .case-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .case-card.violet { border-top-color: var(--accent-2); }
+  .case-card.green { border-top-color: var(--success); }
+
+  .case-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+  .case-id {
+    color: var(--text-3);
+    font-weight: 700;
+  }
+  .case-tag {
+    color: var(--accent);
+    background: var(--accent-muted);
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+  }
+  .case-card.violet .case-tag {
+    color: var(--accent-2);
+    background: color-mix(in srgb, var(--accent-2) 14%, transparent);
+  }
+  .case-card.green .case-tag {
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+  }
+
+  .case-card h3 {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.38;
+    color: var(--text-1);
+  }
+
+  .diff-block {
+    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.81rem;
+    line-height: 1.52;
+  }
+  .diff-block.before {
+    background: color-mix(in srgb, var(--danger) 8%, var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent);
+  }
+  .diff-block.after {
+    background: color-mix(in srgb, var(--success) 8%, var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--success) 26%, transparent);
+    flex: 1;
+  }
+  .diff-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .diff-block.before .diff-label { color: var(--danger); }
+  .diff-block.after .diff-label { color: var(--success); }
+  .diff-block p {
+    margin: 0;
+    color: var(--text-2);
+  }
+
+  @media (max-width: 900px) {
+    .case-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

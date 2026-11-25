@@ -1,0 +1,91 @@
+---
+const pairs = [
+  { from: '힘 기반 배치', to: '포스 디렉티드 레이아웃' },
+  { from: '끌기', to: '드래그' },
+  { from: '빛', to: '글로우' },
+];
+---
+
+<div class="tone-strip visual-wide" aria-label="WhyNode 문서 문체 교정 예시 (총 141건)">
+  <div class="tone-head">
+    <span class="tone-badge">141건 교정</span>
+    <strong>Claude 구조·초안 → Gemini 한국어 문체 교정 예시</strong>
+  </div>
+  <div class="tone-pairs">
+    {pairs.map((p) => (
+      <div class="tone-pair">
+        <span class="tone-from">{p.from}</span>
+        <span class="tone-arrow" aria-hidden="true">→</span>
+        <span class="tone-to">{p.to}</span>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .tone-strip {
+    margin-block: 1.6rem;
+    padding: 1.15rem 1.3rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .tone-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.9rem;
+    font-size: 0.9rem;
+    color: var(--text-1);
+  }
+  .tone-badge {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-2);
+    background: color-mix(in srgb, var(--accent-2) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-2) 32%, transparent);
+    padding: 0.14rem 0.5rem;
+    border-radius: 999px;
+  }
+  .tone-pairs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+  .tone-pair {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.84rem;
+  }
+  .tone-from {
+    color: var(--text-3);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--danger) 65%, transparent);
+  }
+  .tone-arrow {
+    font-family: var(--font-mono);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .tone-to {
+    color: var(--text-1);
+    font-weight: 600;
+  }
+  @media (max-width: 720px) {
+    .tone-pairs {
+      grid-template-columns: 1fr;
+    }
+    .tone-pair {
+      justify-content: flex-start;
+    }
+  }
+</style>

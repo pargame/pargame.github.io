@@ -53,39 +53,43 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
       <div class="section-head">
         <span class="eyebrow">DOCUMENTS IN THIS PROJECT</span>
         <h2>프로젝트 문서</h2>
-        <p>설치와 빌드 방법은 GitHub 저장소의 README에서 확인할 수 있으며, 프로젝트 문서는 추가될 예정입니다.</p>
+        <p>기능 명세와 기술 개발기를 볼 수 있으며, 설치와 빌드 방법은 GitHub 저장소의 README에 정리되어 있습니다.</p>
       </div>
 
       <div class="post-cards">
-        <div class="post-card is-soon" aria-disabled="true">
+        <a href="/learn/projects/whynode/spec" class="post-card">
           <div class="post-top">
             <span class="post-type">DOC 01 · 기능 명세</span>
-            <span class="soon-badge">SOON</span>
+            <span class="post-arrow">→</span>
           </div>
-          <h3>캔버스 인터랙션 &amp; 아키텍처 명세 (준비 중)</h3>
+          <h3>기획 배경과 기능 명세</h3>
           <p>
-            노드 상태 모델, 무한 캔버스 렌더링, AI 맥락 조립 구조를 정리한 문서가 추가될 예정입니다.
+            질문 선택 중심의 탐구 루프, 핵심 인터랙션, 노드 상태 모델, AI 연결 방식과 메시지 규격, 저장 형식을 정리했습니다.
           </p>
           <div class="post-tags">
-            <span>#준비중</span>
-            <span>#SwiftUI</span>
+            <span>#기능명세</span>
+            <span>#UXFlow</span>
+            <span>#ContextPackage</span>
+            <span>#FileFormat</span>
           </div>
-        </div>
+        </a>
 
-        <div class="post-card is-soon" aria-disabled="true">
+        <a href="/learn/projects/whynode/portfolio" class="post-card">
           <div class="post-top">
-            <span class="post-type">DOC 02 · 구현 기록</span>
-            <span class="soon-badge">SOON</span>
+            <span class="post-type">DOC 02 · 기술 개발기</span>
+            <span class="post-arrow">→</span>
           </div>
-          <h3>네이티브 앱 구현 및 검증 기록 (준비 중)</h3>
+          <h3>포트폴리오 · 기술 개발기</h3>
           <p>
-            SwiftUI Canvas 성능 튜닝과 힘 기반 그래프 레이아웃 구현 기록이 추가될 예정입니다.
+            AI 호출 토큰 절감, 요청 수명 관리, 힘 기반 배치 안정화, 화면 갱신 범위 설계, 스키마 마이그레이션과 보안 점검을 실측 결과와 함께 정리했습니다.
           </p>
           <div class="post-tags">
-            <span>#준비중</span>
-            <span>#Implementation</span>
+            <span>#SwiftUI</span>
+            <span>#TokenBudget</span>
+            <span>#ForceLayout</span>
+            <span>#Security</span>
           </div>
-        </div>
+        </a>
       </div>
     </section>
   </div>
@@ -245,9 +249,17 @@ import BaseLayout from '../../../../layouts/BaseLayout.astro';
     flex-direction: column;
     gap: 0.8rem;
   }
-  .post-card.is-soon {
-    opacity: 0.68;
-    cursor: default;
+  a.post-card {
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--dur-fast), border-color var(--dur-fast);
+  }
+  a.post-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--d-accent);
+  }
+  .post-arrow {
+    color: var(--d-accent);
   }
   .post-top {
     display: flex;

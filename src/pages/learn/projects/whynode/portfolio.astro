@@ -1,0 +1,1849 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { Code } from 'astro:components';
+
+const codeCliArgs = `// CLIProvider.swift — 질의응답 전용 CLI 실행 인자
+func arguments(for context: ContextPackage) throws -> [String] {
+    let schema = Prompt.schema(for: context.kind)
+    let message = Prompt.userMessage(for: context)
+    let modelArgs = model.isEmpty ? [] : ["--model", model]
+    // 질의응답에 필요 없는 도구 · 스킬 · 설정 로드를 꺼서 호출당 토큰과 지연을 줄인다.
+    switch kind {
+    case .anthropic:
+        let lean = ["--tools", "", "--strict-mcp-config", "--setting-sources", "", "--disable-slash-commands", "--no-session-persistence"]
+        return ["-p", "--output-format", "json", "--json-schema", schema, "--system-prompt", Prompt.system] + lean + modelArgs + [message]
+    case .google:
+        // agy는 시스템 프롬프트 옵션이 없어 본문 앞에 붙인다.
+        return ["--disable-slash-commands", "--output-format", "json", "--json-schema", schema] + modelArgs + ["-p=\\(Prompt.system)\\n\\n\\(message)"]
+    case .openai:
+        throw ProviderError.notSupported(kind.cliDisplayName)
+    }
+}`;
+
+const codeReconcile = `// AIController.swift — 문서 변경 시 쓸모없어진 요청 취소
+func reconcile(_ document: WhyNodeDocument) {
+    guard let center else { return }
+    // 참조선 찾기는 결과를 반영할 때 지금 맵으로 다시 검증하므로 끊지 않는다.
+    for request in center.requests(in: ObjectIdentifier(document)) where request.key.kind != .links {
+        let status: NodeStatus = request.key.kind == .answer ? .pending : .done
+        if !Self.isCurrent(document.map[request.key.node], status: status, question: request.question) {
+            center.cancel(request.id)
+        }
+    }
+}`;
+
+const codePhysics = `// Physics.swift — 틱마다 이동량 상한 · 비유한 속도 차단 · 정지 판정
+    velocity[i] *= 1 - Self.velocityDecay
+    let speed2 = (velocity[i] * velocity[i]).sum()
+    if !speed2.isFinite {
+        velocity[i] = .zero
+    } else if speed2 > Self.maxSpeed * Self.maxSpeed {
+        velocity[i] *= Self.maxSpeed / speed2.squareRoot()
+    }
+    position[i] += velocity[i]
+    fastest = max(fastest, (velocity[i] * velocity[i]).sum())
+}
+// 처음 몇 틱은 속도가 붙기 전이므로 건너뛴다.
+if ticks > 20, fastest.squareRoot() < Self.restSpeed { alpha = 0 }`;
+
+const codeAutoFit = `// NodeBubble.swift — 단어가 끊기지 않고 원 안에 들어가는 가장 큰 배율
+private var fittedScale: CGFloat {
+    let width = NodeBubble.titleWidth * size
+    let text = displayText
+    let safe = Self.fitScales.filter { Self.longestWordWidth(text, scale: $0) <= width }
+    return safe.first { Self.textHeight(text, scale: $0, width: width) <= fitHeight } ?? Self.fitScales.last!
+}`;
+
+const codeDedupe = `// Validation.swift — 정규화 후 완전 일치 · 문자 바이그램 Jaccard로 표면 중복 제거
+static func dedupe(_ candidates: [String], against existing: [String], threshold: Double) -> ([String], [String]) {
+    var references = existing.map(normalize)
+    var kept: [String] = []
+    var removed: [String] = []
+    for candidate in candidates {
+        let text = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { continue }
+        let normalized = normalize(text)
+        let duplicate = normalized.isEmpty || references.contains { other in
+            other == normalized || jaccard(bigrams(other), bigrams(normalized)) >= threshold
+        }
+        if duplicate {
+            removed.append(text)
+        } else {
+            kept.append(text)
+            references.append(normalized)
+        }
+    }
+    return (kept, removed)
+}`;
+
+---
+
+<BaseLayout
+  title="WhyNode — 포트폴리오 / 기술 개발기"
+  description="SwiftUI 네이티브 지식 마인드맵 앱 WhyNode의 시스템 아키텍처, AI 호출 토큰 절감, 요청 수명 관리, 힘 기반 배치 안정화, 화면 갱신 설계, 스키마 마이그레이션과 보안 점검"
+>
+  <div class="wp-page">
+    <nav class="wp-breadcrumb" aria-label="이동 경로">
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <a href="/learn/projects/whynode">WhyNode</a>
+      <span>/</span>
+      <span class="current">포트폴리오 · 기술 개발기</span>
+    </nav>
+
+    <!-- HERO -->
+    <header class="wp-hero">
+      <div class="wp-hero-top">
+        <div class="wp-hero-copy">
+          <div class="wp-pills">
+            <span class="wp-pill status">
+              <span class="wp-dot"></span>
+              COMPLETED · macOS
+            </span>
+            <span class="wp-pill theme-tag">DOC 02 · ENGINEERING PORTFOLIO</span>
+            <span class="wp-pill wave-tag">SwiftUI · Swift 6 · LLM</span>
+          </div>
+
+          <h1>WhyNode: SwiftUI 네이티브 지식 마인드맵 기술 개발기</h1>
+          <p class="wp-lead">
+            질문과 AI 답변을 노드로 묶어 지식 트리를 넓혀 가는 macOS 앱 WhyNode의 엔지니어링 기록입니다.
+            <strong>AI 호출 토큰 절감, 요청 수명 관리, 힘 기반 배치의 수치 안정성, 화면 갱신 범위 설계, 스키마 마이그레이션과 보안 점검</strong>을 실측 결과와 함께 정리했습니다.
+            클래스 구조와 수식, Swift 구현 코드는 각 섹션 하단의 접힌 상세 보기에 수록했습니다.
+          </p>
+
+          <div class="wp-hero-actions">
+            <a
+              href="https://github.com/pargame/whynode"
+              class="wp-btn primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub · whynode ↗
+            </a>
+            <a href="#arch" class="wp-btn ghost">시스템 구조도 ↓</a>
+            <a href="/learn/projects/whynode/spec" class="wp-btn ghost">DOC 01 · 기능 명세 →</a>
+            <a href="/learn/projects/whynode" class="wp-btn ghost">← 프로젝트 홈</a>
+          </div>
+        </div>
+
+        <figure class="media-card hero-shot">
+          <img
+            src="/images/projects/whynode/01-node-card.png"
+            alt="포커스되어 둥근 카드로 펼쳐진 노드. 질문 제목 아래에 굵은 글씨, 인라인 코드, 번호 목록, 텍스트 다이어그램으로 서식화된 AI 답변이 표시된다"
+            width="1080"
+            height="576"
+            class="zoomable-img"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <figcaption>
+            <strong>App Snapshot · 펼친 노드</strong> — 포커스한 노드는 원에서 카드로 펼쳐지며, AI 답변을 굵게·인라인 코드·목록·텍스트 다이어그램으로 제한한 자체 서식으로 표시합니다.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="wp-exec-grid" aria-label="핵심 엔지니어링 요약">
+        <div class="exec-card coral">
+          <span class="exec-k">TOKEN BUDGET</span>
+          <strong class="exec-v">호출당 18.5k → 1.1k 토큰</strong>
+          <span class="exec-d">공식 CLI가 기본으로 싣는 시스템 프롬프트·도구 선언·전역 설정을 차단해 노드 요청의 입력 토큰을 약 94% 줄였습니다.</span>
+        </div>
+        <div class="exec-card peach">
+          <span class="exec-k">REQUEST LIFECYCLE</span>
+          <strong class="exec-v">무효 요청 즉시 취소</strong>
+          <span class="exec-d">실행 취소·삭제·질문 수정으로 무효화된 요청을 문서 변경 시점마다 대조해 취소하고, 앱 전체 동시 요청 한도를 대기열로 관리합니다.</span>
+        </div>
+        <div class="exec-card mint">
+          <span class="exec-k">FORCE LAYOUT</span>
+          <strong class="exec-v">실측 기반 안정 범위</strong>
+          <span class="exec-d">반발력·장력 조합을 실측해 발산 구간을 확인하고, 이동량 상한과 유한 좌표 검사로 어떤 설정에서도 파일이 깨지지 않게 했습니다.</span>
+        </div>
+        <div class="exec-card coral">
+          <span class="exec-k">DATA INTEGRITY</span>
+          <strong class="exec-v">스키마 v2 → v6 자동 이전</strong>
+          <span class="exec-d">허용 필드 검사, 무결성 복구, 버전별 이전으로 예전 파일을 그대로 열며, 코어 로직은 오프라인 단위 테스트 74개로 검증합니다(실제 AI 호출 검증 5개 별도).</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 00. SYSTEM ARCHITECTURE DIAGRAM -->
+    <section class="wp-section" id="arch">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">00 // SYSTEM ARCHITECTURE &amp; DATA FLOW</span>
+        <h2>전체 시스템 아키텍처 구조도</h2>
+      </div>
+
+      <figure class="arch-figure" aria-labelledby="archDiagramTitle">
+        <div class="arch-diagram">
+          <div id="archDiagramTitle" class="arch-row-label">RUNTIME FLOW (추가 질문 선택이 노드 생성 · AI 요청 · 검증 · 문서 반영으로 이어지는 흐름)</div>
+          <div class="arch-pipeline">
+            <div class="arch-node accent-coral">
+              <div class="node-tag">CANVAS UI</div>
+              <div class="node-title">캔버스 · 노드 · 추가 질문 칩</div>
+              <ul class="node-list">
+                <li>추가 질문 칩 선택 또는 직접 질문 입력</li>
+                <li>카메라 · 끌기 · 시뮬레이션 상태는 별도 관찰 모델</li>
+                <li>편집은 모두 실행 취소 단위로 문서에 반영</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">노드 생성</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-mint">
+              <div class="node-tag">CONTEXT</div>
+              <div class="node-title">맥락 패키지 조립</div>
+              <ul class="node-list">
+                <li>대화 기록 대신 매 요청 트리에서 다시 조립</li>
+                <li>경로 · 형제 · 전체 색인을 글자 예산 안에서 선별</li>
+                <li>요청 대상과 가까운 노드부터 우선 수록</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">대기열 · 한도</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-peach">
+              <div class="node-tag">PROVIDER</div>
+              <div class="node-title">AI 프로바이더</div>
+              <ul class="node-list">
+                <li>API 키(Gemini · Claude · OpenAI) 또는 공식 CLI</li>
+                <li>claude는 요청마다 1회 실행, agy는 상시 연결</li>
+                <li>도구 없는 질의응답 전용 구성으로 격리</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">응답 검증</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-coral">
+              <div class="node-tag">DOCUMENT</div>
+              <div class="node-title">검증 · 문서 반영</div>
+              <ul class="node-list">
+                <li>스키마 · 참조 검증과 표면 중복 제거</li>
+                <li>요청 당시와 노드 상태가 같을 때만 반영</li>
+                <li>사용량을 프로젝트 파일에 누적</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-row-label sub">SUPPORTING DESIGN (화면과 분리된 코어 · 힘 기반 배치 · 문서 저장)</div>
+          <div class="arch-bottom-grid">
+            <div class="arch-node compact accent-mint">
+              <div class="node-tag">HEADLESS CORE</div>
+              <div class="node-title">화면 없는 코어 패키지</div>
+              <p class="node-desc">
+                노드 모델, 상태 전이, 맥락 조립, 응답 검증, 프로바이더, 물리 시뮬레이션을 SwiftUI와 분리된 Swift 패키지에 두고 단위 테스트로 검증합니다.
+              </p>
+            </div>
+
+            <div class="arch-node compact accent-peach">
+              <div class="node-tag">FORCE LAYOUT</div>
+              <div class="node-title">힘 기반 배치</div>
+              <p class="node-desc">
+                버튼으로 실행하는 전체 시뮬레이션과, 새 노드 주변만 움직이는 부분 계산을 같은 엔진으로 처리합니다. 결과는 멈춘 시점에만 문서에 반영합니다.
+              </p>
+            </div>
+
+            <div class="arch-node compact accent-coral">
+              <div class="node-tag">DOCUMENT APP</div>
+              <div class="node-title">문서 앱 저장</div>
+              <p class="node-desc">
+                OS 문서 앱 구조에 저장 시점과 원자적 쓰기를 맡기고, 앱은 실행 취소 등록과 변경 표시만 담당합니다. 파일은 사람이 읽을 수 있는 JSON입니다.
+              </p>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <strong>WhyNode 시스템 아키텍처</strong> — 화면은 사용자 동작을 문서 편집으로 바꾸는 역할만 맡고, AI 요청과 검증, 배치 계산은 코어 계층이 책임집니다. 화면 프레임워크와 무관한 로직을 패키지로 분리해 테스트와 플랫폼 확장이 쉽도록 구성했습니다.
+        </figcaption>
+      </figure>
+
+      <details class="wp-code-details">
+        <summary>구현 매핑 보기 — 구조도 각 블록의 Swift 타입 · 함수</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>캔버스 UI</strong> → <code>MapScreen</code>, <code>NodeBubble</code>, <code>CanvasModel</code>(<code>@Observable</code>, 카메라 · 끌기 · 시뮬레이션), 편집은 <code>WhyNodeDocument.perform</code> → <code>UndoManager</code></li>
+            <li><strong>맥락 조립</strong> → <code>ContextBuilder.answer</code> / <code>suggest</code> / <code>links</code>, 색인 글자 예산 <code>6,000</code>(참조선 다시 찾기는 <code>24,000</code>)</li>
+            <li><strong>대기열 · 한도</strong> → <code>AIRequestCenter.acquire</code>(취소 가능한 대기열), 프로바이더별 동시 요청 한도: CLI <code>2</code> · agy 상시 연결 <code>3</code> · API <code>4</code></li>
+            <li><strong>프로바이더</strong> → <code>AIProvider</code> 프로토콜: <code>GeminiProvider</code>, <code>AnthropicProvider</code>, <code>OpenAIProvider</code>, <code>CLIProvider</code>, <code>ACPProvider</code>(agy <code>acp</code>)</li>
+            <li><strong>검증 · 반영</strong> → <code>ResponseValidator</code> → <code>MindMap.applyAnswer</code>, 사용량 <code>UsageMeter</code>(TaskLocal 수집기) → <code>project.usage</code></li>
+            <li><strong>코어 패키지</strong> → <code>WhyNodeCore</code>(Model · Codec · Integrity · MindMap · Context · Validation · Physics · Provider), 오프라인 단위 테스트 <code>74</code>개(실제 AI 호출 검증 <code>5</code>개 별도)</li>
+            <li><strong>배치</strong> → <code>ForceSimulation</code>(전체) · <code>ForceSimulation(movable:alpha: 0.6)</code>(부분), 반영 <code>MindMap.arrange</code> / <code>applyLayout</code></li>
+            <li><strong>저장</strong> → <code>DocumentGroup</code> + <code>ReferenceFileDocument</code>, <code>WhyNodeCodec</code>(소문자 UUID · 밀리초 ISO 시각 · 정렬 키)</li>
+          </ul>
+        </div>
+      </details>
+
+      <!-- Quick TOC -->
+      <nav class="wp-toc" aria-label="문서 목차">
+        <a href="#case-01"><span>01</span> AI 호출 토큰 절감</a>
+        <a href="#case-02"><span>02</span> 요청 수명 관리</a>
+        <a href="#case-03"><span>03</span> 힘 기반 배치 안정화</a>
+        <a href="#case-04"><span>04</span> 화면 갱신 범위 설계</a>
+        <a href="#case-05"><span>05</span> 스키마 마이그레이션 · 응답 검증</a>
+        <a href="#case-06"><span>06</span> 외부 CLI 격리 · 보안</a>
+        <a href="#limitations"><span>07</span> 한계와 개선 과제</a>
+        <a href="#roadmap"><span>08</span> 다음 마일스톤</a>
+      </nav>
+    </section>
+
+    <!-- CASE 01 -->
+    <section class="wp-section" id="case-01">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 01 // TOKEN BUDGET &amp; CLI ISOLATION</span>
+        <h2>공식 CLI 오버헤드 차단과 프롬프트 언어 설계</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">DESIGN INTENT &amp; TRADE-OFF</span>
+          <h3>구독 계정을 그대로 쓰는 CLI 연결</h3>
+          <p>
+            WhyNode는 API 키 외에, 사용자가 이미 로그인해 둔 공식 CLI(claude, agy)를 백그라운드에서 실행해 구독 요금제로 답변을 받는 연결 방식을 제공합니다.
+            인증은 공식 CLI에 전부 위임하고 앱은 로그인 정보를 읽지 않으므로 계정 보안 책임이 앱으로 넘어오지 않습니다.
+            다만 CLI는 코딩 에이전트용 시스템 프롬프트와 도구 선언, 사용자 전역 설정을 매 호출에 함께 싣기 때문에, 맥락이 수백 토큰에 불과한 노드 요청에서는 이 고정 비용이 대부분을 차지했습니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>요청 단위 실행과 상시 연결</strong>: 시작 비용이 작은 claude는 요청마다 1회 실행하고, 시작이 느린 agy는 앱 실행 동안 연결 하나를 유지한 채 요청마다 세션만 새로 엽니다.</li>
+            <li><strong>대화 기록 미사용</strong>: 매 요청 맥락을 트리에서 다시 조립하므로 세션을 이어 쓰지 않습니다. 가지 사이의 맥락 혼선과 기록 누적을 함께 막습니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>고정 오버헤드와 영어 질문에 한국어로 답하는 문제</h3>
+            <p>
+              claude CLI 기본 호출은 노드 하나에 약 18.5k 토큰을 사용했고, agy 기본 연결도 약 11.7k 토큰을 사용했습니다.
+              또한 시스템 프롬프트를 한국어로 작성했을 때는 영어로 질문해도 답변이 한국어로 고정되는 문제가 실측으로 확인되었습니다.
+              시스템 프롬프트의 언어가 모델의 출력 언어 선택에 강하게 영향을 미친 결과였습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION &amp; VERIFICATION</span>
+            <h3>전용 구성으로 격리하고 지시문을 영어로 전환</h3>
+            <p>
+              claude는 시스템 프롬프트를 WhyNode 프롬프트로 교체하고 도구·MCP·사용자 설정·슬래시 명령·세션 저장을 끈 상태로 실행합니다.
+              agy는 도구가 없는 전용 에이전트와 빈 설정 폴더로 연결해 전역 규칙과 플러그인 로드를 차단했습니다.
+              그 결과 입력 토큰은 claude 약 1.1k, agy 약 2.85k로 줄었습니다.
+              노드마다 맥락이 달라 캐시 적중이 거의 없다는 점을 근거로 프롬프트 캐시 쓰기(1시간 TTL)를 비활성화하자, 같은 요청 비용이 약 25% 추가로 줄었습니다.
+              지시문은 영어로 쓰고 답변 언어는 질문 언어를 따르도록 규칙을 두어 언어 고정 문제를 해결했으며, 입력도 약 13% 줄었습니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>구현 디테일 보기 — CLI 실행 인자 · 실측 표 · Swift 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>claude: <code>--system-prompt</code> 교체, <code>--tools ""</code>, <code>--strict-mcp-config</code>, <code>--setting-sources ""</code>, <code>--disable-slash-commands</code>, <code>--no-session-persistence</code>, 환경 변수 <code>DISABLE_PROMPT_CACHING=1</code></li>
+            <li>agy: <code>agy acp --disable-telemetry --agent whynode --gemini-dir &lt;빈 임시 폴더&gt;</code>, 에이전트 파일은 <code>tools: []</code>이고 본문이 시스템 프롬프트(연결할 때마다 새로 기록)</li>
+            <li>응답 형식: claude는 <code>--json-schema</code> 구조화 출력 우선, 실패 시(및 agy 상시 연결) 본문의 JSON 객체를 뒤에서부터 탐색해 원하는 타입으로 디코딩되는 첫 후보 선택(<code>JSONExtract</code>), 형식 오류는 1회 재요청</li>
+            <li>측정 기준: 18.5k → 1.1k와 11.7k → 2.85k는 연결 테스트(추가 질문 요청), −13%는 루트 답변 요청 기준</li>
+            <li>프롬프트 버전 관리: 내용을 바꾸면 <code>Prompt.version</code>을 올리고 노드의 <code>generation</code>에 기록(현재 <code>4</code>)</li>
+          </ul>
+          <div class="wp-param-strip">
+            <span>claude 18.5k → <code>1.1k</code></span>
+            <span>agy 11.7k → <code>2.85k</code></span>
+            <span>프롬프트 캐시 비활성화 비용 <code>−25%</code></span>
+            <span>영어 지시문 입력 <code>−13%</code></span>
+          </div>
+        </div>
+        <div class="code-wrap">
+          <Code code={codeCliArgs} lang="swift" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 02 -->
+    <section class="wp-section" id="case-02">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 02 // REQUEST LIFECYCLE &amp; USAGE ACCOUNTING</span>
+        <h2>문서 변경과 동기화된 AI 요청 수명 관리</h2>
+      </div>
+
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/06-status-bar.png"
+          alt="AI 상태 막대 두 가지. 초록 점과 함께 모델 이름, 프로젝트 누적 토큰과 비용이 표시된 막대와, 회색 점과 함께 AI 연결 안 됨이 표시된 막대"
+          width="651"
+          height="260"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · AI 상태 막대</strong> — 연결 상태, 사용 중인 모델, 프로젝트 누적 토큰과 비용을 캔버스 왼쪽 아래에 표시합니다. 누르면 이번 실행 합계와 마지막 요청의 입력·출력 토큰, 맥락 글자 수, 소요 시간을 확인할 수 있습니다.
+        </figcaption>
+      </figure>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">ARCHITECTURE</span>
+          <h3>앱 전체 요청 센터와 창별 컨트롤러</h3>
+          <p>
+            AI 요청은 창마다 하나씩 있는 컨트롤러가 만들고, 앱 전체에 하나뿐인 요청 센터에 등록합니다.
+            요청 센터는 프로바이더의 동시 요청 한도를 여러 창이 함께 쓰도록 취소 가능한 대기열로 관리하고, 진행 중인 요청 목록과 이번 실행의 사용량을 보관합니다.
+            앱을 종료하면 남은 요청을 일괄 취소해 자식 프로세스가 남지 않도록 했습니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>재시도 포함 사용량 집계</strong>: 요청 하나의 재시도까지 포함한 사용량을 작업 단위로 모아 이번 실행 합계와 프로젝트 누적에 더합니다.</li>
+            <li><strong>Undo와 분리된 AI 결과</strong>: AI가 보낸 답변은 실행 취소 단계로 쌓지 않고 변경 표시만 남깁니다. 사용자가 누른 동작만 실행 취소 대상이 됩니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>무효화된 요청의 토큰 낭비와 집계 누락</h3>
+            <p>
+              답변을 기다리는 노드를 실행 취소로 지우거나 질문을 고치면, 이미 보낸 요청은 결과를 반영할 곳이 없는데도 끝까지 토큰을 사용했습니다.
+              반대로 도중에 끊긴 요청은 claude 프로세스가 결과 JSON 없이 종료되고 agy도 취소 응답에 사용량을 포함하지 않아, 사용한 토큰을 집계할 방법이 없었습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION &amp; VERIFICATION</span>
+            <h3>상태 대조 기반 즉시 취소와 대기 중 실행 취소 잠금</h3>
+            <p>
+              문서가 바뀔 때마다 진행 중인 요청을 요청 당시의 노드 상태·질문과 대조해, 노드가 사라졌거나 상태나 질문이 달라진 요청을 즉시 취소합니다.
+              결과를 반영할 때도 같은 조건을 다시 확인해 늦게 도착한 답변이 다른 노드 상태를 덮어쓰지 않게 했습니다.
+              집계할 수 없는 중단을 줄이기 위해 답변을 기다리는 동안에는 그 문서의 실행 취소와 가지 삭제를 막고, 이유를 도움말에 명시했습니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>구현 디테일 보기 — 요청 키 · 취소 순서 · 실행 취소 복원 · Swift 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>요청 키: <code>(document, node, kind)</code>, <code>kind</code>는 <code>answer</code> · <code>suggest</code> · <code>links</code>. 같은 질문으로 이미 요청 중이면 새로 보내지 않고, 질문이 바뀌었으면 기존 요청을 취소하고 재요청</li>
+            <li>취소 전파: <code>Task.cancel()</code> → <code>CLIProcess.run</code>이 잠금 플래그로 실행 · 취소 순서를 맞춰 프로세스 종료 후 <code>CancellationError</code>, agy는 <code>session/cancel</code></li>
+            <li>참조선 다시 찾기(<code>links</code>)는 반영 시점의 맵으로 다시 검증하므로 대조 취소 대상에서 제외</li>
+            <li>실행 취소 복원 순서: <code>adoptAnswers(from:)</code> → <code>interruptPending(except: inFlight)</code> → <code>keepUsage</code>(누적 사용량은 유지)</li>
+            <li>실행 취소 잠금: <code>FocusedValues.documentUndo.busy</code>가 참이면 편집 메뉴의 실행 취소 · 다시 실행 비활성화, 가지 삭제는 <code>isAwaitingAI(inBranchOf:)</code>로 차단</li>
+          </ul>
+        </div>
+        <div class="code-wrap">
+          <Code code={codeReconcile} lang="swift" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 03 -->
+    <section class="wp-section" id="case-03">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 03 // FORCE-DIRECTED LAYOUT &amp; NUMERICAL STABILITY</span>
+        <h2>힘 기반 배치의 수치 안정성과 조작 일관성</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">DESIGN INTENT</span>
+          <h3>전체 시뮬레이션과 부분 계산의 단일 엔진</h3>
+          <p>
+            노드끼리 밀어내는 반발력, 부모와 자식을 원 가장자리가 맞닿는 거리로 당기는 장력, 원끼리 겹치지 않게 하는 충돌을 함께 적용하는 힘 기반 배치를 구현했습니다.
+            온도(alpha)가 감쇠하며 수렴·정지하는 방식이므로 정지 상태에서는 추가 연산 비용이 발생하지 않습니다.
+            새 노드가 생기면 그 노드와 형제, 형제의 자식 가운데 사용자가 직접 옮기지 않은 노드만 움직이고 나머지는 고정 장애물로 취급하는 부분 계산을 같은 엔진으로 돌려, 기존 배치를 흐트러뜨리지 않고 겹침만 해소합니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>루트를 원점으로</strong>: 루트는 시뮬레이션 동안 고정되며, 사용자가 루트를 옮기면 그 자리가 새 기준점이 됩니다. 원점 이동 버튼과 문서 열기 시점의 카메라도 루트를 기준으로 맞춥니다.</li>
+            <li><strong>결과 반영 시점</strong>: 매 프레임 좌표는 화면에만 반영하고, 멈추는 순간 전체 시뮬레이션은 실행 취소 1회로, 새 노드 주변 자동 정리는 실행 취소 없이 문서에 기록합니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>장력 발산과 음수 장력의 불안정</h3>
+            <p>
+              조절값 범위를 넓히는 과정에서 장력 비율이 일정 수준을 넘으면 노드가 수렴하지 않고 지속 진동하며, 더 올리면 좌표가 수천만 단위로 발산하는 것을 실측으로 확인했습니다.
+              발산한 좌표가 무한대나 NaN이 되면 JSON으로 저장할 수 없어 문서 저장이 실패할 위험이 있었습니다.
+              음수 장력도 시도했으나, 선이 길수록 더 밀어내는 양의 되먹임이 생겨 작은 값에서도 즉시 발산했습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION &amp; VERIFICATION</span>
+            <h3>실측 기반 범위 재설계와 이동량 상한</h3>
+            <p>
+              한 틱의 최대 이동량을 제한하고 무한대·NaN 좌표는 문서에 반영하지 않도록 해, 어떤 설정에서도 파일이 손상되지 않게 했습니다.
+              역할이 겹치는 링크 거리·중심력·음수 장력은 제거하고 반발력과 장력 두 값만 남겼습니다.
+              두 값은 단위 없는 0~10 눈금으로 통일하고 내부 배율로 실제 힘을 환산해, 사용자가 정한 최적 조합이 눈금 가운데에 오도록 정리했습니다.
+              네 가지 끝값 조합 모두 스스로 멈추는 것을 단위 테스트로 검증합니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>구현 디테일 보기 — 힘 · 정지 조건 · 실측 수치 · Swift 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>엔진: d3-force 방식 온도(<code>alpha</code>) 감쇠, <code>alphaMin 0.001</code>, 최대 <code>600</code>틱, 속도 감쇠 <code>0.4</code>, 가장 빠른 노드의 이동량이 <code>0.05</code> 미만이면 정지</li>
+            <li>힘: 반발력 <code>repel × 500 / max(d², 400)</code>(모든 쌍), 장력 <code>tension × 0.1</code>, 목표 거리 = 두 원 반지름 합, 충돌 여백 원마다 <code>4pt</code></li>
+            <li>부분 계산: <code>movable</code> 집합 밖 노드는 현재 자리에 고정, 시작 온도 <code>0.6</code>, 선의 한쪽 끝이 고정이면 움직이는 쪽이 이동 전체 담당</li>
+            <li>실측(구 눈금, 군집 맵 자식 6 · 손자 4): 장력 비율 <code>6</code>까지 정지, <code>6.5</code>부터 잔진동, <code>8</code>부터 발산</li>
+            <li>보호 장치: 한 틱 최대 이동량 <code>100pt</code>, <code>MindMap.arrange</code> · <code>applyLayout</code>에서 유한 좌표만 반영</li>
+            <li>끌기 중 시작: 스페이스로 시뮬레이션을 시작하면 끌던 노드를 시작 순간의 포인터 위치에 즉시 고정(다음 이동 전까지 한 프레임 원래 자리로 보이던 문제 수정)</li>
+          </ul>
+          <div class="wp-param-strip">
+            <span>반발력 <code>0~10</code> · 기본 <code>5</code></span>
+            <span>장력 <code>0~10</code> · 기본 <code>5</code></span>
+            <span>최대 이동 <code>100pt/틱</code></span>
+          </div>
+        </div>
+        <div class="code-wrap">
+          <Code code={codePhysics} lang="swift" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 04 -->
+    <section class="wp-section" id="case-04">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 04 // RENDER INVALIDATION &amp; ADAPTIVE TYPOGRAPHY</span>
+        <h2>프레임 단위 상태 분리와 노드 글자 크기 자동 맞춤</h2>
+      </div>
+
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/03-auto-fit.png"
+          alt="크기가 같은 세 원형 노드. 한 글자 주제는 크게, 보통 길이 질문은 중간 크기로 세 줄, 매우 긴 질문은 작은 글씨로 다섯 줄까지 표시되고 말줄임표로 끝난다"
+          width="1050"
+          height="370"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · 질문 길이별 자동 글자 크기</strong> — 원의 크기는 같고, 질문 길이에 따라 원 안에 들어가는 가장 큰 글자 크기를 고릅니다. 가장 작은 크기로도 넘치는 질문은 들어가는 줄까지만 보여 주고 말줄임표로 줄입니다.
+        </figcaption>
+      </figure>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">RENDERING STRATEGY</span>
+          <h3>매 프레임 바뀌는 값의 관찰 범위 축소</h3>
+          <p>
+            카메라 이동, 노드 끌기, 시뮬레이션 좌표처럼 매 프레임 바뀌는 값을 화면 전체가 관찰하면 SwiftUI가 모든 노드를 다시 계산합니다.
+            이를 막기 위해 이런 값은 별도 관찰 모델에 두고 노드 층과 선 층만 읽도록 분리했습니다.
+            노드 본문은 화면 배율을 모르는 하위 뷰로 두어, 확대·축소 중에는 테두리와 빛만 다시 그리고 본문은 다시 계산하지 않습니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>선 그리기 이원화</strong>: 버튼 시뮬레이션 중에는 선 전체를 캔버스 한 장에 그리고, 평소에는 노드 애니메이션과 보간 타이밍이 동기화되는 개별 도형으로 그립니다.</li>
+            <li><strong>질문 길이 기반 글자 크기</strong>: 사용자가 조절하는 글자 크기를 없애고, 원 안에 들어가는 가장 큰 크기를 자동으로 고르는 방식으로 일원화했습니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card troubleshoot">
+          <div class="ts-step problem">
+            <span class="ts-tag">PROBLEM &amp; ROOT CAUSE</span>
+            <h3>단어 중간 줄바꿈과 이동 중 빛 잔상</h3>
+            <p>
+              첫 자동 맞춤은 높이만 기준으로 크기를 골라, 큰 글자에서 단어 중간에서 줄바꿈이 발생하는 문제가 있었습니다.
+              또한 호버 빛을 화면 전환 효과로 제거하자, 화면 이동이나 시뮬레이션 중에 꺼지는 빛이 노드를 따라가지 않고 꺼지기 시작한 위치에 0.45초 동안 남았습니다.
+            </p>
+          </div>
+          <div class="ts-step solution">
+            <span class="ts-tag">SOLUTION</span>
+            <h3>단어 폭 사전 측정과 제자리 투명도 감쇠</h3>
+            <p>
+              후보 크기마다 가장 긴 단어의 폭을 미리 측정해 한 줄에 다 들어가지 않는 크기는 제외하고, 남은 후보 중 원 높이 안에 들어가는 가장 큰 크기를 선택합니다.
+              선택한 크기는 펼친 카드의 질문에도 그대로 적용해 원과 카드의 첫 줄 위치를 맞췄습니다.
+              빛은 화면에서 바로 제거하지 않고 투명도만 줄인 뒤 완전히 꺼지면 제거하도록 바꿔, 꺼지는 동안에도 노드와 선을 따라 움직이게 했습니다.
+            </p>
+          </div>
+        </article>
+      </div>
+
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/02-hover-glow.png"
+          alt="원형 노드 두 개. 왼쪽은 테두리 빛이 이어진 실선으로, 오른쪽은 같은 빛이 점선 테두리로 표시되어 있다"
+          width="880"
+          height="440"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · 호버 빛 구분</strong> — 호버한 노드와 트리 선으로 이어진 이웃은 이어진 테두리 빛(왼쪽), 참조선으로만 이어진 이웃은 참조선과 같은 패턴의 점선 빛(오른쪽)으로 구분합니다.
+        </figcaption>
+      </figure>
+
+      <details class="wp-code-details">
+        <summary>구현 디테일 보기 — 관찰 모델 분리 · 글자 맞춤 알고리즘 · 빛 감쇠 · Swift 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>관찰 분리: <code>CanvasModel</code>(<code>@Observable</code>)에 카메라 · 끌기 · 시뮬레이션 상태를 두고 <code>NodeLayer</code> · <code>EdgeLayer</code>만 관찰. <code>isRunning</code>은 화면 본문의 매 틱 재계산을 막기 위해 저장 프로퍼티로 유지</li>
+            <li>본문 분리: <code>NodeBubbleBody</code>는 <code>Equatable</code> 하위 뷰(<code>.equatable()</code>), 테두리 굵기는 <code>1 / zoom</code>으로 화면에서 같은 굵기 유지</li>
+            <li>글자 맞춤: 배율 후보 <code>[1.8, 1.6, 1.4, 1.25, 1.1, 1.0, 0.9, 0.8]</code>, 기준 높이 = 기준 글자 4줄 × 노드 크기, <code>NSString.boundingRect</code>로 높이 측정, 모두 넘치면 <code>0.8</code>배에서 줄 수 제한 후 말줄임</li>
+            <li>저장 형식: 노드별 글자 크기 필드는 스키마 v6에서 제거, 이전 버전 파일은 열 때 자동 삭제</li>
+            <li>빛 감쇠: <code>FadingGlow</code>가 값이 꺼지면 투명도만 <code>0.45</code>초 애니메이션하고 완료 콜백에서 뷰 제거, 블러(blur) 렌더링 비용은 발광 중에만 발생</li>
+          </ul>
+        </div>
+        <div class="code-wrap">
+          <Code code={codeAutoFit} lang="swift" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 05 -->
+    <section class="wp-section" id="case-05">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 05 // FILE FORMAT, MIGRATION &amp; RESPONSE VALIDATION</span>
+        <h2>스키마 마이그레이션과 AI 응답 검증</h2>
+      </div>
+
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/05-launcher-cards.png"
+          alt="시작 화면의 프로젝트 카드 세 장. 각 카드에 루트 주제, 노드 수, 마지막 수정 시각이 표시되어 있다"
+          width="1384"
+          height="428"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · 시작 화면 프로젝트 카드</strong> — 저장 폴더의 파일을 전체 디코딩하지 않고 루트 주제와 노드 수, 수정 시각만 읽어 카드로 보여 줍니다.
+        </figcaption>
+      </figure>
+
+      <div class="wp-grid-3">
+        <article class="wp-card">
+          <span class="wp-card-tag">SCHEMA GUARD</span>
+          <h3>허용 필드 검사와 버전별 이전</h3>
+          <p>
+            파일을 열면 먼저 스키마 버전과 허용 필드를 검사하고, 이전 버전 파일은 없던 필드를 기본값으로 채우거나 사라진 필드를 지운 뒤 현재 버전 기준으로 다시 검사합니다.
+            v2에서 v6까지 네 차례의 스키마 변경을 거쳤지만 예전 파일을 그대로 열 수 있으며, 더 새로운 버전의 파일은 열지 않고 업데이트를 안내합니다.
+          </p>
+        </article>
+
+        <article class="wp-card">
+          <span class="wp-card-tag">INTEGRITY REPAIR</span>
+          <h3>열 때 무결성 복구</h3>
+          <p>
+            부모가 없는 노드, 순환 참조, 사라진 노드를 가리키는 참조선, 범위를 벗어난 크기와 알 수 없는 색 값을 열 때 복구합니다.
+            답변을 기다리던 상태로 저장된 노드는 이전 실행이 중단된 것으로 보고 오류 상태로 바꿔, 다시 시도할 수 있게 했습니다.
+          </p>
+        </article>
+
+        <article class="wp-card">
+          <span class="wp-card-tag">RESPONSE VALIDATION</span>
+          <h3>AI 응답의 최종 검증</h3>
+          <p>
+            AI가 규칙을 어길 수 있다는 전제로 응답을 앱에서 한 번 더 검증합니다.
+            필수 필드가 비면 1회 재요청하고, 존재하지 않거나 부모·자식을 가리키는 참조는 제거합니다.
+            의미상 중복은 프롬프트가, 표면적으로 유사한 문장은 앱이 텍스트 정규화와 문자 바이그램 Jaccard 유사도로 필터링합니다.
+          </p>
+        </article>
+      </div>
+
+      <details class="wp-code-details spaced">
+        <summary>구현 디테일 보기 — 스키마 이력 · 무결성 규칙 · 중복 제거 · Swift 발췌</summary>
+        <div class="detail-body">
+          <ul>
+            <li>스키마 이력: v3 노드별 글자 크기, v4 프로젝트 사용량, v5 노드 크기 · 노드 색 · 글자 색, v6 노드별 글자 크기 제거. <code>WhyNodeCodec.migrate</code>의 단계별 처리</li>
+            <li>형식: 소문자 UUID, 밀리초 ISO 8601 시각, 정렬된 키, <code>null</code> 필드도 키를 남겨 필수 필드 보장, 허용 외 필드는 <code>SchemaGuard</code>에서 거부</li>
+            <li>무결성: 고아 · 순환 · 끊긴 참조 · <code>pending</code> → <code>error</code>(중단됨) · 범위 밖 <code>sizeScale</code> · 알 수 없는 색을 <code>Integrity.repair</code>에서 복구 및 문제 목록 반환</li>
+            <li>중복 제거: 유니코드 NFKC · 소문자화 · 공백과 문장부호 제거 · 의문 어미와 불용어 제거 후, 완전 일치 또는 문자 바이그램 Jaccard <code>≥ 0.6</code>이면 제거, 남은 추가 질문이 <code>2</code>개 미만이면 제거된 질문을 제외 목록에 넣어 1회 보충 요청</li>
+            <li>참조선 다시 찾기: 노드 id를 <code>n1</code>, <code>n2</code> 같은 짧은 번호로 바꿔 토큰 절감, 응답은 원래 id로 복원해 검증(실측: 노드 20개 입력 약 4.4k 토큰)</li>
+          </ul>
+        </div>
+        <div class="code-wrap">
+          <Code code={codeDedupe} lang="swift" theme="github-dark" />
+        </div>
+      </details>
+    </section>
+
+    <!-- CASE 06 -->
+    <section class="wp-section" id="case-06">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">CASE 06 // EXTERNAL PROCESS ISOLATION &amp; SECURITY REVIEW</span>
+        <h2>외부 CLI 격리와 공개 전 보안 점검</h2>
+      </div>
+
+      <p class="wp-section-lead">
+        사용자 기기의 CLI를 실행하는 구조인 만큼, 저장소를 공개하기 전에 다른 AI 에이전트와 교차 검증하는 방식으로 개인정보 노출과 코드 취약점을 점검했습니다.
+        점검에서 확인된 문제 가운데 실제 영향이 있는 항목만 선별해 수정하고, 수정 결과를 다시 교차 검증했습니다.
+      </p>
+
+      <div class="wp-grid-3">
+        <article class="wp-card">
+          <span class="wp-card-tag">NO SHELL · NO TOOLS</span>
+          <h3>셸을 거치지 않는 실행과 도구 차단</h3>
+          <p>
+            CLI는 셸을 거치지 않고 인자 배열로 실행해 질문이나 AI 응답 내용이 셸 명령어 주입(command injection) 가능성을 원천 차단했습니다.
+            에이전트의 파일·터미널·권한 요청은 모두 거절하고 빈 임시 폴더에서 실행해, 프롬프트 인젝션이 있어도 도구가 실행되지 않게 했습니다.
+          </p>
+        </article>
+
+        <article class="wp-card">
+          <span class="wp-card-tag">INPUT VALIDATION</span>
+          <h3>URL 경로에 들어가는 입력 검증</h3>
+          <p>
+            설정에서 직접 입력할 수 있는 모델 이름이 Gemini API 주소 경로에 그대로 들어가, 공백이나 특수 문자가 섞이면 앱이 종료되거나 요청 경로가 바뀔 수 있었습니다.
+            허용 문자 검사를 추가해 잘못된 입력은 안내 메시지로 처리하도록 수정했습니다.
+          </p>
+        </article>
+
+        <article class="wp-card">
+          <span class="wp-card-tag">SECRETS &amp; HARDENING</span>
+          <h3>키 보관과 실행 중 변조 방지</h3>
+          <p>
+            API 키는 키체인에 이 기기 전용으로 저장하고 HTTP 헤더로만 전송합니다.
+            배포용 빌드에는 Hardened Runtime을 적용해 다른 프로세스가 실행 중인 앱에 라이브러리를 주입하지 못하게 했으며, 자식 CLI 실행에는 영향이 없음을 확인했습니다.
+          </p>
+        </article>
+      </div>
+
+      <details class="wp-code-details spaced">
+        <summary>구현 디테일 보기 — 점검 범위 · 수정 내역 · 보류 항목</summary>
+        <div class="detail-body">
+          <ul>
+            <li>개인정보: 커밋 작성자는 GitHub noreply 이메일, 전체 기록에서 API 키 패턴 · 실제 이메일 · 홈 경로 검색 결과 없음</li>
+            <li>CLI 격리: <code>Process</code> 인자 배열, ACP <code>clientCapabilities</code>의 <code>fs</code> · <code>terminal</code> <code>false</code>, <code>session/request_permission</code> → <code>cancelled</code>, 그 외 요청은 <code>-32601</code></li>
+            <li>CLI 위치 조회: <code>zsh -lc 'command -v -- "$1"' zsh &lt;tool&gt;</code>로 도구 이름을 위치 인자로 전달, 주입 시도 차단을 단위 테스트로 검증</li>
+            <li>모델 ID: <code>[A-Za-z0-9._-]</code>만 허용하고 <code>..</code> 금지, 실패 시 <code>ProviderError.invalidModel</code></li>
+            <li>키체인: <code>kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly</code>(갱신 시에도 적용). Hardened Runtime: 임시 서명에서는 Xcode가 자동으로 넣지 않아 Release 구성에 <code>--options=runtime</code> 지정</li>
+            <li>보류: CLI 인자 구분자 정리, 시작 화면 파일 크기 상한, 배포 파일 체크섬(배포 시점에 적용)</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 07. KNOWN LIMITATIONS -->
+    <section class="wp-section" id="limitations">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">07 // KNOWN LIMITATIONS &amp; IMPROVEMENT PLAN</span>
+        <h2>현재 구조의 한계와 개선 계획</h2>
+      </div>
+
+      <p class="wp-section-lead">
+        WhyNode는 노드 수십~수백 개 규모의 개인 탐구를 기준으로 기능을 완성했습니다. 명세에 설계해 둔 대규모 문서 대응 기능 가운데 아직 구현하지 않은 항목과 검증하지 못한 항목을 정리했습니다.
+      </p>
+
+      <div class="limit-grid">
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">ZOOM CLUSTERING</span>
+          </div>
+          <h3>확대 수준별 가지 묶음 미구현</h3>
+          <p>
+            화면을 축소하면 가지를 하나의 묶음으로 합쳐 보여 주는 기능은 명세에만 설계되어 있습니다. 현재 가지 접기는 상태 저장과 표시만 하며 하위 노드를 숨기지 않습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 노드마다 하위 노드 수와 경계 상자를 미리 집계하고, 화면에서 임계 크기보다 작은 가지를 묶음으로 그리는 방식으로 구현할 예정입니다.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">O(n²) REPULSION</span>
+          </div>
+          <h3>모든 노드 쌍을 계산하는 반발력</h3>
+          <p>
+            시뮬레이션은 몇 초만 도는 작업이라 반발력을 모든 노드 쌍에 대해 계산합니다. 노드 수백 개까지는 충분하지만 수천 개 규모에서는 비용이 제곱으로 늘어납니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: Barnes-Hut 근사나 공간 색인으로 가까운 노드만 계산하고, 계산을 백그라운드로 옮길 예정입니다.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">RENDERING SCALE</span>
+          </div>
+          <h3>뷰포트 컬링과 LOD 미적용</h3>
+          <p>
+            모든 노드를 SwiftUI 뷰로 그리며, 화면 밖 노드 생략(뷰포트 컬링)과 확대 수준별 단순화(LOD)는 아직 적용하지 않았습니다. 대규모 문서의 프레임 시간은 측정하지 않았습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 노드 1,000개 · 5,000개 문서를 자동 생성해 Instruments로 측정한 뒤, 목표에 못 미치면 컴팩트 노드와 선을 캔버스 한 장으로 옮길 예정입니다.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">ACP TIMEOUT</span>
+          </div>
+          <h3>agy 연결 · 세션 열기 시간 제한 없음</h3>
+          <p>
+            질문 요청은 시간 제한으로 끊기지만, agy 연결과 세션 열기 단계에서 응답이 멈추면 무한히 기다릴 수 있습니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 연결과 세션 열기에도 시간 제한을 두고, 초과하면 연결을 재시작하도록 처리할 예정입니다.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">PROVIDER COVERAGE</span>
+          </div>
+          <h3>API 키 연결 실검증과 공식 로그인 미완료</h3>
+          <p>
+            API 키 연결 세 종류는 구현했지만 실제 키로 검증하지 않았습니다. AI 회사의 공식 로그인은 회사별 앱 등록과 허용이 필요해 설정 화면에 준비 중으로만 표시합니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 각 회사 키로 연결을 검증하고, 공식 로그인 허용 시점에 맞춰 iPad 버전과 함께 재개할 예정입니다.
+          </div>
+        </article>
+
+        <article class="limit-card">
+          <div class="limit-head">
+            <span class="limit-tag">MAIN THREAD</span>
+          </div>
+          <h3>맥락 조립과 응답 검증의 메인 스레드 처리</h3>
+          <p>
+            AI 요청, 저장 인코딩, 열기 디코딩은 메인 스레드 밖에서 처리하지만, 맥락 조립과 응답 검증·중복 제거는 아직 메인 스레드에서 처리합니다.
+          </p>
+          <div class="limit-fix">
+            <strong>개선안</strong>: 대규모 문서 측정에서 지연이 확인되면 맥락 조립과 검증을 백그라운드 작업으로 옮길 예정입니다.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 08. NEXT MILESTONES -->
+    <section class="wp-section" id="roadmap">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">08 // NEXT MILESTONES</span>
+        <h2>다음 개발 마일스톤</h2>
+      </div>
+
+      <ol class="wp-roadmap-steps">
+        <li>
+          <span class="rm-idx">STEP 01</span>
+          <h3>배포 준비</h3>
+          <p>배포용 빌드와 체크섬을 GitHub Releases에 올리고, 처음 실행할 때의 확인 절차를 README에 안내할 예정입니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 02</span>
+          <h3>가지 묶음과 대규모 문서 대응</h3>
+          <p>확대 수준별 가지 묶음, 화면 밖 노드 생략(뷰포트 컬링), 반발력 근사를 구현하고 노드 수천 개 규모에서 측정할 예정입니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 03</span>
+          <h3>내보내기</h3>
+          <p>완성한 지식 지도를 이미지, PDF, Markdown 노트로 내보내는 기능을 추가할 예정입니다.</p>
+        </li>
+        <li class="final-step">
+          <span class="rm-idx">STEP 04</span>
+          <h3>공식 로그인과 iPad</h3>
+          <p>AI 회사의 공식 로그인을 쓸 수 있게 되면 iPad 빌드를 재개하고 터치 조작을 다듬을 예정입니다.</p>
+        </li>
+      </ol>
+
+      <footer class="wp-bottom-nav">
+        <a href="/learn/projects/whynode" class="wp-btn ghost">← 프로젝트 홈</a>
+        <div class="wp-bottom-right">
+          <a href="/learn/projects/whynode/spec" class="wp-btn ghost">DOC 01 · 기능 명세</a>
+          <a
+            href="https://github.com/pargame/whynode"
+            class="wp-btn primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub 저장소 보기 ↗
+          </a>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <!-- Lightbox Modal for App Snapshots -->
+  <div class="wp-lightbox" id="wp-lightbox" aria-hidden="true" role="dialog" aria-label="이미지 확대 보기">
+    <button type="button" class="wp-lightbox-close" id="wp-lightbox-close" aria-label="닫기">×</button>
+    <img id="wp-lightbox-img" src="" alt="" />
+    <p id="wp-lightbox-cap"></p>
+  </div>
+
+  <script>
+    const lightbox = document.getElementById('wp-lightbox');
+    const lbImg = document.getElementById('wp-lightbox-img') as HTMLImageElement | null;
+    const lbCap = document.getElementById('wp-lightbox-cap');
+    const lbClose = document.getElementById('wp-lightbox-close') as HTMLButtonElement | null;
+    let lastFocused: HTMLElement | null = null;
+
+    document.querySelectorAll<HTMLImageElement>('.zoomable-img').forEach((img) => {
+      img.tabIndex = 0;
+      const openImage = () => {
+        if (!lightbox || !lbImg) return;
+        lastFocused = document.activeElement as HTMLElement | null;
+        lbImg.src = img.src;
+        lbImg.alt = img.alt;
+        if (lbCap) {
+          lbCap.textContent = img.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ?? img.alt;
+        }
+        lightbox.classList.add('open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        lbClose?.focus();
+      };
+      img.addEventListener('click', openImage);
+      img.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openImage();
+        }
+      });
+    });
+
+    const closeLightbox = () => {
+      if (!lightbox?.classList.contains('open')) return;
+      lightbox.classList.remove('open');
+      lightbox.setAttribute('aria-hidden', 'true');
+      lastFocused?.focus();
+    };
+
+    lbClose?.addEventListener('click', closeLightbox);
+    lightbox?.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .wp-page {
+    --wp-coral: #f59e0b;
+    --wp-peach: #38bdf8;
+    --wp-mint: #2ce6b8;
+    --wp-surface: color-mix(in srgb, var(--surface-1) 92%, #f59e0b 8%);
+    --wp-surface-soft: color-mix(in srgb, var(--surface-2) 90%, #38bdf8 10%);
+    --wp-border: color-mix(in srgb, var(--wp-coral) 26%, var(--border));
+    --wp-glow: 0 18px 44px -18px rgba(245, 158, 11, 0.34);
+    display: flex;
+    flex-direction: column;
+    gap: 3.4rem;
+  }
+
+  :global([data-theme="light"]) .wp-page {
+    --wp-coral: #c2610a;
+    --wp-peach: #0277b8;
+    --wp-mint: #0e9f7d;
+    --wp-surface: #fffbf3;
+    --wp-surface-soft: #f2f9fe;
+    --wp-border: rgba(194, 97, 10, 0.22);
+    --wp-glow: 0 16px 36px -18px rgba(194, 97, 10, 0.24);
+  }
+
+  .wp-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.6rem;
+  }
+  .wp-breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .wp-breadcrumb a:hover {
+    color: var(--wp-coral);
+  }
+  .wp-breadcrumb .current {
+    color: var(--wp-peach);
+    font-weight: 600;
+  }
+
+  /* HERO */
+  .wp-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 1.7rem;
+    padding: 2.2rem;
+    border-radius: 24px;
+    border: 1px solid var(--wp-border);
+    background:
+      radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--wp-peach) 16%, transparent), transparent 46%),
+      radial-gradient(circle at 12% 92%, color-mix(in srgb, var(--wp-coral) 16%, transparent), transparent 44%),
+      var(--wp-surface);
+    box-shadow: var(--wp-glow);
+  }
+  .wp-hero-top {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1.8rem;
+    align-items: center;
+  }
+
+  .wp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.95rem;
+  }
+  .wp-pill {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .wp-pill.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    color: var(--wp-coral);
+    background: color-mix(in srgb, var(--wp-coral) 14%, transparent);
+    border-color: color-mix(in srgb, var(--wp-coral) 38%, transparent);
+  }
+  .wp-dot {
+    width: 0.46rem;
+    height: 0.46rem;
+    border-radius: 50%;
+    background: var(--wp-coral);
+    box-shadow: 0 0 8px var(--wp-coral);
+  }
+  .wp-pill.theme-tag {
+    color: var(--wp-peach);
+    background: color-mix(in srgb, var(--wp-peach) 13%, transparent);
+    border-color: color-mix(in srgb, var(--wp-peach) 35%, transparent);
+  }
+  .wp-pill.wave-tag {
+    color: var(--wp-mint);
+    background: color-mix(in srgb, var(--wp-mint) 12%, transparent);
+    border-color: color-mix(in srgb, var(--wp-mint) 32%, transparent);
+  }
+
+  .wp-hero h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.85rem, 1.4rem + 1.6vw, 2.55rem);
+    line-height: 1.18;
+    background: linear-gradient(125deg, var(--wp-coral), var(--wp-peach) 62%, var(--wp-mint));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .wp-lead {
+    color: var(--text-2);
+    font-size: 0.98rem;
+    line-height: 1.72;
+    margin: 0 0 1.25rem;
+  }
+  .wp-lead strong {
+    color: var(--text-1);
+  }
+
+  .wp-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+  .wp-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.54rem 0.98rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-btn.primary {
+    background: linear-gradient(135deg, var(--wp-coral), var(--wp-peach));
+    color: #ffffff;
+    border: 1px solid transparent;
+  }
+  .wp-btn.primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .wp-btn.ghost {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+  }
+  .wp-btn.ghost:hover {
+    border-color: var(--wp-coral);
+    color: var(--wp-coral);
+  }
+
+  /* MEDIA CARD (PIE CAPTURES) */
+  .media-card {
+    margin: 0;
+    min-width: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-1);
+  }
+  .media-card.case-shot {
+    margin-bottom: 1.2rem;
+  }
+  .media-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: zoom-in;
+    transition: transform var(--dur);
+  }
+  .media-card img:hover {
+    transform: scale(1.015);
+  }
+  .media-card figcaption {
+    padding: 0.72rem 0.95rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+  .media-card figcaption strong {
+    color: var(--text-1);
+  }
+
+  .wp-exec-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+  .exec-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .exec-card.coral { border-top: 3px solid var(--wp-coral); }
+  .exec-card.peach { border-top: 3px solid var(--wp-peach); }
+  .exec-card.mint { border-top: 3px solid var(--wp-mint); }
+  .exec-k {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+  }
+  .exec-v {
+    font-family: var(--font-mono);
+    font-size: 0.94rem;
+    color: var(--text-1);
+  }
+  .exec-d {
+    font-size: 0.78rem;
+    color: var(--text-2);
+    line-height: 1.46;
+  }
+
+  .wp-section-head {
+    margin-bottom: 1.1rem;
+  }
+  .wp-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--wp-coral);
+    margin-bottom: 0.3rem;
+  }
+  .wp-section-head h2 {
+    margin: 0;
+    font-size: clamp(1.32rem, 1.12rem + 0.75vw, 1.8rem);
+  }
+  .wp-section-lead {
+    margin: 0 0 1.25rem;
+    color: var(--text-2);
+    line-height: 1.72;
+    font-size: 0.94rem;
+    max-width: 78ch;
+  }
+
+  /* SYSTEM ARCHITECTURE DIAGRAM */
+  .arch-figure {
+    margin: 0 0 1.3rem;
+  }
+  .arch-diagram {
+    padding: 1.45rem;
+    border-radius: 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--wp-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .arch-row-label {
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--wp-coral);
+  }
+  .arch-row-label.sub {
+    margin-top: 0.45rem;
+    padding-top: 0.95rem;
+    border-top: 1px dashed var(--border);
+    color: var(--wp-peach);
+  }
+  .arch-pipeline {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+  .arch-node {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+  .arch-node.accent-coral { border-top: 3px solid var(--wp-coral); }
+  .arch-node.accent-peach { border-top: 3px solid var(--wp-peach); }
+  .arch-node.accent-mint { border-top: 3px solid var(--wp-mint); }
+  .node-tag {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+  }
+  .node-title {
+    font-family: var(--font-mono);
+    font-size: 0.87rem;
+    font-weight: 700;
+    color: var(--text-1);
+    word-break: break-word;
+  }
+  .node-list {
+    margin: 0.18rem 0 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.24rem;
+    font-size: 0.77rem;
+    color: var(--text-2);
+    line-height: 1.45;
+  }
+  .node-desc {
+    margin: 0.12rem 0 0;
+    font-size: 0.79rem;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .arch-conn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0 0.1rem;
+    text-align: center;
+  }
+  .conn-fn {
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    color: var(--wp-mint);
+    white-space: nowrap;
+  }
+  .conn-arrow {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-3);
+  }
+  .arch-bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .arch-figure figcaption {
+    margin-top: 0.7rem;
+    font-size: 0.84rem;
+    color: var(--text-3);
+    line-height: 1.6;
+  }
+  .arch-figure figcaption strong {
+    color: var(--text-2);
+  }
+
+  /* QUICK TOC */
+  .wp-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .wp-toc a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-toc a span {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+  }
+  .wp-toc a:hover {
+    border-color: var(--wp-coral);
+    color: var(--text-1);
+  }
+
+  /* CASE STUDY GRID */
+  .case-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+    margin-bottom: 1rem;
+  }
+  .case-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .case-card.intent {
+    border-top: 3px solid var(--wp-peach);
+  }
+  .case-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--wp-peach);
+  }
+  .case-card h3 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+  .case-card p {
+    margin: 0;
+    font-size: 0.89rem;
+    color: var(--text-2);
+    line-height: 1.66;
+  }
+  .case-card.troubleshoot {
+    padding: 0;
+    background: transparent;
+    border: none;
+    gap: 0.85rem;
+  }
+  .ts-step {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+    flex: 1;
+  }
+  .ts-step.problem { border-left: 3px solid var(--wp-coral); }
+  .ts-step.solution { border-left: 3px solid var(--wp-mint); }
+  .ts-tag {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .ts-step.problem .ts-tag { color: var(--wp-coral); }
+  .ts-step.solution .ts-tag { color: var(--wp-mint); }
+  .ts-step h3 {
+    margin: 0;
+    font-size: 1.02rem;
+  }
+  .ts-step p {
+    margin: 0;
+    font-size: 0.87rem;
+    color: var(--text-2);
+    line-height: 1.64;
+  }
+
+  .wp-bullet-list {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.87rem;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .wp-bullet-list strong {
+    color: var(--text-1);
+  }
+
+  .wp-param-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem;
+    margin-top: 0.3rem;
+  }
+  .wp-param-strip span {
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.22rem 0.52rem;
+    border-radius: 8px;
+  }
+
+  .wp-preset-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+    margin-top: 0.3rem;
+    padding: 0.68rem 0.85rem;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.81rem;
+    color: var(--text-2);
+  }
+  .wp-preset-mini strong {
+    color: var(--wp-coral);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .wp-fsm-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.58rem 0.82rem;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.77rem;
+  }
+  .wp-fsm-bar span {
+    color: var(--wp-peach);
+    font-weight: 700;
+  }
+  .wp-fsm-bar i {
+    font-style: normal;
+    color: var(--text-3);
+  }
+
+  /* CODE DETAILS (ALL CODE COLLAPSED BY DEFAULT) */
+  .wp-code-details {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .wp-code-details summary {
+    cursor: pointer;
+    padding: 0.82rem 1.15rem;
+    font-family: var(--font-mono);
+    font-size: 0.79rem;
+    font-weight: 600;
+    color: var(--text-2);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .wp-code-details summary::before {
+    content: '▸';
+    color: var(--wp-coral);
+    transition: transform var(--dur-fast);
+  }
+  .wp-code-details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  .wp-code-details summary:hover {
+    color: var(--text-1);
+  }
+  .code-wrap {
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    overflow-x: auto;
+  }
+  .code-wrap :global(pre) {
+    margin: 0 !important;
+    padding: 1rem 1.15rem !important;
+    border-radius: 0 !important;
+  }
+
+  .detail-body {
+    border-top: 1px solid var(--border-subtle);
+    padding: 0.95rem 1.15rem 1.05rem;
+    font-size: 0.84rem;
+    color: var(--text-2);
+    line-height: 1.62;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .detail-body h4 {
+    margin: 0.2rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    color: var(--wp-peach);
+  }
+  .detail-body ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .detail-body p {
+    margin: 0;
+  }
+  .wp-code-details.spaced {
+    margin-top: 1rem;
+  }
+  .arch-figure + .wp-code-details {
+    margin: -0.4rem 0 1.3rem;
+  }
+
+  /* 3-COL GRID */
+  .wp-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+  .wp-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.52rem;
+  }
+  .wp-card-tag {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-weight: 700;
+    color: var(--wp-mint);
+    letter-spacing: 0.06em;
+  }
+  .wp-card h3 {
+    margin: 0;
+    font-size: 1.03rem;
+  }
+  .wp-card p {
+    margin: 0;
+    font-size: 0.87rem;
+    color: var(--text-2);
+    line-height: 1.64;
+  }
+  .wp-card p strong {
+    color: var(--text-1);
+  }
+
+  /* ENV & BUDGET BOX */
+  .env-box {
+    background: var(--wp-surface-soft);
+    border: 1px solid var(--wp-border);
+    border-radius: 18px;
+    padding: 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.05rem;
+  }
+  .env-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 1.25rem;
+    font-size: 0.83rem;
+    color: var(--text-2);
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .env-meta strong {
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--wp-coral);
+    margin-right: 0.3rem;
+  }
+  .wp-split-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .env-col {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem;
+  }
+  .env-col.keep { border-top: 3px solid var(--wp-mint); }
+  .env-col.disable { border-top: 3px solid var(--wp-coral); }
+  .env-col-head {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.7rem;
+  }
+  .env-col-head.mint { color: var(--wp-mint); }
+  .env-col-head.coral { color: var(--wp-coral); }
+  .env-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+  }
+  .env-col li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.79rem;
+    padding-bottom: 0.38rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .env-col li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .env-col code {
+    font-size: 0.74rem;
+    color: var(--text-1);
+    word-break: break-all;
+  }
+  .env-col span {
+    color: var(--text-3);
+    white-space: nowrap;
+    font-size: 0.76rem;
+  }
+
+  /* KNOWN LIMITATIONS */
+  .limit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.05rem;
+  }
+  .limit-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--wp-peach);
+    border-radius: 16px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.48rem;
+  }
+  .limit-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .limit-tag {
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: var(--wp-peach);
+    letter-spacing: 0.05em;
+  }
+  .limit-head code {
+    font-size: 0.71rem;
+    color: var(--text-3);
+  }
+  .limit-card h3 {
+    margin: 0;
+    font-size: 0.97rem;
+  }
+  .limit-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-2);
+    line-height: 1.58;
+  }
+  .limit-fix {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.52;
+  }
+  .limit-fix strong {
+    color: var(--wp-mint);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  /* ROADMAP */
+  .wp-roadmap-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .wp-roadmap-steps li {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+  }
+  .wp-roadmap-steps li.final-step {
+    border-color: color-mix(in srgb, var(--wp-mint) 48%, var(--border));
+    background: color-mix(in srgb, var(--surface-1) 90%, var(--wp-mint) 10%);
+  }
+  .rm-idx {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+  }
+  .final-step .rm-idx { color: var(--wp-mint); }
+  .wp-roadmap-steps h3 {
+    margin: 0;
+    font-size: 0.94rem;
+  }
+  .wp-roadmap-steps p {
+    margin: 0;
+    font-size: 0.81rem;
+    color: var(--text-2);
+    line-height: 1.54;
+  }
+
+  .wp-bottom-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .wp-bottom-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  /* LIGHTBOX */
+  .wp-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(8, 10, 18, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(6px);
+  }
+  .wp-lightbox.open {
+    display: flex;
+  }
+  .wp-lightbox img {
+    max-width: min(1180px, 94vw);
+    max-height: 80vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  }
+  .wp-lightbox p {
+    margin: 0;
+    max-width: 78ch;
+    text-align: center;
+    font-size: 0.86rem;
+    color: #e2e8f0;
+  }
+  .wp-lightbox-close {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.4rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .wp-lightbox-close:hover {
+    background: rgba(245, 158, 11, 0.35);
+    border-color: var(--wp-coral);
+  }
+
+  @media (max-width: 1024px) {
+    .wp-hero-top {
+      grid-template-columns: 1fr;
+    }
+    .wp-exec-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .arch-pipeline {
+      grid-template-columns: 1fr;
+    }
+    .arch-conn {
+      flex-direction: row;
+      padding: 0.15rem 0;
+    }
+    .conn-arrow {
+      transform: rotate(90deg);
+    }
+  }
+  @media (max-width: 960px) {
+    .case-grid,
+    .wp-grid-3,
+    .arch-bottom-grid,
+    .wp-split-2,
+    .limit-grid {
+      grid-template-columns: 1fr;
+    }
+    .wp-roadmap-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .wp-hero {
+      padding: 1.4rem;
+    }
+    .wp-exec-grid,
+    .wp-roadmap-steps {
+      grid-template-columns: 1fr;
+    }
+    .env-col li {
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+  }
+</style>

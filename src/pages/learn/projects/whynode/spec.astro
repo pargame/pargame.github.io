@@ -1,0 +1,1512 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="WhyNode — 기능 명세"
+  description="질문과 AI 답변을 노드로 묶어 지식 지도를 넓혀 가는 macOS 마인드맵 앱 WhyNode의 기획 배경, 사용자 흐름, 노드 상태 모델, AI 연결 방식과 메시지 규격, 저장 형식"
+>
+  <div class="wp-page">
+    <nav class="wp-breadcrumb" aria-label="이동 경로">
+      <a href="/learn/projects">Projects</a>
+      <span>/</span>
+      <a href="/learn/projects/whynode">WhyNode</a>
+      <span>/</span>
+      <span class="current">기능 명세</span>
+    </nav>
+
+    <!-- HERO -->
+    <header class="wp-hero">
+      <div class="wp-hero-top">
+        <div class="wp-hero-copy">
+          <div class="wp-pills">
+            <span class="wp-pill status">
+              <span class="wp-dot"></span>
+              COMPLETED · macOS
+            </span>
+            <span class="wp-pill theme-tag">DOC 01 · PRODUCT SPEC</span>
+            <span class="wp-pill wave-tag">QUESTION × ANSWER = NODE</span>
+          </div>
+
+          <h1>WhyNode 기능 명세</h1>
+          <p class="wp-lead">
+            궁금한 주제를 입력하면 AI가 짧은 핵심 답변과 함께 다음에 던질 만한 질문을 제안하고, 사용자가 질문을 고르거나 직접 던지며
+            <strong>질문과 답변이 짝을 이룬 노드로 지식 지도를 넓혀 가는</strong> 탐구형 마인드맵의 기획과 기능 명세입니다.
+            사용자 흐름, 노드 상태 모델, AI 연결 방식과 메시지 규격, 저장 형식을 정리했으며 세부 규칙은 각 섹션의 접힌 상세 보기에 수록했습니다.
+          </p>
+
+          <div class="wp-hero-actions">
+            <a
+              href="https://github.com/pargame/whynode"
+              class="wp-btn primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub · whynode ↗
+            </a>
+            <a href="#flow" class="wp-btn ghost">사용자 흐름 ↓</a>
+            <a href="/learn/projects/whynode/portfolio" class="wp-btn ghost">DOC 02 · 기술 개발기 →</a>
+            <a href="/learn/projects/whynode" class="wp-btn ghost">← 프로젝트 홈</a>
+          </div>
+        </div>
+
+        <figure class="media-card hero-shot">
+          <img
+            src="/images/projects/whynode/01-node-card.png"
+            alt="포커스되어 둥근 카드로 펼쳐진 노드. 질문 제목 아래에 서식화된 AI 답변이 표시된다"
+            width="1080"
+            height="576"
+            class="zoomable-img"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <figcaption>
+            <strong>App Snapshot · 질문 하나와 답변 하나</strong> — 노드는 질문과 그에 대한 3~4문장의 핵심 답변이 짝을 이룬 지식 조각입니다.
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="wp-exec-grid" aria-label="핵심 기획 요약">
+        <div class="exec-card coral">
+          <span class="exec-k">ACTIVE LEARNING</span>
+          <strong class="exec-v">요약 대신 질문 선택</strong>
+          <span class="exec-d">긴 요약을 읽는 대신 답변 속 개념에서 뻗어 나온 질문을 직접 고르며, 그 선택의 흔적이 지식 지도가 됩니다.</span>
+        </div>
+        <div class="exec-card peach">
+          <span class="exec-k">MINIMAL CANVAS</span>
+          <strong class="exec-v">미니멀 화이트보드</strong>
+          <span class="exec-d">도구 모음을 최소화한 무한 캔버스에서 한 번에 하나의 노드만 펼쳐 탐구 경로에 집중하게 합니다.</span>
+        </div>
+        <div class="exec-card mint">
+          <span class="exec-k">BRING YOUR OWN AI</span>
+          <strong class="exec-v">원하는 AI 연결</strong>
+          <span class="exec-d">API 키 또는 Mac에 로그인된 공식 CLI로 연결해, 특정 AI 회사에 묶이지 않고 기존 구독을 그대로 활용합니다.</span>
+        </div>
+        <div class="exec-card coral">
+          <span class="exec-k">OPEN FILE FORMAT</span>
+          <strong class="exec-v">사람이 읽는 JSON 문서</strong>
+          <span class="exec-d">프로젝트 하나가 파일 하나이며, 버전 정보를 담은 JSON으로 저장해 이전 스키마 버전의 파일도 열 때 자동으로 마이그레이션합니다.</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 00. BACKGROUND & FLOW -->
+    <section class="wp-section" id="flow">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">00 // BACKGROUND &amp; USER FLOW</span>
+        <h2>기획 배경과 사용자 흐름</h2>
+      </div>
+
+      <p class="wp-section-lead">
+        챗봇에게 개념 정리를 부탁하면 수십 줄의 요약을 바로 받을 수 있지만, 남이 정리한 요약을 훑는 것만으로는 개념이 서로 연결되지 않아 쉽게 잊힙니다.
+        WhyNode는 소크라테스식 문답법에서 출발해 짧은 핵심 답변 하나와 그 답변에서 파생된 다음 질문들을 함께 보여 주고, 사용자가 질문을 직접 고르며 탐구를 이어 가도록 설계했습니다.
+      </p>
+
+      <figure class="arch-figure" aria-labelledby="flowTitle">
+        <div class="arch-diagram">
+          <div id="flowTitle" class="arch-row-label">EXPLORATION LOOP (주제 입력에서 시작해 질문 선택과 노드 확장을 반복하는 흐름)</div>
+          <div class="arch-pipeline">
+            <div class="arch-node accent-coral">
+              <div class="node-tag">01 · SEED</div>
+              <div class="node-title">주제 입력</div>
+              <ul class="node-list">
+                <li>새 프로젝트의 빈 노드 하나에서 시작</li>
+                <li>단어 · 문장 · 개념 등 형식 제한 없음</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">AI 요청</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-mint">
+              <div class="node-tag">02 · ANSWER</div>
+              <div class="node-title">핵심 답변</div>
+              <ul class="node-list">
+                <li>원리와 메커니즘 위주의 3~4문장</li>
+                <li>노드 = 질문 하나 + 답변 하나</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">파생</span>
+              <span class="conn-arrow">→</span>
+            </div>
+
+            <div class="arch-node accent-peach">
+              <div class="node-tag">03 · SUGGEST</div>
+              <div class="node-title">추가 질문 3~4개</div>
+              <ul class="node-list">
+                <li>방금 쓴 답변 속 개념에서만 파생</li>
+                <li>기존 질문과 겹치지 않게 선별</li>
+              </ul>
+            </div>
+
+            <div class="arch-conn" aria-hidden="true">
+              <span class="conn-fn">선택 · 반복</span>
+              <span class="conn-arrow">↺</span>
+            </div>
+
+            <div class="arch-node accent-coral">
+              <div class="node-tag">04 · EXPAND</div>
+              <div class="node-title">새 노드로 확장</div>
+              <ul class="node-list">
+                <li>고른 질문이 자식 노드가 되어 선으로 연결</li>
+                <li>직접 질문 입력 · 다른 질문 3개 받기</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <strong>탐구 루프</strong> — 새로 만들어진 노드에서도 추가 질문이 다시 제안되어 3단계로 돌아갑니다. 선택하지 않은 질문은 원래 노드에 남아 있어 나중에 다른 갈래로 탐구를 넓힐 수 있습니다.
+        </figcaption>
+      </figure>
+
+      <details class="wp-code-details">
+        <summary>상세 보기 — 프로젝트 · 노드 생성 · 표시 규칙</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>프로젝트</strong>: 시작 화면에서 새 프로젝트 생성 또는 저장 폴더의 프로젝트 카드 열기. 새 프로젝트는 저장 폴더에 즉시 생성 후 자동 저장, 루트 주제 입력 시 파일 이름을 주제로 변경</li>
+            <li><strong>노드 생성</strong>: 추가 질문 칩 선택 또는 직접 질문 입력 시 자식 노드를 즉시 생성하고 답변 대기 상태로 전환. 새 노드 주변만 자동 정리해 형제와의 겹침 해소</li>
+            <li><strong>포커스 유지</strong>: 자식 노드를 만들어도 포커스는 부모에 유지되어 남은 추가 질문을 연속 선택 가능</li>
+            <li><strong>추가 질문 관리</strong>: 미사용 질문은 최대 12개까지 누적, 6개 초과 시 목록 스크롤. 사용한 질문은 칩에서 숨기고, 해당 자식 노드 삭제 시 다시 선택 가능 상태로 복원</li>
+            <li><strong>답변 다시 받기</strong>: 펼친 카드 하단 버튼으로 재요청, 대기 중과 실패 시 모두 이전 답변 유지</li>
+          </ul>
+        </div>
+      </details>
+
+      <nav class="wp-toc" aria-label="문서 목차">
+        <a href="#interaction"><span>01</span> 핵심 인터랙션</a>
+        <a href="#node-model"><span>02</span> 노드 상태 모델</a>
+        <a href="#providers"><span>03</span> AI 연결 방식</a>
+        <a href="#messages"><span>04</span> AI 메시지 규격</a>
+        <a href="#storage"><span>05</span> 저장 형식</a>
+        <a href="#scenario"><span>06</span> 사용 시나리오</a>
+      </nav>
+    </section>
+
+    <!-- 01. INTERACTIONS -->
+    <section class="wp-section" id="interaction">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">01 // CORE INTERACTIONS</span>
+        <h2>핵심 인터랙션</h2>
+      </div>
+
+      <div class="wp-grid-3">
+        <article class="wp-card">
+          <span class="wp-card-tag">FOCUS DIMMING</span>
+          <h3>포커스 흐림</h3>
+          <p>노드를 펼치면 나머지 노드를 반투명하게 흐려, 방금 나타난 답변과 추가 질문에 시선이 머물게 합니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">PERSISTENT SUGGESTIONS</span>
+          <h3>남아 있는 추가 질문</h3>
+          <p>추가 질문 하나를 골라도 나머지는 그 노드에 남습니다. 한 갈래를 끝까지 탐구한 뒤 돌아와 다른 질문으로 지도를 넓힐 수 있습니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">EXPANDING NODE</span>
+          <h3>제자리에서 펼쳐지는 노드</h3>
+          <p>평소에는 질문만 담은 원으로 보이고, 누르면 질문은 제자리에 둔 채 원이 아래로 넓어지는 카드가 되며 답변이 이어집니다. 한 번에 하나만 펼칩니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">NO DUPLICATES · CROSS LINKS</span>
+          <h3>중복 방지와 참조선</h3>
+          <p>탐구 흐름을 맥락으로 전달해 이미 다룬 질문이 반복되지 않게 하고, 다른 가지의 관련 노드는 점선으로 잇습니다. 맵 전체를 다시 검토해 놓친 연결을 더하는 기능도 제공합니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">BRING YOUR OWN AI</span>
+          <h3>원하는 AI 연결</h3>
+          <p>API 키 또는 Mac에 로그인된 공식 CLI로 연결합니다. 사용 중인 모델과 프로젝트 누적 토큰을 캔버스 아래 상태 막대에 표시합니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">ZOOM CLUSTERING · PLANNED</span>
+          <h3>가지 묶음 (예정)</h3>
+          <p>화면을 축소하면 가지를 하나의 묶음으로 합쳐 시작 질문과 노드 수만 보여 주는 기능으로, 명세를 마치고 구현을 앞두고 있습니다.</p>
+        </article>
+      </div>
+
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/04-style-panel.png"
+          alt="노드 편집 패널. 노드 크기 조절 버튼, 노드 색과 글자 색 프리셋, 가지 접기와 원래대로, 삭제 버튼이 있고 오른쪽에 사용자 지정 색 격자가 펼쳐져 있다"
+          width="1316"
+          height="550"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · 노드 편집 패널</strong> — 노드를 우클릭하면 노드 크기, 노드 색과 글자 색, 가지 접기, 원래대로, 삭제를 한곳에서 조절합니다. 패널이 열린 동안의 연속 편집은 실행 취소 한 번으로 묶입니다.
+        </figcaption>
+      </figure>
+
+      <details class="wp-code-details">
+        <summary>상세 보기 — 캔버스 조작 · 시뮬레이션 · 단축키</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>캔버스</strong>: 빈 곳 끌기 · 두 손가락 스크롤로 이동, 핀치로 확대 · 축소. 배율과 무관하게 선과 테두리 굵기를 화면 기준으로 고정</li>
+            <li><strong>호버 빛</strong>: 마우스를 올린 노드와 바로 이어진 노드에 테두리 빛 표시. 트리 선 이웃은 실선 빛, 참조선 이웃은 점선 빛</li>
+            <li><strong>글자 크기</strong>: 사용자 조절 없이 원 안 질문을 길이에 맞춰 들어가는 가장 큰 크기로 자동 표시, 루트 노드는 기본 1.3배 크기</li>
+            <li><strong>시뮬레이션</strong>: 오른쪽 아래 버튼 또는 스페이스로 겹친 노드 정리. 반발력과 장력 두 값을 0~10 눈금으로 조절하며, 루트는 고정된 기준점</li>
+            <li><strong>단축키</strong>: <code>⌘N</code> 새 프로젝트, <code>⇧⌘O</code> 프로젝트 보기, <code>Space</code> 시뮬레이션 시작, <code>⌫</code> 포커스 노드 삭제, <code>Esc</code> 패널 닫기, <code>⌘?</code> 도움말</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 02. NODE MODEL -->
+    <section class="wp-section" id="node-model">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">02 // NODE MODEL &amp; STATE MACHINE</span>
+        <h2>노드 상태 모델</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">STATE MACHINE</span>
+          <h3>네 가지 노드 상태</h3>
+          <p>
+            노드는 질문이 없는 빈 상태, 답변을 기다리는 대기 상태, 답변이 채워진 완료 상태, 요청이 실패했거나 중단된 오류 상태 중 하나를 가집니다.
+            완료와 오류 노드는 답변 다시 받기로 다시 대기 상태가 될 수 있으며, 이때도 자식 노드와 이전 답변은 유지합니다.
+          </p>
+          <div class="wp-fsm-bar">
+            <span>empty</span>
+            <i>→</i>
+            <span>pending</span>
+            <i>→</i>
+            <span>done</span>
+            <i>⇄</i>
+            <span>error</span>
+          </div>
+        </article>
+
+        <article class="case-card intent">
+          <span class="case-badge">EDIT RULES</span>
+          <h3>편집과 실행 취소</h3>
+          <p>
+            노드를 삭제하면 그 아래 가지 전체가 함께 삭제되고, 삭제된 노드를 가리키던 참조선도 사라집니다. 루트 노드는 삭제할 수 없습니다.
+            노드 생성, 삭제, 끌어서 옮기기, 가지 접기, 꾸미기는 모두 실행 취소할 수 있으며, AI가 자동으로 채운 답변과 주변 자동 배치는 실행 취소 단계로 쌓지 않으며, 사용자가 직접 요청한 추가 질문 다시 받기와 참조선 다시 찾기 결과는 실행 취소할 수 있습니다.
+          </p>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>상세 보기 — 상태별 의미 · 답변 다시 받기 · 대기 중 제약</summary>
+        <div class="detail-body">
+          <ul>
+            <li><code>empty</code>: 질문이 없는 상태, 새 프로젝트의 루트 노드 전용</li>
+            <li><code>pending</code>: 답변 대기 상태, 원 안에 진행 표시</li>
+            <li><code>done</code>: 답변 · 한 줄 요약 · 추가 질문이 채워진 상태</li>
+            <li><code>error</code>: 요청 실패 또는 앱 종료로 중단된 상태, 사유 표시와 재시도 지원. 대기 상태로 저장된 노드는 다음에 열 때 중단으로 간주해 오류 상태로 전환</li>
+            <li>답변 다시 받기: 대기 중과 실패 시 모두 이전 답변 · 요약 · 추가 질문 · 참조 · 생성 정보 보존, 성공 시 새 값으로 교체</li>
+            <li>대기 중 제약: 답변 대기 중에는 해당 문서의 실행 취소와, 요청 중인 노드가 포함된 가지의 삭제를 차단(도중에 끊긴 요청은 사용 토큰 집계 불가)</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 03. PROVIDERS -->
+    <section class="wp-section" id="providers">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">03 // AI PROVIDER CONNECTIONS</span>
+        <h2>AI 연결 방식</h2>
+      </div>
+
+      <p class="wp-section-lead">
+        AI 회사(Google Gemini, Anthropic Claude, OpenAI)와 연결 방식을 따로 고릅니다. 앱은 어떤 경우에도 구독 로그인 토큰을 직접 읽거나 재사용하지 않으며, 인증은 각 회사가 공식으로 제공하는 수단에 위임합니다.
+      </p>
+
+      <div class="wp-grid-3">
+        <article class="wp-card">
+          <span class="wp-card-tag">① API KEY</span>
+          <h3>API 키</h3>
+          <p>각 회사에서 발급한 키를 붙여 넣어 연결합니다. 키는 이 기기의 키체인에만 저장하며, 모델 목록을 불러와 고를 수 있습니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">② OFFICIAL SIGN-IN · PLANNED</span>
+          <h3>공식 로그인 (예정)</h3>
+          <p>AI 회사가 외부 앱에 공식 로그인을 허용하면 지원할 예정입니다. 회사별 앱 등록과 허용이 필요해 현재는 준비 중으로 표시합니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">③ BACKGROUND CLI · macOS</span>
+          <h3>백그라운드 CLI</h3>
+          <p>Mac에 설치하고 로그인한 공식 CLI(Claude Code, Antigravity CLI)를 백그라운드에서 실행해, 사용 중인 구독 요금제로 답변을 받습니다.</p>
+        </article>
+      </div>
+
+      <details class="wp-code-details spaced">
+        <summary>상세 보기 — 연결 테스트 · 설치 안내 · 요청 한도</summary>
+        <div class="detail-body">
+          <ul>
+            <li><strong>첫 실행</strong>: AI 연결 화면에서 회사와 연결 방식을 고르고, 실제 추가 질문 요청으로 연결 테스트 통과 후 시작. 설정 변경 시에도 테스트 통과 후 저장</li>
+            <li><strong>CLI 설치 안내</strong>: CLI 미발견 시 회사별 공식 설치 명령 · 복사 버튼 · 로그인 방법 안내, 도움말에도 동일 내용 수록</li>
+            <li><strong>CLI 탐색</strong>: GUI 앱은 셸 실행 경로를 상속하지 않으므로 주요 설치 위치와 로그인 셸의 실행 경로에서 탐색</li>
+            <li><strong>동시 요청 한도</strong>: 연결 방식별 한도(CLI 2 · agy 상시 연결 3 · API 4), 여러 창이 하나의 대기열 공유</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 04. MESSAGES -->
+    <section class="wp-section" id="messages">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">04 // AI MESSAGE CONTRACT</span>
+        <h2>AI 메시지 규격</h2>
+      </div>
+
+      <div class="case-grid">
+        <article class="case-card intent">
+          <span class="case-badge">CONTEXT PACKAGE</span>
+          <h3>매 요청 다시 조립하는 맥락 패키지</h3>
+          <p>
+            대화 기록을 이어 보내는 대신, 요청마다 트리에서 맥락을 새로 조립합니다.
+            전체 주제, 루트부터 현재 위치까지의 경로, 직전 답변 전문, 형제 질문, 프로젝트 전체 노드 색인을 담되 답변 전문은 직전 답변에만 쓰고 나머지는 한 줄 요약으로 대신해, 트리가 커져도 토큰 사용량이 비례해 늘지 않게 했습니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>요청 종류</strong>: 답변 요청, 추가 질문 다시 받기, 참조선 다시 찾기 세 가지입니다.</li>
+            <li><strong>예산 초과 시</strong>: 경로, 형제와 자식, 트리 거리가 가까운 노드 순으로 남기고 나머지는 질문만 남기거나 생략합니다.</li>
+          </ul>
+        </article>
+
+        <article class="case-card intent">
+          <span class="case-badge">RESPONSE &amp; FORMAT</span>
+          <h3>구조화 응답과 제한된 답변 서식</h3>
+          <p>
+            응답은 답변, 한 줄 요약, 추가 질문 3~4개, 참조 노드로 이루어진 JSON이며, 스키마 전달을 지원하는 프로바이더(Claude API·CLI)에는 구조화 출력을 강제하고, JSON 모드나 일반 텍스트만 지원하는 프로바이더(Gemini·OpenAI API, agy 상시 연결)는 앱 측 JSON 추출과 재요청으로 형식을 보장합니다.
+            답변은 노드 카드에서 잘 보이는 최소한의 서식만 허용합니다. 짧은 문단, 굵게, 인라인 코드, 목록 하나, 텍스트 다이어그램 하나로 제한하고, 나머지는 앱이 일반 텍스트로 정리합니다.
+          </p>
+          <ul class="wp-bullet-list">
+            <li><strong>답변 언어</strong>: 지시문은 영어로 작성하고, 답변은 사용자의 질문 언어를 따릅니다.</li>
+          </ul>
+        </article>
+      </div>
+
+      <details class="wp-code-details">
+        <summary>상세 보기 — 맥락 패키지 필드 · 시스템 프롬프트 규칙 · 응답 예시</summary>
+        <div class="detail-body">
+          <h4>맥락 패키지 필드</h4>
+          <ul>
+            <li><code>topic</code>: 루트 노드의 질문(전체 주제 고정)</li>
+            <li><code>path</code>: 루트부터 부모까지의 <code>&#123;id, question, summary&#125;</code></li>
+            <li><code>parentAnswer</code>: 부모 노드의 답변 전문(답변 요청), <code>answer</code>: 현재 노드 답변 전문(추가 질문 요청)</li>
+            <li><code>siblings</code> · <code>children</code>: 겹치지 않게 할 형제 · 자식 질문</li>
+            <li><code>index</code>: 요청 대상을 제외한 전체 노드의 <code>&#123;id, question, summary&#125;</code>, 글자 예산 6,000자</li>
+            <li><code>exclude</code>: 다시 받기 시 이미 제안했던 질문</li>
+          </ul>
+          <h4>시스템 프롬프트 규칙</h4>
+          <ul>
+            <li>답변은 원리와 메커니즘 위주 3~4문장, 루트에 주제어가 오면 개괄</li>
+            <li>요약은 한국어 40자 · 영어 10단어 안팎, 이후 요청의 맥락으로 재사용</li>
+            <li>추가 질문은 방금 쓴 답변에 실제로 나온 개념에서만 파생한 Why · How 질문 3~4개</li>
+            <li>기존 노드와 직접 관련되면 그 내용을 이어 부연하고 노드 id를 <code>refs</code>에 기록</li>
+          </ul>
+          <h4>응답 예시</h4>
+          <ul>
+            <li><code>&#123;"answer": "…", "summary": "…", "suggestions": ["…", "…", "…"], "refs": [&#123;"nodeId": "…", "reason": "…"&#125;]&#125;</code></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 05. STORAGE -->
+    <section class="wp-section" id="storage">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">05 // FILE FORMAT &amp; STORAGE</span>
+        <h2>저장 형식</h2>
+      </div>
+
+      <figure class="media-card case-shot">
+        <img
+          src="/images/projects/whynode/05-launcher-cards.png"
+          alt="시작 화면의 프로젝트 카드 세 장. 각 카드에 루트 주제, 노드 수, 마지막 수정 시각이 표시되어 있다"
+          width="1384"
+          height="428"
+          class="zoomable-img"
+          loading="lazy"
+        />
+        <figcaption>
+          <strong>App Snapshot · 프로젝트 카드</strong> — 프로젝트 하나가 <code>.whynode</code> 파일 하나이며, 시작 화면은 저장 폴더의 파일을 카드로 보여 줍니다.
+        </figcaption>
+      </figure>
+
+      <div class="wp-grid-3">
+        <article class="wp-card">
+          <span class="wp-card-tag">.WHYNODE · JSON</span>
+          <h3>평면 노드 목록</h3>
+          <p>트리를 중첩 구조 대신 부모 id를 가진 노드의 평면 목록으로 저장합니다. 노드를 옮기거나 지울 때 구조 전체를 다시 쓰지 않아도 되고, 사람이 읽고 비교하기도 쉽습니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">VERSIONED SCHEMA</span>
+          <h3>버전 관리와 자동 마이그레이션</h3>
+          <p>파일마다 스키마 버전을 기록하고, 이전 버전 파일은 열 때 현재 형식으로 자동 마이그레이션합니다. 더 새로운 버전의 파일은 열지 않고 앱 업데이트를 안내합니다.</p>
+        </article>
+        <article class="wp-card">
+          <span class="wp-card-tag">OS DOCUMENT APP</span>
+          <h3>OS 표준 저장</h3>
+          <p>저장 시점과 원자적 쓰기는 OS의 문서 앱 구조에 맡깁니다. 앱은 편집을 실행 취소에 등록하고 변경을 표시하며, 프로젝트의 AI 사용량도 파일에 함께 누적합니다.</p>
+        </article>
+      </div>
+
+      <details class="wp-code-details spaced">
+        <summary>상세 보기 — 노드 필드 · 무결성 규칙</summary>
+        <div class="detail-body">
+          <h4>노드 필드</h4>
+          <ul>
+            <li><code>id</code> · <code>parentId</code> · <code>question</code> · <code>answer</code> · <code>summary</code> · <code>status</code> · <code>error</code></li>
+            <li><code>suggestions</code>: <code>&#123;id, text, usedBy&#125;</code>, 사용한 질문은 만들어진 자식 노드 id를 <code>usedBy</code>에 기록</li>
+            <li><code>refs</code>: 참조 노드 <code>&#123;nodeId, reason&#125;</code>, <code>position</code>: <code>&#123;x, y, pinned&#125;</code>, <code>collapsed</code></li>
+            <li>꾸밈: <code>sizeScale</code>(0.6~2.0), <code>fillColor</code> · <code>textColor</code>(프리셋 토큰 또는 <code>#RRGGBB</code>)</li>
+            <li><code>generation</code>: 답변을 만든 회사 · 연결 방식 · 모델 · 프롬프트 버전 · 시각</li>
+          </ul>
+          <h4>무결성 규칙 (열 때 복구)</h4>
+          <ul>
+            <li>부모가 없는 노드와 순환 참조, 사라진 노드를 가리키는 참조와 <code>usedBy</code>를 정리</li>
+            <li>대기 상태로 저장된 노드는 중단된 요청으로 보고 오류 상태로 전환</li>
+            <li>허용 범위를 벗어난 크기, 알 수 없는 색 값을 기본값으로 복원</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <!-- 06. SCENARIO -->
+    <section class="wp-section" id="scenario">
+      <div class="wp-section-head">
+        <span class="wp-eyebrow">06 // USAGE SCENARIO</span>
+        <h2>사용 시나리오: 양자역학 탐구</h2>
+      </div>
+
+      <p class="wp-section-lead">
+        물리 비전공 대학생이 교양 시험을 앞두고 양자역학의 큰 줄기를 잡는 과정을 예로 들었습니다.
+      </p>
+
+      <ol class="wp-roadmap-steps">
+        <li>
+          <span class="rm-idx">STEP 01</span>
+          <h3>주제 입력</h3>
+          <p>새 프로젝트의 빈 노드에 "양자역학"을 입력하면 개괄 답변과 함께 추가 질문 3개가 나타납니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 02</span>
+          <h3>질문 선택</h3>
+          <p>"관측하기 전까지 상태가 겹쳐 있다는 게 무슨 뜻일까?"를 고르면 새 노드가 생기고 양자 중첩에 대한 답변이 채워집니다. 고르지 않은 두 질문은 루트에 남습니다.</p>
+        </li>
+        <li>
+          <span class="rm-idx">STEP 03</span>
+          <h3>연쇄 탐구</h3>
+          <p>새 노드에는 방금 답변에 나온 관측, 중첩, 코펜하겐 해석에서 이어지는 추가 질문이 다시 제안됩니다.</p>
+        </li>
+        <li class="final-step">
+          <span class="rm-idx">STEP 04</span>
+          <h3>직접 질문과 연결</h3>
+          <p>"슈뢰딩거의 고양이는 결국 살아 있는 걸까?"를 직접 묻자, AI가 앞서 만든 중첩 노드의 설명을 이어 부연하고 두 노드를 점선으로 연결합니다.</p>
+        </li>
+      </ol>
+
+      <footer class="wp-bottom-nav">
+        <a href="/learn/projects/whynode" class="wp-btn ghost">← 프로젝트 홈</a>
+        <div class="wp-bottom-right">
+          <a href="/learn/projects/whynode/portfolio" class="wp-btn ghost">DOC 02 · 기술 개발기</a>
+          <a
+            href="https://github.com/pargame/whynode"
+            class="wp-btn primary"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub 저장소 보기 ↗
+          </a>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <!-- Lightbox Modal for App Snapshots -->
+  <div class="wp-lightbox" id="wp-lightbox" aria-hidden="true" role="dialog" aria-label="이미지 확대 보기">
+    <button type="button" class="wp-lightbox-close" id="wp-lightbox-close" aria-label="닫기">×</button>
+    <img id="wp-lightbox-img" src="" alt="" />
+    <p id="wp-lightbox-cap"></p>
+  </div>
+
+  <script>
+    const lightbox = document.getElementById('wp-lightbox');
+    const lbImg = document.getElementById('wp-lightbox-img') as HTMLImageElement | null;
+    const lbCap = document.getElementById('wp-lightbox-cap');
+    const lbClose = document.getElementById('wp-lightbox-close') as HTMLButtonElement | null;
+    let lastFocused: HTMLElement | null = null;
+
+    document.querySelectorAll<HTMLImageElement>('.zoomable-img').forEach((img) => {
+      img.tabIndex = 0;
+      const openImage = () => {
+        if (!lightbox || !lbImg) return;
+        lastFocused = document.activeElement as HTMLElement | null;
+        lbImg.src = img.src;
+        lbImg.alt = img.alt;
+        if (lbCap) {
+          lbCap.textContent = img.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ?? img.alt;
+        }
+        lightbox.classList.add('open');
+        lightbox.setAttribute('aria-hidden', 'false');
+        lbClose?.focus();
+      };
+      img.addEventListener('click', openImage);
+      img.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openImage();
+        }
+      });
+    });
+
+    const closeLightbox = () => {
+      if (!lightbox?.classList.contains('open')) return;
+      lightbox.classList.remove('open');
+      lightbox.setAttribute('aria-hidden', 'true');
+      lastFocused?.focus();
+    };
+
+    lbClose?.addEventListener('click', closeLightbox);
+    lightbox?.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .wp-page {
+    --wp-coral: #f59e0b;
+    --wp-peach: #38bdf8;
+    --wp-mint: #2ce6b8;
+    --wp-surface: color-mix(in srgb, var(--surface-1) 92%, #f59e0b 8%);
+    --wp-surface-soft: color-mix(in srgb, var(--surface-2) 90%, #38bdf8 10%);
+    --wp-border: color-mix(in srgb, var(--wp-coral) 26%, var(--border));
+    --wp-glow: 0 18px 44px -18px rgba(245, 158, 11, 0.34);
+    display: flex;
+    flex-direction: column;
+    gap: 3.4rem;
+  }
+
+  :global([data-theme="light"]) .wp-page {
+    --wp-coral: #c2610a;
+    --wp-peach: #0277b8;
+    --wp-mint: #0e9f7d;
+    --wp-surface: #fffbf3;
+    --wp-surface-soft: #f2f9fe;
+    --wp-border: rgba(194, 97, 10, 0.22);
+    --wp-glow: 0 16px 36px -18px rgba(194, 97, 10, 0.24);
+  }
+
+  .wp-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    color: var(--text-3);
+    margin-bottom: -1.6rem;
+  }
+  .wp-breadcrumb a {
+    color: var(--text-2);
+    text-decoration: none;
+  }
+  .wp-breadcrumb a:hover {
+    color: var(--wp-coral);
+  }
+  .wp-breadcrumb .current {
+    color: var(--wp-peach);
+    font-weight: 600;
+  }
+
+  /* HERO */
+  .wp-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 1.7rem;
+    padding: 2.2rem;
+    border-radius: 24px;
+    border: 1px solid var(--wp-border);
+    background:
+      radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--wp-peach) 16%, transparent), transparent 46%),
+      radial-gradient(circle at 12% 92%, color-mix(in srgb, var(--wp-coral) 16%, transparent), transparent 44%),
+      var(--wp-surface);
+    box-shadow: var(--wp-glow);
+  }
+  .wp-hero-top {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1.8rem;
+    align-items: center;
+  }
+
+  .wp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.95rem;
+  }
+  .wp-pill {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.28rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .wp-pill.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    color: var(--wp-coral);
+    background: color-mix(in srgb, var(--wp-coral) 14%, transparent);
+    border-color: color-mix(in srgb, var(--wp-coral) 38%, transparent);
+  }
+  .wp-dot {
+    width: 0.46rem;
+    height: 0.46rem;
+    border-radius: 50%;
+    background: var(--wp-coral);
+    box-shadow: 0 0 8px var(--wp-coral);
+  }
+  .wp-pill.theme-tag {
+    color: var(--wp-peach);
+    background: color-mix(in srgb, var(--wp-peach) 13%, transparent);
+    border-color: color-mix(in srgb, var(--wp-peach) 35%, transparent);
+  }
+  .wp-pill.wave-tag {
+    color: var(--wp-mint);
+    background: color-mix(in srgb, var(--wp-mint) 12%, transparent);
+    border-color: color-mix(in srgb, var(--wp-mint) 32%, transparent);
+  }
+
+  .wp-hero h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.85rem, 1.4rem + 1.6vw, 2.55rem);
+    line-height: 1.18;
+    background: linear-gradient(125deg, var(--wp-coral), var(--wp-peach) 62%, var(--wp-mint));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .wp-lead {
+    color: var(--text-2);
+    font-size: 0.98rem;
+    line-height: 1.72;
+    margin: 0 0 1.25rem;
+  }
+  .wp-lead strong {
+    color: var(--text-1);
+  }
+
+  .wp-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+  .wp-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.54rem 0.98rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-btn.primary {
+    background: linear-gradient(135deg, var(--wp-coral), var(--wp-peach));
+    color: #ffffff;
+    border: 1px solid transparent;
+  }
+  .wp-btn.primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+  .wp-btn.ghost {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+  }
+  .wp-btn.ghost:hover {
+    border-color: var(--wp-coral);
+    color: var(--wp-coral);
+  }
+
+  /* MEDIA CARD (PIE CAPTURES) */
+  .media-card {
+    margin: 0;
+    min-width: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-1);
+  }
+  .media-card.case-shot {
+    margin-bottom: 1.2rem;
+  }
+  .media-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: zoom-in;
+    transition: transform var(--dur);
+  }
+  .media-card img:hover {
+    transform: scale(1.015);
+  }
+  .media-card figcaption {
+    padding: 0.72rem 0.95rem;
+    background: var(--surface-2);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+  .media-card figcaption strong {
+    color: var(--text-1);
+  }
+
+  .wp-exec-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+  .exec-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .exec-card.coral { border-top: 3px solid var(--wp-coral); }
+  .exec-card.peach { border-top: 3px solid var(--wp-peach); }
+  .exec-card.mint { border-top: 3px solid var(--wp-mint); }
+  .exec-k {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+  }
+  .exec-v {
+    font-family: var(--font-mono);
+    font-size: 0.94rem;
+    color: var(--text-1);
+  }
+  .exec-d {
+    font-size: 0.78rem;
+    color: var(--text-2);
+    line-height: 1.46;
+  }
+
+  .wp-section-head {
+    margin-bottom: 1.1rem;
+  }
+  .wp-eyebrow {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--wp-coral);
+    margin-bottom: 0.3rem;
+  }
+  .wp-section-head h2 {
+    margin: 0;
+    font-size: clamp(1.32rem, 1.12rem + 0.75vw, 1.8rem);
+  }
+  .wp-section-lead {
+    margin: 0 0 1.25rem;
+    color: var(--text-2);
+    line-height: 1.72;
+    font-size: 0.94rem;
+    max-width: 78ch;
+  }
+
+  /* SYSTEM ARCHITECTURE DIAGRAM */
+  .arch-figure {
+    margin: 0 0 1.3rem;
+  }
+  .arch-diagram {
+    padding: 1.45rem;
+    border-radius: 20px;
+    background: var(--surface-1);
+    border: 1px solid var(--wp-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .arch-row-label {
+    font-family: var(--font-mono);
+    font-size: 0.71rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: var(--wp-coral);
+  }
+  .arch-row-label.sub {
+    margin-top: 0.45rem;
+    padding-top: 0.95rem;
+    border-top: 1px dashed var(--border);
+    color: var(--wp-peach);
+  }
+  .arch-pipeline {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+    gap: 0.6rem;
+    align-items: stretch;
+  }
+  .arch-node {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+  .arch-node.accent-coral { border-top: 3px solid var(--wp-coral); }
+  .arch-node.accent-peach { border-top: 3px solid var(--wp-peach); }
+  .arch-node.accent-mint { border-top: 3px solid var(--wp-mint); }
+  .node-tag {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+  }
+  .node-title {
+    font-family: var(--font-mono);
+    font-size: 0.87rem;
+    font-weight: 700;
+    color: var(--text-1);
+    word-break: break-word;
+  }
+  .node-list {
+    margin: 0.18rem 0 0;
+    padding-left: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.24rem;
+    font-size: 0.77rem;
+    color: var(--text-2);
+    line-height: 1.45;
+  }
+  .node-desc {
+    margin: 0.12rem 0 0;
+    font-size: 0.79rem;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .arch-conn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 0 0.1rem;
+    text-align: center;
+  }
+  .conn-fn {
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    color: var(--wp-mint);
+    white-space: nowrap;
+  }
+  .conn-arrow {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-3);
+  }
+  .arch-bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .arch-figure figcaption {
+    margin-top: 0.7rem;
+    font-size: 0.84rem;
+    color: var(--text-3);
+    line-height: 1.6;
+  }
+  .arch-figure figcaption strong {
+    color: var(--text-2);
+  }
+
+  /* QUICK TOC */
+  .wp-toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .wp-toc a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 0.8rem;
+    text-decoration: none;
+    transition: all var(--dur-fast);
+  }
+  .wp-toc a span {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+  }
+  .wp-toc a:hover {
+    border-color: var(--wp-coral);
+    color: var(--text-1);
+  }
+
+  /* CASE STUDY GRID */
+  .case-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem;
+    margin-bottom: 1rem;
+  }
+  .case-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .case-card.intent {
+    border-top: 3px solid var(--wp-peach);
+  }
+  .case-badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--wp-peach);
+  }
+  .case-card h3 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+  .case-card p {
+    margin: 0;
+    font-size: 0.89rem;
+    color: var(--text-2);
+    line-height: 1.66;
+  }
+  .case-card.troubleshoot {
+    padding: 0;
+    background: transparent;
+    border: none;
+    gap: 0.85rem;
+  }
+  .ts-step {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+    flex: 1;
+  }
+  .ts-step.problem { border-left: 3px solid var(--wp-coral); }
+  .ts-step.solution { border-left: 3px solid var(--wp-mint); }
+  .ts-tag {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .ts-step.problem .ts-tag { color: var(--wp-coral); }
+  .ts-step.solution .ts-tag { color: var(--wp-mint); }
+  .ts-step h3 {
+    margin: 0;
+    font-size: 1.02rem;
+  }
+  .ts-step p {
+    margin: 0;
+    font-size: 0.87rem;
+    color: var(--text-2);
+    line-height: 1.64;
+  }
+
+  .wp-bullet-list {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.87rem;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+  .wp-bullet-list strong {
+    color: var(--text-1);
+  }
+
+  .wp-param-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.42rem;
+    margin-top: 0.3rem;
+  }
+  .wp-param-strip span {
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    padding: 0.22rem 0.52rem;
+    border-radius: 8px;
+  }
+
+  .wp-preset-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+    margin-top: 0.3rem;
+    padding: 0.68rem 0.85rem;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.81rem;
+    color: var(--text-2);
+  }
+  .wp-preset-mini strong {
+    color: var(--wp-coral);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .wp-fsm-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.58rem 0.82rem;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.77rem;
+  }
+  .wp-fsm-bar span {
+    color: var(--wp-peach);
+    font-weight: 700;
+  }
+  .wp-fsm-bar i {
+    font-style: normal;
+    color: var(--text-3);
+  }
+
+  /* CODE DETAILS (ALL CODE COLLAPSED BY DEFAULT) */
+  .wp-code-details {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .wp-code-details summary {
+    cursor: pointer;
+    padding: 0.82rem 1.15rem;
+    font-family: var(--font-mono);
+    font-size: 0.79rem;
+    font-weight: 600;
+    color: var(--text-2);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .wp-code-details summary::before {
+    content: '▸';
+    color: var(--wp-coral);
+    transition: transform var(--dur-fast);
+  }
+  .wp-code-details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  .wp-code-details summary:hover {
+    color: var(--text-1);
+  }
+  .code-wrap {
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    overflow-x: auto;
+  }
+  .code-wrap :global(pre) {
+    margin: 0 !important;
+    padding: 1rem 1.15rem !important;
+    border-radius: 0 !important;
+  }
+
+  .detail-body {
+    border-top: 1px solid var(--border-subtle);
+    padding: 0.95rem 1.15rem 1.05rem;
+    font-size: 0.84rem;
+    color: var(--text-2);
+    line-height: 1.62;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .detail-body h4 {
+    margin: 0.2rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    color: var(--wp-peach);
+  }
+  .detail-body ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .detail-body p {
+    margin: 0;
+  }
+  .wp-code-details.spaced {
+    margin-top: 1rem;
+  }
+  .arch-figure + .wp-code-details {
+    margin: -0.4rem 0 1.3rem;
+  }
+
+  /* 3-COL GRID */
+  .wp-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.1rem;
+  }
+  .wp-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.52rem;
+  }
+  .wp-card-tag {
+    font-family: var(--font-mono);
+    font-size: 0.69rem;
+    font-weight: 700;
+    color: var(--wp-mint);
+    letter-spacing: 0.06em;
+  }
+  .wp-card h3 {
+    margin: 0;
+    font-size: 1.03rem;
+  }
+  .wp-card p {
+    margin: 0;
+    font-size: 0.87rem;
+    color: var(--text-2);
+    line-height: 1.64;
+  }
+  .wp-card p strong {
+    color: var(--text-1);
+  }
+
+  /* ENV & BUDGET BOX */
+  .env-box {
+    background: var(--wp-surface-soft);
+    border: 1px solid var(--wp-border);
+    border-radius: 18px;
+    padding: 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.05rem;
+  }
+  .env-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 1.25rem;
+    font-size: 0.83rem;
+    color: var(--text-2);
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .env-meta strong {
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+    color: var(--wp-coral);
+    margin-right: 0.3rem;
+  }
+  .wp-split-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .env-col {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem;
+  }
+  .env-col.keep { border-top: 3px solid var(--wp-mint); }
+  .env-col.disable { border-top: 3px solid var(--wp-coral); }
+  .env-col-head {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.7rem;
+  }
+  .env-col-head.mint { color: var(--wp-mint); }
+  .env-col-head.coral { color: var(--wp-coral); }
+  .env-col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+  }
+  .env-col li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-size: 0.79rem;
+    padding-bottom: 0.38rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .env-col li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .env-col code {
+    font-size: 0.74rem;
+    color: var(--text-1);
+    word-break: break-all;
+  }
+  .env-col span {
+    color: var(--text-3);
+    white-space: nowrap;
+    font-size: 0.76rem;
+  }
+
+  /* KNOWN LIMITATIONS */
+  .limit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.05rem;
+  }
+  .limit-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--wp-peach);
+    border-radius: 16px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.48rem;
+  }
+  .limit-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .limit-tag {
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    font-weight: 700;
+    color: var(--wp-peach);
+    letter-spacing: 0.05em;
+  }
+  .limit-head code {
+    font-size: 0.71rem;
+    color: var(--text-3);
+  }
+  .limit-card h3 {
+    margin: 0;
+    font-size: 0.97rem;
+  }
+  .limit-card p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-2);
+    line-height: 1.58;
+  }
+  .limit-fix {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border-subtle);
+    font-size: 0.82rem;
+    color: var(--text-2);
+    line-height: 1.52;
+  }
+  .limit-fix strong {
+    color: var(--wp-mint);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  /* ROADMAP */
+  .wp-roadmap-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.8rem;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+  .wp-roadmap-steps li {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.42rem;
+  }
+  .wp-roadmap-steps li.final-step {
+    border-color: color-mix(in srgb, var(--wp-mint) 48%, var(--border));
+    background: color-mix(in srgb, var(--surface-1) 90%, var(--wp-mint) 10%);
+  }
+  .rm-idx {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--wp-coral);
+  }
+  .final-step .rm-idx { color: var(--wp-mint); }
+  .wp-roadmap-steps h3 {
+    margin: 0;
+    font-size: 0.94rem;
+  }
+  .wp-roadmap-steps p {
+    margin: 0;
+    font-size: 0.81rem;
+    color: var(--text-2);
+    line-height: 1.54;
+  }
+
+  .wp-bottom-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .wp-bottom-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  /* LIGHTBOX */
+  .wp-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(8, 10, 18, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 1.5rem;
+    backdrop-filter: blur(6px);
+  }
+  .wp-lightbox.open {
+    display: flex;
+  }
+  .wp-lightbox img {
+    max-width: min(1180px, 94vw);
+    max-height: 80vh;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  }
+  .wp-lightbox p {
+    margin: 0;
+    max-width: 78ch;
+    text-align: center;
+    font-size: 0.86rem;
+    color: #e2e8f0;
+  }
+  .wp-lightbox-close {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.4rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .wp-lightbox-close:hover {
+    background: rgba(245, 158, 11, 0.35);
+    border-color: var(--wp-coral);
+  }
+
+  @media (max-width: 1024px) {
+    .wp-hero-top {
+      grid-template-columns: 1fr;
+    }
+    .wp-exec-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .arch-pipeline {
+      grid-template-columns: 1fr;
+    }
+    .arch-conn {
+      flex-direction: row;
+      padding: 0.15rem 0;
+    }
+    .conn-arrow {
+      transform: rotate(90deg);
+    }
+  }
+  @media (max-width: 960px) {
+    .case-grid,
+    .wp-grid-3,
+    .arch-bottom-grid,
+    .wp-split-2,
+    .limit-grid {
+      grid-template-columns: 1fr;
+    }
+    .wp-roadmap-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 560px) {
+    .wp-hero {
+      padding: 1.4rem;
+    }
+    .wp-exec-grid,
+    .wp-roadmap-steps {
+      grid-template-columns: 1fr;
+    }
+    .env-col li {
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+  }
+</style>

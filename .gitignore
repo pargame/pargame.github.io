@@ -19,12 +19,18 @@ dist-ssr
 .env.local
 .env.*
 .env.*.local
+!.env.example
 *.pem
 *.key
+*.p12
 *credential*
+*secret*
 credentials.json
-.agents
-.cache
+.agents/
+.claude/
+.collab/
+.gemini/
+.cache/
 
 # Editor directories and files
 .vscode/*

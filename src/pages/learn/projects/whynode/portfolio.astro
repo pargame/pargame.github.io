@@ -2,6 +2,7 @@
 import '../../../../styles/projects/doc-showcase.css';
 import '../../../../styles/projects/nav-breadcrumb.css';
 import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import DocLightbox from '../../../../components/projects/DocLightbox.astro';
 import { Code } from 'astro:components';
 
 const codeCliArgs = `// CLIProvider.swift — 질의응답 전용 CLI 실행 인자
@@ -846,56 +847,5 @@ static func dedupe(_ candidates: [String], against existing: [String], threshold
     </section>
   </div>
 
-  <!-- Lightbox Modal for App Snapshots -->
-  <div class="wp-lightbox" id="wp-lightbox" aria-hidden="true" role="dialog" aria-label="이미지 확대 보기">
-    <button type="button" class="wp-lightbox-close" id="wp-lightbox-close" aria-label="닫기">×</button>
-    <img id="wp-lightbox-img" src="" alt="" />
-    <p id="wp-lightbox-cap"></p>
-  </div>
-
-  <script>
-    const lightbox = document.getElementById('wp-lightbox');
-    const lbImg = document.getElementById('wp-lightbox-img') as HTMLImageElement | null;
-    const lbCap = document.getElementById('wp-lightbox-cap');
-    const lbClose = document.getElementById('wp-lightbox-close') as HTMLButtonElement | null;
-    let lastFocused: HTMLElement | null = null;
-
-    document.querySelectorAll<HTMLImageElement>('.zoomable-img').forEach((img) => {
-      img.tabIndex = 0;
-      const openImage = () => {
-        if (!lightbox || !lbImg) return;
-        lastFocused = document.activeElement as HTMLElement | null;
-        lbImg.src = img.src;
-        lbImg.alt = img.alt;
-        if (lbCap) {
-          lbCap.textContent = img.closest('figure')?.querySelector('figcaption')?.textContent?.trim() ?? img.alt;
-        }
-        lightbox.classList.add('open');
-        lightbox.setAttribute('aria-hidden', 'false');
-        lbClose?.focus();
-      };
-      img.addEventListener('click', openImage);
-      img.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openImage();
-        }
-      });
-    });
-
-    const closeLightbox = () => {
-      if (!lightbox?.classList.contains('open')) return;
-      lightbox.classList.remove('open');
-      lightbox.setAttribute('aria-hidden', 'true');
-      lastFocused?.focus();
-    };
-
-    lbClose?.addEventListener('click', closeLightbox);
-    lightbox?.addEventListener('click', (e) => {
-      if (e.target === lightbox) closeLightbox();
-    });
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeLightbox();
-    });
-  </script>
+  <DocLightbox />
 </BaseLayout>

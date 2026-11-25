@@ -404,7 +404,7 @@ const theme = [
         <summary>상세 보기 — 풀 크기 · 물리 전환 · 스케일 수치</summary>
         <div class="detail-body">
           <ul>
-            <li>풀: <code>AAsteroidFieldManager</code>가 <code>1,150</code>개를 사전 생성하고 활성 목표 <code>950</code>개 유지, 소행성은 자체 Tick 없음</li>
+            <li>풀: <code>AAsteroidFieldManager</code>가 <code>1,150</code>개를 사전 생성해 재사용(활성 개수는 레벨 설정값), 소행성은 자체 Tick 없음</li>
             <li>물리: 플레이어 근처 최대 <code>48</code>개만 Chaos 강체, 나머지는 <code>StepKinematicDrift</code> 등속 이동, 전환 경계에 히스테리시스 적용</li>
             <li>스케일: 플레이어 반지름 배율의 <code>0.75</code>제곱으로 <code>1.0~3.5</code>배 균일 스케일, 메시 재생성 없이 질량(<code>s³</code>) · 전염 비용 · 미네랄 보상 연동</li>
           </ul>
